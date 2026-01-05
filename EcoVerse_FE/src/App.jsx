@@ -15,9 +15,8 @@ import { HelmetProvider } from "react-helmet-async";
 //   AdminContent,
 //   AdminMarketplace
 // } from "@/modules/admin";
+
 import SchoolAdminLayout from "@/roles/school/SchoolAdminLayout";
-import SchoolAuth from "./features/auth/pages/school/schoolAuth/schoolAuth";
-import SchoolRegister from "./features/auth/pages/school/schoolRegister/schoolRegister";
 // import {
 //   SchoolDashboard,
 //   SchoolStudents,
@@ -27,6 +26,7 @@ import SchoolRegister from "./features/auth/pages/school/schoolRegister/schoolRe
 //   SchoolSubscription,
 //   SchoolLeaderboardPage
 // } from "@/modules/school";
+
 // import ParentLayout from "./components/parent/ParentLayout";
 // import {
 //   ParentHome,
@@ -35,8 +35,9 @@ import SchoolRegister from "./features/auth/pages/school/schoolRegister/schoolRe
 //   ParentStats,
 //   ParentSettings
 // } from "@/modules/parent";
-// import SchoolAuth from "./pages/auth/SchoolAuth";
-// import SchoolRegister from "./pages/auth/SchoolRegister";
+
+import SchoolAuth from "./features/auth/pages/school/schoolAuth/schoolAuth";
+import SchoolRegister from "./features/auth/pages/school/schoolRegister/schoolRegister";
 // import SchoolPending from "./pages/auth/SchoolPending";
 // import SchoolRejected from "./pages/auth/SchoolRejected";
 // import AdminAuth from "./pages/auth/AdminAuth";
