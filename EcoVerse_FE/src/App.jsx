@@ -7,18 +7,20 @@ import { HelmetProvider } from "react-helmet-async";
 // // import Index from "./pages/Index";
 // import StudentApp from "./pages/StudentApp";
 // import AdminLayout from "./components/admin/AdminLayout";
-// import { 
-//   AdminDashboard, 
-//   AdminSchools, 
-//   AdminSubscriptions, 
-//   AdminTransactions, 
+// import {
+//   AdminDashboard,
+//   AdminSchools,
+//   AdminSubscriptions,
+//   AdminTransactions,
 //   AdminContent,
 //   AdminMarketplace
 // } from "@/modules/admin";
 import SchoolAdminLayout from "@/roles/school/SchoolAdminLayout";
-// import { 
-//   SchoolDashboard, 
-//   SchoolStudents, 
+import SchoolAuth from "./features/auth/pages/school/schoolAuth/schoolAuth";
+import SchoolRegister from "./features/auth/pages/school/schoolRegister/schoolRegister";
+// import {
+//   SchoolDashboard,
+//   SchoolStudents,
 //   SchoolClasses,
 //   SchoolQuizzes,
 //   SchoolRewards,
@@ -52,7 +54,7 @@ const App = () => (
           <Routes>
             {/* <Route path="/" element={<Index />} />
             <Route path="/student" element={<StudentApp />} /> */}
-            
+
             {/* Admin Routes */}
             {/* <Route path="/admin/auth" element={<AdminAuth />} />
             <Route path="/admin" element={<AdminLayout />}>
@@ -65,9 +67,9 @@ const App = () => (
             </Route> */}
 
             {/* School Auth Routes */}
-            {/* <Route path="/school/auth" element={<SchoolAuth />} />
+            <Route path="/school/auth" element={<SchoolAuth />} />
             <Route path="/school/register" element={<SchoolRegister />} />
-            <Route path="/school/pending" element={<SchoolPending />} />
+            {/* <Route path="/school/pending" element={<SchoolPending />} />
             <Route path="/school/rejected" element={<SchoolRejected />} /> */}
 
             {/* School Admin Routes (Protected) */}

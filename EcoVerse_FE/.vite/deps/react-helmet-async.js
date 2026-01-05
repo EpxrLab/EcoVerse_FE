@@ -1,9 +1,11 @@
 import {
+  require_react
+} from "./chunk-2CLD7BNN.js";
+import {
   __commonJS,
   __publicField,
-  __toESM,
-  require_react
-} from "./chunk-SJRETL4Y.js";
+  __toESM
+} from "./chunk-WOOG5QLI.js";
 
 // node_modules/react-fast-compare/index.js
 var require_react_fast_compare = __commonJS({
