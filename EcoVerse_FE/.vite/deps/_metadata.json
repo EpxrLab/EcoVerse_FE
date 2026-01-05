@@ -1,0 +1,52 @@
+{
+  "hash": "949b93ee",
+  "configHash": "87b96b93",
+  "lockfileHash": "abbf9da3",
+  "browserHash": "40be0c72",
+  "optimized": {
+    "react-dom/client": {
+      "src": "../../node_modules/react-dom/client.js",
+      "file": "react-dom_client.js",
+      "fileHash": "4969e869",
+      "needsInterop": true
+    },
+    "react-hot-toast": {
+      "src": "../../node_modules/react-hot-toast/dist/index.mjs",
+      "file": "react-hot-toast.js",
+      "fileHash": "eeb14bcd",
+      "needsInterop": false
+    },
+    "react-router": {
+      "src": "../../node_modules/react-router/dist/development/index.mjs",
+      "file": "react-router.js",
+      "fileHash": "18511304",
+      "needsInterop": false
+    },
+    "@tanstack/react-query": {
+      "src": "../../node_modules/@tanstack/react-query/build/modern/index.js",
+      "file": "@tanstack_react-query.js",
+      "fileHash": "300e4179",
+      "needsInterop": false
+    },
+    "react-router-dom": {
+      "src": "../../node_modules/react-router-dom/dist/index.js",
+      "file": "react-router-dom.js",
+      "fileHash": "05536d64",
+      "needsInterop": false
+    },
+    "react-helmet-async": {
+      "src": "../../node_modules/react-helmet-async/lib/index.esm.js",
+      "file": "react-helmet-async.js",
+      "fileHash": "39399401",
+      "needsInterop": false
+    }
+  },
+  "chunks": {
+    "chunk-X4Y73ZAP": {
+      "file": "chunk-X4Y73ZAP.js"
+    },
+    "chunk-SJRETL4Y": {
+      "file": "chunk-SJRETL4Y.js"
+    }
+  }
+}
