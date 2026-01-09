@@ -18,6 +18,8 @@ import { HelmetProvider } from "react-helmet-async";
 import SchoolAdminLayout from "@/roles/school/SchoolAdminLayout";
 import SchoolAuth from "./features/auth/pages/school/schoolAuth/schoolAuth";
 import SchoolRegister from "./features/auth/pages/school/schoolRegister/schoolRegister";
+import Index from "./roles/guest";
+import OptionPage from "./features/auth/pages/optionPage/optionPage";
 // import {
 //   SchoolDashboard,
 //   SchoolStudents,
@@ -52,8 +54,9 @@ const App = () => (
         <Sonner />
         <BrowserRouter>
           <Routes>
-            {/* <Route path="/" element={<Index />} />
-            <Route path="/student" element={<StudentApp />} /> */}
+            <Route path="/" element={<Index />} />
+            <Route path="/auth" element={<OptionPage />} />
+            {/* <Route path="/student" element={<StudentApp />} /> */}
 
             {/* Admin Routes */}
             {/* <Route path="/admin/auth" element={<AdminAuth />} />
@@ -67,10 +70,10 @@ const App = () => (
             </Route> */}
 
             {/* School Auth Routes */}
-            <Route path="/school/auth" element={<SchoolAuth />} />
-            <Route path="/school/register" element={<SchoolRegister />} />
-            {/* <Route path="/school/pending" element={<SchoolPending />} />
-            <Route path="/school/rejected" element={<SchoolRejected />} /> */}
+            <Route path="/auth/school" element={<SchoolAuth />} />
+            <Route path="/auth/school/register" element={<SchoolRegister />} />
+            {/* <Route path="/auth/school/pending" element={<SchoolPending />} />
+            <Route path="/auth/school/rejected" element={<SchoolRejected />} /> */}
 
             {/* School Admin Routes (Protected) */}
             <Route path="/school" element={<SchoolAdminLayout />}>
