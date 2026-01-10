@@ -64,7 +64,6 @@ export default function SchoolAuth() {
 
     setIsLoading(true);
     try {
-      // Simulate API call
       await new Promise((resolve) => setTimeout(resolve, 2000));
       message.success("Đăng nhập thành công!");
     } catch (error) {
@@ -189,6 +188,22 @@ export default function SchoolAuth() {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-green-50 via-white to-blue-50 flex items-center justify-center p-4">
+      <motion.button
+        onClick={() => navigate("/auth")}
+        className="fixed top-6 left-6 z-50
+               flex items-center gap-2
+               bg-white/80 backdrop-blur-md
+               px-4 py-2 rounded-full shadow-lg
+               text-gray-600 hover:text-green-600
+               transition-colors group"
+        whileHover={{ x: -5 }}
+        whileTap={{ scale: 0.95 }}
+        initial={{ opacity: 0, x: -20 }}
+        animate={{ opacity: 1, x: 0 }}
+      >
+        <ArrowLeftOutlined className="text-lg" />
+        <span className="font-medium">Quay lại</span>
+      </motion.button>
       <motion.div
         className="w-full max-w-md"
         variants={containerVariants}
