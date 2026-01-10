@@ -20,6 +20,7 @@ import SchoolAuth from "./features/auth/pages/school/schoolAuth/schoolAuth";
 import SchoolRegister from "./features/auth/pages/school/schoolRegister/schoolRegister";
 import Index from "./roles/guest";
 import OptionPage from "./features/auth/pages/optionPage/optionPage";
+import StudentLogin from "./features/auth/pages/student/studentLogin/studentLogin";
 // import {
 //   SchoolDashboard,
 //   SchoolStudents,
@@ -55,8 +56,15 @@ const App = () => (
         <BrowserRouter>
           <Routes>
             <Route path="/" element={<Index />} />
+
+            {/* Authentication Router*/}
             <Route path="/auth" element={<OptionPage />} />
+            <Route path="/auth/school" element={<SchoolAuth />} />
+            <Route path="/auth/school/register" element={<SchoolRegister />} />
+            {/* <Route path="/auth/school/pending" element={<SchoolPending />} />
+            <Route path="/auth/school/rejected" element={<SchoolRejected />} /> */}
             {/* <Route path="/student" element={<StudentApp />} /> */}
+            <Route path="/auth/student" element={<StudentLogin />} />
 
             {/* Admin Routes */}
             {/* <Route path="/admin/auth" element={<AdminAuth />} />
@@ -68,12 +76,6 @@ const App = () => (
               <Route path="content" element={<AdminContent />} />
               <Route path="marketplace" element={<AdminMarketplace />} />
             </Route> */}
-
-            {/* School Auth Routes */}
-            <Route path="/auth/school" element={<SchoolAuth />} />
-            <Route path="/auth/school/register" element={<SchoolRegister />} />
-            {/* <Route path="/auth/school/pending" element={<SchoolPending />} />
-            <Route path="/auth/school/rejected" element={<SchoolRejected />} /> */}
 
             {/* School Admin Routes (Protected) */}
             <Route path="/school" element={<SchoolAdminLayout />}>
