@@ -2,7 +2,7 @@ import { Route, Routes, Navigate } from "react-router-dom";
 
 // Import Layout components
 import StudentLayout from "@/roles/student/StudentLayout";
-import SchoolLayout from "@/roles/school/SchoolLayout";
+import SchoolLayout from "@/roles/school/SchoolAdminLayout";
 import AdminLayout from "@/roles/admin/AdminLayout";
 
 // Import feature routes
