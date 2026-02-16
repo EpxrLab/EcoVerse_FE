@@ -9,7 +9,7 @@ export default defineConfig(({ mode }) => ({
     port: 5173,
   },
   plugins: [react(), mode === "development" && componentTagger()].filter(
-    Boolean
+    Boolean,
   ),
   resolve: {
     alias: {

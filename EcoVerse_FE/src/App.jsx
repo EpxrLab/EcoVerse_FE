@@ -6,7 +6,6 @@ import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { HelmetProvider } from "react-helmet-async";
 // // import Index from "./pages/Index";
 // import StudentApp from "./pages/StudentApp";
-// import AdminLayout from "./components/admin/AdminLayout";
 // import {
 //   AdminDashboard,
 //   AdminSchools,
@@ -24,6 +23,8 @@ import OptionPage from "./features/auth/pages/optionPage/optionPage";
 import StudentLogin from "./features/auth/pages/student/studentLogin/studentLogin";
 import PartnershipAuth from "./features/auth/pages/partnership/partnershipAuth/partnershipAuth";
 import PartnershipRegister from "./features/auth/pages/partnership/partnershipRegister/partnershipRegister";
+import AdminLayout from "./roles/admin/AdminLayout";
+import AdminDashboard from "./roles/admin/pages/adminDashboard";
 // import {
 //   SchoolDashboard,
 //   SchoolStudents,
@@ -77,17 +78,17 @@ const App = () => (
             <Route path="/auth/school/rejected" element={<SchoolRejected />} /> */}
 
             {/* Admin Routes */}
-            {/* <Route path="/admin/auth" element={<AdminAuth />} />
+            {/* <Route path="/auth/admin" element={<AdminAuth />} /> */}
             <Route path="/admin" element={<AdminLayout />}>
-              <Route index element={<AdminDashboard />} />
-              <Route path="schools" element={<AdminSchools />} />
+              {/* <Route index element={<AdminDashboard />} /> */}
+              {/* <Route path="schools" element={<AdminSchools />} />
               <Route path="subscriptions" element={<AdminSubscriptions />} />
               <Route path="transactions" element={<AdminTransactions />} />
               <Route path="content" element={<AdminContent />} />
-              <Route path="marketplace" element={<AdminMarketplace />} />
-            </Route> */}
+              <Route path="marketplace" element={<AdminMarketplace />} /> */}
+            </Route>
 
-            {/* School Admin Routes (Protected) */}
+            {/* School Routes (Protected) */}
             <Route path="/school" element={<SchoolAdminLayout />}>
               {/* <Route index element={<SchoolDashboard />} />
               <Route path="students" element={<SchoolStudents />} />
