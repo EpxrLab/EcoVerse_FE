@@ -1,5 +1,6 @@
 import { Route, Routes, Navigate } from "react-router-dom";
 import SchoolRegister from "./pages/school/schoolRegister/schoolRegister";
+import PartnershipAuth from "./pages/partnership/partnershipAuth/partnershipAuth";
 
 /**
  * AuthRouter - Định tuyến cho Auth Feature
@@ -12,7 +13,7 @@ export function AuthRouter() {
     <Routes>
       {/* Auth routes */}
       {/* <Route path="/login" element={<LoginPage />} /> */}
-      <Route path="register" element={<SchoolRegister />} />
+      <Route path="/register" element={<SchoolRegister />} />
       {/* <Route path="/forgot-password" element={<ForgotPasswordPage />} /> */}
       {/* <Route path="/reset-password/:token" element={<ResetPasswordPage />} /> */}
 

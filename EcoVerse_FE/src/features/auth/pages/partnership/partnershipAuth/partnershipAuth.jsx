@@ -1,8 +1,7 @@
-import { useCallback, useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Input, Button, Card, Tabs, message } from "antd";
 import {
-  HomeOutlined,
   MailOutlined,
   LockOutlined,
   EyeOutlined,
@@ -10,9 +9,11 @@ import {
   KeyOutlined,
   ArrowLeftOutlined,
   LoadingOutlined,
+  TeamOutlined,
 } from "@ant-design/icons";
 import { z } from "zod";
 import { useNavigate } from "react-router-dom";
+import toast from "react-hot-toast";
 
 const { TabPane } = Tabs;
 
@@ -21,86 +22,65 @@ const loginSchema = z.object({
   password: z.string().min(6, { message: "Mật khẩu phải có ít nhất 6 ký tự" }),
 });
 
-export default function SchoolAuth() {
+export default function PartnershipAuth() {
   const navigate = useNavigate();
   const [isLoading, setIsLoading] = useState(false);
-  const [showPassword, setShowPassword] = useState(false);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [errors, setErrors] = useState({});
+  const [activeTab, setActiveTab] = useState("login");
 
-  // Email verification state
   const [registerStep, setRegisterStep] = useState("credentials");
   const [otpCode, setOtpCode] = useState(["", "", "", "", "", ""]);
   const [devModeOtp, setDevModeOtp] = useState(null);
   const [isResending, setIsResending] = useState(false);
   const [resendCountdown, setResendCountdown] = useState(0);
 
-  // Countdown timer for resend
   useEffect(() => {
     if (resendCountdown > 0) {
-      const timer = setTimeout(
-        () => setResendCountdown(resendCountdown - 1),
-        1000,
-      );
-      return () => clearTimeout(timer);
+      const t = setTimeout(() => setResendCountdown((c) => c - 1), 1000);
+      return () => clearTimeout(t);
     }
   }, [resendCountdown]);
 
-  const handleLogin = async (e) => {
-    e.preventDefault();
-    setErrors({});
-
+  const validate = () => {
     const result = loginSchema.safeParse({ email, password });
     if (!result.success) {
-      const fieldErrors = {};
-      result.error.errors.forEach((err) => {
-        if (err.path[0] === "email") fieldErrors.email = err.message;
-        if (err.path[0] === "password") fieldErrors.password = err.message;
+      const fe = {};
+      result.error.errors.forEach((e) => {
+        fe[e.path[0]] = e.message;
       });
-      setErrors(fieldErrors);
-      return;
+      setErrors(fe);
+      return false;
     }
+    setErrors({});
+    return true;
+  };
 
+  const handleLogin = async () => {
+    if (!validate()) return;
     setIsLoading(true);
     try {
-      await new Promise((resolve) => setTimeout(resolve, 2000));
-      message.success("Đăng nhập thành công!");
-    } catch (error) {
-      message.error("Đã xảy ra lỗi khi đăng nhập");
+      await new Promise((r) => setTimeout(r, 1500));
+      toast.success("Đăng nhập thành công!");
+    } catch {
+      toast.error("Đã xảy ra lỗi khi đăng nhập");
     } finally {
       setIsLoading(false);
     }
   };
 
-  const handleSendOTP = async (e) => {
-    e.preventDefault();
-    setErrors({});
-
-    const result = loginSchema.safeParse({ email, password });
-    if (!result.success) {
-      const fieldErrors = {};
-      result.error.errors.forEach((err) => {
-        if (err.path[0] === "email") fieldErrors.email = err.message;
-        if (err.path[0] === "password") fieldErrors.password = err.message;
-      });
-      setErrors(fieldErrors);
-      return;
-    }
-
+  const handleSendOTP = async () => {
+    if (!validate()) return;
     setIsLoading(true);
     try {
-      // Simulate sending OTP
-      await new Promise((resolve) => setTimeout(resolve, 1500));
-
-      // Simulate dev mode OTP
+      await new Promise((r) => setTimeout(r, 1500));
       const mockOtp = "123456";
       setDevModeOtp(mockOtp);
-
-      message.success(`Mã OTP: ${mockOtp} (chế độ dev)`);
+      message.success(`Dev Mode – Mã OTP: ${mockOtp}`);
       setRegisterStep("verify");
       setResendCountdown(60);
-    } catch (error) {
+    } catch {
       message.error("Đã xảy ra lỗi khi gửi mã xác thực");
     } finally {
       setIsLoading(false);
@@ -113,14 +93,15 @@ export default function SchoolAuth() {
       message.error("Vui lòng nhập đủ 6 chữ số");
       return;
     }
-
     setIsLoading(true);
     try {
-      await new Promise((resolve) => setTimeout(resolve, 1500));
-      message.success("Xác thực thành công! Đang chuyển đến trang đăng ký...");
-      navigate("/auth/school/register");
-    } catch (error) {
-      message.error("Đã xảy ra lỗi khi xác thực");
+      await new Promise((r) => setTimeout(r, 1500));
+      toast.success(
+        "Xác thực thành công! Đang chuyển đến trang đăng ký thông tin đối tác...",
+      );
+      navigate("/auth/partnership/register");
+    } catch {
+      toast.error("Đã xảy ra lỗi khi xác thực");
     } finally {
       setIsLoading(false);
     }
@@ -128,15 +109,14 @@ export default function SchoolAuth() {
 
   const handleResendOTP = async () => {
     if (resendCountdown > 0) return;
-
     setIsResending(true);
     try {
-      await new Promise((resolve) => setTimeout(resolve, 1000));
+      await new Promise((r) => setTimeout(r, 1000));
       message.success(`Đã gửi lại mã xác thực đến ${email}`);
       setResendCountdown(60);
       setOtpCode(["", "", "", "", "", ""]);
-    } catch (error) {
-      message.error("Đã xảy ra lỗi khi gửi lại mã xác thực");
+    } catch {
+      message.error("Đã xảy ra lỗi khi gửi lại mã");
     } finally {
       setIsResending(false);
     }
@@ -145,27 +125,21 @@ export default function SchoolAuth() {
   const handleBackToCredentials = () => {
     setRegisterStep("credentials");
     setOtpCode(["", "", "", "", "", ""]);
+    setDevModeOtp(null);
   };
 
   const handleOtpChange = (index, value) => {
     if (!/^\d*$/.test(value)) return;
-
-    const newOtp = [...otpCode];
-    newOtp[index] = value.slice(-1);
-    setOtpCode(newOtp);
-
-    // Auto focus next input
-    if (value && index < 5) {
-      const nextInput = document.getElementById(`otp-${index + 1}`);
-      if (nextInput) nextInput.focus();
-    }
+    const next = [...otpCode];
+    next[index] = value.slice(-1);
+    setOtpCode(next);
+    if (value && index < 5)
+      document.getElementById(`otp-p-${index + 1}`)?.focus();
   };
 
   const handleOtpKeyDown = (index, e) => {
-    if (e.key === "Backspace" && !otpCode[index] && index > 0) {
-      const prevInput = document.getElementById(`otp-${index - 1}`);
-      if (prevInput) prevInput.focus();
-    }
+    if (e.key === "Backspace" && !otpCode[index] && index > 0)
+      document.getElementById(`otp-p-${index - 1}`)?.focus();
   };
 
   const containerVariants = {
@@ -187,15 +161,13 @@ export default function SchoolAuth() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-green-50 via-white to-blue-50 flex items-center justify-center p-4">
+    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-green-50 flex items-center justify-center p-4">
+      {/* Back button — fixed top-left, same as SchoolAuth */}
       <motion.button
-        onClick={() => navigate("/auth")}
-        className="fixed top-6 left-6 z-50
-               flex items-center gap-2
-               bg-white/80 backdrop-blur-md
-               px-4 py-2 rounded-full shadow-lg
-               text-gray-600 hover:text-green-600
-               transition-colors group"
+        onClick={() => console.log("navigate /auth")}
+        className="fixed top-6 left-6 z-50 flex items-center gap-2
+                   bg-white/80 backdrop-blur-md px-4 py-2 rounded-full shadow-lg
+                   text-gray-600 hover:text-blue-600 transition-colors group"
         whileHover={{ x: -5 }}
         whileTap={{ scale: 0.95 }}
         initial={{ opacity: 0, x: -20 }}
@@ -204,6 +176,7 @@ export default function SchoolAuth() {
         <ArrowLeftOutlined className="text-lg" />
         <span className="font-medium">Quay lại</span>
       </motion.button>
+
       <motion.div
         className="w-full max-w-md"
         variants={containerVariants}
@@ -217,22 +190,27 @@ export default function SchoolAuth() {
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.2, duration: 0.5 }}
         >
-          <div className="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-green-100 mb-4">
-            <HomeOutlined className="text-3xl text-green-600" />
+          <div className="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-blue-100 mb-4">
+            <TeamOutlined className="text-3xl text-blue-600" />
           </div>
           <h1 className="text-3xl font-bold text-gray-800">EcoVerse</h1>
-          <p className="text-gray-600 mt-2">Cổng đăng ký dành cho Trường học</p>
+          <p className="text-gray-600 mt-2">Cổng đăng ký dành cho Đối tác</p>
         </motion.div>
 
+        {/* Card */}
         <motion.div variants={cardVariants}>
           <Card className="border-0 shadow-xl">
             <Tabs
-              defaultActiveKey="login"
+              activeKey={activeTab}
+              onChange={(k) => {
+                setActiveTab(k);
+                setRegisterStep("credentials");
+              }}
               centered
               className="w-full"
               tabBarStyle={{ marginBottom: "24px" }}
             >
-              {/* Login Tab */}
+              {/* ── Login ── */}
               <TabPane tab="Đăng nhập" key="login">
                 <div className="space-y-4">
                   <div className="mb-6">
@@ -240,7 +218,7 @@ export default function SchoolAuth() {
                       Chào mừng trở lại!
                     </h2>
                     <p className="text-gray-600 text-sm mt-1">
-                      Đăng nhập để quản lý trường học của bạn
+                      Đăng nhập để quản lý hợp tác của bạn
                     </p>
                   </div>
 
@@ -251,9 +229,12 @@ export default function SchoolAuth() {
                     <Input
                       prefix={<MailOutlined className="text-gray-400" />}
                       type="email"
-                      placeholder="school@example.com"
+                      placeholder="partner@example.com"
                       value={email}
-                      onChange={(e) => setEmail(e.target.value)}
+                      onChange={(e) => {
+                        setEmail(e.target.value);
+                        setErrors((p) => ({ ...p, email: "" }));
+                      }}
                       size="large"
                       disabled={isLoading}
                       status={errors.email ? "error" : ""}
@@ -271,12 +252,15 @@ export default function SchoolAuth() {
                       prefix={<LockOutlined className="text-gray-400" />}
                       placeholder="••••••••"
                       value={password}
-                      onChange={(e) => setPassword(e.target.value)}
+                      onChange={(e) => {
+                        setPassword(e.target.value);
+                        setErrors((p) => ({ ...p, password: "" }));
+                      }}
                       size="large"
                       disabled={isLoading}
                       status={errors.password ? "error" : ""}
-                      iconRender={(visible) =>
-                        visible ? <EyeOutlined /> : <EyeInvisibleOutlined />
+                      iconRender={(v) =>
+                        v ? <EyeOutlined /> : <EyeInvisibleOutlined />
                       }
                     />
                     {errors.password && (
@@ -290,14 +274,14 @@ export default function SchoolAuth() {
                     block
                     onClick={handleLogin}
                     loading={isLoading}
-                    className="bg-green-600 hover:bg-green-700 mt-6"
+                    className="bg-blue-600 hover:bg-blue-700 mt-6"
                   >
                     {isLoading ? "Đang xử lý..." : "Đăng nhập"}
                   </Button>
                 </div>
               </TabPane>
 
-              {/* Register Tab */}
+              {/* ── Register ── */}
               <TabPane
                 tab="Đăng ký"
                 key="register"
@@ -328,9 +312,12 @@ export default function SchoolAuth() {
                         <Input
                           prefix={<MailOutlined className="text-gray-400" />}
                           type="email"
-                          placeholder="school@example.com"
+                          placeholder="partner@example.com"
                           value={email}
-                          onChange={(e) => setEmail(e.target.value)}
+                          onChange={(e) => {
+                            setEmail(e.target.value);
+                            setErrors((p) => ({ ...p, email: "" }));
+                          }}
                           size="large"
                           disabled={isLoading}
                           status={errors.email ? "error" : ""}
@@ -348,12 +335,15 @@ export default function SchoolAuth() {
                           prefix={<LockOutlined className="text-gray-400" />}
                           placeholder="Ít nhất 6 ký tự"
                           value={password}
-                          onChange={(e) => setPassword(e.target.value)}
+                          onChange={(e) => {
+                            setPassword(e.target.value);
+                            setErrors((p) => ({ ...p, password: "" }));
+                          }}
                           size="large"
                           disabled={isLoading}
                           status={errors.password ? "error" : ""}
-                          iconRender={(visible) =>
-                            visible ? <EyeOutlined /> : <EyeInvisibleOutlined />
+                          iconRender={(v) =>
+                            v ? <EyeOutlined /> : <EyeInvisibleOutlined />
                           }
                         />
                         {errors.password && (
@@ -369,14 +359,20 @@ export default function SchoolAuth() {
                         block
                         onClick={handleSendOTP}
                         loading={isLoading}
-                        className="bg-green-600 hover:bg-green-700 mt-6"
+                        className="bg-blue-600 hover:bg-blue-700 mt-6"
                       >
                         {isLoading ? "Đang gửi mã..." : "Gửi mã xác thực"}
                       </Button>
 
                       <p className="text-xs text-center text-gray-500 mt-4">
-                        Mã xác thực 6 số sẽ được gửi đến email của bạn. Sau khi
-                        xác thực, bạn sẽ điền thông tin trường học.
+                        Bằng việc đăng ký, bạn đồng ý với{" "}
+                        <a href="#" className="text-blue-600 hover:underline">
+                          Điều khoản sử dụng
+                        </a>{" "}
+                        và{" "}
+                        <a href="#" className="text-blue-600 hover:underline">
+                          Chính sách bảo mật
+                        </a>
                       </p>
                     </motion.div>
                   ) : (
@@ -396,8 +392,8 @@ export default function SchoolAuth() {
                       </button>
 
                       <div className="text-center mb-6">
-                        <div className="inline-flex items-center justify-center w-12 h-12 rounded-full bg-green-100 mb-3">
-                          <KeyOutlined className="text-xl text-green-600" />
+                        <div className="inline-flex items-center justify-center w-12 h-12 rounded-full bg-blue-100 mb-3">
+                          <KeyOutlined className="text-xl text-blue-600" />
                         </div>
                         <h2 className="text-xl font-semibold text-gray-800">
                           Nhập mã xác thực
@@ -417,7 +413,6 @@ export default function SchoolAuth() {
                         </p>
                       </div>
 
-                      {/* Dev Mode OTP Display */}
                       {devModeOtp && (
                         <div className="rounded-lg border-2 border-dashed border-amber-400 bg-amber-50 p-4 text-center mb-4">
                           <p className="text-xs text-amber-600 mb-2 font-medium">
@@ -432,12 +427,11 @@ export default function SchoolAuth() {
                         </div>
                       )}
 
-                      {/* OTP Input */}
                       <div className="flex justify-center gap-2 py-4">
                         {otpCode.map((digit, index) => (
                           <input
                             key={index}
-                            id={`otp-${index}`}
+                            id={`otp-p-${index}`}
                             type="text"
                             maxLength={1}
                             value={digit}
@@ -446,7 +440,7 @@ export default function SchoolAuth() {
                             }
                             onKeyDown={(e) => handleOtpKeyDown(index, e)}
                             disabled={isLoading}
-                            className="w-12 h-12 text-center text-xl font-semibold border-2 border-gray-300 rounded-lg focus:border-green-500 focus:outline-none transition-colors disabled:bg-gray-100"
+                            className="w-12 h-12 text-center text-xl font-semibold border-2 border-gray-300 rounded-lg focus:border-blue-500 focus:outline-none transition-colors disabled:bg-gray-100"
                           />
                         ))}
                       </div>
@@ -458,7 +452,7 @@ export default function SchoolAuth() {
                         onClick={handleVerifyOTP}
                         loading={isLoading}
                         disabled={otpCode.join("").length !== 6}
-                        className="bg-green-600 hover:bg-green-700"
+                        className="bg-blue-600 hover:bg-blue-700"
                       >
                         {isLoading
                           ? "Đang xác thực..."
@@ -474,7 +468,7 @@ export default function SchoolAuth() {
                           size="small"
                           onClick={handleResendOTP}
                           disabled={isResending || resendCountdown > 0}
-                          className="text-green-600 hover:text-green-700"
+                          className="text-blue-600 hover:text-blue-700"
                         >
                           {isResending ? (
                             <>
@@ -506,9 +500,8 @@ export default function SchoolAuth() {
           animate={{ opacity: 1 }}
           transition={{ delay: 0.6 }}
         >
-          Cần hỗ trợ?{" "}
-          <a href="#" className="text-green-600 hover:underline">
-            Liên hệ với chúng tôi
+          <a href="/" className="hover:text-blue-600 transition-colors">
+            ← Quay về trang chủ
           </a>
         </motion.p>
       </motion.div>
