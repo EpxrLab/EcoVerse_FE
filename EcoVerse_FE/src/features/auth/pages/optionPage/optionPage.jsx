@@ -5,6 +5,8 @@ import {
   UserOutlined,
   HomeOutlined,
   ArrowRightOutlined,
+  GlobalOutlined,
+  LockOutlined,
 } from "@ant-design/icons";
 import { useNavigate } from "react-router-dom";
 
@@ -32,6 +34,26 @@ const OptionPage = () => {
       gradient: "from-green-400 to-emerald-400",
       shadowColor: "shadow-green-300",
       bgPattern: "🏫🌳📖🎓",
+    },
+    {
+      id: "partnership",
+      title: "Đối tác",
+      description: "Tổ chức chiến dịch, sự kiện và kết nối các trường tham gia",
+      icon: GlobalOutlined,
+      path: "/auth/partnership",
+      gradient: "from-orange-400 to-red-400",
+      shadowColor: "shadow-orange-300",
+      bgPattern: "🤝🌍🎯📢",
+    },
+    {
+      id: "admin",
+      title: "Quản trị viên",
+      description: "Quản lý hệ thống, người dùng và cấu hình nền tảng",
+      icon: LockOutlined,
+      path: "/auth/admin",
+      gradient: "from-purple-500 to-indigo-500",
+      shadowColor: "shadow-purple-300",
+      bgPattern: "🛠️🔐⚙️📊",
     },
   ];
 
@@ -177,7 +199,7 @@ const OptionPage = () => {
           variants={containerVariants}
           initial="hidden"
           animate="visible"
-          className="grid grid-cols-1 md:grid-cols-2 gap-8 max-w-4xl w-full"
+          className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8 max-w-6xl w-full"
         >
           {roles.map((role) => {
             const Icon = role.icon;

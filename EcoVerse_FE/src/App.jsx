@@ -14,12 +14,15 @@ import { HelmetProvider } from "react-helmet-async";
 //   AdminContent,
 //   AdminMarketplace
 // } from "@/modules/admin";
+
 import SchoolAdminLayout from "@/roles/school/SchoolAdminLayout";
 import SchoolAuth from "./features/auth/pages/school/schoolAuth/schoolAuth";
 import SchoolRegister from "./features/auth/pages/school/schoolRegister/schoolRegister";
 import Index from "./roles/guest";
 import OptionPage from "./features/auth/pages/optionPage/optionPage";
 import StudentLogin from "./features/auth/pages/student/studentLogin/studentLogin";
+import PartnershipAuth from "./features/auth/pages/partnership/partnershipAuth/partnershipAuth";
+import PartnershipRegister from "./features/auth/pages/partnership/partnershipRegister/partnershipRegister";
 import AdminLayout from "./roles/admin/AdminLayout";
 import AdminDashboard from "./roles/admin/pages/adminDashboard";
 // import {
@@ -31,6 +34,7 @@ import AdminDashboard from "./roles/admin/pages/adminDashboard";
 //   SchoolSubscription,
 //   SchoolLeaderboardPage
 // } from "@/modules/school";
+
 // import ParentLayout from "./components/parent/ParentLayout";
 // import {
 //   ParentHome,
@@ -39,8 +43,7 @@ import AdminDashboard from "./roles/admin/pages/adminDashboard";
 //   ParentStats,
 //   ParentSettings
 // } from "@/modules/parent";
-// import SchoolAuth from "./pages/auth/SchoolAuth";
-// import SchoolRegister from "./pages/auth/SchoolRegister";
+
 // import SchoolPending from "./pages/auth/SchoolPending";
 // import SchoolRejected from "./pages/auth/SchoolRejected";
 // import AdminAuth from "./pages/auth/AdminAuth";
@@ -60,12 +63,19 @@ const App = () => (
 
             {/* Authentication Router*/}
             <Route path="/auth" element={<OptionPage />} />
+            {/* <Route path="/student" element={<StudentApp />} /> */}
+            <Route path="/auth/student" element={<StudentLogin />} />
+
+            <Route path="/auth/partnership" element={<PartnershipAuth />} />
+            <Route
+              path="/auth/partnership/register"
+              element={<PartnershipRegister />}
+            />
+
             <Route path="/auth/school" element={<SchoolAuth />} />
             <Route path="/auth/school/register" element={<SchoolRegister />} />
             {/* <Route path="/auth/school/pending" element={<SchoolPending />} />
             <Route path="/auth/school/rejected" element={<SchoolRejected />} /> */}
-            {/* <Route path="/student" element={<StudentApp />} /> */}
-            <Route path="/auth/student" element={<StudentLogin />} />
 
             {/* Admin Routes */}
             {/* <Route path="/auth/admin" element={<AdminAuth />} /> */}
