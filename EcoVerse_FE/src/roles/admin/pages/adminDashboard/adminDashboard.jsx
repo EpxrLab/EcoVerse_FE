@@ -33,7 +33,7 @@ import {
   userGrowthData,
   topSchools,
   recentTransactions,
-} from "../data/dashboard.data";
+} from "../../data/dashboard.data";
 
 const AdminDashboard = () => {
   const containerVariants = {

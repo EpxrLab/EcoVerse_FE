@@ -24,7 +24,8 @@ import StudentLogin from "./features/auth/pages/student/studentLogin/studentLogi
 import PartnershipAuth from "./features/auth/pages/partnership/partnershipAuth/partnershipAuth";
 import PartnershipRegister from "./features/auth/pages/partnership/partnershipRegister/partnershipRegister";
 import AdminLayout from "./roles/admin/AdminLayout";
-import AdminDashboard from "./roles/admin/pages/adminDashboard";
+import AdminDashboard from "./roles/admin/pages/adminDashboard/adminDashboard";
+import AdminSchool from "./roles/admin/pages/adminSchool/adminSchool";
 // import {
 //   SchoolDashboard,
 //   SchoolStudents,
@@ -80,12 +81,13 @@ const App = () => (
             {/* Admin Routes */}
             {/* <Route path="/auth/admin" element={<AdminAuth />} /> */}
             <Route path="/admin" element={<AdminLayout />}>
-              {/* <Route index element={<AdminDashboard />} /> */}
-              {/* <Route path="schools" element={<AdminSchools />} />
-              <Route path="subscriptions" element={<AdminSubscriptions />} />
-              <Route path="transactions" element={<AdminTransactions />} />
-              <Route path="content" element={<AdminContent />} />
-              <Route path="marketplace" element={<AdminMarketplace />} /> */}
+              <Route index element={<AdminDashboard />} />
+              <Route path="schools" element={<AdminSchool />} />
+              {/*
+            <Route path="subscriptions" element={<AdminSubscriptions />} />
+            <Route path="transactions" element={<AdminTransactions />} />
+            <Route path="content" element={<AdminContent />} />
+            <Route path="marketplace" element={<AdminMarketplace />} /> */}
             </Route>
 
             {/* School Routes (Protected) */}
