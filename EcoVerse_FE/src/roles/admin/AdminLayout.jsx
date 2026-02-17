@@ -15,6 +15,7 @@ import {
   BellOutlined,
   UserOutlined,
   GlobalOutlined,
+  ControlOutlined,
 } from "@ant-design/icons";
 import { Outlet, useNavigate } from "react-router-dom";
 
@@ -22,11 +23,16 @@ const { Sider, Header, Content } = Layout;
 
 const menuItems = [
   { key: "/admin", label: "Dashboard", icon: <DashboardOutlined /> },
-  { key: "/admin/schools", label: "Quản lý đối tác", icon: <BankOutlined /> },
+  { key: "/admin/schools", label: "Quản lý trường", icon: <BankOutlined /> },
   {
     key: "/admin/partnerships",
-    label: "Quản lý trường",
+    label: "Quản lý đối tác",
     icon: <GlobalOutlined />,
+  },
+  {
+    key: "/admin/game-levels",
+    label: "Cấp độ game",
+    icon: <ControlOutlined />,
   },
   {
     key: "/admin/subscriptions",

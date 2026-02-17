@@ -27,6 +27,7 @@ import AdminLayout from "./roles/admin/AdminLayout";
 import AdminDashboard from "./roles/admin/pages/adminDashboard/adminDashboard";
 import AdminSchool from "./roles/admin/pages/adminSchool/adminSchool";
 import AdminPartnership from "./roles/admin/pages/adminPartnership/adminPartnership";
+import AdminGameLevels from "./roles/admin/pages/adminGameLevel/adminGameLevels";
 // import {
 //   SchoolDashboard,
 //   SchoolStudents,
@@ -85,6 +86,7 @@ const App = () => (
               <Route index element={<AdminDashboard />} />
               <Route path="schools" element={<AdminSchool />} />
               <Route path="partnerships" element={<AdminPartnership />} />
+              <Route path="game-levels" element={<AdminGameLevels />} />
               {/*
             <Route path="subscriptions" element={<AdminSubscriptions />} />
             <Route path="transactions" element={<AdminTransactions />} />
