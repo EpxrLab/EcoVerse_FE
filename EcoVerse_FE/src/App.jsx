@@ -30,6 +30,9 @@ import AdminPartnership from "./roles/admin/pages/adminPartnership/adminPartners
 import AdminGameLevels from "./roles/admin/pages/adminGameLevel/adminGameLevels";
 import AdminSubscription from "./roles/admin/pages/adminSubscription/adminSubscription";
 import AdminTransaction from "./roles/admin/pages/adminTransaction/adminTransaction";
+import AdminContent from "./roles/admin/pages/adminContent/adminContent";
+import AdminMarketPlace from "./roles/admin/pages/adminMarketPlace/adminMarketPlace";
+import CampaignSelection from "./roles/student/pages/studentCampaignSelection/campaignSelection";
 // import {
 //   SchoolDashboard,
 //   SchoolStudents,
@@ -70,7 +73,6 @@ const App = () => (
             <Route path="/auth" element={<OptionPage />} />
             {/* <Route path="/student" element={<StudentApp />} /> */}
             <Route path="/auth/student" element={<StudentLogin />} />
-
             <Route path="/auth/partnership" element={<PartnershipAuth />} />
             <Route
               path="/auth/partnership/register"
@@ -82,8 +84,10 @@ const App = () => (
             {/* <Route path="/auth/school/pending" element={<SchoolPending />} />
             <Route path="/auth/school/rejected" element={<SchoolRejected />} /> */}
 
+            {/* Student Routes */}
+            <Route path="/student" element={<CampaignSelection />} />
+
             {/* Admin Routes */}
-            {/* <Route path="/auth/admin" element={<AdminAuth />} /> */}
             <Route path="/admin" element={<AdminLayout />}>
               <Route index element={<AdminDashboard />} />
               <Route path="schools" element={<AdminSchool />} />
@@ -91,11 +95,8 @@ const App = () => (
               <Route path="game-levels" element={<AdminGameLevels />} />
               <Route path="subscriptions" element={<AdminSubscription />} />
               <Route path="transactions" element={<AdminTransaction />} />
-              {/*
-            <Route path="subscriptions" element={<AdminSubscriptions />} />
-            <Route path="transactions" element={<AdminTransactions />} />
-            <Route path="content" element={<AdminContent />} />
-            <Route path="marketplace" element={<AdminMarketplace />} /> */}
+              <Route path="content" element={<AdminContent />} />
+              <Route path="marketplace" element={<AdminMarketPlace />} />
             </Route>
 
             {/* School Routes (Protected) */}
