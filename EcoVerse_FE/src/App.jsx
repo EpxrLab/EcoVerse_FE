@@ -33,6 +33,8 @@ import AdminTransaction from "./roles/admin/pages/adminTransaction/adminTransact
 import AdminContent from "./roles/admin/pages/adminContent/adminContent";
 import AdminMarketPlace from "./roles/admin/pages/adminMarketPlace/adminMarketPlace";
 import CampaignSelection from "./roles/student/pages/studentCampaignSelection/campaignSelection";
+import StudentProfile from "./roles/student/pages/studentProfile/studentProfile";
+import StudentLayout from "./roles/student/StudentLayout";
 // import {
 //   SchoolDashboard,
 //   SchoolStudents,
@@ -85,7 +87,10 @@ const App = () => (
             <Route path="/auth/school/rejected" element={<SchoolRejected />} /> */}
 
             {/* Student Routes */}
-            <Route path="/student" element={<CampaignSelection />} />
+            <Route path="/student" element={<StudentLayout />}>
+              <Route index element={<CampaignSelection />} />
+              <Route path="profile" element={<StudentProfile />} />
+            </Route>
 
             {/* Admin Routes */}
             <Route path="/admin" element={<AdminLayout />}>

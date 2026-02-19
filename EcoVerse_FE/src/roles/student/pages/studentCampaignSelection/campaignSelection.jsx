@@ -11,6 +11,7 @@ import {
   LoadingOutlined,
 } from "@ant-design/icons";
 import { motion, AnimatePresence } from "framer-motion";
+import { useNavigate } from "react-router-dom";
 
 // ─── Demo Data ────────────────────────────────────────────────────────────────
 
@@ -114,11 +115,17 @@ const CampaignCard = lazy(() =>
         <motion.div
           variants={cardVariants}
           whileHover={{ y: -6, transition: { duration: 0.2 } }}
+          className="h-full"
         >
           <Card
-            className={`relative overflow-hidden rounded-2xl border-2 transition-all duration-300 hover:shadow-xl
+            className={`relative overflow-hidden rounded-2xl border-2 transition-all duration-300 hover:shadow-xl h-full
               ${isActive ? "border-green-300" : "border-gray-200 opacity-75"}`}
-            bodyStyle={{ padding: "24px" }}
+            bodyStyle={{
+              padding: "24px",
+              height: "100%",
+              display: "flex",
+              flexDirection: "column",
+            }}
           >
             {/* Top accent bar */}
             <div
@@ -129,9 +136,10 @@ const CampaignCard = lazy(() =>
               }`}
             />
 
-            <div className="space-y-4">
+            {/* Content wrapper with flex-grow */}
+            <div className="flex flex-col h-full">
               {/* Header */}
-              <div className="space-y-2">
+              <div className="space-y-2 mb-4">
                 <div className="flex items-start justify-between gap-2">
                   <h3
                     className={`text-xl font-bold text-gray-800 transition-colors ${
@@ -141,7 +149,7 @@ const CampaignCard = lazy(() =>
                     {campaign.name}
                   </h3>
                   <span
-                    className={`inline-flex px-2.5 py-0.5 rounded-full text-xs font-semibold border ${statusCfg.tw}`}
+                    className={`inline-flex px-2.5 py-0.5 rounded-full text-xs font-semibold border flex-shrink-0 ${statusCfg.tw}`}
                   >
                     {statusCfg.label}
                   </span>
@@ -154,12 +162,12 @@ const CampaignCard = lazy(() =>
               </div>
 
               {/* Description */}
-              <p className="text-sm text-gray-500 line-clamp-2">
+              <p className="text-sm text-gray-500 line-clamp-2 mb-4">
                 {campaign.description}
               </p>
 
               {/* Dates */}
-              <div className="flex items-center gap-2 text-sm text-gray-400">
+              <div className="flex items-center gap-2 text-sm text-gray-400 mb-4">
                 <CalendarOutlined />
                 <span>
                   {new Date(campaign.startDate).toLocaleDateString("vi-VN")} -{" "}
@@ -169,7 +177,7 @@ const CampaignCard = lazy(() =>
 
               {/* Progress */}
               {campaign.studentProgress && (
-                <div className="grid grid-cols-3 gap-3 pt-3 border-t border-gray-100">
+                <div className="grid grid-cols-3 gap-3 pt-3 mb-4 border-t border-gray-100">
                   <div className="text-center">
                     <div className="flex items-center justify-center gap-1 text-amber-500 font-bold text-lg">
                       <TrophyOutlined />
@@ -193,23 +201,28 @@ const CampaignCard = lazy(() =>
                 </div>
               )}
 
-              {/* Action Button */}
-              <Button
-                block
-                type={isActive ? "primary" : "default"}
-                size="large"
-                onClick={() => onSelect(campaign)}
-                disabled={campaign.status === "upcoming"}
-                className={`rounded-xl font-semibold ${
-                  isActive
-                    ? "bg-green-500 border-green-500 hover:bg-green-600"
-                    : ""
-                }`}
-                icon={<ArrowRightOutlined />}
-                iconPosition="end"
-              >
-                {campaign.status === "upcoming" ? "Sắp mở" : "Vào chiến dịch"}
-              </Button>
+              {/* Spacer to push button to bottom */}
+              <div className="flex-grow" />
+
+              {/* Action Button - always at bottom */}
+              <div className="pt-4">
+                <Button
+                  block
+                  type={isActive ? "primary" : "default"}
+                  size="large"
+                  onClick={() => onSelect(campaign)}
+                  disabled={campaign.status === "upcoming"}
+                  className={`rounded-xl font-semibold ${
+                    isActive
+                      ? "bg-green-500 border-green-500 hover:bg-green-600"
+                      : ""
+                  }`}
+                  icon={<ArrowRightOutlined />}
+                  iconPosition="end"
+                >
+                  {campaign.status === "upcoming" ? "Sắp mở" : "Vào chiến dịch"}
+                </Button>
+              </div>
             </div>
           </Card>
         </motion.div>
@@ -232,6 +245,7 @@ const EmptyState = ({ message }) => (
 // ─── Main Component ────────────────────────────────────────────────────────────
 
 export default function CampaignSelection() {
+  const navigate = useNavigate();
   const [campaigns] = useState(DEMO_CAMPAIGNS);
   const [loading] = useState(false);
   const [selectedCampaignId, setSelectedCampaignId] = useState(null);
@@ -244,7 +258,7 @@ export default function CampaignSelection() {
   };
 
   const handleProfile = () => {
-    console.log("Navigate to: /student/profile");
+    navigate("/student/profile");
   };
 
   const handleRewards = () => {
