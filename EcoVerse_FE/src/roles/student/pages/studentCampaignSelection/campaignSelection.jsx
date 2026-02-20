@@ -262,7 +262,7 @@ export default function CampaignSelection() {
   };
 
   const handleRewards = () => {
-    console.log("Navigate to: /student/rewards");
+    navigate("/student/rewards");
   };
 
   // ── Filtered campaigns ──

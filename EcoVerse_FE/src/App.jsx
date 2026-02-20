@@ -35,6 +35,7 @@ import AdminMarketPlace from "./roles/admin/pages/adminMarketPlace/adminMarketPl
 import CampaignSelection from "./roles/student/pages/studentCampaignSelection/campaignSelection";
 import StudentProfile from "./roles/student/pages/studentProfile/studentProfile";
 import StudentLayout from "./roles/student/StudentLayout";
+import StudentRewards from "./roles/student/pages/studentRewards/studentRewards";
 // import {
 //   SchoolDashboard,
 //   SchoolStudents,
@@ -90,6 +91,7 @@ const App = () => (
             <Route path="/student" element={<StudentLayout />}>
               <Route index element={<CampaignSelection />} />
               <Route path="profile" element={<StudentProfile />} />
+              <Route path="rewards" element={<StudentRewards />} />
             </Route>
 
             {/* Admin Routes */}
