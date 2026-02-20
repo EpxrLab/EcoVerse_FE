@@ -13,6 +13,8 @@ import {
   BellOutlined,
 } from "@ant-design/icons";
 import { motion } from "framer-motion";
+import { useCampaignContext, useStudentContext } from "../context";
+import { useStudentCampaigns } from "../hooks/useStudentCampaign";
 
 const { Sider, Header, Content } = Layout;
 
@@ -56,14 +58,18 @@ export default function StudentDashboardLayout() {
   const navigate = useNavigate();
   const location = useLocation();
   const { campaignId } = useParams();
+  const { setSelectedCampaign } = useCampaignContext();
+  const { getCampaignById } = useStudentCampaigns();
 
   const [student] = useState(DEMO_STUDENT);
   const [collapsed, setCollapsed] = useState(false);
   const [mobileDrawerOpen, setMobileDrawerOpen] = useState(false);
 
   // Find campaign
-  const campaign = DEMO_CAMPAIGNS.find((c) => c.id === parseInt(campaignId));
-
+  const campaign = getCampaignById(campaignId);
+  if (campaign) {
+    setSelectedCampaign(campaign);
+  }
   // Menu items
   const menuItems = [
     {

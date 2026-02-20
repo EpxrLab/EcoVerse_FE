@@ -11,54 +11,9 @@ import {
   LoadingOutlined,
 } from "@ant-design/icons";
 import { motion, AnimatePresence } from "framer-motion";
+import { useStudentCampaigns } from "../../hooks/useStudentCampaign";
+import { useCampaignContext } from "../../context";
 import { useNavigate } from "react-router-dom";
-
-// ─── Demo Data ────────────────────────────────────────────────────────────────
-
-const DEMO_CAMPAIGNS = [
-  {
-    id: 1,
-    name: "Tuần lễ xanh 2024",
-    description:
-      "Cùng nhau bảo vệ môi trường, phân loại rác đúng cách và nhận phần thưởng hấp dẫn",
-    type: "school",
-    status: "active",
-    startDate: "2024-06-01",
-    endDate: "2024-06-30",
-    studentProgress: { rank: 3, totalPoints: 1250, accuracy: 92 },
-  },
-  {
-    id: 2,
-    name: "Thử thách tái chế",
-    description: "Học cách tái chế và biến rác thành tài nguyên hữu ích",
-    type: "partnership",
-    status: "active",
-    startDate: "2024-06-05",
-    endDate: "2024-06-25",
-    studentProgress: { rank: 7, totalPoints: 850, accuracy: 87 },
-  },
-  {
-    id: 3,
-    name: "Hè xanh sạch đẹp",
-    description:
-      "Chiến dịch mùa hè với nhiều hoạt động thú vị và giải thưởng lớn",
-    type: "school",
-    status: "upcoming",
-    startDate: "2024-07-01",
-    endDate: "2024-07-31",
-    studentProgress: null,
-  },
-  {
-    id: 4,
-    name: "Tháng 5 xanh",
-    description: "Chiến dịch đã kết thúc với nhiều kỷ niệm đẹp",
-    type: "partnership",
-    status: "completed",
-    startDate: "2024-05-01",
-    endDate: "2024-05-31",
-    studentProgress: { rank: 5, totalPoints: 2100, accuracy: 95 },
-  },
-];
 
 // ─── Status & Type Config ─────────────────────────────────────────────────────
 
@@ -246,15 +201,12 @@ const EmptyState = ({ message }) => (
 
 export default function CampaignSelection() {
   const navigate = useNavigate();
-  const [campaigns] = useState(DEMO_CAMPAIGNS);
-  const [loading] = useState(false);
-  const [selectedCampaignId, setSelectedCampaignId] = useState(null);
+  const { campaigns, loading } = useStudentCampaigns();
+  const { setSelectedCampaign } = useCampaignContext();
 
-  // Simulated navigation
   const handleSelectCampaign = (campaign) => {
-    setSelectedCampaignId(campaign.id);
-    console.log("Navigate to:", `/student/campaign/${campaign.id}`);
-    // In real app: navigate(`/student/campaign/${campaign.id}`);
+    setSelectedCampaign(campaign.id);
+    navigate(`/student/campaign/${campaign.id}`);
   };
 
   const handleProfile = () => {
