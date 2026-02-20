@@ -4,25 +4,19 @@ import { TooltipProvider } from "@/shared/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { HelmetProvider } from "react-helmet-async";
-// // import Index from "./pages/Index";
-// import StudentApp from "./pages/StudentApp";
-// import {
-//   AdminDashboard,
-//   AdminSchools,
-//   AdminSubscriptions,
-//   AdminTransactions,
-//   AdminContent,
-//   AdminMarketplace
-// } from "@/modules/admin";
 
+import Index from "./roles/guest";
+
+//=====================Authenticate Routes=======================
+import OptionPage from "./features/auth/pages/optionPage/optionPage";
 import SchoolAdminLayout from "@/roles/school/SchoolAdminLayout";
 import SchoolAuth from "./features/auth/pages/school/schoolAuth/schoolAuth";
 import SchoolRegister from "./features/auth/pages/school/schoolRegister/schoolRegister";
-import Index from "./roles/guest";
-import OptionPage from "./features/auth/pages/optionPage/optionPage";
 import StudentLogin from "./features/auth/pages/student/studentLogin/studentLogin";
 import PartnershipAuth from "./features/auth/pages/partnership/partnershipAuth/partnershipAuth";
 import PartnershipRegister from "./features/auth/pages/partnership/partnershipRegister/partnershipRegister";
+
+//======================Admin Routes==============================
 import AdminLayout from "./roles/admin/AdminLayout";
 import AdminDashboard from "./roles/admin/pages/adminDashboard/adminDashboard";
 import AdminSchool from "./roles/admin/pages/adminSchool/adminSchool";
@@ -32,10 +26,14 @@ import AdminSubscription from "./roles/admin/pages/adminSubscription/adminSubscr
 import AdminTransaction from "./roles/admin/pages/adminTransaction/adminTransaction";
 import AdminContent from "./roles/admin/pages/adminContent/adminContent";
 import AdminMarketPlace from "./roles/admin/pages/adminMarketPlace/adminMarketPlace";
+
+//=======================Student Routes==============================
 import CampaignSelection from "./roles/student/pages/studentCampaignSelection/campaignSelection";
 import StudentProfile from "./roles/student/pages/studentProfile/studentProfile";
 import StudentLayout from "./roles/student/StudentLayout";
 import StudentRewards from "./roles/student/pages/studentRewards/studentRewards";
+import StudentDashboardLayout from "./roles/student/components/studentDashboardLayout";
+import CampaignDashboard from "./roles/student/pages/studentCampaignDashboard/campaignDashboard";
 // import {
 //   SchoolDashboard,
 //   SchoolStudents,
@@ -92,6 +90,12 @@ const App = () => (
               <Route index element={<CampaignSelection />} />
               <Route path="profile" element={<StudentProfile />} />
               <Route path="rewards" element={<StudentRewards />} />
+              <Route
+                path="campaign/:campaignId"
+                element={<StudentDashboardLayout />}
+              >
+                <Route index element={<CampaignDashboard />} />
+              </Route>
             </Route>
 
             {/* Admin Routes */}
