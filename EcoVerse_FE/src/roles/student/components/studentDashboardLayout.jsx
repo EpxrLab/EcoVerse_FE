@@ -18,21 +18,6 @@ import { useStudentCampaigns } from "../hooks/useStudentCampaign";
 
 const { Sider, Header, Content } = Layout;
 
-// ─── Demo Data ────────────────────────────────────────────────────────────────
-
-const DEMO_STUDENT = {
-  avatar: "👨‍🎓",
-  name: "Nguyễn Văn An",
-  class: "8A1",
-  school: "THCS Trần Đại Nghĩa",
-  coins: 2450,
-};
-
-const DEMO_CAMPAIGNS = [
-  { id: 1, name: "Tuần lễ xanh 2024", type: "school" },
-  { id: 2, name: "Thử thách tái chế", type: "partnership" },
-];
-
 // ─── CoinIcon ─────────────────────────────────────────────────────────────────
 
 const CoinIcon = ({ className = "w-5 h-5 text-amber-500" }) => (
@@ -60,8 +45,8 @@ export default function StudentDashboardLayout() {
   const { campaignId } = useParams();
   const { setSelectedCampaign } = useCampaignContext();
   const { getCampaignById } = useStudentCampaigns();
+  const { currentStudent } = useStudentContext();
 
-  const [student] = useState(DEMO_STUDENT);
   const [collapsed, setCollapsed] = useState(false);
   const [mobileDrawerOpen, setMobileDrawerOpen] = useState(false);
 
@@ -164,13 +149,13 @@ export default function StudentDashboardLayout() {
       {/* Student Info */}
       <div className="p-4 border-b border-gray-100">
         <div className="flex items-center gap-3 mb-3">
-          <div className="text-4xl">{student.avatar}</div>
+          <div className="text-4xl">{currentStudent.avatar}</div>
           <div className="flex-1 min-w-0">
             <p className="font-semibold text-sm text-gray-800 truncate">
-              {student.name}
+              {currentStudent.name}
             </p>
             <p className="text-xs text-gray-400">
-              Lớp {student.class} • {student.school}
+              Lớp {currentStudent.class} • {currentStudent.school}
             </p>
           </div>
         </div>
@@ -178,7 +163,9 @@ export default function StudentDashboardLayout() {
           <div className="flex items-center justify-between p-2 rounded-lg bg-amber-50">
             <div className="flex items-center gap-2">
               <CoinIcon />
-              <span className="font-bold text-amber-600">{student.coins}</span>
+              <span className="font-bold text-amber-600">
+                {currentStudent.coins}
+              </span>
             </div>
             <span className="text-xs text-gray-400">xu</span>
           </div>

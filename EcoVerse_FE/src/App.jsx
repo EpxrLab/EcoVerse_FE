@@ -34,6 +34,8 @@ import StudentLayout from "./roles/student/StudentLayout";
 import StudentRewards from "./roles/student/pages/studentRewards/studentRewards";
 import StudentDashboardLayout from "./roles/student/components/studentDashboardLayout";
 import CampaignDashboard from "./roles/student/pages/studentCampaignDashboard/campaignDashboard";
+import StudentLeaderboard from "./roles/student/pages/studentLeaderboard/studentLeaderboard";
+import { StudentProvider } from "./roles/student/context";
 // import {
 //   SchoolDashboard,
 //   SchoolStudents,
@@ -66,63 +68,68 @@ const App = () => (
       <TooltipProvider>
         <Toaster />
         <Sonner />
-        <BrowserRouter>
-          <Routes>
-            <Route path="/" element={<Index />} />
+        <StudentProvider>
+          <BrowserRouter>
+            <Routes>
+              <Route path="/" element={<Index />} />
 
-            {/* Authentication Router*/}
-            <Route path="/auth" element={<OptionPage />} />
-            {/* <Route path="/student" element={<StudentApp />} /> */}
-            <Route path="/auth/student" element={<StudentLogin />} />
-            <Route path="/auth/partnership" element={<PartnershipAuth />} />
-            <Route
-              path="/auth/partnership/register"
-              element={<PartnershipRegister />}
-            />
+              {/* Authentication Router*/}
+              <Route path="/auth" element={<OptionPage />} />
+              {/* <Route path="/student" element={<StudentApp />} /> */}
+              <Route path="/auth/student" element={<StudentLogin />} />
+              <Route path="/auth/partnership" element={<PartnershipAuth />} />
+              <Route
+                path="/auth/partnership/register"
+                element={<PartnershipRegister />}
+              />
 
-            <Route path="/auth/school" element={<SchoolAuth />} />
-            <Route path="/auth/school/register" element={<SchoolRegister />} />
-            {/* <Route path="/auth/school/pending" element={<SchoolPending />} />
+              <Route path="/auth/school" element={<SchoolAuth />} />
+              <Route
+                path="/auth/school/register"
+                element={<SchoolRegister />}
+              />
+              {/* <Route path="/auth/school/pending" element={<SchoolPending />} />
             <Route path="/auth/school/rejected" element={<SchoolRejected />} /> */}
 
-            {/* Student Routes */}
-            <Route path="/student" element={<StudentLayout />}>
-              <Route index element={<CampaignSelection />} />
-              <Route path="profile" element={<StudentProfile />} />
-              <Route path="rewards" element={<StudentRewards />} />
-              <Route
-                path="campaign/:campaignId"
-                element={<StudentDashboardLayout />}
-              >
-                <Route index element={<CampaignDashboard />} />
+              {/* Student Routes */}
+              <Route path="/student" element={<StudentLayout />}>
+                <Route index element={<CampaignSelection />} />
+                <Route path="profile" element={<StudentProfile />} />
+                <Route path="rewards" element={<StudentRewards />} />
+                <Route
+                  path="campaign/:campaignId"
+                  element={<StudentDashboardLayout />}
+                >
+                  <Route index element={<CampaignDashboard />} />
+                  <Route path="leaderboard" element={<StudentLeaderboard />} />
+                </Route>
               </Route>
-            </Route>
 
-            {/* Admin Routes */}
-            <Route path="/admin" element={<AdminLayout />}>
-              <Route index element={<AdminDashboard />} />
-              <Route path="schools" element={<AdminSchool />} />
-              <Route path="partnerships" element={<AdminPartnership />} />
-              <Route path="game-levels" element={<AdminGameLevels />} />
-              <Route path="subscriptions" element={<AdminSubscription />} />
-              <Route path="transactions" element={<AdminTransaction />} />
-              <Route path="content" element={<AdminContent />} />
-              <Route path="marketplace" element={<AdminMarketPlace />} />
-            </Route>
+              {/* Admin Routes */}
+              <Route path="/admin" element={<AdminLayout />}>
+                <Route index element={<AdminDashboard />} />
+                <Route path="schools" element={<AdminSchool />} />
+                <Route path="partnerships" element={<AdminPartnership />} />
+                <Route path="game-levels" element={<AdminGameLevels />} />
+                <Route path="subscriptions" element={<AdminSubscription />} />
+                <Route path="transactions" element={<AdminTransaction />} />
+                <Route path="content" element={<AdminContent />} />
+                <Route path="marketplace" element={<AdminMarketPlace />} />
+              </Route>
 
-            {/* School Routes (Protected) */}
-            <Route path="/school" element={<SchoolAdminLayout />}>
-              {/* <Route index element={<SchoolDashboard />} />
+              {/* School Routes (Protected) */}
+              <Route path="/school" element={<SchoolAdminLayout />}>
+                {/* <Route index element={<SchoolDashboard />} />
               <Route path="students" element={<SchoolStudents />} />
               <Route path="classes" element={<SchoolClasses />} />
               <Route path="quizzes" element={<SchoolQuizzes />} />
               <Route path="rewards" element={<SchoolRewards />} />
               <Route path="subscription" element={<SchoolSubscription />} />
               <Route path="leaderboard" element={<SchoolLeaderboardPage />} /> */}
-            </Route>
+              </Route>
 
-            {/* Parent Routes (Mobile UI) */}
-            {/* <Route path="/parent" element={<ParentLayout />}>
+              {/* Parent Routes (Mobile UI) */}
+              {/* <Route path="/parent" element={<ParentLayout />}>
               <Route index element={<ParentHome />} />
               <Route path="children" element={<ParentChildren />} />
               <Route path="children/:childId" element={<ParentChildDetail />} />
@@ -130,9 +137,10 @@ const App = () => (
               <Route path="settings" element={<ParentSettings />} />
             </Route> */}
 
-            {/* <Route path="*" element={<NotFound />} /> */}
-          </Routes>
-        </BrowserRouter>
+              {/* <Route path="*" element={<NotFound />} /> */}
+            </Routes>
+          </BrowserRouter>
+        </StudentProvider>
       </TooltipProvider>
     </QueryClientProvider>
   </HelmetProvider>
