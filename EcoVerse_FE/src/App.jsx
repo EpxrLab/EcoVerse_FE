@@ -36,6 +36,8 @@ import StudentDashboardLayout from "./roles/student/components/studentDashboardL
 import CampaignDashboard from "./roles/student/pages/studentCampaignDashboard/campaignDashboard";
 import StudentLeaderboard from "./roles/student/pages/studentLeaderboard/studentLeaderboard";
 import { StudentProvider } from "./roles/student/context";
+import StudentGame from "./roles/student/pages/studentGameSelection/studentGame";
+import StudentQuiz from "./roles/student/pages/studentQuizSelection/studentQuiz";
 // import {
 //   SchoolDashboard,
 //   SchoolStudents,
@@ -101,6 +103,8 @@ const App = () => (
                   element={<StudentDashboardLayout />}
                 >
                   <Route index element={<CampaignDashboard />} />
+                  <Route path="game" element={<StudentGame />} />
+                  <Route path="quiz" element={<StudentQuiz />} />
                   <Route path="leaderboard" element={<StudentLeaderboard />} />
                 </Route>
               </Route>
