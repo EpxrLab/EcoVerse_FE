@@ -14,14 +14,26 @@ import {
   MenuUnfoldOutlined,
   BellOutlined,
   UserOutlined,
+  GlobalOutlined,
+  ControlOutlined,
 } from "@ant-design/icons";
-import AdminDashboard from "./pages/adminDashboard";
+import { Outlet, useNavigate } from "react-router-dom";
 
 const { Sider, Header, Content } = Layout;
 
 const menuItems = [
   { key: "/admin", label: "Dashboard", icon: <DashboardOutlined /> },
   { key: "/admin/schools", label: "Quản lý trường", icon: <BankOutlined /> },
+  {
+    key: "/admin/partnerships",
+    label: "Quản lý đối tác",
+    icon: <GlobalOutlined />,
+  },
+  {
+    key: "/admin/game-levels",
+    label: "Cấp độ game",
+    icon: <ControlOutlined />,
+  },
   {
     key: "/admin/subscriptions",
     label: "Gói đăng ký",
@@ -41,6 +53,7 @@ const menuItems = [
 ];
 
 const AdminLayout = ({ children }) => {
+  const navigate = useNavigate();
   const [isLoading, setIsLoading] = useState(true);
   const [collapsed, setCollapsed] = useState(false);
   const [user, setUser] = useState(null);
@@ -66,13 +79,11 @@ const AdminLayout = ({ children }) => {
 
   const handleLogout = () => {
     console.log("Logging out...");
-    // navigate('/admin/auth');
   };
 
   const handleMenuClick = (item) => {
     setSelectedKey(item.key);
-    console.log("Navigate to:", item.key);
-    // navigate(item.key);
+    navigate(item.key);
   };
 
   const notificationMenu = (
@@ -130,47 +141,42 @@ const AdminLayout = ({ children }) => {
         collapsed={collapsed}
         onCollapse={setCollapsed}
         width={260}
-        className="bg-white border-r border-gray-200"
         trigger={null}
+        className="bg-white border-r border-gray-200 fixed left-0 top-0 h-screen"
       >
-        {/* Logo */}
-        <motion.div
-          className="p-4 border-b border-gray-200 flex items-center gap-3"
-          animate={{
-            paddingLeft: collapsed ? "20px" : "16px",
-            justifyContent: collapsed ? "center" : "flex-start",
-          }}
-        >
-          <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-green-500 to-blue-500 flex items-center justify-center flex-shrink-0">
-            <span className="text-white text-xl font-bold">🌱</span>
-          </div>
-          <AnimatePresence>
+        <div className="flex flex-col h-full">
+          {/* Logo */}
+          <motion.div
+            className="p-4 border-b border-gray-200 flex items-center gap-3"
+            animate={{
+              paddingLeft: collapsed ? "20px" : "16px",
+              justifyContent: collapsed ? "center" : "flex-start",
+            }}
+          >
+            <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-green-500 to-blue-500 flex items-center justify-center flex-shrink-0">
+              <span className="text-white text-xl font-bold">🌱</span>
+            </div>
             {!collapsed && (
-              <motion.div
-                initial={{ opacity: 0, width: 0 }}
-                animate={{ opacity: 1, width: "auto" }}
-                exit={{ opacity: 0, width: 0 }}
-                transition={{ duration: 0.2 }}
-              >
+              <div>
                 <h1 className="font-bold text-lg text-gray-800">EcoVerse</h1>
                 <p className="text-xs text-gray-500">Admin Portal</p>
-              </motion.div>
+              </div>
             )}
-          </AnimatePresence>
-        </motion.div>
+          </motion.div>
 
-        {/* Menu */}
-        <div className="py-4">
-          <Menu
-            mode="inline"
-            selectedKeys={[selectedKey]}
-            onClick={handleMenuClick}
-            className="border-0"
-            items={menuItems}
-          />
+          {/* Menu trên */}
+          <div className="flex-1 py-4">
+            <Menu
+              mode="inline"
+              selectedKeys={[selectedKey]}
+              onClick={handleMenuClick}
+              className="border-0"
+              items={menuItems}
+            />
+          </div>
 
-          {/* Bottom Menu */}
-          <div className="absolute bottom-0 left-0 right-0 border-t border-gray-200 bg-white">
+          {/* Menu dưới */}
+          <div className="border-t border-gray-200">
             <Menu
               mode="inline"
               className="border-0"
@@ -194,7 +200,7 @@ const AdminLayout = ({ children }) => {
       </Sider>
 
       {/* Main Layout */}
-      <Layout>
+      <Layout style={{ marginLeft: collapsed ? 80 : 260 }}>
         {/* Header */}
         <Header className="bg-white border-b border-gray-200 px-6 flex items-center justify-between h-16 sticky top-0 z-10">
           <div className="flex items-center gap-4">
@@ -254,7 +260,7 @@ const AdminLayout = ({ children }) => {
           >
             {children || (
               <div className="bg-white rounded-lg shadow-sm p-6 min-h-[600px]">
-                <AdminDashboard />
+                <Outlet />
               </div>
             )}
           </motion.div>

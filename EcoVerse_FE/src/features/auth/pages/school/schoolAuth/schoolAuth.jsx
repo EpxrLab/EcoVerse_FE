@@ -13,6 +13,7 @@ import {
 } from "@ant-design/icons";
 import { z } from "zod";
 import { useNavigate } from "react-router-dom";
+import toast from "react-hot-toast";
 
 const { TabPane } = Tabs;
 
@@ -65,9 +66,10 @@ export default function SchoolAuth() {
     setIsLoading(true);
     try {
       await new Promise((resolve) => setTimeout(resolve, 2000));
-      message.success("Đăng nhập thành công!");
+      toast.success("Đăng nhập thành công!");
+      navigate("/school");
     } catch (error) {
-      message.error("Đã xảy ra lỗi khi đăng nhập");
+      toast.error("Đã xảy ra lỗi khi đăng nhập");
     } finally {
       setIsLoading(false);
     }
