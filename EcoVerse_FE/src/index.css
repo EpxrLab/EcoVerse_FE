@@ -7,7 +7,7 @@
 @layer base {
   :root {
     /* Fresh eco background - light mint green */
-    --background: 120 45% 88%;
+    --background: 120 35% 96%;
     /* Text - rich forest green */
     --foreground: 150 30% 20%;
 
@@ -136,96 +136,14 @@
 }
 
 @layer components {
-  /* Eco card styles */
-  .eco-card {
-    @apply bg-card border-2 border-border rounded-2xl shadow-sm;
-    box-shadow: var(--shadow-card);
-  }
 
-  .eco-card-green {
-    @apply bg-card border-2 border-eco-green/25 rounded-2xl;
-    box-shadow: 0 4px 20px -6px hsl(var(--eco-green) / 0.12);
-  }
-
-  .eco-card-blue {
-    @apply bg-card border-2 border-eco-blue/25 rounded-2xl;
-    box-shadow: 0 4px 20px -6px hsl(var(--eco-blue) / 0.12);
-  }
-
-  .eco-card-orange {
-    @apply bg-card border-2 border-eco-orange/25 rounded-2xl;
-    box-shadow: 0 4px 20px -6px hsl(var(--eco-orange) / 0.12);
-  }
-
-  .eco-shadow {
-    box-shadow: var(--shadow-soft);
-  }
-
-  .eco-glow {
-    box-shadow: var(--shadow-glow);
-  }
-
-  /* Icon containers */
-  .eco-icon {
-    @apply rounded-xl flex items-center justify-center;
-  }
-
-  .eco-icon-green {
-    @apply eco-icon bg-eco-green/12 text-eco-green;
-  }
-
-  .eco-icon-blue {
-    @apply eco-icon bg-eco-blue/12 text-eco-blue;
-  }
-
-  .eco-icon-orange {
-    @apply eco-icon bg-eco-orange/12 text-eco-orange;
-  }
-
-  .eco-icon-leaf {
-    @apply eco-icon bg-eco-leaf/12 text-eco-leaf;
-  }
-
-  .eco-icon-brown {
-    @apply eco-icon bg-eco-brown/12 text-eco-brown;
-  }
-
-  /* Bin colors */
-  .bin-plastic {
-    @apply bg-[hsl(var(--bin-plastic))];
-  }
-
-  .bin-paper {
-    @apply bg-[hsl(var(--bin-paper))];
-  }
-
-  .bin-organic {
-    @apply bg-[hsl(var(--bin-organic))];
-  }
-
-  .bin-others {
-    @apply bg-[hsl(var(--bin-others))];
-  }
-
-  /* Stats badge */
-  .eco-badge {
-    @apply px-2.5 py-1 rounded-full text-xs font-semibold;
-  }
-
-  .eco-badge-green {
-    @apply eco-badge bg-eco-green/12 text-eco-green;
-  }
-
-  .eco-badge-blue {
-    @apply eco-badge bg-eco-blue/12 text-eco-blue;
-  }
-
-  .eco-badge-orange {
-    @apply eco-badge bg-eco-orange/12 text-eco-orange;
-  }
 }
 
 @layer utilities {
+  .bg-gradient-eco {
+    @apply bg-gradient-to-r from-eco-green to-eco-blue;
+  }
+
   .text-balance {
     text-wrap: balance;
   }
