@@ -1,35 +1,12 @@
-import React from 'react';
+import { Outlet } from "react-router-dom";
+import { CampaignProvider } from "./context";
 
-/**
- * StudentLayout - Layout chính cho Student Role
- * Bao gồm: Sidebar navigation, Header, Footer
- */
-export function StudentLayout({ children }) {
+export default function StudentLayout() {
   return (
-    <div className="student-layout">
-      {/* Header */}
-      <header className="student-header">
-        {/* Header content */}
-      </header>
-
-      <div className="student-container">
-        {/* Sidebar */}
-        <aside className="student-sidebar">
-          {/* Navigation menu */}
-        </aside>
-
-        {/* Main content */}
-        <main className="student-main">
-          {children}
-        </main>
+    <CampaignProvider>
+      <div className="min-h-screen bg-background">
+        <Outlet />
       </div>
-
-      {/* Footer */}
-      <footer className="student-footer">
-        {/* Footer content */}
-      </footer>
-    </div>
+    </CampaignProvider>
   );
 }
-
-export default StudentLayout;
