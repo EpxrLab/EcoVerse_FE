@@ -42,8 +42,8 @@ import {
   // SchoolDashboard,
   // SchoolStudents,
   SchoolClasses,
-  // SchoolQuizzes,
-  // SchoolRewards,
+  SchoolQuizzes,
+  SchoolRewards,
   // SchoolSubscription,
   // SchoolLeaderboardPage
 } from "@/roles/school";
@@ -126,9 +126,9 @@ const App = () => (
                 {/* <Route index element={<SchoolDashboard />} />
               <Route path="students" element={<SchoolStudents />} /> */}
               <Route path="classes" element={<SchoolClasses />} />
-              {/* <Route path="quizzes" element={<SchoolQuizzes />} />
+              <Route path="quizzes" element={<SchoolQuizzes />} />
               <Route path="rewards" element={<SchoolRewards />} />
-              <Route path="subscription" element={<SchoolSubscription />} />
+              {/* <Route path="subscription" element={<SchoolSubscription />} />
               <Route path="leaderboard" element={<SchoolLeaderboardPage />} /> */}
               </Route>
 
