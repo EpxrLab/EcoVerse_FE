@@ -1,6 +1,32 @@
 import { useState, useEffect, useCallback } from 'react';
 import { toast } from 'sonner';
 
+// Mock data
+const mockAcademicYears = [
+  { id: 1, name: 'Năm học 2024-2025', start_date: '2024-09-01', end_date: '2025-05-31', is_current: true, school_id: 1 },
+  { id: 2, name: 'Năm học 2023-2024', start_date: '2023-09-01', end_date: '2024-05-31', is_current: false, school_id: 1 },
+];
+
+const mockClasses = [
+  { id: 1, name: '6A', grade: 6, teacher_name: 'Nguyễn Văn A', description: '', academic_year_id: 1, school_id: 1 },
+  { id: 2, name: '6B', grade: 6, teacher_name: 'Trần Thị B', description: '', academic_year_id: 1, school_id: 1 },
+  { id: 3, name: '7A', grade: 7, teacher_name: 'Lê Văn C', description: '', academic_year_id: 1, school_id: 1 },
+  { id: 4, name: '8A', grade: 8, teacher_name: 'Phạm Thị D', description: '', academic_year_id: 2, school_id: 1 },
+];
+
+const mockStudents = [
+  { id: 1, class_id: 1, student_name: 'Nguyễn An', student_code: 'HS001', date_of_birth: '2012-03-15', gender: 'male', parent_name: 'Nguyễn Văn X', parent_phone: '0901234567', parent_email: '', address: '', notes: '', status: 'active', accuracy: 85, items_sorted: 120 },
+  { id: 2, class_id: 1, student_name: 'Trần Bình', student_code: 'HS002', date_of_birth: '2012-07-20', gender: 'male', parent_name: 'Trần Thị Y', parent_phone: '0912345678', parent_email: '', address: '', notes: '', status: 'active', accuracy: 72, items_sorted: 95 },
+  { id: 3, class_id: 2, student_name: 'Lê Cẩm', student_code: 'HS003', date_of_birth: '2012-01-10', gender: 'female', parent_name: 'Lê Văn Z', parent_phone: '0923456789', parent_email: '', address: '', notes: '', status: 'active', accuracy: 91, items_sorted: 150 },
+];
+
+let _academicYears = [...mockAcademicYears];
+let _classes = [...mockClasses];
+let _students = [...mockStudents];
+let _nextYearId = 3;
+let _nextClassId = 5;
+let _nextStudentId = 4;
+
 export function useClasses() {
   const [academicYears, setAcademicYears] = useState([]);
   const [selectedYear, setSelectedYear] = useState(null);
@@ -13,52 +39,20 @@ export function useClasses() {
   const [isAddYearDialogOpen, setIsAddYearDialogOpen] = useState(false);
   const [isAddStudentDialogOpen, setIsAddStudentDialogOpen] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
-  const [schoolId, setSchoolId] = useState(null);
-
-  // Fetch school ID
-  useEffect(() => {
-    const fetchSchoolId = async () => {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) return;
-
-      const { data: registration } = await supabase
-        .from('school_registrations')
-        .select('id')
-        .eq('user_id', user.id)
-        .maybeSingle();
-
-      if (registration) {
-        setSchoolId(registration.id);
-      }
-    };
-
-    fetchSchoolId();
-  }, []);
+  const schoolId = 1;
 
   // Fetch academic years
   const fetchAcademicYears = useCallback(async () => {
-    if (!schoolId) return;
+    const data = _academicYears.filter(y => y.school_id === schoolId)
+      .sort((a, b) => new Date(b.start_date) - new Date(a.start_date));
 
-    const { data, error } = await supabase
-      .from('academic_years')
-      .select('*')
-      .eq('school_id', schoolId)
-      .order('start_date', { ascending: false });
+    setAcademicYears(data);
 
-    if (error) {
-      console.error('Error fetching academic years:', error);
-      toast.error('Không thể tải danh sách niên khóa');
-      return;
-    }
-
-    setAcademicYears(data || []);
-
-    // Select current year or first year
-    const currentYear = data?.find(y => y.is_current) || data?.[0];
+    const currentYear = data.find(y => y.is_current) || data[0];
     if (currentYear && !selectedYear) {
       setSelectedYear(currentYear);
     }
-  }, [schoolId, selectedYear]);
+  }, [selectedYear]);
 
   // Fetch classes for selected year
   const fetchClasses = useCallback(async () => {
@@ -70,55 +64,34 @@ export function useClasses() {
 
     setIsLoading(true);
 
-    const { data, error } = await supabase
-      .from('classes')
-      .select('*')
-      .eq('academic_year_id', selectedYear.id)
-      .order('grade', { ascending: true })
-      .order('name', { ascending: true });
+    const data = _classes
+      .filter(c => c.academic_year_id === selectedYear.id)
+      .sort((a, b) => a.grade - b.grade || a.name.localeCompare(b.name));
 
-    if (error) {
-      console.error('Error fetching classes:', error);
-      toast.error('Không thể tải danh sách lớp học');
-      setIsLoading(false);
-      return;
-    }
+    const classesWithStats = data.map((classItem) => {
+      const students = _students.filter(s => s.class_id === classItem.id);
+      const avgAccuracy = students.length > 0
+        ? Math.round(students.reduce((sum, s) => sum + s.accuracy, 0) / students.length)
+        : 0;
+      const totalItems = students.reduce((sum, s) => sum + s.items_sorted, 0);
+      const topStudent = students.length > 0
+        ? [...students].sort((a, b) => b.accuracy - a.accuracy)[0]?.student_name
+        : null;
 
-    // Fetch student counts for each class
-    const classesWithStats = await Promise.all(
-      (data || []).map(async (classItem) => {
-        const { data: students } = await supabase
-          .from('class_students')
-          .select('*')
-          .eq('class_id', classItem.id);
-
-        const studentList = students || [];
-        const avgAccuracy = studentList.length > 0 
-          ? Math.round(studentList.reduce((sum, s) => sum + s.accuracy, 0) / studentList.length)
-          : 0;
-        const totalItems = studentList.reduce((sum, s) => sum + s.items_sorted, 0);
-        const topStudent = studentList.length > 0 
-          ? studentList.sort((a, b) => b.accuracy - a.accuracy)[0]?.student_name
-          : null;
-
-        return {
-          ...classItem,
-          students_count: studentList.length,
-          avg_accuracy: avgAccuracy,
-          total_items: totalItems,
-          top_student: topStudent,
-        };
-      })
-    );
+      return {
+        ...classItem,
+        students_count: students.length,
+        avg_accuracy: avgAccuracy,
+        total_items: totalItems,
+        top_student: topStudent,
+      };
+    });
 
     setClasses(classesWithStats);
 
-    // Group classes by grade
     const groupedByGrade = classesWithStats.reduce((acc, classItem) => {
       const grade = classItem.grade;
-      if (!acc[grade]) {
-        acc[grade] = [];
-      }
+      if (!acc[grade]) acc[grade] = [];
       acc[grade].push(classItem);
       return acc;
     }, {});
@@ -127,7 +100,7 @@ export function useClasses() {
       grade: parseInt(grade),
       classes: gradeClasses,
       totalStudents: gradeClasses.reduce((sum, c) => sum + (c.students_count || 0), 0),
-      avgAccuracy: gradeClasses.length > 0 
+      avgAccuracy: gradeClasses.length > 0
         ? Math.round(gradeClasses.reduce((sum, c) => sum + (c.avg_accuracy || 0), 0) / gradeClasses.length)
         : 0,
     }));
@@ -138,25 +111,15 @@ export function useClasses() {
 
   // Fetch students for selected class
   const fetchClassStudents = useCallback(async (classId) => {
-    const { data, error } = await supabase
-      .from('class_students')
-      .select('*')
-      .eq('class_id', classId)
-      .order('student_name', { ascending: true });
-
-    if (error) {
-      console.error('Error fetching students:', error);
-      return;
-    }
-
-    setClassStudents(data || []);
+    const data = _students
+      .filter(s => s.class_id === classId)
+      .sort((a, b) => a.student_name.localeCompare(b.student_name));
+    setClassStudents(data);
   }, []);
 
   useEffect(() => {
-    if (schoolId) {
-      fetchAcademicYears();
-    }
-  }, [schoolId, fetchAcademicYears]);
+    fetchAcademicYears();
+  }, [fetchAcademicYears]);
 
   useEffect(() => {
     if (selectedYear) {
@@ -176,7 +139,7 @@ export function useClasses() {
   const stats = {
     totalClasses: classes.length,
     totalStudents: classes.reduce((sum, c) => sum + (c.students_count || 0), 0),
-    avgAccuracy: classes.length > 0 
+    avgAccuracy: classes.length > 0
       ? Math.round(classes.reduce((sum, c) => sum + (c.avg_accuracy || 0), 0) / classes.length)
       : 0,
     totalGrades: gradeGroups.length,
@@ -184,48 +147,30 @@ export function useClasses() {
 
   // Create academic year
   const createAcademicYear = async (formData) => {
-    if (!schoolId) return;
-
-    const { data, error } = await supabase
-      .from('academic_years')
-      .insert({
-        school_id: schoolId,
-        name: formData.name,
-        start_date: formData.start_date,
-        end_date: formData.end_date,
-        is_current: formData.is_current,
-      })
-      .select()
-      .single();
-
-    if (error) {
-      console.error('Error creating academic year:', error);
-      toast.error('Không thể tạo niên khóa mới');
-      return;
-    }
-
+    const newYear = {
+      id: _nextYearId++,
+      school_id: schoolId,
+      name: formData.name,
+      start_date: formData.start_date,
+      end_date: formData.end_date,
+      is_current: formData.is_current || false,
+    };
+    _academicYears = [..._academicYears, newYear];
     toast.success('Tạo niên khóa thành công');
     await fetchAcademicYears();
-    if (data) {
-      setSelectedYear(data);
-    }
+    setSelectedYear(newYear);
   };
 
   // Copy classes from previous year
   const copyClassesFromYear = async (sourceYearId, targetYearId) => {
-    if (!schoolId) return;
-
-    const { data: sourceClasses, error: fetchError } = await supabase
-      .from('classes')
-      .select('*')
-      .eq('academic_year_id', sourceYearId);
-
-    if (fetchError || !sourceClasses) {
+    const sourceClasses = _classes.filter(c => c.academic_year_id === sourceYearId);
+    if (!sourceClasses.length) {
       toast.error('Không thể sao chép lớp học');
       return;
     }
 
     const newClasses = sourceClasses.map(c => ({
+      id: _nextClassId++,
       school_id: schoolId,
       academic_year_id: targetYearId,
       name: c.name,
@@ -234,40 +179,25 @@ export function useClasses() {
       description: c.description,
     }));
 
-    const { error: insertError } = await supabase
-      .from('classes')
-      .insert(newClasses);
-
-    if (insertError) {
-      toast.error('Không thể sao chép lớp học');
-      return;
-    }
-
+    _classes = [..._classes, ...newClasses];
     toast.success(`Đã sao chép ${newClasses.length} lớp từ niên khóa trước`);
     await fetchClasses();
   };
 
   // Create class
   const createClass = async (formData) => {
-    if (!schoolId || !selectedYear) return;
+    if (!selectedYear) return;
 
-    const { error } = await supabase
-      .from('classes')
-      .insert({
-        school_id: schoolId,
-        academic_year_id: selectedYear.id,
-        name: formData.name,
-        grade: formData.grade,
-        teacher_name: formData.teacher_name,
-        description: formData.description,
-      });
-
-    if (error) {
-      console.error('Error creating class:', error);
-      toast.error('Không thể tạo lớp học');
-      return;
-    }
-
+    const newClass = {
+      id: _nextClassId++,
+      school_id: schoolId,
+      academic_year_id: selectedYear.id,
+      name: formData.name,
+      grade: formData.grade,
+      teacher_name: formData.teacher_name,
+      description: formData.description,
+    };
+    _classes = [..._classes, newClass];
     toast.success('Tạo lớp học thành công');
     await fetchClasses();
     setIsAddDialogOpen(false);
@@ -275,39 +205,18 @@ export function useClasses() {
 
   // Update class
   const updateClass = async (classId, formData) => {
-    const { error } = await supabase
-      .from('classes')
-      .update({
-        name: formData.name,
-        grade: formData.grade,
-        teacher_name: formData.teacher_name,
-        description: formData.description,
-      })
-      .eq('id', classId);
-
-    if (error) {
-      console.error('Error updating class:', error);
-      toast.error('Không thể cập nhật lớp học');
-      return;
-    }
-
+    _classes = _classes.map(c =>
+      c.id === classId
+        ? { ...c, name: formData.name, grade: formData.grade, teacher_name: formData.teacher_name, description: formData.description }
+        : c
+    );
     toast.success('Cập nhật lớp học thành công');
     await fetchClasses();
   };
 
   // Delete class
   const deleteClass = async (classId) => {
-    const { error } = await supabase
-      .from('classes')
-      .delete()
-      .eq('id', classId);
-
-    if (error) {
-      console.error('Error deleting class:', error);
-      toast.error('Không thể xóa lớp học');
-      return;
-    }
-
+    _classes = _classes.filter(c => c.id !== classId);
     toast.success('Xóa lớp học thành công');
     if (selectedClass?.id === classId) {
       setSelectedClass(null);
@@ -317,17 +226,7 @@ export function useClasses() {
 
   // Delete academic year
   const deleteAcademicYear = async (yearId) => {
-    const { error } = await supabase
-      .from('academic_years')
-      .delete()
-      .eq('id', yearId);
-
-    if (error) {
-      console.error('Error deleting academic year:', error);
-      toast.error('Không thể xóa niên khóa');
-      return;
-    }
-
+    _academicYears = _academicYears.filter(y => y.id !== yearId);
     toast.success('Xóa niên khóa thành công');
     setSelectedYear(null);
     await fetchAcademicYears();
@@ -335,45 +234,30 @@ export function useClasses() {
 
   // Set current academic year
   const setCurrentAcademicYear = async (yearId) => {
-    const { error } = await supabase
-      .from('academic_years')
-      .update({ is_current: true })
-      .eq('id', yearId);
-
-    if (error) {
-      console.error('Error setting current year:', error);
-      toast.error('Không thể đặt niên khóa hiện tại');
-      return;
-    }
-
+    _academicYears = _academicYears.map(y => ({ ...y, is_current: y.id === yearId }));
     toast.success('Đã đặt làm niên khóa hiện tại');
     await fetchAcademicYears();
   };
 
   // Student CRUD operations
   const createStudent = async (classId, formData) => {
-    const { error } = await supabase
-      .from('class_students')
-      .insert({
-        class_id: classId,
-        student_name: formData.student_name,
-        student_code: formData.student_code || null,
-        date_of_birth: formData.date_of_birth || null,
-        gender: formData.gender || 'other',
-        parent_name: formData.parent_name || null,
-        parent_phone: formData.parent_phone || null,
-        parent_email: formData.parent_email || null,
-        address: formData.address || null,
-        notes: formData.notes || null,
-        status: formData.status || 'active',
-      });
-
-    if (error) {
-      console.error('Error creating student:', error);
-      toast.error('Không thể thêm học sinh');
-      return false;
-    }
-
+    const newStudent = {
+      id: _nextStudentId++,
+      class_id: classId,
+      student_name: formData.student_name,
+      student_code: formData.student_code || null,
+      date_of_birth: formData.date_of_birth || null,
+      gender: formData.gender || 'other',
+      parent_name: formData.parent_name || null,
+      parent_phone: formData.parent_phone || null,
+      parent_email: formData.parent_email || null,
+      address: formData.address || null,
+      notes: formData.notes || null,
+      status: formData.status || 'active',
+      accuracy: 0,
+      items_sorted: 0,
+    };
+    _students = [..._students, newStudent];
     toast.success('Thêm học sinh thành công');
     await fetchClassStudents(classId);
     await fetchClasses();
@@ -383,28 +267,23 @@ export function useClasses() {
   const updateStudent = async (studentId, formData) => {
     if (!selectedClass) return false;
 
-    const { error } = await supabase
-      .from('class_students')
-      .update({
-        student_name: formData.student_name,
-        student_code: formData.student_code || null,
-        date_of_birth: formData.date_of_birth || null,
-        gender: formData.gender || 'other',
-        parent_name: formData.parent_name || null,
-        parent_phone: formData.parent_phone || null,
-        parent_email: formData.parent_email || null,
-        address: formData.address || null,
-        notes: formData.notes || null,
-        status: formData.status,
-      })
-      .eq('id', studentId);
-
-    if (error) {
-      console.error('Error updating student:', error);
-      toast.error('Không thể cập nhật học sinh');
-      return false;
-    }
-
+    _students = _students.map(s =>
+      s.id === studentId
+        ? {
+            ...s,
+            student_name: formData.student_name,
+            student_code: formData.student_code || null,
+            date_of_birth: formData.date_of_birth || null,
+            gender: formData.gender || 'other',
+            parent_name: formData.parent_name || null,
+            parent_phone: formData.parent_phone || null,
+            parent_email: formData.parent_email || null,
+            address: formData.address || null,
+            notes: formData.notes || null,
+            status: formData.status,
+          }
+        : s
+    );
     toast.success('Cập nhật học sinh thành công');
     await fetchClassStudents(selectedClass.id);
     return true;
@@ -413,17 +292,7 @@ export function useClasses() {
   const deleteStudent = async (studentId) => {
     if (!selectedClass) return false;
 
-    const { error } = await supabase
-      .from('class_students')
-      .delete()
-      .eq('id', studentId);
-
-    if (error) {
-      console.error('Error deleting student:', error);
-      toast.error('Không thể xóa học sinh');
-      return false;
-    }
-
+    _students = _students.filter(s => s.id !== studentId);
     toast.success('Xóa học sinh thành công');
     await fetchClassStudents(selectedClass.id);
     await fetchClasses();
@@ -433,22 +302,15 @@ export function useClasses() {
   const importStudents = async (classId, students) => {
     if (students.length === 0) return false;
 
-    const studentsToInsert = students.map(s => ({
+    const newStudents = students.map(s => ({
+      id: _nextStudentId++,
       class_id: classId,
       student_name: s.student_name,
       status: 'active',
+      accuracy: 0,
+      items_sorted: 0,
     }));
-
-    const { error } = await supabase
-      .from('class_students')
-      .insert(studentsToInsert);
-
-    if (error) {
-      console.error('Error importing students:', error);
-      toast.error('Không thể import học sinh');
-      return false;
-    }
-
+    _students = [..._students, ...newStudents];
     toast.success(`Đã import ${students.length} học sinh thành công`);
     await fetchClassStudents(classId);
     await fetchClasses();
@@ -467,7 +329,7 @@ export function useClasses() {
     selectedGrade,
     isLoading,
     schoolId,
-    
+
     // Dialog states
     isAddDialogOpen,
     setIsAddDialogOpen,
@@ -475,24 +337,24 @@ export function useClasses() {
     setIsAddYearDialogOpen,
     isAddStudentDialogOpen,
     setIsAddStudentDialogOpen,
-    
+
     // Setters
     setSelectedYear,
     setSelectedClass,
     setSelectedGrade,
-    
+
     // Academic Year Actions
     createAcademicYear,
     copyClassesFromYear,
     deleteAcademicYear,
     setCurrentAcademicYear,
-    
+
     // Class Actions
     createClass,
     updateClass,
     deleteClass,
     fetchClasses,
-    
+
     // Student Actions
     createStudent,
     updateStudent,
