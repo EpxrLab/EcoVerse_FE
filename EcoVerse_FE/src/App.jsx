@@ -38,6 +38,8 @@ import StudentLeaderboard from "./roles/student/pages/studentLeaderboard/student
 import { StudentProvider } from "./roles/student/context";
 import StudentGame from "./roles/student/pages/studentGameSelection/studentGame";
 import StudentQuiz from "./roles/student/pages/studentQuizSelection/studentQuiz";
+
+//=========================School Routes===============================
 import {
   // SchoolDashboard,
   // SchoolStudents,
@@ -125,10 +127,10 @@ const App = () => (
               <Route path="/school" element={<SchoolAdminLayout />}>
                 {/* <Route index element={<SchoolDashboard />} />
               <Route path="students" element={<SchoolStudents />} /> */}
-              <Route path="classes" element={<SchoolClasses />} />
-              <Route path="quizzes" element={<SchoolQuizzes />} />
-              <Route path="rewards" element={<SchoolRewards />} />
-              {/* <Route path="subscription" element={<SchoolSubscription />} />
+                <Route path="classes" element={<SchoolClasses />} />
+                <Route path="quizzes" element={<SchoolQuizzes />} />
+                <Route path="rewards" element={<SchoolRewards />} />
+                {/* <Route path="subscription" element={<SchoolSubscription />} />
               <Route path="leaderboard" element={<SchoolLeaderboardPage />} /> */}
               </Route>
 
