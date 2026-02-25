@@ -11,6 +11,8 @@ import Index from "./roles/guest";
 import OptionPage from "./features/auth/pages/optionPage/optionPage";
 import StudentLogin from "./features/auth/pages/student/studentLogin/studentLogin";
 
+import AdminAuth from "./features/auth/pages/admin/adminAuth/adminAuth";
+
 import SchoolAuth from "./features/auth/pages/school/schoolAuth/schoolAuth";
 import SchoolRegister from "./features/auth/pages/school/schoolRegister/schoolRegister";
 import SchoolPending from "./features/auth/pages/school/schoolPending/schoolPending";
@@ -65,7 +67,6 @@ import {
 //   ParentSettings
 // } from "@/modules/parent";
 
-// import AdminAuth from "./pages/auth/AdminAuth";
 import NotFound from "./roles/notFound";
 
 const queryClient = new QueryClient();
@@ -109,6 +110,7 @@ const App = () => (
                 path="/auth/school/rejected"
                 element={<SchoolRejected />}
               />
+              <Route path="/auth/admin" element={<AdminAuth />} />
 
               {/* Student Routes */}
               <Route path="/student" element={<StudentLayout />}>
