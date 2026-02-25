@@ -201,7 +201,7 @@ export default function PartnershipRegister() {
       message.success(
         "Đăng ký thành công! Đơn đăng ký của bạn đang chờ Admin duyệt.",
       );
-      navigate("/partnership/pending");
+      navigate("/auth/partnership/pending");
     } catch (err) {
       message.error(err.message || "Đã xảy ra lỗi khi đăng ký");
     } finally {
