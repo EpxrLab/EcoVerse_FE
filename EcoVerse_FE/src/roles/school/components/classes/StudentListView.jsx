@@ -554,7 +554,7 @@ export function StudentListView({
                           </div>
                         </TableCell>
                         <TableCell className="text-center">
-                          <span className="font-semibold text-eco-orange">{student.coins.toLocaleString()}</span>
+                          <span className="font-semibold text-eco-orange">{(student.coins ?? 0).toLocaleString()}</span>
                         </TableCell>
                         <TableCell className="text-center">
                           <div className="flex items-center justify-center gap-1">

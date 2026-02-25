@@ -48,7 +48,6 @@ export default function SchoolClasses() {
   const {
     academicYears,
     selectedYear,
-    classes,
     gradeGroups,
     classStudents,
     stats,
