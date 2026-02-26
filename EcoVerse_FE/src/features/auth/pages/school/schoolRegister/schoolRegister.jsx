@@ -1,66 +1,219 @@
 import { useState } from "react";
-import { motion, AnimatePresence } from "framer-motion";
-import { Input, Select, Button, Upload, Card, Steps, message } from "antd";
-import {
-  HomeOutlined,
-  BuildOutlined,
-  UserOutlined,
-  PhoneOutlined,
-  MailOutlined,
-  EnvironmentOutlined,
-  GlobalOutlined,
-  FileTextOutlined,
-  UploadOutlined,
-  CheckCircleOutlined,
-} from "@ant-design/icons";
-import { z } from "zod";
 import { useNavigate } from "react-router-dom";
+import { motion, AnimatePresence } from "framer-motion";
+import { Card, Input, Select, notification } from "antd";
+import {
+  Loader2,
+  School,
+  Upload,
+  CheckCircle2,
+  Building,
+  User,
+  Phone,
+  Mail,
+  MapPin,
+  Globe,
+  FileText,
+} from "lucide-react";
 
+const { Option } = Select;
 const { TextArea } = Input;
-const { Step } = Steps;
 
-const registrationSchema = z.object({
-  school_name: z
-    .string()
-    .trim()
-    .min(3, { message: "Tên trường phải có ít nhất 3 ký tự" })
-    .max(200),
-  email: z.string().trim().email({ message: "Email không hợp lệ" }),
-  phone: z
-    .string()
-    .trim()
-    .min(10, { message: "Số điện thoại không hợp lệ" })
-    .max(15),
-  address: z
-    .string()
-    .trim()
-    .min(10, { message: "Địa chỉ phải có ít nhất 10 ký tự" })
-    .max(500),
-  representative_name: z
-    .string()
-    .trim()
-    .min(2, { message: "Tên người đại diện phải có ít nhất 2 ký tự" })
-    .max(100),
-  representative_position: z.string().optional(),
-  student_count: z.number().min(1).optional(),
-  school_type: z.enum(["public", "private"]),
-  website: z.string().url().optional().or(z.literal("")),
-  tax_code: z.string().optional(),
-  description: z.string().max(1000).optional(),
-});
+// Vietnam administrative data
+const PROVINCES = [
+  { code: "HCM", name: "TP. Hồ Chí Minh" },
+  { code: "HN", name: "Hà Nội" },
+  { code: "DN", name: "Đà Nẵng" },
+  { code: "HP", name: "Hải Phòng" },
+  { code: "CT", name: "Cần Thơ" },
+  { code: "BD", name: "Bình Dương" },
+  { code: "DNG", name: "Đồng Nai" },
+  { code: "LA", name: "Long An" },
+  { code: "AG", name: "An Giang" },
+  { code: "BR", name: "Bà Rịa - Vũng Tàu" },
+  { code: "BG", name: "Bắc Giang" },
+  { code: "BK", name: "Bắc Kạn" },
+  { code: "BL", name: "Bạc Liêu" },
+  { code: "BN", name: "Bắc Ninh" },
+  { code: "BTH", name: "Bình Thuận" },
+  { code: "BP", name: "Bình Phước" },
+  { code: "BDH", name: "Bình Định" },
+  { code: "CM", name: "Cà Mau" },
+  { code: "CB", name: "Cao Bằng" },
+  { code: "GL", name: "Gia Lai" },
+  { code: "HG", name: "Hà Giang" },
+  { code: "HNM", name: "Hà Nam" },
+  { code: "HT", name: "Hà Tĩnh" },
+  { code: "HD", name: "Hải Dương" },
+  { code: "HBH", name: "Hòa Bình" },
+  { code: "HU", name: "Huế" },
+  { code: "HY", name: "Hưng Yên" },
+  { code: "KH", name: "Khánh Hòa" },
+  { code: "KG", name: "Kiên Giang" },
+  { code: "KT", name: "Kon Tum" },
+  { code: "LC", name: "Lai Châu" },
+  { code: "LD", name: "Lâm Đồng" },
+  { code: "LS", name: "Lạng Sơn" },
+  { code: "LCA", name: "Lào Cai" },
+  { code: "ND", name: "Nam Định" },
+  { code: "NA", name: "Nghệ An" },
+  { code: "NB", name: "Ninh Bình" },
+  { code: "NT", name: "Ninh Thuận" },
+  { code: "PT", name: "Phú Thọ" },
+  { code: "PY", name: "Phú Yên" },
+  { code: "QB", name: "Quảng Bình" },
+  { code: "QN", name: "Quảng Nam" },
+  { code: "QNG", name: "Quảng Ngãi" },
+  { code: "QNH", name: "Quảng Ninh" },
+  { code: "QT", name: "Quảng Trị" },
+  { code: "ST", name: "Sóc Trăng" },
+  { code: "SL", name: "Sơn La" },
+  { code: "TN", name: "Tây Ninh" },
+  { code: "TB", name: "Thái Bình" },
+  { code: "TNG", name: "Thái Nguyên" },
+  { code: "TH", name: "Thanh Hóa" },
+  { code: "TG", name: "Tiền Giang" },
+  { code: "TV", name: "Trà Vinh" },
+  { code: "TQ", name: "Tuyên Quang" },
+  { code: "VL", name: "Vĩnh Long" },
+  { code: "VP", name: "Vĩnh Phúc" },
+  { code: "YB", name: "Yên Bái" },
+  { code: "DL", name: "Đắk Lắk" },
+  { code: "DKN", name: "Đắk Nông" },
+  { code: "DB", name: "Điện Biên" },
+  { code: "DT", name: "Đồng Tháp" },
+  { code: "HGG", name: "Hậu Giang" },
+];
+
+const DISTRICTS_BY_PROVINCE = {
+  HCM: [
+    { code: "Q1", name: "Quận 1" },
+    { code: "Q2", name: "Quận 2 (TP. Thủ Đức)" },
+    { code: "Q3", name: "Quận 3" },
+    { code: "Q4", name: "Quận 4" },
+    { code: "Q5", name: "Quận 5" },
+    { code: "Q6", name: "Quận 6" },
+    { code: "Q7", name: "Quận 7" },
+    { code: "Q8", name: "Quận 8" },
+    { code: "Q9", name: "Quận 9 (TP. Thủ Đức)" },
+    { code: "Q10", name: "Quận 10" },
+    { code: "Q11", name: "Quận 11" },
+    { code: "Q12", name: "Quận 12" },
+    { code: "BT", name: "Quận Bình Thạnh" },
+    { code: "TB", name: "Quận Tân Bình" },
+    { code: "TP", name: "Quận Tân Phú" },
+    { code: "PN", name: "Quận Phú Nhuận" },
+    { code: "GV", name: "Quận Gò Vấp" },
+    { code: "BC", name: "Quận Bình Chánh" },
+    { code: "CC", name: "Huyện Củ Chi" },
+    { code: "HM", name: "Huyện Hóc Môn" },
+    { code: "NB", name: "Huyện Nhà Bè" },
+    { code: "CG", name: "Huyện Cần Giờ" },
+  ],
+  HN: [
+    { code: "HK", name: "Quận Hoàn Kiếm" },
+    { code: "BD", name: "Quận Ba Đình" },
+    { code: "DD", name: "Quận Đống Đa" },
+    { code: "HBT", name: "Quận Hai Bà Trưng" },
+    { code: "HM", name: "Quận Hoàng Mai" },
+    { code: "TX", name: "Quận Thanh Xuân" },
+    { code: "CG", name: "Quận Cầu Giấy" },
+    { code: "LB", name: "Quận Long Biên" },
+    { code: "TL", name: "Quận Tây Hồ" },
+    { code: "BT", name: "Quận Bắc Từ Liêm" },
+    { code: "NTL", name: "Quận Nam Từ Liêm" },
+    { code: "HD", name: "Quận Hà Đông" },
+    { code: "ST", name: "Huyện Sóc Sơn" },
+    { code: "DA", name: "Huyện Đông Anh" },
+    { code: "GL", name: "Huyện Gia Lâm" },
+    { code: "TT", name: "Huyện Thanh Trì" },
+  ],
+  DN: [
+    { code: "HC", name: "Quận Hải Châu" },
+    { code: "TK", name: "Quận Thanh Khê" },
+    { code: "ST", name: "Quận Sơn Trà" },
+    { code: "NK", name: "Quận Ngũ Hành Sơn" },
+    { code: "LC", name: "Quận Liên Chiểu" },
+    { code: "CM", name: "Quận Cẩm Lệ" },
+    { code: "HV", name: "Huyện Hòa Vang" },
+  ],
+};
+
+const WARDS_BY_DISTRICT = {
+  Q1: [
+    { code: "BN", name: "Phường Bến Nghé" },
+    { code: "BT", name: "Phường Bến Thành" },
+    { code: "CT", name: "Phường Cầu Ông Lãnh" },
+    { code: "CK", name: "Phường Cô Giang" },
+    { code: "DP", name: "Phường Đa Kao" },
+    { code: "NK", name: "Phường Nguyễn Cư Trinh" },
+    { code: "NT", name: "Phường Nguyễn Thái Bình" },
+    { code: "PNL", name: "Phường Phạm Ngũ Lão" },
+    { code: "TD", name: "Phường Tân Định" },
+  ],
+  Q3: [
+    { code: "P1", name: "Phường 1" },
+    { code: "P2", name: "Phường 2" },
+    { code: "P3", name: "Phường 3" },
+    { code: "P4", name: "Phường 4" },
+    { code: "P5", name: "Phường 5" },
+    { code: "VCT", name: "Phường Võ Thị Sáu" },
+  ],
+  Q7: [
+    { code: "TK", name: "Phường Tân Kiểng" },
+    { code: "TQ", name: "Phường Tân Quy" },
+    { code: "TH", name: "Phường Tân Hưng" },
+    { code: "TP", name: "Phường Tân Phú" },
+    { code: "PP", name: "Phường Phú Mỹ" },
+    { code: "BTH", name: "Phường Bình Thuận" },
+  ],
+  BT: [
+    { code: "P1", name: "Phường 1" },
+    { code: "P2", name: "Phường 2" },
+    { code: "P3", name: "Phường 3" },
+    { code: "P11", name: "Phường 11" },
+    { code: "P12", name: "Phường 12" },
+    { code: "P13", name: "Phường 13" },
+    { code: "P14", name: "Phường 14" },
+    { code: "P15", name: "Phường 15" },
+  ],
+  HK: [
+    { code: "CT", name: "Phường Chương Dương" },
+    { code: "CL", name: "Phường Cửa Đông" },
+    { code: "HT", name: "Phường Hàng Trống" },
+    { code: "HB", name: "Phường Hàng Bông" },
+    { code: "HC", name: "Phường Hàng Gai" },
+    { code: "LT", name: "Phường Lý Thái Tổ" },
+    { code: "PN", name: "Phường Phan Chu Trinh" },
+  ],
+};
+
+// Simple validation helpers
+const validate = {
+  required: (val, msg) => (!val || !val.trim() ? msg : ""),
+  minLen: (val, len, msg) => (!val || val.trim().length < len ? msg : ""),
+  email: (val) =>
+    !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(val) ? "Email không hợp lệ" : "",
+  phone: (val) =>
+    !val || val.trim().length < 10 ? "Số điện thoại không hợp lệ" : "",
+};
 
 export default function SchoolRegister() {
   const navigate = useNavigate();
   const [isLoading, setIsLoading] = useState(false);
-  const [currentStep, setCurrentStep] = useState(0);
+  const [step, setStep] = useState(1);
   const [logoFile, setLogoFile] = useState(null);
   const [licenseFile, setLicenseFile] = useState(null);
   const [logoPreview, setLogoPreview] = useState(null);
+
   const [formData, setFormData] = useState({
     school_name: "",
     email: "",
     phone: "",
-    address: "",
+    province: "",
+    district: "",
+    ward: "",
+    street_address: "",
     representative_name: "",
     representative_position: "",
     student_count: "",
@@ -69,146 +222,170 @@ export default function SchoolRegister() {
     tax_code: "",
     description: "",
   });
+
   const [errors, setErrors] = useState({});
 
-  const handleChange = (field, value) => {
-    setFormData((prev) => ({ ...prev, [field]: value }));
-    if (errors[field]) {
-      setErrors((prev) => ({ ...prev, [field]: "" }));
+  const availableDistricts = formData.province
+    ? DISTRICTS_BY_PROVINCE[formData.province] || []
+    : [];
+  const availableWards = formData.district
+    ? WARDS_BY_DISTRICT[formData.district] || []
+    : [];
+
+  const buildFullAddress = () => {
+    const parts = [];
+    if (formData.street_address) parts.push(formData.street_address);
+    if (formData.ward) {
+      const w = availableWards.find((w) => w.code === formData.ward);
+      if (w) parts.push(w.name);
     }
+    if (formData.district) {
+      const d = availableDistricts.find((d) => d.code === formData.district);
+      if (d) parts.push(d.name);
+    }
+    if (formData.province) {
+      const p = PROVINCES.find((p) => p.code === formData.province);
+      if (p) parts.push(p.name);
+    }
+    return parts.join(", ");
   };
 
-  const handleLogoChange = (info) => {
-    const file = info.file.originFileObj || info.file;
+  const handleInputChange = (e) => {
+    const { name, value } = e.target;
+    setFormData((prev) => ({ ...prev, [name]: value }));
+    if (errors[name]) setErrors((prev) => ({ ...prev, [name]: "" }));
+  };
+
+  const handleSelectChange = (field, value) => {
+    if (field === "province") {
+      setFormData((prev) => ({
+        ...prev,
+        province: value,
+        district: "",
+        ward: "",
+      }));
+    } else if (field === "district") {
+      setFormData((prev) => ({ ...prev, district: value, ward: "" }));
+    } else {
+      setFormData((prev) => ({ ...prev, [field]: value }));
+    }
+    if (errors[field]) setErrors((prev) => ({ ...prev, [field]: "" }));
+  };
+
+  const handleLogoChange = (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
     if (file.size > 5 * 1024 * 1024) {
-      message.error("Logo không được vượt quá 5MB");
-      return false;
-    }
-    setLogoFile(file);
-    const reader = new FileReader();
-    reader.onload = (e) => setLogoPreview(e.target.result);
-    reader.readAsDataURL(file);
-    return false;
-  };
-
-  const handleLicenseChange = (info) => {
-    const file = info.file.originFileObj || info.file;
-    if (file.size > 10 * 1024 * 1024) {
-      message.error("Giấy phép không được vượt quá 10MB");
-      return false;
-    }
-    setLicenseFile(file);
-    return false;
-  };
-
-  const validateStep1 = () => {
-    const step1Schema = z.object({
-      school_name: registrationSchema.shape.school_name,
-      email: registrationSchema.shape.email,
-      phone: registrationSchema.shape.phone,
-      address: registrationSchema.shape.address,
-      representative_name: registrationSchema.shape.representative_name,
-    });
-
-    const result = step1Schema.safeParse(formData);
-    if (!result.success) {
-      const fieldErrors = {};
-      result.error.errors.forEach((err) => {
-        fieldErrors[err.path[0]] = err.message;
-      });
-      setErrors(fieldErrors);
-      return false;
-    }
-    return true;
-  };
-
-  const handleNext = () => {
-    if (validateStep1()) {
-      setCurrentStep(1);
-    }
-  };
-
-  const handleSubmit = async () => {
-    const result = registrationSchema.safeParse({
-      ...formData,
-      student_count: formData.student_count
-        ? parseInt(formData.student_count)
-        : undefined,
-    });
-
-    if (!result.success) {
-      const fieldErrors = {};
-      result.error.errors.forEach((err) => {
-        fieldErrors[err.path[0]] = err.message;
-      });
-      setErrors(fieldErrors);
-      result.error.errors.forEach((err) => {
-        message.error(err.message);
+      notification.error({
+        message: "File quá lớn",
+        description: "Logo không được vượt quá 5MB",
       });
       return;
     }
+    setLogoFile(file);
+    setLogoPreview(URL.createObjectURL(file));
+  };
+
+  const handleLicenseChange = (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    if (file.size > 10 * 1024 * 1024) {
+      notification.error({
+        message: "File quá lớn",
+        description: "Giấy phép không được vượt quá 10MB",
+      });
+      return;
+    }
+    setLicenseFile(file);
+  };
+
+  const validateStep1 = () => {
+    const newErrors = {};
+    newErrors.school_name = validate.minLen(
+      formData.school_name,
+      3,
+      "Tên trường phải có ít nhất 3 ký tự",
+    );
+    newErrors.email = validate.email(formData.email);
+    newErrors.phone = validate.phone(formData.phone);
+    newErrors.province = validate.required(
+      formData.province,
+      "Vui lòng chọn tỉnh/thành phố",
+    );
+    newErrors.district = validate.required(
+      formData.district,
+      "Vui lòng chọn quận/huyện",
+    );
+    newErrors.ward = validate.required(
+      formData.ward,
+      "Vui lòng chọn phường/xã",
+    );
+    newErrors.street_address = validate.minLen(
+      formData.street_address,
+      5,
+      "Địa chỉ phải có ít nhất 5 ký tự",
+    );
+    newErrors.representative_name = validate.minLen(
+      formData.representative_name,
+      2,
+      "Tên người đại diện phải có ít nhất 2 ký tự",
+    );
+    const filtered = Object.fromEntries(
+      Object.entries(newErrors).filter(([, v]) => v),
+    );
+    setErrors(filtered);
+    return Object.keys(filtered).length === 0;
+  };
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    if (!validateStep1()) return;
 
     setIsLoading(true);
-
     try {
-      // Simulate API call
-      await new Promise((resolve) => setTimeout(resolve, 2000));
-      message.success(
-        "Đăng ký thành công! Đơn đăng ký của bạn đang chờ Admin duyệt."
-      );
-      navigate("/school/auth");
+      // TODO: replace with your API call
+      // const fullAddress = buildFullAddress();
+      // await api.post('/school_registrations', { ...formData, address: fullAddress, logoFile, licenseFile });
+      await new Promise((r) => setTimeout(r, 1000)); // mock delay
+      notification.success({
+        message: "Đăng ký thành công!",
+        description: "Đơn đăng ký đang chờ Admin duyệt.",
+      });
+      navigate("/auth/school/pending");
     } catch (error) {
-      message.error(error.message || "Đã xảy ra lỗi khi đăng ký");
+      notification.error({
+        message: "Lỗi",
+        description: error?.message || "Đã xảy ra lỗi khi đăng ký",
+      });
     } finally {
       setIsLoading(false);
     }
   };
 
-  const containerVariants = {
-    hidden: { opacity: 0, y: 20 },
-    visible: {
-      opacity: 1,
-      y: 0,
-      transition: { duration: 0.5, ease: "easeOut" },
-    },
+  const handleLogout = () => {
+    navigate("/auth/school");
   };
 
-  const cardVariants = {
-    hidden: { opacity: 0, scale: 0.95 },
-    visible: {
-      opacity: 1,
-      scale: 1,
-      transition: { duration: 0.4, ease: "easeOut" },
-    },
-    exit: {
-      opacity: 0,
-      scale: 0.95,
-      transition: { duration: 0.3 },
-    },
-  };
+  // Shared input class
+  const inputCls =
+    "rounded-xl border-gray-200 hover:border-green-400 focus:border-green-500";
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-green-50 via-white to-blue-50 py-8 px-4">
-      <motion.div
-        className="max-w-2xl mx-auto"
-        variants={containerVariants}
-        initial="hidden"
-        animate="visible"
-      >
+      <div className="max-w-2xl mx-auto">
         {/* Header */}
         <motion.div
-          className="text-center mb-8"
           initial={{ opacity: 0, y: -20 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.2, duration: 0.5 }}
+          className="text-center mb-8"
         >
-          <div className="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-green-100 mb-4">
-            <HomeOutlined className="text-3xl text-green-600" />
+          <div className="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-green-100 mb-4 shadow-md">
+            <School className="w-8 h-8 text-green-600" />
           </div>
-          <h1 className="text-3xl font-bold text-gray-800">
+          <h1 className="text-3xl font-extrabold text-gray-800">
             Đăng ký Trường học
           </h1>
-          <p className="text-gray-600 mt-2">
+          <p className="text-gray-500 mt-2">
             Điền đầy đủ thông tin để đăng ký sử dụng EcoVerse
           </p>
         </motion.div>
@@ -217,366 +394,540 @@ export default function SchoolRegister() {
         <motion.div
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
-          transition={{ delay: 0.4, duration: 0.5 }}
-          className="mb-8"
+          transition={{ delay: 0.1 }}
+          className="flex items-center justify-center gap-4 mb-8"
         >
-          <Steps current={currentStep} className="px-4">
-            <Step
-              title="Thông tin cơ bản"
-              icon={
-                currentStep > 0 ? <CheckCircleOutlined /> : <BuildOutlined />
-              }
-            />
-            <Step
-              title="Chi tiết & Tài liệu"
-              icon={
-                currentStep > 1 ? <CheckCircleOutlined /> : <FileTextOutlined />
-              }
-            />
-          </Steps>
+          {[
+            { num: 1, label: "Thông tin cơ bản" },
+            { num: 2, label: "Chi tiết & Tài liệu" },
+          ].map(({ num, label }, i) => (
+            <div key={num} className="flex items-center gap-2">
+              {i > 0 && <div className="w-10 h-0.5 bg-gray-200" />}
+              <div
+                className={`flex items-center gap-2 ${step >= num ? "text-green-600" : "text-gray-400"}`}
+              >
+                <div
+                  className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold transition-all ${step >= num ? "bg-green-500 text-white shadow-md" : "bg-gray-100 text-gray-400"}`}
+                >
+                  {step > num ? <CheckCircle2 className="w-4 h-4" /> : num}
+                </div>
+                <span className="font-medium text-sm hidden sm:block">
+                  {label}
+                </span>
+              </div>
+            </div>
+          ))}
         </motion.div>
 
-        <AnimatePresence mode="wait">
-          {/* Step 1: Basic Info */}
-          {currentStep === 0 && (
-            <motion.div
-              key="step1"
-              variants={cardVariants}
-              initial="hidden"
-              animate="visible"
-              exit="exit"
-            >
-              <Card
-                className="shadow-lg"
-                title={
-                  <div className="flex items-center gap-2">
-                    <BuildOutlined className="text-green-600" />
-                    <span>Thông tin cơ bản</span>
-                  </div>
-                }
+        <form onSubmit={handleSubmit}>
+          <AnimatePresence mode="wait">
+            {/* Step 1 */}
+            {step === 1 && (
+              <motion.div
+                key="step1"
+                initial={{ opacity: 0, x: 30 }}
+                animate={{ opacity: 1, x: 0 }}
+                exit={{ opacity: 0, x: -30 }}
+                transition={{ duration: 0.3 }}
               >
-                <div className="space-y-4">
-                  <div>
-                    <label className="block text-sm font-medium mb-2">
-                      Tên trường học *
-                    </label>
-                    <Input
-                      prefix={<HomeOutlined />}
-                      placeholder="VD: Trường Tiểu học Nguyễn Du"
-                      size="large"
-                      value={formData.school_name}
-                      onChange={(e) =>
-                        handleChange("school_name", e.target.value)
-                      }
-                      status={errors.school_name ? "error" : ""}
-                    />
-                    {errors.school_name && (
-                      <p className="text-red-500 text-sm mt-1">
-                        {errors.school_name}
-                      </p>
-                    )}
-                  </div>
+                <Card
+                  className="rounded-3xl shadow-xl border-0"
+                  bodyStyle={{ padding: "32px 28px" }}
+                >
+                  <div className="space-y-5">
+                    <div className="flex items-center gap-2 mb-1">
+                      <Building className="w-5 h-5 text-green-500" />
+                      <h2 className="text-lg font-bold text-gray-800">
+                        Thông tin cơ bản
+                      </h2>
+                    </div>
+                    <p className="text-sm text-gray-500 -mt-3">
+                      Nhập thông tin cơ bản về trường học của bạn
+                    </p>
 
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div>
-                      <label className="block text-sm font-medium mb-2">
-                        Email liên hệ *
+                    {/* School name */}
+                    <div className="space-y-1">
+                      <label className="text-sm font-semibold text-gray-700">
+                        Tên trường học <span className="text-red-500">*</span>
                       </label>
                       <Input
-                        prefix={<MailOutlined />}
-                        placeholder="contact@school.edu.vn"
+                        name="school_name"
+                        placeholder="VD: Trường Tiểu học Nguyễn Du"
+                        value={formData.school_name}
+                        onChange={handleInputChange}
+                        className={inputCls}
                         size="large"
-                        value={formData.email}
-                        onChange={(e) => handleChange("email", e.target.value)}
-                        status={errors.email ? "error" : ""}
                       />
-                      {errors.email && (
-                        <p className="text-red-500 text-sm mt-1">
-                          {errors.email}
+                      {errors.school_name && (
+                        <p className="text-xs text-red-500">
+                          {errors.school_name}
                         </p>
                       )}
                     </div>
 
-                    <div>
-                      <label className="block text-sm font-medium mb-2">
-                        Số điện thoại *
-                      </label>
-                      <Input
-                        prefix={<PhoneOutlined />}
-                        placeholder="0123 456 789"
-                        size="large"
-                        value={formData.phone}
-                        onChange={(e) => handleChange("phone", e.target.value)}
-                        status={errors.phone ? "error" : ""}
-                      />
-                      {errors.phone && (
-                        <p className="text-red-500 text-sm mt-1">
-                          {errors.phone}
-                        </p>
-                      )}
-                    </div>
-                  </div>
-
-                  <div>
-                    <label className="block text-sm font-medium mb-2">
-                      Địa chỉ *
-                    </label>
-                    <TextArea
-                      placeholder="Số nhà, đường, phường/xã, quận/huyện, tỉnh/thành phố"
-                      rows={3}
-                      size="large"
-                      value={formData.address}
-                      onChange={(e) => handleChange("address", e.target.value)}
-                      status={errors.address ? "error" : ""}
-                    />
-                    {errors.address && (
-                      <p className="text-red-500 text-sm mt-1">
-                        {errors.address}
-                      </p>
-                    )}
-                  </div>
-
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div>
-                      <label className="block text-sm font-medium mb-2">
-                        Người đại diện *
-                      </label>
-                      <Input
-                        prefix={<UserOutlined />}
-                        placeholder="Họ và tên"
-                        size="large"
-                        value={formData.representative_name}
-                        onChange={(e) =>
-                          handleChange("representative_name", e.target.value)
-                        }
-                        status={errors.representative_name ? "error" : ""}
-                      />
-                      {errors.representative_name && (
-                        <p className="text-red-500 text-sm mt-1">
-                          {errors.representative_name}
-                        </p>
-                      )}
-                    </div>
-
-                    <div>
-                      <label className="block text-sm font-medium mb-2">
-                        Chức vụ
-                      </label>
-                      <Input
-                        placeholder="VD: Hiệu trưởng"
-                        size="large"
-                        value={formData.representative_position}
-                        onChange={(e) =>
-                          handleChange(
-                            "representative_position",
-                            e.target.value
-                          )
-                        }
-                      />
-                    </div>
-                  </div>
-
-                  <div className="flex justify-end pt-4">
-                    <Button
-                      type="primary"
-                      size="large"
-                      onClick={handleNext}
-                      className="bg-green-600 hover:bg-green-700"
-                    >
-                      Tiếp tục
-                    </Button>
-                  </div>
-                </div>
-              </Card>
-            </motion.div>
-          )}
-
-          {/* Step 2: Details & Documents */}
-          {currentStep === 1 && (
-            <motion.div
-              key="step2"
-              variants={cardVariants}
-              initial="hidden"
-              animate="visible"
-              exit="exit"
-            >
-              <Card
-                className="shadow-lg"
-                title={
-                  <div className="flex items-center gap-2">
-                    <FileTextOutlined className="text-green-600" />
-                    <span>Chi tiết & Tài liệu</span>
-                  </div>
-                }
-              >
-                <div className="space-y-4">
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div>
-                      <label className="block text-sm font-medium mb-2">
-                        Loại trường *
-                      </label>
-                      <Select
-                        size="large"
-                        className="w-full"
-                        value={formData.school_type}
-                        onChange={(value) => handleChange("school_type", value)}
-                      >
-                        <Select.Option value="public">Công lập</Select.Option>
-                        <Select.Option value="private">Tư thục</Select.Option>
-                      </Select>
-                    </div>
-
-                    <div>
-                      <label className="block text-sm font-medium mb-2">
-                        Số lượng học sinh
-                      </label>
-                      <Input
-                        type="number"
-                        placeholder="VD: 500"
-                        size="large"
-                        value={formData.student_count}
-                        onChange={(e) =>
-                          handleChange("student_count", e.target.value)
-                        }
-                      />
-                    </div>
-                  </div>
-
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div>
-                      <label className="block text-sm font-medium mb-2">
-                        Website
-                      </label>
-                      <Input
-                        prefix={<GlobalOutlined />}
-                        placeholder="https://school.edu.vn"
-                        size="large"
-                        value={formData.website}
-                        onChange={(e) =>
-                          handleChange("website", e.target.value)
-                        }
-                        status={errors.website ? "error" : ""}
-                      />
-                      {errors.website && (
-                        <p className="text-red-500 text-sm mt-1">
-                          {errors.website}
-                        </p>
-                      )}
-                    </div>
-
-                    <div>
-                      <label className="block text-sm font-medium mb-2">
-                        Mã số thuế
-                      </label>
-                      <Input
-                        placeholder="VD: 0123456789"
-                        size="large"
-                        value={formData.tax_code}
-                        onChange={(e) =>
-                          handleChange("tax_code", e.target.value)
-                        }
-                      />
-                    </div>
-                  </div>
-
-                  <div>
-                    <label className="block text-sm font-medium mb-2">
-                      Mô tả về trường
-                    </label>
-                    <TextArea
-                      placeholder="Giới thiệu ngắn về trường học..."
-                      rows={4}
-                      size="large"
-                      maxLength={1000}
-                      showCount
-                      value={formData.description}
-                      onChange={(e) =>
-                        handleChange("description", e.target.value)
-                      }
-                    />
-                  </div>
-
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div>
-                      <label className="block text-sm font-medium mb-2">
-                        Logo trường
-                      </label>
-                      <Upload
-                        beforeUpload={handleLogoChange}
-                        maxCount={1}
-                        accept="image/*"
-                        listType="picture-card"
-                        showUploadList={false}
-                      >
-                        {logoPreview ? (
-                          <img
-                            src={logoPreview}
-                            alt="Logo preview"
-                            className="w-full h-full object-contain"
-                          />
-                        ) : (
-                          <div className="text-center">
-                            <UploadOutlined className="text-2xl mb-2" />
-                            <div className="text-xs text-gray-600">
-                              Tải lên logo
-                              <br />
-                              (tối đa 5MB)
-                            </div>
-                          </div>
+                    {/* Email & Phone */}
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <div className="space-y-1">
+                        <label className="text-sm font-semibold text-gray-700">
+                          Email liên hệ <span className="text-red-500">*</span>
+                        </label>
+                        <Input
+                          name="email"
+                          type="email"
+                          placeholder="contact@school.edu.vn"
+                          value={formData.email}
+                          onChange={handleInputChange}
+                          prefix={<Mail className="w-4 h-4 text-gray-400" />}
+                          className={inputCls}
+                          size="large"
+                        />
+                        {errors.email && (
+                          <p className="text-xs text-red-500">{errors.email}</p>
                         )}
-                      </Upload>
+                      </div>
+                      <div className="space-y-1">
+                        <label className="text-sm font-semibold text-gray-700">
+                          Số điện thoại <span className="text-red-500">*</span>
+                        </label>
+                        <Input
+                          name="phone"
+                          placeholder="0123 456 789"
+                          value={formData.phone}
+                          onChange={handleInputChange}
+                          prefix={<Phone className="w-4 h-4 text-gray-400" />}
+                          className={inputCls}
+                          size="large"
+                        />
+                        {errors.phone && (
+                          <p className="text-xs text-red-500">{errors.phone}</p>
+                        )}
+                      </div>
                     </div>
 
-                    <div>
-                      <label className="block text-sm font-medium mb-2">
-                        Giấy phép hoạt động
-                      </label>
-                      <Upload
-                        beforeUpload={handleLicenseChange}
-                        maxCount={1}
-                        accept=".pdf,.jpg,.jpeg,.png"
+                    {/* Address Section */}
+                    <div className="space-y-3 pt-1">
+                      <div className="flex items-center gap-2">
+                        <MapPin className="w-4 h-4 text-green-500" />
+                        <label className="text-sm font-bold text-gray-700">
+                          Địa chỉ trường học{" "}
+                          <span className="text-red-500">*</span>
+                        </label>
+                      </div>
+
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div className="space-y-1">
+                          <label className="text-xs font-semibold text-gray-600">
+                            Tỉnh/Thành phố
+                          </label>
+                          <Select
+                            className="w-full"
+                            size="large"
+                            placeholder="Chọn tỉnh/thành phố"
+                            value={formData.province || undefined}
+                            onChange={(v) => handleSelectChange("province", v)}
+                            showSearch
+                            optionFilterProp="children"
+                          >
+                            {PROVINCES.map((p) => (
+                              <Option key={p.code} value={p.code}>
+                                {p.name}
+                              </Option>
+                            ))}
+                          </Select>
+                          {errors.province && (
+                            <p className="text-xs text-red-500">
+                              {errors.province}
+                            </p>
+                          )}
+                        </div>
+                        <div className="space-y-1">
+                          <label className="text-xs font-semibold text-gray-600">
+                            Quận/Huyện
+                          </label>
+                          <Select
+                            className="w-full"
+                            size="large"
+                            placeholder={
+                              formData.province
+                                ? "Chọn quận/huyện"
+                                : "Chọn tỉnh/thành phố trước"
+                            }
+                            value={formData.district || undefined}
+                            onChange={(v) => handleSelectChange("district", v)}
+                            disabled={!formData.province}
+                            showSearch
+                            optionFilterProp="children"
+                          >
+                            {availableDistricts.map((d) => (
+                              <Option key={d.code} value={d.code}>
+                                {d.name}
+                              </Option>
+                            ))}
+                          </Select>
+                          {errors.district && (
+                            <p className="text-xs text-red-500">
+                              {errors.district}
+                            </p>
+                          )}
+                        </div>
+                      </div>
+
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div className="space-y-1">
+                          <label className="text-xs font-semibold text-gray-600">
+                            Phường/Xã
+                          </label>
+                          <Select
+                            className="w-full"
+                            size="large"
+                            placeholder={
+                              formData.district
+                                ? "Chọn phường/xã"
+                                : "Chọn quận/huyện trước"
+                            }
+                            value={formData.ward || undefined}
+                            onChange={(v) => handleSelectChange("ward", v)}
+                            disabled={!formData.district}
+                            showSearch
+                            optionFilterProp="children"
+                          >
+                            {availableWards.length > 0 ? (
+                              availableWards.map((w) => (
+                                <Option key={w.code} value={w.code}>
+                                  {w.name}
+                                </Option>
+                              ))
+                            ) : (
+                              <Option value="_other">
+                                Khác (nhập trong địa chỉ cụ thể)
+                              </Option>
+                            )}
+                          </Select>
+                          {errors.ward && (
+                            <p className="text-xs text-red-500">
+                              {errors.ward}
+                            </p>
+                          )}
+                        </div>
+                        <div className="space-y-1">
+                          <label className="text-xs font-semibold text-gray-600">
+                            Số nhà, tên đường
+                          </label>
+                          <Input
+                            name="street_address"
+                            placeholder="VD: 123 Nguyễn Văn Linh"
+                            value={formData.street_address}
+                            onChange={handleInputChange}
+                            className={inputCls}
+                            size="large"
+                          />
+                          {errors.street_address && (
+                            <p className="text-xs text-red-500">
+                              {errors.street_address}
+                            </p>
+                          )}
+                        </div>
+                      </div>
+
+                      {/* Address preview */}
+                      {(formData.street_address ||
+                        formData.ward ||
+                        formData.district ||
+                        formData.province) && (
+                        <motion.div
+                          initial={{ opacity: 0, height: 0 }}
+                          animate={{ opacity: 1, height: "auto" }}
+                          className="bg-green-50 border border-green-100 rounded-xl p-3 text-sm"
+                        >
+                          <span className="text-gray-500">
+                            Địa chỉ đầy đủ:{" "}
+                          </span>
+                          <span className="font-medium text-gray-700">
+                            {buildFullAddress() || "Đang nhập..."}
+                          </span>
+                        </motion.div>
+                      )}
+                    </div>
+
+                    {/* Representative */}
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <div className="space-y-1">
+                        <label className="text-sm font-semibold text-gray-700">
+                          Người đại diện <span className="text-red-500">*</span>
+                        </label>
+                        <Input
+                          name="representative_name"
+                          placeholder="Họ và tên"
+                          value={formData.representative_name}
+                          onChange={handleInputChange}
+                          prefix={<User className="w-4 h-4 text-gray-400" />}
+                          className={inputCls}
+                          size="large"
+                        />
+                        {errors.representative_name && (
+                          <p className="text-xs text-red-500">
+                            {errors.representative_name}
+                          </p>
+                        )}
+                      </div>
+                      <div className="space-y-1">
+                        <label className="text-sm font-semibold text-gray-700">
+                          Chức vụ
+                        </label>
+                        <Input
+                          name="representative_position"
+                          placeholder="VD: Hiệu trưởng"
+                          value={formData.representative_position}
+                          onChange={handleInputChange}
+                          className={inputCls}
+                          size="large"
+                        />
+                      </div>
+                    </div>
+
+                    <div className="flex justify-end pt-2">
+                      <motion.button
+                        type="button"
+                        whileHover={{ scale: 1.02 }}
+                        whileTap={{ scale: 0.97 }}
+                        onClick={() => {
+                          if (validateStep1()) setStep(2);
+                        }}
+                        className="px-6 py-2.5 rounded-xl bg-green-500 hover:bg-green-600 text-white font-semibold text-sm transition-all shadow-md"
                       >
-                        <Button icon={<UploadOutlined />} size="large" block>
-                          {licenseFile ? licenseFile.name : "Tải lên giấy phép"}
-                        </Button>
-                      </Upload>
+                        Tiếp tục →
+                      </motion.button>
                     </div>
                   </div>
+                </Card>
+              </motion.div>
+            )}
 
-                  <div className="flex justify-between pt-4">
-                    <Button size="large" onClick={() => setCurrentStep(0)}>
-                      Quay lại
-                    </Button>
-                    <Button
-                      type="primary"
-                      size="large"
-                      onClick={handleSubmit}
-                      loading={isLoading}
-                      className="bg-green-600 hover:bg-green-700"
-                    >
-                      {isLoading ? "Đang gửi..." : "Gửi đăng ký"}
-                    </Button>
+            {/* Step 2 */}
+            {step === 2 && (
+              <motion.div
+                key="step2"
+                initial={{ opacity: 0, x: 30 }}
+                animate={{ opacity: 1, x: 0 }}
+                exit={{ opacity: 0, x: -30 }}
+                transition={{ duration: 0.3 }}
+              >
+                <Card
+                  className="rounded-3xl shadow-xl border-0"
+                  bodyStyle={{ padding: "32px 28px" }}
+                >
+                  <div className="space-y-5">
+                    <div className="flex items-center gap-2 mb-1">
+                      <FileText className="w-5 h-5 text-green-500" />
+                      <h2 className="text-lg font-bold text-gray-800">
+                        Chi tiết & Tài liệu
+                      </h2>
+                    </div>
+                    <p className="text-sm text-gray-500 -mt-3">
+                      Thông tin bổ sung và tài liệu đính kèm
+                    </p>
+
+                    {/* School type & student count */}
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <div className="space-y-1">
+                        <label className="text-sm font-semibold text-gray-700">
+                          Loại trường <span className="text-red-500">*</span>
+                        </label>
+                        <Select
+                          className="w-full"
+                          size="large"
+                          value={formData.school_type}
+                          onChange={(v) => handleSelectChange("school_type", v)}
+                        >
+                          <Option value="public">Công lập</Option>
+                          <Option value="private">Tư thục</Option>
+                        </Select>
+                      </div>
+                      <div className="space-y-1">
+                        <label className="text-sm font-semibold text-gray-700">
+                          Số lượng học sinh
+                        </label>
+                        <Input
+                          name="student_count"
+                          type="number"
+                          placeholder="VD: 500"
+                          value={formData.student_count}
+                          onChange={handleInputChange}
+                          className={inputCls}
+                          size="large"
+                        />
+                      </div>
+                    </div>
+
+                    {/* Website & Tax */}
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <div className="space-y-1">
+                        <label className="text-sm font-semibold text-gray-700">
+                          Website
+                        </label>
+                        <Input
+                          name="website"
+                          placeholder="https://school.edu.vn"
+                          value={formData.website}
+                          onChange={handleInputChange}
+                          prefix={<Globe className="w-4 h-4 text-gray-400" />}
+                          className={inputCls}
+                          size="large"
+                        />
+                        {errors.website && (
+                          <p className="text-xs text-red-500">
+                            {errors.website}
+                          </p>
+                        )}
+                      </div>
+                      <div className="space-y-1">
+                        <label className="text-sm font-semibold text-gray-700">
+                          Mã số thuế
+                        </label>
+                        <Input
+                          name="tax_code"
+                          placeholder="VD: 0123456789"
+                          value={formData.tax_code}
+                          onChange={handleInputChange}
+                          className={inputCls}
+                          size="large"
+                        />
+                      </div>
+                    </div>
+
+                    {/* Description */}
+                    <div className="space-y-1">
+                      <label className="text-sm font-semibold text-gray-700">
+                        Mô tả về trường
+                      </label>
+                      <TextArea
+                        name="description"
+                        placeholder="Giới thiệu ngắn về trường học..."
+                        value={formData.description}
+                        onChange={handleInputChange}
+                        rows={4}
+                        className={inputCls}
+                      />
+                    </div>
+
+                    {/* File uploads */}
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      {/* Logo */}
+                      <div className="space-y-1">
+                        <label className="text-sm font-semibold text-gray-700">
+                          Logo trường
+                        </label>
+                        <label className="block border-2 border-dashed border-gray-200 rounded-2xl p-5 text-center cursor-pointer hover:border-green-400 transition-colors">
+                          {logoPreview ? (
+                            <div className="space-y-2">
+                              <img
+                                src={logoPreview}
+                                alt="Logo preview"
+                                className="w-20 h-20 mx-auto object-contain rounded-xl"
+                              />
+                              <p className="text-xs text-gray-500 truncate">
+                                {logoFile?.name}
+                              </p>
+                            </div>
+                          ) : (
+                            <>
+                              <Upload className="w-8 h-8 mx-auto text-gray-400 mb-2" />
+                              <p className="text-sm text-gray-400">
+                                Tải lên logo
+                              </p>
+                              <p className="text-xs text-gray-300">
+                                Tối đa 5MB
+                              </p>
+                            </>
+                          )}
+                          <input
+                            type="file"
+                            accept="image/*"
+                            onChange={handleLogoChange}
+                            className="hidden"
+                          />
+                        </label>
+                      </div>
+
+                      {/* License */}
+                      <div className="space-y-1">
+                        <label className="text-sm font-semibold text-gray-700">
+                          Giấy phép hoạt động
+                        </label>
+                        <label className="block border-2 border-dashed border-gray-200 rounded-2xl p-5 text-center cursor-pointer hover:border-green-400 transition-colors">
+                          {licenseFile ? (
+                            <div className="space-y-2">
+                              <FileText className="w-8 h-8 mx-auto text-green-500" />
+                              <p className="text-xs text-gray-500 truncate">
+                                {licenseFile.name}
+                              </p>
+                            </div>
+                          ) : (
+                            <>
+                              <Upload className="w-8 h-8 mx-auto text-gray-400 mb-2" />
+                              <p className="text-sm text-gray-400">
+                                Tải lên giấy phép
+                              </p>
+                              <p className="text-xs text-gray-300">
+                                PDF, tối đa 10MB
+                              </p>
+                            </>
+                          )}
+                          <input
+                            type="file"
+                            accept=".pdf,.jpg,.jpeg,.png"
+                            onChange={handleLicenseChange}
+                            className="hidden"
+                          />
+                        </label>
+                      </div>
+                    </div>
+
+                    {/* Actions */}
+                    <div className="flex justify-between pt-2">
+                      <motion.button
+                        type="button"
+                        whileHover={{ scale: 1.02 }}
+                        whileTap={{ scale: 0.97 }}
+                        onClick={() => setStep(1)}
+                        className="px-6 py-2.5 rounded-xl border-2 border-gray-200 text-gray-600 font-semibold text-sm hover:bg-gray-50 transition-all"
+                      >
+                        ← Quay lại
+                      </motion.button>
+                      <motion.button
+                        type="submit"
+                        whileHover={{ scale: isLoading ? 1 : 1.02 }}
+                        whileTap={{ scale: isLoading ? 1 : 0.97 }}
+                        disabled={isLoading}
+                        className="px-6 py-2.5 rounded-xl bg-green-500 hover:bg-green-600 disabled:opacity-60 text-white font-semibold text-sm transition-all shadow-md flex items-center gap-2"
+                      >
+                        {isLoading ? (
+                          <>
+                            <Loader2 className="w-4 h-4 animate-spin" />
+                            Đang gửi...
+                          </>
+                        ) : (
+                          "Gửi đăng ký"
+                        )}
+                      </motion.button>
+                    </div>
                   </div>
-                </div>
-              </Card>
-            </motion.div>
-          )}
-        </AnimatePresence>
+                </Card>
+              </motion.div>
+            )}
+          </AnimatePresence>
+        </form>
 
-        <motion.p
-          className="text-center text-sm text-gray-600 mt-6"
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          transition={{ delay: 0.6 }}
-        >
+        {/* Logout */}
+        <p className="text-center text-sm text-gray-400 mt-6">
           <button
-            onClick={() => message.info("Đăng xuất thành công")}
-            className="text-green-600 hover:text-green-700 transition-colors"
+            onClick={handleLogout}
+            className="hover:text-green-600 transition-colors underline underline-offset-2"
           >
             Đăng xuất
           </button>
-        </motion.p>
-      </motion.div>
+        </p>
+      </div>
     </div>
   );
 }

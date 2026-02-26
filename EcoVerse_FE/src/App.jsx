@@ -9,12 +9,19 @@ import Index from "./roles/guest";
 
 //=====================Authenticate Routes=======================
 import OptionPage from "./features/auth/pages/optionPage/optionPage";
-import SchoolAdminLayout from "@/roles/school/SchoolAdminLayout";
+import StudentLogin from "./features/auth/pages/student/studentLogin/studentLogin";
+
+import AdminAuth from "./features/auth/pages/admin/adminAuth/adminAuth";
+
 import SchoolAuth from "./features/auth/pages/school/schoolAuth/schoolAuth";
 import SchoolRegister from "./features/auth/pages/school/schoolRegister/schoolRegister";
-import StudentLogin from "./features/auth/pages/student/studentLogin/studentLogin";
+import SchoolPending from "./features/auth/pages/school/schoolPending/schoolPending";
+import SchoolRejected from "./features/auth/pages/school/schoolRejected/schoolRejected";
+
 import PartnershipAuth from "./features/auth/pages/partnership/partnershipAuth/partnershipAuth";
 import PartnershipRegister from "./features/auth/pages/partnership/partnershipRegister/partnershipRegister";
+import PartnershipPending from "./features/auth/pages/partnership/partnershipPending/partnershipPending";
+import PartnershipRejected from "./features/auth/pages/partnership/partnershipRejected/partnershipRejected";
 
 //======================Admin Routes==============================
 import AdminLayout from "./roles/admin/AdminLayout";
@@ -28,6 +35,7 @@ import AdminContent from "./roles/admin/pages/adminContent/adminContent";
 import AdminMarketPlace from "./roles/admin/pages/adminMarketPlace/adminMarketPlace";
 
 //=======================Student Routes==============================
+import { StudentProvider } from "./roles/student/context";
 import CampaignSelection from "./roles/student/pages/studentCampaignSelection/campaignSelection";
 import StudentProfile from "./roles/student/pages/studentProfile/studentProfile";
 import StudentLayout from "./roles/student/StudentLayout";
@@ -35,9 +43,11 @@ import StudentRewards from "./roles/student/pages/studentRewards/studentRewards"
 import StudentDashboardLayout from "./roles/student/components/studentDashboardLayout";
 import CampaignDashboard from "./roles/student/pages/studentCampaignDashboard/campaignDashboard";
 import StudentLeaderboard from "./roles/student/pages/studentLeaderboard/studentLeaderboard";
-import { StudentProvider } from "./roles/student/context";
 import StudentGame from "./roles/student/pages/studentGameSelection/studentGame";
 import StudentQuiz from "./roles/student/pages/studentQuizSelection/studentQuiz";
+
+//========================School Routes==============================
+import SchoolAdminLayout from "@/roles/school/SchoolAdminLayout";
 import {
   SchoolDashboard,
   // SchoolStudents,
@@ -58,10 +68,7 @@ import {
 //   ParentSettings
 // } from "@/modules/parent";
 
-// import SchoolPending from "./pages/auth/SchoolPending";
-// import SchoolRejected from "./pages/auth/SchoolRejected";
-// import AdminAuth from "./pages/auth/AdminAuth";
-// import NotFound from "./pages/NotFound";
+import NotFound from "./roles/notFound";
 
 const queryClient = new QueryClient();
 
@@ -85,14 +92,26 @@ const App = () => (
                 path="/auth/partnership/register"
                 element={<PartnershipRegister />}
               />
+              <Route
+                path="/auth/partnership/pending"
+                element={<PartnershipPending />}
+              />
+              <Route
+                path="/auth/partnership/rejected"
+                element={<PartnershipRejected />}
+              />
 
               <Route path="/auth/school" element={<SchoolAuth />} />
               <Route
                 path="/auth/school/register"
                 element={<SchoolRegister />}
               />
-              {/* <Route path="/auth/school/pending" element={<SchoolPending />} />
-            <Route path="/auth/school/rejected" element={<SchoolRejected />} /> */}
+              <Route path="/auth/school/pending" element={<SchoolPending />} />
+              <Route
+                path="/auth/school/rejected"
+                element={<SchoolRejected />}
+              />
+              <Route path="/auth/admin" element={<AdminAuth />} />
 
               {/* Student Routes */}
               <Route path="/student" element={<StudentLayout />}>
@@ -143,7 +162,7 @@ const App = () => (
               <Route path="settings" element={<ParentSettings />} />
             </Route> */}
 
-              {/* <Route path="*" element={<NotFound />} /> */}
+              <Route path="*" element={<NotFound />} />
             </Routes>
           </BrowserRouter>
         </StudentProvider>
