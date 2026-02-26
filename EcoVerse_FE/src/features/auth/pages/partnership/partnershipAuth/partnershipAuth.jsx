@@ -63,6 +63,7 @@ export default function PartnershipAuth() {
     try {
       await new Promise((r) => setTimeout(r, 1500));
       toast.success("Đăng nhập thành công!");
+      navigate("/partnership");
     } catch {
       toast.error("Đã xảy ra lỗi khi đăng nhập");
     } finally {

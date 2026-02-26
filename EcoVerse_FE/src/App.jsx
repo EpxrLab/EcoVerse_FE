@@ -49,23 +49,24 @@ import StudentQuiz from "./roles/student/pages/studentQuizSelection/studentQuiz"
 //========================School Routes==============================
 import SchoolAdminLayout from "@/roles/school/SchoolAdminLayout";
 import {
-  // SchoolDashboard,
-  // SchoolStudents,
+  SchoolDashboard,
   SchoolClasses,
   SchoolQuizzes,
   SchoolRewards,
-  // SchoolSubscription,
-  // SchoolLeaderboardPage
+  SchoolCampaigns,
+  SchoolSubscription,
+  SchoolLeaderboardPage,
 } from "@/roles/school";
 
-// import ParentLayout from "./components/parent/ParentLayout";
-// import {
-//   ParentHome,
-//   ParentChildren,
-//   ParentChildDetail,
-//   ParentStats,
-//   ParentSettings
-// } from "@/modules/parent";
+//========================Partnership Routes==============================
+import PartnershipLayout from "@/roles/partnership/PartnershipLayout";
+import {
+  PartnershipDashboard,
+  PartnershipCampaigns,
+  PartnershipQuizzes,
+  PartnershipLeaderboard,
+  PartnershipRewards,
+} from "@/roles/partnership";
 
 import NotFound from "./roles/notFound";
 
@@ -142,23 +143,27 @@ const App = () => (
 
               {/* School Routes (Protected) */}
               <Route path="/school" element={<SchoolAdminLayout />}>
-                {/* <Route index element={<SchoolDashboard />} />
-              <Route path="students" element={<SchoolStudents />} /> */}
+                <Route index element={<SchoolDashboard />} />
+                {/* <Route path="students" element={<SchoolStudents />} /> */}
                 <Route path="classes" element={<SchoolClasses />} />
                 <Route path="quizzes" element={<SchoolQuizzes />} />
                 <Route path="rewards" element={<SchoolRewards />} />
-                {/* <Route path="subscription" element={<SchoolSubscription />} />
-              <Route path="leaderboard" element={<SchoolLeaderboardPage />} /> */}
+                <Route path="campaigns" element={<SchoolCampaigns />} />
+                <Route path="subscription" element={<SchoolSubscription />} />
+                <Route path="leaderboard" element={<SchoolLeaderboardPage />} />
               </Route>
 
-              {/* Parent Routes (Mobile UI) */}
-              {/* <Route path="/parent" element={<ParentLayout />}>
-              <Route index element={<ParentHome />} />
-              <Route path="children" element={<ParentChildren />} />
-              <Route path="children/:childId" element={<ParentChildDetail />} />
-              <Route path="stats" element={<ParentStats />} />
-              <Route path="settings" element={<ParentSettings />} />
-            </Route> */}
+              {/* Partnership Routes (Protected) */}
+              <Route path="/partnership" element={<PartnershipLayout />}>
+                <Route index element={<PartnershipDashboard />} />
+                <Route path="campaigns" element={<PartnershipCampaigns />} />
+                <Route path="quizzes" element={<PartnershipQuizzes />} />
+                <Route
+                  path="leaderboard"
+                  element={<PartnershipLeaderboard />}
+                />
+                <Route path="rewards" element={<PartnershipRewards />} />
+              </Route>
 
               <Route path="*" element={<NotFound />} />
             </Routes>

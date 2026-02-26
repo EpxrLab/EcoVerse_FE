@@ -1,0 +1,1 @@
+export { usePartnership } from './usePartnership';
