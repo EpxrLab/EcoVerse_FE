@@ -1,4 +1,4 @@
-import { useRef, useState } from "react";
+import { useState } from "react";
 import { Button } from "@/shared/components/ui/button";
 import { Card, CardContent } from "@/shared/components/ui/card";
 import { Input } from "@/shared/components/ui/input";
@@ -25,6 +25,7 @@ import {
   DropdownMenuTrigger,
 } from "@/shared/components/ui/dropdown-menu";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/shared/components/ui/tabs";
+import { Progress } from "@/shared/components/ui/progress";
 import { 
   ArrowLeft,
   Upload, 
@@ -47,9 +48,14 @@ import {
   Lock,
   Eye,
   EyeOff,
+  SendHorizonal,
+  CheckCircle2,
+  Loader2,
 } from "lucide-react";
 import { cn } from "@/shared/lib/utils";
+import { toast } from "sonner";
 import { StudentFormDialog } from "./StudentFormDialog";
+import { EmailPreviewDialog } from "./EmailPreviewDialog";
 
 const initialStudentForm = {
   student_name: '',
@@ -77,18 +83,20 @@ export function StudentListView({
 }) {
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
-  const [isImportDialogOpen, setIsImportDialogOpen] = useState(false);
   const [studentForm, setStudentForm] = useState(initialStudentForm);
   const [editingStudentId, setEditingStudentId] = useState(null);
-  const [importedStudents, setImportedStudents] = useState([]);
   const [searchQuery, setSearchQuery] = useState('');
   const [activeTab, setActiveTab] = useState('students');
   const [highlightedParentId, setHighlightedParentId] = useState(null);
-  const fileInputRef = useRef(null);
 
   // State for showing/hiding passwords
   const [showStudentPasswords, setShowStudentPasswords] = useState({});
   const [showParentPasswords, setShowParentPasswords] = useState({});
+
+  // Email sending state
+  const [emailPreviewData, setEmailPreviewData] = useState(null); // { parent, student }
+  const [isSendingAll, setIsSendingAll] = useState(false);
+  const [sentEmails, setSentEmails] = useState(new Set());
 
   const filteredStudents = students.filter(s => 
     s.student_name.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -106,9 +114,11 @@ export function StudentListView({
           name: student.parent_name || '',
           phone: student.parent_phone || '',
           email: student.parent_email || '',
+          username: student.parent_username || '',
           password: student.parent_password || '',
           studentName: student.student_name,
           studentId: student.id,
+          student: student,
         });
       }
       return acc;
@@ -126,6 +136,27 @@ export function StudentListView({
     setActiveTab('parents');
     setHighlightedParentId(studentId);
     setTimeout(() => setHighlightedParentId(null), 2000);
+  };
+
+  const openEmailPreview = (parent, student) => {
+    setEmailPreviewData({ parent, student });
+  };
+
+  const handleSendAllEmails = async () => {
+    const withEmail = parentsData.filter(p => p.email);
+    if (withEmail.length === 0) {
+      toast.error('Không có phụ huynh nào có email để gửi');
+      return;
+    }
+    setIsSendingAll(true);
+    const newSent = new Set(sentEmails);
+    for (const parent of withEmail) {
+      await new Promise(r => setTimeout(r, 400));
+      newSent.add(parent.id);
+      setSentEmails(new Set(newSent));
+    }
+    setIsSendingAll(false);
+    toast.success(`Đã gửi email đến ${withEmail.length} phụ huynh`);
   };
 
   const handleAddStudent = async () => {
@@ -166,37 +197,6 @@ export function StudentListView({
     setIsEditDialogOpen(true);
   };
 
-  const handleFileChange = (e) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-
-    const reader = new FileReader();
-    reader.onload = (event) => {
-      const text = event.target?.result;
-      const lines = text.split('\n').filter(line => line.trim());
-      const startIndex = lines[0]?.toLowerCase().includes('name') || lines[0]?.toLowerCase().includes('tên') ? 1 : 0;
-      
-      const parsed = lines.slice(startIndex).map((line, index) => {
-        const parts = line.split(',');
-        return {
-          student_name: parts[0]?.trim() || line.trim(),
-          rowIndex: index + startIndex + 1,
-        };
-      }).filter(s => s.student_name);
-
-      setImportedStudents(parsed);
-    };
-    reader.readAsText(file);
-  };
-
-  const handleImport = async () => {
-    const success = await onImportStudents(selectedClass.id, importedStudents);
-    if (success) {
-      setImportedStudents([]);
-      setIsImportDialogOpen(false);
-      if (fileInputRef.current) fileInputRef.current.value = '';
-    }
-  };
 
   return (
     <div className="space-y-6 animate-fade-in">
@@ -224,68 +224,6 @@ export function StudentListView({
         </div>
 
         <div className="flex items-center gap-3">
-          <Dialog open={isImportDialogOpen} onOpenChange={setIsImportDialogOpen}>
-            <DialogTrigger asChild>
-              <Button variant="outline" className="border-eco-blue/30 hover:bg-eco-blue/10 hover:border-eco-blue/50">
-                <Upload className="w-4 h-4 mr-2" />
-                Import
-              </Button>
-            </DialogTrigger>
-            <DialogContent className="max-w-lg">
-              <DialogHeader>
-                <DialogTitle className="flex items-center gap-2">
-                  <div className="w-10 h-10 rounded-xl bg-eco-blue/10 flex items-center justify-center">
-                    <FileSpreadsheet className="w-5 h-5 text-eco-blue" />
-                  </div>
-                  Import danh sách học sinh
-                </DialogTitle>
-              </DialogHeader>
-              <div className="space-y-4 py-4">
-                <div className="p-4 rounded-xl bg-muted/50 border border-border">
-                  <p className="text-sm text-muted-foreground mb-3">
-                    Hỗ trợ file CSV hoặc TXT. Mỗi dòng là tên một học sinh.
-                  </p>
-                  <Input
-                    ref={fileInputRef}
-                    type="file"
-                    accept=".csv,.txt"
-                    onChange={handleFileChange}
-                    className="bg-background"
-                  />
-                </div>
-
-                {importedStudents.length > 0 && (
-                  <div className="space-y-2">
-                    <p className="text-sm font-medium">
-                      Xem trước ({importedStudents.length} học sinh):
-                    </p>
-                    <div className="max-h-48 overflow-y-auto space-y-1 p-3 rounded-lg bg-muted/30 border">
-                      {importedStudents.slice(0, 10).map((student, index) => (
-                        <div key={index} className="text-sm py-1.5 px-3 rounded-lg bg-background">
-                          {student.student_name}
-                        </div>
-                      ))}
-                      {importedStudents.length > 10 && (
-                        <p className="text-xs text-muted-foreground text-center py-2">
-                          ... và {importedStudents.length - 10} học sinh khác
-                        </p>
-                      )}
-                    </div>
-                  </div>
-                )}
-
-                <Button
-                  className="w-full bg-eco-blue hover:bg-eco-blue/90"
-                  onClick={handleImport}
-                  disabled={importedStudents.length === 0}
-                >
-                  <Upload className="w-4 h-4 mr-2" />
-                  Import {importedStudents.length} học sinh
-                </Button>
-              </div>
-            </DialogContent>
-          </Dialog>
-
           <Button 
             className="bg-eco-green hover:bg-eco-green/90 text-white font-semibold shadow-lg shadow-eco-green/20"
             onClick={() => {
@@ -401,16 +339,32 @@ export function StudentListView({
         </Card>
       ) : (
         <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v)}>
-          <TabsList className="mb-4">
-            <TabsTrigger value="students" className="gap-2">
-              <Users className="w-4 h-4" />
-              Học sinh ({filteredStudents.length})
-            </TabsTrigger>
-            <TabsTrigger value="parents" className="gap-2">
-              <User className="w-4 h-4" />
-              Phụ huynh ({parentsData.length})
-            </TabsTrigger>
-          </TabsList>
+          <div className="flex items-center justify-between mb-4 gap-3">
+            <TabsList>
+              <TabsTrigger value="students" className="gap-2">
+                <Users className="w-4 h-4" />
+                Học sinh ({filteredStudents.length})
+              </TabsTrigger>
+              <TabsTrigger value="parents" className="gap-2">
+                <User className="w-4 h-4" />
+                Phụ huynh ({parentsData.length})
+              </TabsTrigger>
+            </TabsList>
+            {activeTab === 'parents' && parentsData.length > 0 && (
+              <Button
+                size="sm"
+                className="bg-eco-blue hover:bg-eco-blue/90 shadow-md"
+                onClick={handleSendAllEmails}
+                disabled={isSendingAll}
+              >
+                {isSendingAll ? (
+                  <><Loader2 className="w-3.5 h-3.5 mr-1.5 animate-spin" /> Đang gửi...</>
+                ) : (
+                  <><SendHorizonal className="w-3.5 h-3.5 mr-1.5" /> Gửi tất cả ({parentsData.filter(p => p.email).length})</>
+                )}
+              </Button>
+            )}
+          </div>
 
           <TabsContent value="students">
             {filteredStudents.length === 0 ? (
@@ -429,7 +383,7 @@ export function StudentListView({
                     <TableRow className="bg-muted/50 hover:bg-muted/50">
                       <TableHead className="w-12 text-center">#</TableHead>
                       <TableHead>Học sinh</TableHead>
-                      <TableHead className="text-center">Mã HS</TableHead>
+                      <TableHead className="text-center">Tên đăng nhập</TableHead>
                       <TableHead className="text-center">
                         <div className="flex items-center justify-center gap-1">
                           <Lock className="w-4 h-4" />
@@ -495,7 +449,7 @@ export function StudentListView({
                         </TableCell>
                         <TableCell className="text-center">
                           <span className="font-mono text-sm text-muted-foreground">
-                            {student.student_code || '-'}
+                            {student.student_username || student.student_code || '-'}
                           </span>
                         </TableCell>
                         <TableCell className="text-center">
@@ -637,7 +591,7 @@ export function StudentListView({
                       <TableHead className="text-center">
                         <div className="flex items-center justify-center gap-1">
                           <Phone className="w-4 h-4" />
-                          Số điện thoại
+                          Số ĐT
                         </div>
                       </TableHead>
                       <TableHead className="text-center">
@@ -646,12 +600,14 @@ export function StudentListView({
                           Email
                         </div>
                       </TableHead>
+                      <TableHead className="text-center">Tên đăng nhập</TableHead>
                       <TableHead className="text-center">
                         <div className="flex items-center justify-center gap-1">
                           <Lock className="w-4 h-4" />
                           Mật khẩu
                         </div>
                       </TableHead>
+                      <TableHead className="w-28 text-center">Email TK</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
@@ -698,6 +654,11 @@ export function StudentListView({
                           )}
                         </TableCell>
                         <TableCell className="text-center">
+                          <span className="font-mono text-sm text-muted-foreground">
+                            {parent.username || '-'}
+                          </span>
+                        </TableCell>
+                        <TableCell className="text-center">
                           <div className="flex items-center justify-center gap-1">
                             <span className="font-mono text-sm text-muted-foreground">
                               {parent.password 
@@ -717,6 +678,30 @@ export function StudentListView({
                               </button>
                             )}
                           </div>
+                        </TableCell>
+                        <TableCell className="text-center">
+                          {sentEmails.has(parent.id) ? (
+                            <div className="flex items-center justify-center gap-1 text-eco-green text-xs">
+                              <CheckCircle2 className="w-3.5 h-3.5" />
+                              Đã gửi
+                            </div>
+                          ) : (
+                            <Button
+                              size="sm"
+                              variant="ghost"
+                              className={cn(
+                                "h-7 px-2 text-xs gap-1",
+                                parent.email
+                                  ? "text-eco-blue hover:bg-eco-blue/10"
+                                  : "text-muted-foreground cursor-not-allowed opacity-50"
+                              )}
+                              onClick={() => parent.email && openEmailPreview(parent, parent.student)}
+                              disabled={!parent.email}
+                            >
+                              <Mail className="w-3.5 h-3.5" />
+                              Gửi
+                            </Button>
+                          )}
                         </TableCell>
                       </TableRow>
                     ))}
@@ -749,6 +734,21 @@ export function StudentListView({
         onFormChange={setStudentForm}
         onSubmit={handleUpdateStudent}
       />
+
+      {/* Email Preview Dialog */}
+      {emailPreviewData && (
+        <EmailPreviewDialog
+          isOpen={!!emailPreviewData}
+          onClose={() => {
+            setEmailPreviewData(null);
+            if (emailPreviewData?.parent) {
+              setSentEmails(prev => new Set([...prev, emailPreviewData.parent.id]));
+            }
+          }}
+          parent={emailPreviewData.parent}
+          student={emailPreviewData.student}
+        />
+      )}
     </div>
   );
 }

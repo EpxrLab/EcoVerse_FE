@@ -27,6 +27,12 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "@/shared/components/ui/alert-dialog";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/shared/components/ui/dropdown-menu";
 import { 
   Plus, 
   GraduationCap,
@@ -37,11 +43,20 @@ import {
   Edit,
   Loader2,
   Layers,
+  Sparkles,
+  FileSpreadsheet,
+  ArrowRight,
+  Users,
+  Mail,
+  MoreVertical,
+  Settings,
+  Target,
 } from "lucide-react";
+import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/shared/components/ui/tabs";
 import { useClasses } from '../../features/classes/hooks/useClasses';
 import { useClassForm } from '../../features/classes/hooks';
-import { StudentListView, GradeGroup } from '../../components/classes';
-import { ClassStats, ClassForm, AcademicYearForm } from '../../features/classes/components';
+import { StudentListView, GradeGroup, SchoolAccountsView } from '../../components/classes';
+import { ClassStats, ClassForm, AcademicYearForm, BulkImportDialog } from '../../features/classes/components';
 import { cn } from "@/shared/lib/utils";
 
 export default function SchoolClasses() {
@@ -50,6 +65,7 @@ export default function SchoolClasses() {
     selectedYear,
     gradeGroups,
     classStudents,
+    allStudents,
     stats,
     selectedClass,
     isLoading,
@@ -57,6 +73,8 @@ export default function SchoolClasses() {
     setIsAddDialogOpen,
     isAddYearDialogOpen,
     setIsAddYearDialogOpen,
+    isBulkImportOpen,
+    setIsBulkImportOpen,
     setSelectedYear,
     setSelectedClass,
     createAcademicYear,
@@ -70,9 +88,9 @@ export default function SchoolClasses() {
     updateStudent,
     deleteStudent,
     importStudents,
+    bulkImport,
   } = useClasses();
 
-  // Use class form hook for all form logic
   const {
     classForm,
     updateClassForm,
@@ -90,6 +108,7 @@ export default function SchoolClasses() {
   const [copyFromYearId, setCopyFromYearId] = useState('');
   const [editingClass, setEditingClass] = useState(null);
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
+  const [mainTab, setMainTab] = useState('classes');
 
   // Handlers
   const handleCreateClass = async () => {
@@ -144,6 +163,10 @@ export default function SchoolClasses() {
     setIsEditDialogOpen(true);
   };
 
+  const handleBulkImport = async (parsedRows) => {
+    return await bulkImport(parsedRows);
+  };
+
   // View: Student List for Selected Class
   if (selectedClass) {
     return (
@@ -154,31 +177,30 @@ export default function SchoolClasses() {
         onAddStudent={handleAddStudent}
         onUpdateStudent={handleUpdateStudent}
         onDeleteStudent={deleteStudent}
-        onImportStudents={importStudents}
       />
     );
   }
 
   // Main View
   return (
-    <div className="space-y-6 animate-fade-in">
-      {/* Header */}
+    <div className="space-y-5 animate-fade-in">
+      {/* ─── Header Row ─── */}
       <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
-        <div className="flex items-center gap-4">
-          <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-eco-blue to-eco-green flex items-center justify-center shadow-lg shadow-eco-blue/20">
-            <GraduationCap className="w-7 h-7 text-white" />
+        {/* Title */}
+        <div className="flex items-center gap-3.5">
+          <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-eco-blue to-eco-green flex items-center justify-center shadow-lg shadow-eco-blue/20">
+            <GraduationCap className="w-6 h-6 text-white" />
           </div>
           <div>
-            <h1 className="text-2xl font-bold text-foreground">
-              Quản lý Lớp & Học sinh
-            </h1>
+            <h1 className="text-2xl font-bold text-foreground">Quản lý Lớp & Học sinh</h1>
+            <p className="text-sm text-muted-foreground">Niên khóa · Khối · Lớp · Tài khoản</p>
           </div>
         </div>
 
-        <div className="flex flex-wrap items-center gap-3">
-          {/* Academic Year Selector */}
-          <div className="flex items-center gap-2 px-3 py-1.5 rounded-xl bg-muted/50 border border-border">
-            <Calendar className="w-4 h-4 text-muted-foreground" />
+        {/* Actions — compact */}
+        <div className="flex items-center gap-2.5">
+          {/* Year selector */}
+          {academicYears.length > 0 && (
             <Select
               value={selectedYear?.id || ''}
               onValueChange={(value) => {
@@ -186,7 +208,8 @@ export default function SchoolClasses() {
                 if (year) setSelectedYear(year);
               }}
             >
-              <SelectTrigger className="w-[160px] border-0 bg-transparent h-8">
+              <SelectTrigger className="w-[180px] h-9 bg-background border-border">
+                <Calendar className="w-3.5 h-3.5 mr-1.5 text-muted-foreground shrink-0" />
                 <SelectValue placeholder="Chọn niên khóa" />
               </SelectTrigger>
               <SelectContent>
@@ -195,7 +218,7 @@ export default function SchoolClasses() {
                     <div className="flex items-center gap-2">
                       {year.name}
                       {year.is_current && (
-                        <Badge variant="secondary" className="text-xs bg-eco-green/10 text-eco-green">
+                        <Badge variant="secondary" className="text-[10px] bg-eco-green/10 text-eco-green px-1.5 py-0">
                           Hiện tại
                         </Badge>
                       )}
@@ -204,90 +227,152 @@ export default function SchoolClasses() {
                 ))}
               </SelectContent>
             </Select>
-          </div>
-
-          {/* Add Year Button */}
-          <Dialog open={isAddYearDialogOpen} onOpenChange={setIsAddYearDialogOpen}>
-            <DialogTrigger asChild>
-              <Button variant="outline" className="border-eco-blue/30 hover:bg-eco-blue/10 hover:border-eco-blue/50">
-                <History className="w-4 h-4 mr-2" />
-                Tạo niên khóa
-              </Button>
-            </DialogTrigger>
-            <DialogContent className="max-w-md">
-              <DialogHeader>
-                <DialogTitle className="flex items-center gap-2">
-                  <div className="w-10 h-10 rounded-xl bg-eco-blue/10 flex items-center justify-center">
-                    <Calendar className="w-5 h-5 text-eco-blue" />
-                  </div>
-                  Tạo niên khóa mới
-                </DialogTitle>
-              </DialogHeader>
-              <AcademicYearForm
-                formData={yearForm}
-                existingYears={academicYears}
-                copyFromYearId={copyFromYearId}
-                onFormChange={updateYearForm}
-                onCopyFromChange={setCopyFromYearId}
-                onGenerateYearName={() => updateYearForm({ name: generateYearName() })}
-                onSubmit={handleCreateYear}
-              />
-            </DialogContent>
-          </Dialog>
-
-          {/* Add Class Button */}
-          {selectedYear && (
-            <Button 
-              className="bg-eco-green hover:bg-eco-green/90 shadow-lg shadow-eco-green/20"
-              onClick={() => setIsAddDialogOpen(true)}
-            >
-              <Plus className="w-4 h-4 mr-2" />
-              Tạo lớp mới
-            </Button>
           )}
+
+          {/* More actions dropdown — gộp Tạo niên khóa + Tạo lớp */}
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="outline" size="sm" className="h-9 gap-1.5">
+                <Plus className="w-3.5 h-3.5" />
+                Tạo mới
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end" className="w-44">
+              <DropdownMenuItem onClick={() => setIsAddYearDialogOpen(true)} className="gap-2 cursor-pointer">
+                <History className="w-4 h-4 text-eco-blue" />
+                Tạo niên khóa
+              </DropdownMenuItem>
+              {selectedYear && (
+                <DropdownMenuItem onClick={() => setIsAddDialogOpen(true)} className="gap-2 cursor-pointer">
+                  <Layers className="w-4 h-4 text-eco-green" />
+                  Tạo lớp học
+                </DropdownMenuItem>
+              )}
+            </DropdownMenuContent>
+          </DropdownMenu>
+
+          {/* Primary CTA */}
+          <Button
+            className="h-9 bg-gradient-to-r from-eco-blue to-eco-green hover:opacity-90 shadow-md shadow-eco-blue/15 text-white font-semibold gap-1.5"
+            onClick={() => setIsBulkImportOpen(true)}
+          >
+            <Sparkles className="w-4 h-4" />
+            Import 
+          </Button>
         </div>
       </div>
 
-      {/* Year Settings Card */}
-      {selectedYear && (
-        <Card className="border-2 border-eco-leaf/20 bg-gradient-to-r from-eco-leaf/5 to-transparent">
-          <CardContent className="p-4">
-            <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-              <div className="flex items-center gap-4">
-                <div className="w-12 h-12 rounded-xl bg-eco-leaf/10 flex items-center justify-center">
-                  <Calendar className="w-6 h-6 text-eco-leaf" />
-                </div>
-                <div>
-                  <div className="flex items-center gap-2">
-                    <h3 className="font-bold text-lg">{selectedYear.name}</h3>
-                    {selectedYear.is_current && (
-                      <Badge className="bg-eco-green text-white">
-                        <Star className="w-3 h-3 mr-1" />
-                        Hiện tại
-                      </Badge>
-                    )}
+      {/* ─── Hero Empty State — no academic years ─── */}
+      {!selectedYear && academicYears.length === 0 && (
+        <Card className="border-2 border-dashed border-muted-foreground/20 overflow-hidden">
+          <CardContent className="p-0">
+            <div className="bg-gradient-to-r from-eco-blue/10 via-eco-green/10 to-eco-leaf/10 px-8 pt-10 pb-6 text-center">
+              <div className="w-20 h-20 mx-auto rounded-2xl bg-gradient-to-br from-eco-blue to-eco-green flex items-center justify-center mb-4 shadow-lg shadow-eco-blue/20">
+                <Sparkles className="w-10 h-10 text-white" />
+              </div>
+              <h2 className="text-2xl font-bold mb-2">Bắt đầu với Import hàng loạt</h2>
+              <p className="text-muted-foreground max-w-md mx-auto text-sm leading-relaxed">
+                Tải lên 1 file CSV để tự động tạo niên khóa, khối, lớp, học sinh và phụ huynh — kèm tài khoản đăng nhập
+              </p>
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-4 divide-y sm:divide-y-0 sm:divide-x divide-border">
+              {[
+                { icon: FileSpreadsheet, label: '1. Upload CSV', desc: 'Theo mẫu có sẵn', color: 'text-eco-blue' },
+                { icon: Calendar, label: '2. Tạo niên khóa', desc: 'Tự động từ file', color: 'text-eco-green' },
+                { icon: Layers, label: '3. Lớp & Học sinh', desc: 'Theo khối', color: 'text-eco-leaf' },
+                { icon: Mail, label: '4. Gửi tài khoản', desc: 'Email phụ huynh', color: 'text-eco-orange' },
+              ].map(({ icon: Icon, label, desc, color }) => (
+                <div key={label} className="flex flex-col items-center text-center p-5 gap-2">
+                  <div className="w-10 h-10 rounded-xl bg-muted/60 flex items-center justify-center">
+                    <Icon className={cn("w-5 h-5", color)} />
                   </div>
-                  <p className="text-sm text-muted-foreground">
-                    {new Date(selectedYear.start_date).toLocaleDateString('vi-VN')} - {new Date(selectedYear.end_date).toLocaleDateString('vi-VN')}
-                  </p>
+                  <p className="text-sm font-semibold">{label}</p>
+                  <p className="text-xs text-muted-foreground">{desc}</p>
+                </div>
+              ))}
+            </div>
+
+            <div className="px-8 py-5 flex flex-col sm:flex-row items-center justify-center gap-3 border-t border-border bg-muted/20">
+              <Button
+                className="bg-gradient-to-r from-eco-blue to-eco-green hover:opacity-90 shadow-lg shadow-eco-blue/20 text-white font-semibold"
+                onClick={() => setIsBulkImportOpen(true)}
+              >
+                <Sparkles className="w-4 h-4 mr-2" />
+                Import hàng loạt ngay
+                <ArrowRight className="w-4 h-4 ml-2" />
+              </Button>
+              <Button variant="outline" onClick={() => setIsAddYearDialogOpen(true)}>
+                <History className="w-4 h-4 mr-2" />
+                Tạo thủ công
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
+      {/* ─── Main Tabs — full view switch ─── */}
+      {selectedYear && (
+        <Tabs value={mainTab} onValueChange={setMainTab}>
+          <TabsList className="h-10 p-1 bg-muted/60 rounded-xl">
+            <TabsTrigger
+              value="classes"
+              className="gap-2 rounded-lg px-4 data-[state=active]:bg-background data-[state=active]:shadow-sm"
+            >
+              <Layers className="w-4 h-4" />
+              Lớp học
+            </TabsTrigger>
+            <TabsTrigger
+              value="accounts"
+              className="gap-2 rounded-lg px-4 data-[state=active]:bg-background data-[state=active]:shadow-sm"
+            >
+              <Mail className="w-4 h-4" />
+              Tài khoản & Email
+              {allStudents.length > 0 && (
+                <Badge variant="secondary" className="ml-0.5 h-5 min-w-5 px-1.5 text-[10px] bg-eco-blue/10 text-eco-blue font-semibold">
+                  {allStudents.length}
+                </Badge>
+              )}
+            </TabsTrigger>
+          </TabsList>
+
+          {/* ── Classes Tab ── */}
+          <TabsContent value="classes" className="mt-4 space-y-4">
+            {/* Year Info Bar — only shown in classes tab */}
+            <div className="flex items-center justify-between rounded-xl border border-eco-leaf/20 bg-gradient-to-r from-eco-leaf/5 via-transparent to-transparent px-4 py-2.5">
+              <div className="flex items-center gap-3">
+                <div className="w-9 h-9 rounded-lg bg-eco-leaf/10 flex items-center justify-center">
+                  <Calendar className="w-4.5 h-4.5 text-eco-leaf" />
+                </div>
+                <div className="flex items-center gap-2.5">
+                  <span className="font-semibold text-sm">{selectedYear.name}</span>
+                  {selectedYear.is_current && (
+                    <Badge className="bg-eco-green/15 text-eco-green border-eco-green/30 text-[10px] px-1.5 py-0 font-medium">
+                      <Star className="w-2.5 h-2.5 mr-0.5" />
+                      Hiện tại
+                    </Badge>
+                  )}
+                  <span className="text-xs text-muted-foreground">
+                    {new Date(selectedYear.start_date).toLocaleDateString('vi-VN')} – {new Date(selectedYear.end_date).toLocaleDateString('vi-VN')}
+                  </span>
                 </div>
               </div>
-              <div className="flex items-center gap-2">
+              <div className="flex items-center gap-1">
                 {!selectedYear.is_current && (
                   <Button 
-                    variant="outline" 
+                    variant="ghost" 
                     size="sm"
+                    className="h-7 text-xs hover:bg-eco-green/10 hover:text-eco-green gap-1"
                     onClick={() => setCurrentAcademicYear(selectedYear.id)}
-                    className="hover:bg-eco-green/10 hover:text-eco-green hover:border-eco-green/30"
                   >
-                    <Star className="w-4 h-4 mr-1" />
+                    <Star className="w-3 h-3" />
                     Đặt hiện tại
                   </Button>
                 )}
                 <AlertDialog>
                   <AlertDialogTrigger asChild>
-                    <Button variant="ghost" size="sm" className="text-destructive hover:bg-destructive/10">
-                      <Trash2 className="w-4 h-4" />
+                    <Button variant="ghost" size="sm" className="h-7 w-7 p-0 text-muted-foreground hover:text-destructive hover:bg-destructive/10">
+                      <Trash2 className="w-3.5 h-3.5" />
                     </Button>
                   </AlertDialogTrigger>
                   <AlertDialogContent>
@@ -310,123 +395,140 @@ export default function SchoolClasses() {
                 </AlertDialog>
               </div>
             </div>
-          </CardContent>
-        </Card>
-      )}
 
-      {/* No Year Selected */}
-      {!selectedYear && academicYears.length === 0 && (
-        <Card className="border-2 border-dashed border-muted-foreground/30">
-          <CardContent className="p-12 text-center">
-            <div className="w-20 h-20 mx-auto rounded-full bg-muted/50 flex items-center justify-center mb-4">
-              <Calendar className="w-10 h-10 text-muted-foreground/50" />
-            </div>
-            <h3 className="text-xl font-semibold mb-2">Chưa có niên khóa nào</h3>
-            <p className="text-muted-foreground mb-6 max-w-sm mx-auto">
-              Tạo niên khóa đầu tiên để bắt đầu quản lý lớp học và học sinh
-            </p>
-            <Button onClick={() => setIsAddYearDialogOpen(true)} className="bg-eco-blue hover:bg-eco-blue/90">
-              <Plus className="w-4 h-4 mr-2" />
-              Tạo niên khóa
-            </Button>
-          </CardContent>
-        </Card>
-      )}
+            {/* Stats — only in classes tab */}
+            <ClassStats stats={stats} />
 
-      {/* Summary Stats */}
-      {selectedYear && <ClassStats stats={stats} />}
-
-      {/* Loading State */}
-      {isLoading && selectedYear && (
-        <div className="flex items-center justify-center py-16">
-          <div className="text-center">
-            <Loader2 className="w-10 h-10 animate-spin text-eco-green mx-auto mb-3" />
-            <p className="text-muted-foreground">Đang tải dữ liệu...</p>
-          </div>
-        </div>
-      )}
-
-      {/* Empty State - No Classes */}
-      {!isLoading && selectedYear && gradeGroups.length === 0 && (
-        <Card className="border-2 border-dashed border-muted-foreground/30">
-          <CardContent className="p-12 text-center">
-            <div className="w-20 h-20 mx-auto rounded-full bg-muted/50 flex items-center justify-center mb-4">
-              <Layers className="w-10 h-10 text-muted-foreground/50" />
-            </div>
-            <h3 className="text-xl font-semibold mb-2">Chưa có lớp học nào</h3>
-            <p className="text-muted-foreground mb-6 max-w-sm mx-auto">
-              Tạo lớp học đầu tiên cho niên khóa {selectedYear.name}
-            </p>
-            <Button onClick={() => setIsAddDialogOpen(true)} className="bg-eco-green hover:bg-eco-green/90">
-              <Plus className="w-4 h-4 mr-2" />
-              Tạo lớp học
-            </Button>
-          </CardContent>
-        </Card>
-      )}
-
-      {/* Grade Groups */}
-      {!isLoading && gradeGroups.length > 0 && (
-        <div className="space-y-4">
-          {/* Quick navigation tabs when more than 5 grades */}
-          {gradeGroups.length > 5 && (
-            <div className="flex flex-wrap gap-2 p-3 rounded-xl bg-muted/30 border border-border">
-              <span className="text-xs text-muted-foreground self-center mr-2">Chuyển nhanh:</span>
-              {gradeGroups.map((group) => (
-                <Button
-                  key={group.grade}
-                  variant={expandedGrades.has(group.grade) ? "default" : "outline"}
-                  size="sm"
-                  className={cn(
-                    "h-7 px-3 text-xs",
-                    expandedGrades.has(group.grade) 
-                      ? "bg-eco-green hover:bg-eco-green/90" 
-                      : "hover:bg-eco-green/10 hover:border-eco-green/50"
-                  )}
-                  onClick={() => {
-                    toggleGrade(group.grade);
-                    if (!expandedGrades.has(group.grade)) {
-                      setTimeout(() => {
-                        document.getElementById(`grade-${group.grade}`)?.scrollIntoView({ 
-                          behavior: 'smooth', 
-                          block: 'start' 
-                        });
-                      }, 100);
-                    }
-                  }}
-                >
-                  Khối {group.grade}
-                </Button>
-              ))}
-            </div>
-          )}
-
-          {/* Grade Groups List */}
-          <div className="space-y-3">
-            {gradeGroups.map((group) => (
-              <div key={group.grade} id={`grade-${group.grade}`}>
-                <GradeGroup
-                  group={group}
-                  isExpanded={expandedGrades.has(group.grade)}
-                  onToggle={() => toggleGrade(group.grade)}
-                  onAddClass={openAddClassForGrade}
-                  onSelectClass={setSelectedClass}
-                  onEditClass={openEditDialog}
-                  onDeleteClass={deleteClass}
-                />
+            {/* Loading */}
+            {isLoading && (
+              <div className="flex items-center justify-center py-16">
+                <div className="text-center">
+                  <Loader2 className="w-10 h-10 animate-spin text-eco-green mx-auto mb-3" />
+                  <p className="text-muted-foreground text-sm">Đang tải dữ liệu…</p>
+                </div>
               </div>
-            ))}
-          </div>
-        </div>
+            )}
+
+            {/* Empty */}
+            {!isLoading && gradeGroups.length === 0 && (
+              <Card className="border-2 border-dashed border-muted-foreground/20">
+                <CardContent className="p-10 text-center">
+                  <div className="w-16 h-16 mx-auto rounded-full bg-muted/50 flex items-center justify-center mb-4">
+                    <Layers className="w-8 h-8 text-muted-foreground/40" />
+                  </div>
+                  <h3 className="text-lg font-semibold mb-1.5">Chưa có lớp học nào</h3>
+                  <p className="text-muted-foreground text-sm mb-5 max-w-xs mx-auto">
+                    Tạo lớp đầu tiên cho niên khóa {selectedYear.name} hoặc import từ file CSV
+                  </p>
+                  <div className="flex flex-wrap justify-center gap-2.5">
+                    <Button
+                      className="bg-gradient-to-r from-eco-blue to-eco-green hover:opacity-90 shadow-md"
+                      onClick={() => setIsBulkImportOpen(true)}
+                    >
+                      <Sparkles className="w-4 h-4 mr-1.5" />
+                      Import hàng loạt
+                    </Button>
+                    <Button variant="outline" onClick={() => setIsAddDialogOpen(true)}>
+                      <Plus className="w-4 h-4 mr-1.5" />
+                      Tạo lớp
+                    </Button>
+                  </div>
+                </CardContent>
+              </Card>
+            )}
+
+            {/* Grade Groups */}
+            {!isLoading && gradeGroups.length > 0 && (
+              <div className="space-y-3">
+                {gradeGroups.length > 5 && (
+                  <div className="flex flex-wrap gap-1.5 p-2.5 rounded-xl bg-muted/30 border border-border">
+                    <span className="text-xs text-muted-foreground self-center mr-1.5">Khối:</span>
+                    {gradeGroups.map((group) => (
+                      <Button
+                        key={group.grade}
+                        variant={expandedGrades.has(group.grade) ? "default" : "ghost"}
+                        size="sm"
+                        className={cn(
+                          "h-7 px-2.5 text-xs rounded-lg",
+                          expandedGrades.has(group.grade) 
+                            ? "bg-eco-green hover:bg-eco-green/90 text-white" 
+                            : "hover:bg-eco-green/10 text-muted-foreground"
+                        )}
+                        onClick={() => {
+                          toggleGrade(group.grade);
+                          if (!expandedGrades.has(group.grade)) {
+                            setTimeout(() => {
+                              document.getElementById(`grade-${group.grade}`)?.scrollIntoView({ 
+                                behavior: 'smooth', 
+                                block: 'start' 
+                              });
+                            }, 100);
+                          }
+                        }}
+                      >
+                        Khối {group.grade}
+                      </Button>
+                    ))}
+                  </div>
+                )}
+                <div className="space-y-2.5">
+                  {gradeGroups.map((group) => (
+                    <div key={group.grade} id={`grade-${group.grade}`}>
+                      <GradeGroup
+                        group={group}
+                        isExpanded={expandedGrades.has(group.grade)}
+                        onToggle={() => toggleGrade(group.grade)}
+                        onAddClass={openAddClassForGrade}
+                        onSelectClass={setSelectedClass}
+                        onEditClass={openEditDialog}
+                        onDeleteClass={deleteClass}
+                      />
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+          </TabsContent>
+
+          {/* ── Accounts & Email Tab — full replacement view ── */}
+          <TabsContent value="accounts" className="mt-4">
+            <SchoolAccountsView
+              allStudents={allStudents}
+              gradeGroups={gradeGroups}
+            />
+          </TabsContent>
+        </Tabs>
       )}
 
-      {/* Add Class Dialog */}
+      {/* ─── Dialogs ─── */}
+      <Dialog open={isAddYearDialogOpen} onOpenChange={setIsAddYearDialogOpen}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2.5">
+              <div className="w-9 h-9 rounded-xl bg-eco-blue/10 flex items-center justify-center">
+                <Calendar className="w-4.5 h-4.5 text-eco-blue" />
+              </div>
+              Tạo niên khóa mới
+            </DialogTitle>
+          </DialogHeader>
+          <AcademicYearForm
+            formData={yearForm}
+            existingYears={academicYears}
+            copyFromYearId={copyFromYearId}
+            onFormChange={updateYearForm}
+            onCopyFromChange={setCopyFromYearId}
+            onGenerateYearName={() => updateYearForm({ name: generateYearName() })}
+            onSubmit={handleCreateYear}
+          />
+        </DialogContent>
+      </Dialog>
+
       <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
         <DialogContent className="max-w-md">
           <DialogHeader>
-            <DialogTitle className="flex items-center gap-2">
-              <div className="w-10 h-10 rounded-xl bg-eco-green/10 flex items-center justify-center">
-                <Plus className="w-5 h-5 text-eco-green" />
+            <DialogTitle className="flex items-center gap-2.5">
+              <div className="w-9 h-9 rounded-xl bg-eco-green/10 flex items-center justify-center">
+                <Plus className="w-4.5 h-4.5 text-eco-green" />
               </div>
               Tạo lớp học mới
             </DialogTitle>
@@ -442,13 +544,12 @@ export default function SchoolClasses() {
         </DialogContent>
       </Dialog>
 
-      {/* Edit Class Dialog */}
       <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
         <DialogContent className="max-w-md">
           <DialogHeader>
-            <DialogTitle className="flex items-center gap-2">
-              <div className="w-10 h-10 rounded-xl bg-eco-blue/10 flex items-center justify-center">
-                <Edit className="w-5 h-5 text-eco-blue" />
+            <DialogTitle className="flex items-center gap-2.5">
+              <div className="w-9 h-9 rounded-xl bg-eco-blue/10 flex items-center justify-center">
+                <Edit className="w-4.5 h-4.5 text-eco-blue" />
               </div>
               Chỉnh sửa lớp học
             </DialogTitle>
@@ -462,6 +563,12 @@ export default function SchoolClasses() {
           />
         </DialogContent>
       </Dialog>
+
+      <BulkImportDialog
+        isOpen={isBulkImportOpen}
+        onClose={() => setIsBulkImportOpen(false)}
+        onImport={handleBulkImport}
+      />
     </div>
   );
 }
