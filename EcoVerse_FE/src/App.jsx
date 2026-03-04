@@ -45,6 +45,7 @@ import CampaignDashboard from "./roles/student/pages/studentCampaignDashboard/ca
 import StudentLeaderboard from "./roles/student/pages/studentLeaderboard/studentLeaderboard";
 import StudentGame from "./roles/student/pages/studentGameSelection/studentGame";
 import StudentQuiz from "./roles/student/pages/studentQuizSelection/studentQuiz";
+import EcoGamePage from "./roles/student/pages/ecoGamePlay/EcoGamePage";
 
 //========================School Routes==============================
 import SchoolAdminLayout from "@/roles/school/SchoolAdminLayout";
@@ -124,6 +125,7 @@ const App = () => (
                 >
                   <Route index element={<CampaignDashboard />} />
                   <Route path="game" element={<StudentGame />} />
+                  <Route path="game/play" element={<EcoGamePage />} />
                   <Route path="quiz" element={<StudentQuiz />} />
                   <Route path="leaderboard" element={<StudentLeaderboard />} />
                 </Route>

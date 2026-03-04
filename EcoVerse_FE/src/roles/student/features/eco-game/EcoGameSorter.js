@@ -1,0 +1,667 @@
+/**
+ * EcoGameSorter - Stage 2: Sorting Game
+ *
+ * 3D drag-and-drop sorting game using THREE.Raycaster.
+ * Players sort collected trash into the correct bins.
+ */
+import * as THREE from 'three';
+import gsap from 'gsap';
+import { BinType, SPAWNABLE_TRASH } from './EcoGameStateManager';
+import { DEFAULT_LEVEL_CONFIG } from './gameConfig';
+
+// ─── Constants ───────────────────────────────────────────────────────────────
+
+const BIN_POSITIONS = [
+  { binType: BinType.ORGANIC, x: -3.5, z: -4 },
+  { binType: BinType.INORGANIC, x: 0, z: -4 },
+  { binType: BinType.RECYCLE, x: 3.5, z: -4 },
+];
+
+const TABLE_SIZE = { w: 8, h: 0.2, d: 3 };
+const TABLE_Y = 0;
+const ITEM_Y = TABLE_Y + 0.5;
+const DRAG_PLANE_Y = TABLE_Y + 0.5;
+
+export default class EcoGameSorter {
+  /**
+   * @param {THREE.Scene} scene
+   * @param {THREE.Camera} camera
+   * @param {EcoGameStateManager} stateManager
+   * @param {THREE.WebGLRenderer} renderer
+   * @param {object} config - Sorter config from API (sorter sub-object of GameLevelConfig)
+   */
+  constructor(scene, camera, stateManager, renderer, config = {}) {
+    this.scene = scene;
+    this.camera = camera;
+    this.stateManager = stateManager;
+    this.renderer = renderer;
+
+    // Merge provided config with defaults
+    const defaults = DEFAULT_LEVEL_CONFIG.sorter;
+    this.config = { ...defaults, ...config };
+
+    this.raycaster = new THREE.Raycaster();
+    this.mouse = new THREE.Vector2();
+    this.dragPlane = new THREE.Plane(new THREE.Vector3(0, 1, 0), -DRAG_PLANE_Y);
+
+    this.trashMeshes = [];
+    this.binMeshes = [];
+    this.binLabels = [];
+    this.selectedObject = null;
+    this.isDragging = false;
+    this.originalPosition = new THREE.Vector3();
+
+    this.itemsRemaining = 0;
+    this.score = { correct: 0, wrong: 0 };
+
+    // Timer support (configurable)
+    this.timeRemaining = this.config.timeLimit; // 0 = no limit
+    this.timerActive = this.config.timeLimit > 0;
+
+    this._onPointerDown = this._onPointerDown.bind(this);
+    this._onPointerMove = this._onPointerMove.bind(this);
+    this._onPointerUp = this._onPointerUp.bind(this);
+  }
+
+  // ─── Initialization ─────────────────────────────────────────────────────────
+
+  init() {
+    this._clearScene();
+    this._createEnvironment();
+    this._createTable();
+    this._createBins();
+    this._createTrashItems();
+    this._setupCamera();
+    this._addEventListeners();
+  }
+
+  _clearScene() {
+    // Remove runner stage objects (the scene is shared)
+    // The EcoGame orchestrator handles this
+  }
+
+  _createEnvironment() {
+    // Ambient light
+    const ambient = new THREE.AmbientLight(0xffffff, 0.7);
+    this.scene.add(ambient);
+    this._ambientLight = ambient;
+
+    // Directional light
+    const dirLight = new THREE.DirectionalLight(0xffffff, 0.6);
+    dirLight.position.set(5, 10, 5);
+    dirLight.castShadow = true;
+    dirLight.shadow.mapSize.width = 1024;
+    dirLight.shadow.mapSize.height = 1024;
+    this.scene.add(dirLight);
+    this._dirLight = dirLight;
+
+    // Background
+    this.scene.background = new THREE.Color(0xe8f5e9);
+    this.scene.fog = null;
+
+    // Floor
+    const floorGeo = new THREE.PlaneGeometry(20, 20);
+    const floorMat = new THREE.MeshStandardMaterial({
+      color: 0xc8e6c9,
+      roughness: 0.9,
+    });
+    this._floor = new THREE.Mesh(floorGeo, floorMat);
+    this._floor.rotation.x = -Math.PI / 2;
+    this._floor.position.y = -0.7;
+    this._floor.receiveShadow = true;
+    this.scene.add(this._floor);
+  }
+
+  _createTable() {
+    // Table surface
+    const tableGeo = new THREE.BoxGeometry(TABLE_SIZE.w, TABLE_SIZE.h, TABLE_SIZE.d);
+    const tableMat = new THREE.MeshStandardMaterial({
+      color: 0x8d6e63,
+      roughness: 0.7,
+    });
+    this._table = new THREE.Mesh(tableGeo, tableMat);
+    this._table.position.set(0, TABLE_Y, 1);
+    this._table.receiveShadow = true;
+    this._table.castShadow = true;
+    this.scene.add(this._table);
+
+    // Table legs
+    const legGeo = new THREE.CylinderGeometry(0.08, 0.08, 0.7, 8);
+    const legMat = new THREE.MeshStandardMaterial({ color: 0x6d4c41 });
+    const legPositions = [
+      [-TABLE_SIZE.w / 2 + 0.3, -0.45, 1 + TABLE_SIZE.d / 2 - 0.3],
+      [TABLE_SIZE.w / 2 - 0.3, -0.45, 1 + TABLE_SIZE.d / 2 - 0.3],
+      [-TABLE_SIZE.w / 2 + 0.3, -0.45, 1 - TABLE_SIZE.d / 2 + 0.3],
+      [TABLE_SIZE.w / 2 - 0.3, -0.45, 1 - TABLE_SIZE.d / 2 + 0.3],
+    ];
+    this._tableLegs = [];
+    legPositions.forEach(([x, y, z]) => {
+      const leg = new THREE.Mesh(legGeo, legMat);
+      leg.position.set(x, y, z);
+      leg.castShadow = true;
+      this.scene.add(leg);
+      this._tableLegs.push(leg);
+    });
+  }
+
+  _createBins() {
+    BIN_POSITIONS.forEach(({ binType, x, z }) => {
+      const group = new THREE.Group();
+
+      // Bin body
+      const binGeo = new THREE.CylinderGeometry(0.7, 0.6, 1.4, 16, 1, true);
+      const binMat = new THREE.MeshStandardMaterial({
+        color: binType.color,
+        side: THREE.DoubleSide,
+        roughness: 0.5,
+        metalness: 0.2,
+      });
+      const bin = new THREE.Mesh(binGeo, binMat);
+      bin.castShadow = true;
+      group.add(bin);
+
+      // Bin bottom
+      const bottomGeo = new THREE.CircleGeometry(0.6, 16);
+      const bottomMat = new THREE.MeshStandardMaterial({ color: binType.color });
+      const bottom = new THREE.Mesh(bottomGeo, bottomMat);
+      bottom.rotation.x = -Math.PI / 2;
+      bottom.position.y = -0.7;
+      group.add(bottom);
+
+      // Bin rim
+      const rimGeo = new THREE.TorusGeometry(0.7, 0.05, 8, 32);
+      const rimMat = new THREE.MeshStandardMaterial({
+        color: 0xffffff,
+        metalness: 0.5,
+      });
+      const rim = new THREE.Mesh(rimGeo, rimMat);
+      rim.rotation.x = Math.PI / 2;
+      rim.position.y = 0.7;
+      group.add(rim);
+
+      // Label using a small plane with canvas texture
+      const label = this._createBinLabel(binType.name, binType.color);
+      label.position.set(0, 0, 0.72);
+      group.add(label);
+
+      group.position.set(x, 0, z);
+      group.userData = { type: 'bin', binId: binType.id };
+
+      this.scene.add(group);
+      this.binMeshes.push(group);
+
+      // Entrance animation
+      group.scale.set(0, 0, 0);
+      gsap.to(group.scale, {
+        x: 1,
+        y: 1,
+        z: 1,
+        duration: 0.5,
+        ease: 'back.out(1.7)',
+        delay: 0.3,
+      });
+    });
+  }
+
+  _createBinLabel(text, bgColor) {
+    const canvas = document.createElement('canvas');
+    canvas.width = 256;
+    canvas.height = 96;
+    const ctx = canvas.getContext('2d');
+
+    // Background
+    ctx.fillStyle = '#ffffff';
+    ctx.roundRect(4, 4, 248, 88, 12);
+    ctx.fill();
+
+    // Text
+    ctx.fillStyle = '#333333';
+    ctx.font = 'bold 36px Arial, sans-serif';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillText(text, 128, 48);
+
+    const texture = new THREE.CanvasTexture(canvas);
+    const geo = new THREE.PlaneGeometry(1.2, 0.45);
+    const mat = new THREE.MeshBasicMaterial({
+      map: texture,
+      transparent: true,
+    });
+
+    return new THREE.Mesh(geo, mat);
+  }
+
+  _createTrashItems() {
+    const items = this.stateManager.getTrashItemsForSorting();
+
+    // If no items collected, add some defaults for playability
+    if (items.length === 0) {
+      for (let i = 0; i < 5; i++) {
+        items.push({ ...SPAWNABLE_TRASH[i % SPAWNABLE_TRASH.length] });
+      }
+    }
+
+    this.itemsRemaining = items.length;
+
+    // Arrange items on the table in a grid
+    const cols = Math.ceil(Math.sqrt(items.length));
+    const spacing = TABLE_SIZE.w / (cols + 1);
+
+    items.forEach((item, index) => {
+      const col = index % cols;
+      const row = Math.floor(index / cols);
+
+      let mesh;
+      switch (item.id) {
+        case 'plastic_bottle':
+          mesh = this._createBottle(item.color);
+          break;
+        case 'can':
+          mesh = this._createCan(item.color);
+          break;
+        default:
+          mesh = this._createBoxItem(item.color);
+          break;
+      }
+
+      const x = -TABLE_SIZE.w / 2 + spacing * (col + 1);
+      const z = 1 - TABLE_SIZE.d / 2 + 0.5 + row * 0.8;
+
+      mesh.position.set(x, ITEM_Y, z);
+      mesh.userData = {
+        type: 'sortable',
+        trashInfo: item,
+        correctBin: item.bin,
+        originalPos: new THREE.Vector3(x, ITEM_Y, z),
+      };
+
+      this.scene.add(mesh);
+      this.trashMeshes.push(mesh);
+
+      // Entrance animation
+      mesh.scale.set(0, 0, 0);
+      gsap.to(mesh.scale, {
+        x: 1,
+        y: 1,
+        z: 1,
+        duration: 0.4,
+        ease: 'back.out(1.7)',
+        delay: 0.5 + index * 0.08,
+      });
+    });
+  }
+
+  _createBottle(color) {
+    const group = new THREE.Group();
+    const bodyGeo = new THREE.CylinderGeometry(0.12, 0.15, 0.5, 8);
+    const bodyMat = new THREE.MeshStandardMaterial({
+      color,
+      transparent: true,
+      opacity: 0.8,
+      roughness: 0.3,
+    });
+    const body = new THREE.Mesh(bodyGeo, bodyMat);
+    body.castShadow = true;
+    group.add(body);
+
+    const capGeo = new THREE.CylinderGeometry(0.06, 0.08, 0.1, 8);
+    const capMat = new THREE.MeshStandardMaterial({ color: 0xffffff });
+    const cap = new THREE.Mesh(capGeo, capMat);
+    cap.position.y = 0.3;
+    group.add(cap);
+
+    return group;
+  }
+
+  _createCan(color) {
+    const geo = new THREE.CylinderGeometry(0.14, 0.14, 0.4, 12);
+    const mat = new THREE.MeshStandardMaterial({ color, metalness: 0.6, roughness: 0.3 });
+    const mesh = new THREE.Mesh(geo, mat);
+    mesh.castShadow = true;
+    return mesh;
+  }
+
+  _createBoxItem(color) {
+    const geo = new THREE.BoxGeometry(0.35, 0.25, 0.35);
+    const mat = new THREE.MeshStandardMaterial({ color, roughness: 0.5 });
+    const mesh = new THREE.Mesh(geo, mat);
+    mesh.castShadow = true;
+    return mesh;
+  }
+
+  _setupCamera() {
+    gsap.to(this.camera.position, {
+      x: 0,
+      y: 7,
+      z: 7,
+      duration: 1,
+      ease: 'power2.inOut',
+    });
+    gsap.to(this.camera.rotation, {
+      x: -Math.PI / 4,
+      y: 0,
+      z: 0,
+      duration: 1,
+      ease: 'power2.inOut',
+    });
+  }
+
+  // ─── Event Handling ─────────────────────────────────────────────────────────
+
+  _addEventListeners() {
+    const domElement = this.renderer.domElement;
+    domElement.addEventListener('pointerdown', this._onPointerDown);
+    domElement.addEventListener('pointermove', this._onPointerMove);
+    domElement.addEventListener('pointerup', this._onPointerUp);
+  }
+
+  _removeEventListeners() {
+    const domElement = this.renderer.domElement;
+    domElement.removeEventListener('pointerdown', this._onPointerDown);
+    domElement.removeEventListener('pointermove', this._onPointerMove);
+    domElement.removeEventListener('pointerup', this._onPointerUp);
+  }
+
+  _getPointerPosition(event) {
+    const rect = this.renderer.domElement.getBoundingClientRect();
+    this.mouse.x = ((event.clientX - rect.left) / rect.width) * 2 - 1;
+    this.mouse.y = -((event.clientY - rect.top) / rect.height) * 2 + 1;
+  }
+
+  _onPointerDown(event) {
+    this._getPointerPosition(event);
+    this.raycaster.setFromCamera(this.mouse, this.camera);
+
+    // Get all sortable meshes and their children
+    const sortableMeshes = [];
+    this.trashMeshes.forEach((mesh) => {
+      if (mesh.userData.type === 'sortable') {
+        sortableMeshes.push(mesh);
+        // Also check children for groups
+        mesh.traverse((child) => {
+          if (child.isMesh) sortableMeshes.push(child);
+        });
+      }
+    });
+
+    const intersects = this.raycaster.intersectObjects(sortableMeshes, true);
+
+    if (intersects.length > 0) {
+      // Find the top-level sortable parent
+      let target = intersects[0].object;
+      while (target.parent && target.userData.type !== 'sortable') {
+        target = target.parent;
+      }
+
+      if (target.userData.type === 'sortable') {
+        this.selectedObject = target;
+        this.isDragging = true;
+        this.originalPosition.copy(target.userData.originalPos);
+
+        // Lift animation
+        gsap.to(target.position, {
+          y: ITEM_Y + 0.8,
+          duration: 0.2,
+          ease: 'power2.out',
+        });
+        gsap.to(target.scale, {
+          x: 1.2,
+          y: 1.2,
+          z: 1.2,
+          duration: 0.2,
+          ease: 'power2.out',
+        });
+      }
+    }
+  }
+
+  _onPointerMove(event) {
+    if (!this.isDragging || !this.selectedObject) return;
+
+    this._getPointerPosition(event);
+    this.raycaster.setFromCamera(this.mouse, this.camera);
+
+    const intersection = new THREE.Vector3();
+    this.raycaster.ray.intersectPlane(this.dragPlane, intersection);
+
+    if (intersection) {
+      this.selectedObject.position.x = intersection.x;
+      this.selectedObject.position.z = intersection.z;
+    }
+  }
+
+  _onPointerUp(event) {
+    if (!this.isDragging || !this.selectedObject) return;
+
+    this.isDragging = false;
+    const droppedItem = this.selectedObject;
+    this.selectedObject = null;
+
+    // Check if dropped on a bin
+    const itemPos = droppedItem.position;
+    let droppedOnBin = null;
+
+    for (const bin of this.binMeshes) {
+      const dx = itemPos.x - bin.position.x;
+      const dz = itemPos.z - bin.position.z;
+      const distance = Math.sqrt(dx * dx + dz * dz);
+
+      if (distance < 1.2) {
+        droppedOnBin = bin;
+        break;
+      }
+    }
+
+    if (droppedOnBin) {
+      const correctBin = droppedItem.userData.correctBin;
+      const binId = droppedOnBin.userData.binId;
+
+      if (correctBin === binId) {
+        // Correct!
+        this.score.correct++;
+        this._handleCorrectSort(droppedItem, droppedOnBin);
+      } else {
+        // Wrong!
+        this.score.wrong++;
+        if (this.config.penaltyOnWrong && this.score.correct > 0) {
+          this.score.correct--; // Penalty: subtract a correct point
+        }
+        this._handleWrongSort(droppedItem);
+      }
+    } else {
+      // Dropped outside any bin — return to original position
+      this._returnToOriginal(droppedItem);
+    }
+
+    // Update HUD
+    if (this._onScoreUpdate) {
+      this._onScoreUpdate(this.score, this.itemsRemaining);
+    }
+  }
+
+  _handleCorrectSort(item, bin) {
+    this.itemsRemaining--;
+
+    // Success animation: fly into bin and shrink
+    const tl = gsap.timeline({
+      onComplete: () => {
+        this.scene.remove(item);
+        const idx = this.trashMeshes.indexOf(item);
+        if (idx > -1) this.trashMeshes.splice(idx, 1);
+
+        // Check if all items sorted
+        if (this.itemsRemaining <= 0) {
+          this._handleAllSorted();
+        }
+      },
+    });
+
+    tl.to(item.position, {
+      x: bin.position.x,
+      y: bin.position.y + 1.5,
+      z: bin.position.z,
+      duration: 0.3,
+      ease: 'power2.in',
+    });
+    tl.to(
+      item.scale,
+      {
+        x: 0,
+        y: 0,
+        z: 0,
+        duration: 0.2,
+        ease: 'power2.in',
+      },
+      '-=0.1'
+    );
+
+    // Bin pulse effect
+    gsap.to(bin.scale, {
+      x: 1.1,
+      y: 1.1,
+      z: 1.1,
+      duration: 0.15,
+      yoyo: true,
+      repeat: 1,
+      ease: 'power2.out',
+    });
+  }
+
+  _handleWrongSort(item) {
+    // Shake animation + return to original position
+    const tl = gsap.timeline();
+
+    // Red flash (temporarily change color)
+    tl.to(item.position, {
+      x: '+=0.2',
+      duration: 0.05,
+      repeat: 5,
+      yoyo: true,
+      ease: 'none',
+    });
+
+    tl.to(
+      item.position,
+      {
+        x: item.userData.originalPos.x,
+        y: ITEM_Y,
+        z: item.userData.originalPos.z,
+        duration: 0.4,
+        ease: 'back.out(1.7)',
+      }
+    );
+
+    tl.to(
+      item.scale,
+      {
+        x: 1,
+        y: 1,
+        z: 1,
+        duration: 0.3,
+        ease: 'power2.out',
+      },
+      '<'
+    );
+  }
+
+  _returnToOriginal(item) {
+    gsap.to(item.position, {
+      x: item.userData.originalPos.x,
+      y: ITEM_Y,
+      z: item.userData.originalPos.z,
+      duration: 0.4,
+      ease: 'back.out(1.7)',
+    });
+    gsap.to(item.scale, {
+      x: 1,
+      y: 1,
+      z: 1,
+      duration: 0.3,
+      ease: 'power2.out',
+    });
+  }
+
+  _handleAllSorted() {
+    this.stateManager.sortingScore = { ...this.score };
+
+    setTimeout(() => {
+      if (this._onStageComplete) {
+        this._onStageComplete(this.score);
+      }
+    }, 800);
+  }
+
+  // ─── Callbacks ──────────────────────────────────────────────────────────────
+
+  onScoreUpdate(callback) {
+    this._onScoreUpdate = callback;
+  }
+
+  onStageComplete(callback) {
+    this._onStageComplete = callback;
+  }
+
+  onTimerUpdate(callback) {
+    this._onTimerUpdate = callback;
+  }
+
+  // ─── Update (timer + idle animations) ──────────────────────────────────────
+
+  update(delta) {
+    // Timer countdown (configurable)
+    if (this.timerActive && this.timeRemaining > 0) {
+      this.timeRemaining -= delta;
+      if (this._onTimerUpdate) {
+        this._onTimerUpdate(Math.max(0, this.timeRemaining));
+      }
+      if (this.timeRemaining <= 0) {
+        this.timeRemaining = 0;
+        this.timerActive = false;
+        // Time's up — trigger completion with current score
+        this._handleAllSorted();
+        return;
+      }
+    }
+
+    // Gentle rotation for idle items
+    this.trashMeshes.forEach((mesh) => {
+      if (mesh !== this.selectedObject) {
+        mesh.rotation.y += delta * 0.5;
+      }
+    });
+  }
+
+  // ─── Cleanup ────────────────────────────────────────────────────────────────
+
+  dispose() {
+    this._removeEventListeners();
+
+    const toRemove = [
+      ...this.trashMeshes,
+      ...this.binMeshes,
+      this._table,
+      ...this._tableLegs,
+      this._floor,
+      this._ambientLight,
+      this._dirLight,
+    ].filter(Boolean);
+
+    toRemove.forEach((obj) => {
+      this.scene.remove(obj);
+      obj.traverse?.((child) => {
+        if (child.geometry) child.geometry.dispose();
+        if (child.material) {
+          if (Array.isArray(child.material)) {
+            child.material.forEach((m) => m.dispose());
+          } else {
+            child.material.dispose();
+          }
+        }
+      });
+    });
+
+    this.trashMeshes = [];
+    this.binMeshes = [];
+    this._tableLegs = [];
+  }
+}

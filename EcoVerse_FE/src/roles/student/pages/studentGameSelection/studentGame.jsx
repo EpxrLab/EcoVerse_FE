@@ -1,6 +1,6 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate, useParams } from "react-router-dom";
-import { Card, Button, Progress } from "antd";
+import { Card, Button, Progress, Spin } from "antd";
 import {
   PlayCircleOutlined,
   LockOutlined,
@@ -8,74 +8,11 @@ import {
   HomeOutlined,
   CheckCircleOutlined,
   AimOutlined,
+  LoadingOutlined,
 } from "@ant-design/icons";
 import { Star, Lock, Play } from "lucide-react";
 import { motion } from "framer-motion";
-
-// ─── Demo Data ────────────────────────────────────────────────────────────────
-
-const mockGameLevels = [
-  {
-    id: 1,
-    name: "Khởi đầu",
-    difficulty: "Dễ",
-    itemsCount: 10,
-    stars: 3,
-    coinReward: 15,
-    completed: true,
-    locked: false,
-  },
-  {
-    id: 2,
-    name: "Thử thách",
-    difficulty: "Dễ",
-    itemsCount: 15,
-    stars: 2,
-    coinReward: 15,
-    completed: true,
-    locked: false,
-  },
-  {
-    id: 3,
-    name: "Tiến bộ",
-    difficulty: "Trung bình",
-    itemsCount: 20,
-    stars: 3,
-    coinReward: 25,
-    completed: true,
-    locked: false,
-  },
-  {
-    id: 4,
-    name: "Chuyên gia",
-    difficulty: "Trung bình",
-    itemsCount: 25,
-    stars: 0,
-    coinReward: 25,
-    completed: false,
-    locked: false,
-  },
-  {
-    id: 5,
-    name: "Bậc thầy",
-    difficulty: "Khó",
-    itemsCount: 30,
-    stars: 0,
-    coinReward: 35,
-    completed: false,
-    locked: false,
-  },
-  {
-    id: 6,
-    name: "Huyền thoại",
-    difficulty: "Khó",
-    itemsCount: 40,
-    stars: 0,
-    coinReward: 50,
-    completed: false,
-    locked: true,
-  },
-];
+import { fetchGameLevels } from "../../features/eco-game/ecoGame.service";
 
 // ─── CoinIcon ─────────────────────────────────────────────────────────────────
 
@@ -96,16 +33,19 @@ const CoinIcon = ({ className = "w-6 h-6 text-white" }) => (
   </svg>
 );
 
+// ─── Difficulty badge color mapping ───────────────────────────────────────────
+
+const DIFFICULTY_LABELS = {
+  easy: { label: "Dễ", bg: "bg-green-50", text: "text-green-600", border: "border-green-200" },
+  medium: { label: "Trung bình", bg: "bg-blue-50", text: "text-blue-600", border: "border-blue-200" },
+  hard: { label: "Khó", bg: "bg-red-50", text: "text-red-600", border: "border-red-200" },
+};
+
 // ─── Animation Variants ───────────────────────────────────────────────────────
 
 const containerVariants = {
   hidden: { opacity: 0 },
   visible: { opacity: 1, transition: { staggerChildren: 0.1 } },
-};
-
-const itemVariants = {
-  hidden: { opacity: 0, y: 20 },
-  visible: { opacity: 1, y: 0, transition: { duration: 0.4, ease: "easeOut" } },
 };
 
 const cardVariants = {
@@ -124,14 +64,68 @@ export default function StudentGame() {
   const navigate = useNavigate();
   const { campaignId } = useParams();
 
-  const completedLevels = mockGameLevels.filter((l) => l.completed);
-  const totalStars = mockGameLevels.reduce((sum, l) => sum + l.stars, 0);
-  const maxStars = mockGameLevels.length * 3;
-  const totalCoins = completedLevels.reduce((sum, l) => sum + l.coinReward, 0);
+  const [gameLevels, setGameLevels] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+
+  // Fetch game levels from API
+  useEffect(() => {
+    let cancelled = false;
+
+    async function loadLevels() {
+      try {
+        setLoading(true);
+        setError(null);
+        const levels = await fetchGameLevels(campaignId);
+        if (!cancelled) {
+          setGameLevels(levels);
+        }
+      } catch (err) {
+        if (!cancelled) {
+          setError("Không thể tải danh sách level. Vui lòng thử lại.");
+          console.error("[StudentGame] Failed to fetch game levels:", err);
+        }
+      } finally {
+        if (!cancelled) setLoading(false);
+      }
+    }
+
+    loadLevels();
+    return () => { cancelled = true; };
+  }, [campaignId]);
+
+  const completedLevels = gameLevels.filter((l) => l.completed);
+  const totalStars = gameLevels.reduce((sum, l) => sum + (l.stars || 0), 0);
+  const maxStars = gameLevels.length * 3;
+  const totalCoins = completedLevels.reduce((sum, l) => sum + (l.coinReward || 0), 0);
 
   const handlePlayLevel = (levelId) => {
-    alert(`Starting level ${levelId}`);
+    navigate(`/student/campaign/${campaignId}/game/play?levelId=${levelId}`);
   };
+
+  // ─── Loading State ──────────────────────────────────────────────────────────
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center min-h-[400px]">
+        <Spin indicator={<LoadingOutlined style={{ fontSize: 48 }} spin />} />
+        <span className="ml-4 text-gray-500 text-lg">Đang tải level...</span>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="flex flex-col items-center justify-center min-h-[400px] gap-4">
+        <p className="text-red-500 text-lg">{error}</p>
+        <Button type="primary" onClick={() => window.location.reload()}>
+          Tải lại
+        </Button>
+      </div>
+    );
+  }
+
+  // ─── Render ─────────────────────────────────────────────────────────────────
 
   return (
     <div className="space-y-6">
@@ -194,7 +188,7 @@ export default function StudentGame() {
                     <div className="text-left">
                       <p className="text-sm text-gray-500">Level hoàn thành</p>
                       <p className="text-2xl font-bold text-gray-800">
-                        {completedLevels.length}/{mockGameLevels.length}
+                        {completedLevels.length}/{gameLevels.length}
                       </p>
                     </div>
                   </div>
@@ -255,16 +249,18 @@ export default function StudentGame() {
                 Tiến độ hoàn thành
               </span>
               <span className="text-sm font-bold text-green-600">
-                {Math.round(
-                  (completedLevels.length / mockGameLevels.length) * 100,
-                )}
+                {gameLevels.length > 0
+                  ? Math.round((completedLevels.length / gameLevels.length) * 100)
+                  : 0}
                 %
               </span>
             </div>
             <Progress
-              percent={Math.round(
-                (completedLevels.length / mockGameLevels.length) * 100,
-              )}
+              percent={
+                gameLevels.length > 0
+                  ? Math.round((completedLevels.length / gameLevels.length) * 100)
+                  : 0
+              }
               strokeColor="#22c55e"
               trailColor="#e5e7eb"
               strokeWidth={12}
@@ -280,119 +276,125 @@ export default function StudentGame() {
         initial="hidden"
         animate="visible"
       >
-        {mockGameLevels.map((level) => (
-          <motion.div
-            key={level.id}
-            variants={cardVariants}
-            whileHover={
-              !level.locked ? { y: -6, transition: { duration: 0.2 } } : {}
-            }
-          >
-            <Card
-              className={`rounded-2xl border-2 transition-all ${
-                level.locked ? "opacity-50" : "hover:shadow-xl"
-              } ${level.completed ? "border-green-200" : "border-gray-100"}`}
-              bodyStyle={{ padding: "24px" }}
+        {gameLevels.map((level, index) => {
+          const diffStyle = DIFFICULTY_LABELS[level.difficulty] || DIFFICULTY_LABELS.medium;
+
+          return (
+            <motion.div
+              key={level.id}
+              variants={cardVariants}
+              whileHover={
+                !level.locked ? { y: -6, transition: { duration: 0.2 } } : {}
+              }
             >
-              <div className="space-y-4">
-                {/* Header */}
-                <div className="flex items-start justify-between">
-                  <div className="flex-1">
-                    <div className="flex items-center gap-2 mb-2">
-                      <span
-                        className={`inline-flex px-2.5 py-0.5 rounded-full text-xs font-semibold border-2 ${
-                          level.difficulty === "Dễ"
-                            ? "bg-green-50 text-green-600 border-green-200"
-                            : level.difficulty === "Trung bình"
-                              ? "bg-blue-50 text-blue-600 border-blue-200"
-                              : "bg-red-50 text-red-600 border-red-200"
-                        }`}
-                      >
-                        {level.difficulty}
-                      </span>
-                      {level.locked && (
-                        <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-semibold bg-gray-100 text-gray-500 border border-gray-200">
-                          <Lock className="w-3 h-3" />
-                          Khoá
+              <Card
+                className={`rounded-2xl border-2 transition-all ${
+                  level.locked ? "opacity-50" : "hover:shadow-xl"
+                } ${level.completed ? "border-green-200" : "border-gray-100"}`}
+                bodyStyle={{ padding: "24px" }}
+              >
+                <div className="space-y-4">
+                  {/* Header */}
+                  <div className="flex items-start justify-between">
+                    <div className="flex-1">
+                      <div className="flex items-center gap-2 mb-2">
+                        <span
+                          className={`inline-flex px-2.5 py-0.5 rounded-full text-xs font-semibold border-2 ${diffStyle.bg} ${diffStyle.text} ${diffStyle.border}`}
+                        >
+                          {diffStyle.label}
                         </span>
-                      )}
+                        {level.locked && (
+                          <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-semibold bg-gray-100 text-gray-500 border border-gray-200">
+                            <Lock className="w-3 h-3" />
+                            Khoá
+                          </span>
+                        )}
+                      </div>
+                      <h3 className="text-xl font-bold text-gray-800 mb-1">
+                        Level {index + 1}
+                      </h3>
+                      <p className="text-lg font-semibold text-gray-500">
+                        {level.name}
+                      </p>
                     </div>
-                    <h3 className="text-xl font-bold text-gray-800 mb-1">
-                      Level {level.id}
-                    </h3>
-                    <p className="text-lg font-semibold text-gray-500">
-                      {level.name}
-                    </p>
+                    <div className="w-16 h-16 rounded-2xl bg-green-50 flex items-center justify-center text-3xl">
+                      🎮
+                    </div>
                   </div>
-                  <div className="w-16 h-16 rounded-2xl bg-green-50 flex items-center justify-center text-3xl">
-                    🎮
-                  </div>
-                </div>
 
-                {/* Stars */}
-                <div className="flex items-center justify-center gap-2 p-4 rounded-xl bg-gray-50">
-                  {[1, 2, 3].map((star) => (
-                    <Star
-                      key={star}
-                      className={`w-8 h-8 ${star <= level.stars ? "fill-amber-500 text-amber-500" : "text-gray-300"}`}
-                    />
-                  ))}
-                </div>
-
-                {/* Info */}
-                <div className="space-y-2">
-                  <div className="flex items-center justify-between text-sm">
-                    <span className="text-gray-500 flex items-center gap-2">
-                      <AimOutlined />
-                      Số vật phẩm
-                    </span>
-                    <span className="font-semibold text-gray-800">
-                      {level.itemsCount}
-                    </span>
+                  {/* Stars */}
+                  <div className="flex items-center justify-center gap-2 p-4 rounded-xl bg-gray-50">
+                    {[1, 2, 3].map((star) => (
+                      <Star
+                        key={star}
+                        className={`w-8 h-8 ${star <= (level.stars || 0) ? "fill-amber-500 text-amber-500" : "text-gray-300"}`}
+                      />
+                    ))}
                   </div>
-                  <div className="flex items-center justify-between text-sm">
-                    <span className="text-gray-500 flex items-center gap-2">
-                      <CoinIcon className="w-4 h-4 text-amber-500" />
-                      Phần thưởng
-                    </span>
-                    <span className="font-semibold text-amber-600">
-                      +{level.coinReward} xu
-                    </span>
-                  </div>
-                </div>
 
-                {/* Action Button */}
-                <Button
-                  block
-                  type={level.locked ? "default" : "primary"}
-                  size="large"
-                  onClick={() => !level.locked && handlePlayLevel(level.id)}
-                  disabled={level.locked}
-                  icon={
-                    level.locked ? (
-                      <LockOutlined />
-                    ) : (
-                      <Play className="w-4 h-4" />
-                    )
-                  }
-                  className={`rounded-xl font-semibold ${
-                    level.locked
-                      ? "bg-gray-100 text-gray-400 cursor-not-allowed"
+                  {/* Info */}
+                  <div className="space-y-2">
+                    <div className="flex items-center justify-between text-sm">
+                      <span className="text-gray-500 flex items-center gap-2">
+                        <AimOutlined />
+                        Số vật phẩm
+                      </span>
+                      <span className="font-semibold text-gray-800">
+                        {level.itemsCount || "—"}
+                      </span>
+                    </div>
+                    <div className="flex items-center justify-between text-sm">
+                      <span className="text-gray-500 flex items-center gap-2">
+                        <CoinIcon className="w-4 h-4 text-amber-500" />
+                        Phần thưởng
+                      </span>
+                      <span className="font-semibold text-amber-600">
+                        +{level.coinReward || 0} xu
+                      </span>
+                    </div>
+                    {level.sorter?.timeLimit > 0 && (
+                      <div className="flex items-center justify-between text-sm">
+                        <span className="text-gray-500">⏱️ Thời gian phân loại</span>
+                        <span className="font-semibold text-gray-800">
+                          {level.sorter.timeLimit}s
+                        </span>
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Action Button */}
+                  <Button
+                    block
+                    type={level.locked ? "default" : "primary"}
+                    size="large"
+                    onClick={() => !level.locked && handlePlayLevel(level.id)}
+                    disabled={level.locked}
+                    icon={
+                      level.locked ? (
+                        <LockOutlined />
+                      ) : (
+                        <Play className="w-4 h-4" />
+                      )
+                    }
+                    className={`rounded-xl font-semibold ${
+                      level.locked
+                        ? "bg-gray-100 text-gray-400 cursor-not-allowed"
+                        : level.completed
+                          ? "bg-green-500 border-green-500 hover:bg-green-600"
+                          : "bg-blue-500 border-blue-500 hover:bg-blue-600"
+                    }`}
+                  >
+                    {level.locked
+                      ? "Đã khoá"
                       : level.completed
-                        ? "bg-green-500 border-green-500 hover:bg-green-600"
-                        : "bg-blue-500 border-blue-500 hover:bg-blue-600"
-                  }`}
-                >
-                  {level.locked
-                    ? "Đã khoá"
-                    : level.completed
-                      ? "Chơi lại"
-                      : "Chơi ngay"}
-                </Button>
-              </div>
-            </Card>
-          </motion.div>
-        ))}
+                        ? "Chơi lại"
+                        : "Chơi ngay"}
+                  </Button>
+                </div>
+              </Card>
+            </motion.div>
+          );
+        })}
       </motion.div>
     </div>
   );
