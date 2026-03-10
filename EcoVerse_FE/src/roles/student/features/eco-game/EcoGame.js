@@ -4,11 +4,12 @@
  * Manages the Three.js renderer, scene, camera, and delegates
  * to EcoGameRunner (Stage 1) and EcoGameSorter (Stage 2).
  */
-import * as THREE from 'three';
-import EcoGameStateManager, { GameState } from './EcoGameStateManager';
-import EcoGameRunner from './EcoGameRunner';
-import EcoGameSorter from './EcoGameSorter';
-import { DEFAULT_LEVEL_CONFIG, mergeLevelConfig } from './gameConfig';
+import * as THREE from "three";
+import EcoGameStateManager, { GameState } from "./EcoGameStateManager";
+import EcoGameRunner from "./EcoGameRunner";
+import EcoGameSorter from "./EcoGameSorter";
+import EcoSeaRescue from "./SeaRescue/EcoSeaRescue";
+import { DEFAULT_LEVEL_CONFIG, mergeLevelConfig } from "./gameConfig";
 
 export default class EcoGame {
   constructor() {
@@ -24,7 +25,7 @@ export default class EcoGame {
 
     this.animationFrameId = null;
     this.container = null;
-    this.levelConfig = null; // Stored for restart
+    this.levelConfig = null;
 
     // HUD callbacks
     this._hudCallbacks = {};
@@ -42,7 +43,9 @@ export default class EcoGame {
    */
   init(container, levelConfig = null) {
     this.container = container;
-    this.levelConfig = levelConfig ? mergeLevelConfig(levelConfig) : mergeLevelConfig({});
+    this.levelConfig = levelConfig
+      ? mergeLevelConfig(levelConfig)
+      : mergeLevelConfig({});
 
     // Renderer
     this.renderer = new THREE.WebGLRenderer({
@@ -66,11 +69,11 @@ export default class EcoGame {
       60,
       container.clientWidth / container.clientHeight,
       0.1,
-      200
+      200,
     );
 
     // Resize listener
-    window.addEventListener('resize', this._onResize);
+    window.addEventListener("resize", this._onResize);
 
     // Start with Stage 1 directly
     this.startStage1();
@@ -81,7 +84,9 @@ export default class EcoGame {
   }
 
   /**
-   * Start Stage 1 - Endless Runner
+   * Start Stage 1 — chọn game dựa vào levelConfig.stage1Game
+   * 'runner'     → EcoGameRunner (endless runner mặc định)
+   * 'searescue'  → EcoSeaRescue  (game tàu thu gom rác biển)
    */
   startStage1() {
     // Clean up any existing stage
@@ -92,11 +97,29 @@ export default class EcoGame {
 
     this.stateManager.setState(GameState.STAGE_1);
 
-    this.runner = new EcoGameRunner(this.scene, this.camera, this.stateManager, this.levelConfig.runner);
+    // ── Chọn game Stage 1 theo config ──────────────────────────────────────
+    const gameType = this.levelConfig?.stage1Game ?? "runner";
+
+    if (gameType === "searescue") {
+      this.runner = new EcoSeaRescue(
+        this.scene,
+        this.camera,
+        this.stateManager,
+        this.levelConfig.searescue ?? {},
+      );
+    } else {
+      this.runner = new EcoGameRunner(
+        this.scene,
+        this.camera,
+        this.stateManager,
+        this.levelConfig.runner,
+      );
+    }
+
     this.runner.init();
     this.activeStage = this.runner;
 
-    // Register callbacks
+    // Register callbacks — EcoSeaRescue có cùng interface với EcoGameRunner
     this.runner.onTrashCollected((count) => {
       if (this._hudCallbacks.onTrashCollected) {
         this._hudCallbacks.onTrashCollected(count);
@@ -134,6 +157,9 @@ export default class EcoGame {
   /**
    * Start Stage 2 - Sorting Game
    */
+  triggerStage2() {
+    this.switchToStage2();
+  }
   startStage2() {
     this.stateManager.setState(GameState.STAGE_2);
 
@@ -142,7 +168,7 @@ export default class EcoGame {
       this.camera,
       this.stateManager,
       this.renderer,
-      this.levelConfig.sorter
+      this.levelConfig.sorter,
     );
     this.sorter.init();
     this.activeStage = this.sorter;
@@ -190,7 +216,6 @@ export default class EcoGame {
    * Restart the entire game
    */
   restart() {
-    // Clean up
     if (this.runner) {
       this.runner.dispose();
       this.runner = null;
@@ -224,15 +249,29 @@ export default class EcoGame {
 
   // ─── HUD Callback Registration ─────────────────────────────────────────────
 
-  onTrashCollected(cb) { this._hudCallbacks.onTrashCollected = cb; }
-  onDistanceUpdate(cb) { this._hudCallbacks.onDistanceUpdate = cb; }
-  onSortingUpdate(cb) { this._hudCallbacks.onSortingUpdate = cb; }
-  onTimerUpdate(cb) { this._hudCallbacks.onTimerUpdate = cb; }
-  onStageChange(cb) { this._hudCallbacks.onStageChange = cb; }
-  onResult(cb) { this._hudCallbacks.onResult = cb; }
+  onTrashCollected(cb) {
+    this._hudCallbacks.onTrashCollected = cb;
+  }
+  onDistanceUpdate(cb) {
+    this._hudCallbacks.onDistanceUpdate = cb;
+  }
+  onSortingUpdate(cb) {
+    this._hudCallbacks.onSortingUpdate = cb;
+  }
+  onTimerUpdate(cb) {
+    this._hudCallbacks.onTimerUpdate = cb;
+  }
+  onStageChange(cb) {
+    this._hudCallbacks.onStageChange = cb;
+  }
+  onResult(cb) {
+    this._hudCallbacks.onResult = cb;
+  }
 
   /** Get the current level config */
-  getLevelConfig() { return this.levelConfig; }
+  getLevelConfig() {
+    return this.levelConfig;
+  }
 
   // ─── Game Loop ──────────────────────────────────────────────────────────────
 
@@ -240,7 +279,7 @@ export default class EcoGame {
     this.animationFrameId = requestAnimationFrame(this._update);
 
     const delta = this.clock.getDelta();
-    const clampedDelta = Math.min(delta, 0.05); // Prevent huge delta spikes
+    const clampedDelta = Math.min(delta, 0.05);
 
     if (this.activeStage) {
       this.activeStage.update(clampedDelta);
@@ -265,16 +304,13 @@ export default class EcoGame {
   // ─── Cleanup ────────────────────────────────────────────────────────────────
 
   dispose() {
-    // Stop animation loop
     if (this.animationFrameId) {
       cancelAnimationFrame(this.animationFrameId);
       this.animationFrameId = null;
     }
 
-    // Remove resize listener
-    window.removeEventListener('resize', this._onResize);
+    window.removeEventListener("resize", this._onResize);
 
-    // Dispose stages
     if (this.runner) {
       this.runner.dispose();
       this.runner = null;
@@ -284,16 +320,17 @@ export default class EcoGame {
       this.sorter = null;
     }
 
-    // Dispose renderer
     if (this.renderer) {
       this.renderer.dispose();
-      if (this.container && this.renderer.domElement.parentNode === this.container) {
+      if (
+        this.container &&
+        this.renderer.domElement.parentNode === this.container
+      ) {
         this.container.removeChild(this.renderer.domElement);
       }
       this.renderer = null;
     }
 
-    // Clear scene
     if (this.scene) {
       while (this.scene.children.length > 0) {
         const child = this.scene.children[0];

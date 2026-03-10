@@ -9,20 +9,20 @@
  *   GET /api/campaigns/:campaignId/game-levels     → list of levels for a campaign
  *   GET /api/game-levels/:levelId                  → single level config
  */
-import { mergeLevelConfig, DIFFICULTY_PRESETS } from './gameConfig';
+import { mergeLevelConfig, DIFFICULTY_PRESETS } from "./gameConfig";
 
 // ─── Config ──────────────────────────────────────────────────────────────────
 
 // TODO: Replace with your actual API base URL from environment config
-const API_BASE_URL = import.meta.env.VITE_API_URL || '/api';
+const API_BASE_URL = import.meta.env.VITE_API_URL || "/api";
 
 // ─── Mock Data (remove when real API is ready) ────────────────────────────────
 
 const MOCK_GAME_LEVELS = [
   {
-    id: 'level_1',
-    name: 'Khởi đầu',
-    difficulty: 'easy',
+    id: "level_1",
+    name: "Khởi đầu",
+    difficulty: "easy",
     itemsCount: 10,
     coinReward: 15,
     maxStars: 3,
@@ -43,9 +43,9 @@ const MOCK_GAME_LEVELS = [
     sorter: { timeLimit: 0, penaltyOnWrong: false },
   },
   {
-    id: 'level_2',
-    name: 'Thử thách',
-    difficulty: 'easy',
+    id: "level_2",
+    name: "Thử thách",
+    difficulty: "easy",
     itemsCount: 15,
     coinReward: 15,
     maxStars: 3,
@@ -66,9 +66,9 @@ const MOCK_GAME_LEVELS = [
     sorter: { timeLimit: 0, penaltyOnWrong: false },
   },
   {
-    id: 'level_3',
-    name: 'Tiến bộ',
-    difficulty: 'medium',
+    id: "level_3",
+    name: "Tiến bộ",
+    difficulty: "medium",
     itemsCount: 20,
     coinReward: 25,
     maxStars: 3,
@@ -89,9 +89,9 @@ const MOCK_GAME_LEVELS = [
     sorter: { timeLimit: 60, penaltyOnWrong: false },
   },
   {
-    id: 'level_4',
-    name: 'Chuyên gia',
-    difficulty: 'medium',
+    id: "level_4",
+    name: "Chuyên gia",
+    difficulty: "medium",
     itemsCount: 25,
     coinReward: 25,
     maxStars: 3,
@@ -112,9 +112,9 @@ const MOCK_GAME_LEVELS = [
     sorter: { timeLimit: 50, penaltyOnWrong: false },
   },
   {
-    id: 'level_5',
-    name: 'Bậc thầy',
-    difficulty: 'hard',
+    id: "level_5",
+    name: "Bậc thầy",
+    difficulty: "hard",
     itemsCount: 30,
     coinReward: 35,
     maxStars: 3,
@@ -135,9 +135,9 @@ const MOCK_GAME_LEVELS = [
     sorter: { timeLimit: 45, penaltyOnWrong: true },
   },
   {
-    id: 'level_6',
-    name: 'Huyền thoại',
-    difficulty: 'hard',
+    id: "level_6",
+    name: "Huyền thoại",
+    difficulty: "hard",
     itemsCount: 40,
     coinReward: 50,
     maxStars: 3,
@@ -156,6 +156,23 @@ const MOCK_GAME_LEVELS = [
       jumpDuration: 0.4,
     },
     sorter: { timeLimit: 30, penaltyOnWrong: true },
+  },
+  {
+    id: "level_sea_1",
+    name: "Giải cứu đại dương",
+    difficulty: "medium",
+    stage1Game: "searescue", // ← KEY FIELD
+    searescue: {
+      gameTime: 60,
+      totalTrash: 12,
+      maxHp: 10,
+    },
+    sorter: { timeLimit: 60, penaltyOnWrong: false },
+    coinReward: 30,
+    maxStars: 3,
+    stars: 0,
+    completed: false,
+    locked: false,
   },
 ];
 
@@ -196,7 +213,7 @@ export async function fetchGameLevelById(levelId) {
   const level = MOCK_GAME_LEVELS.find((l) => l.id === levelId);
   if (!level) {
     // Fallback: return medium difficulty if level not found
-    return mergeLevelConfig({ id: levelId, difficulty: 'medium' });
+    return mergeLevelConfig({ id: levelId, difficulty: "medium" });
   }
   return mergeLevelConfig(level);
 }
@@ -219,7 +236,7 @@ export async function fetchGameLevelById(levelId) {
  */
 export async function submitGameResult(campaignId, levelId, result) {
   // ── Mock implementation ──
-  console.log('[EcoGame] Submitting result:', { campaignId, levelId, result });
+  console.log("[EcoGame] Submitting result:", { campaignId, levelId, result });
   await new Promise((resolve) => setTimeout(resolve, 300));
   return { success: true, coinsEarned: 15, starsEarned: 2 };
 }
