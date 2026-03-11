@@ -11,27 +11,33 @@
 // ─── Default Level Config ─────────────────────────────────────────────────────
 
 export const DEFAULT_LEVEL_CONFIG = {
-  id: 'default',
-  name: 'Mặc định',
-  difficulty: 'medium',
+  id: "default",
+  name: "Mặc định",
+  difficulty: "medium",
 
-  // Stage 1 - Runner configuration
+  // Stage 1 - Runner or Sea Rescue configuration
   runner: {
-    baseSpeed: 12,            // Starting speed (units/second)
-    maxSpeed: 28,             // Maximum attainable speed
-    speedIncrement: 0.004,    // Speed increase per frame
-    maxDistance: 300,          // Distance before auto-ending stage 1
-    spawnIntervalMin: 0.6,    // Minimum seconds between object spawns
-    spawnIntervalMax: 1.4,    // Maximum seconds between object spawns
-    obstacleRatio: 0.4,       // 0-1, percentage of spawns that are obstacles
-    jumpHeight: 2.5,          // Player jump height
-    jumpDuration: 0.55,       // Jump animation duration (seconds)
+    baseSpeed: 12, // Starting speed (units/second)
+    maxSpeed: 28, // Maximum attainable speed
+    speedIncrement: 0.004, // Speed increase per frame
+    maxDistance: 300, // Distance before auto-ending stage 1
+    spawnIntervalMin: 0.6, // Minimum seconds between object spawns
+    spawnIntervalMax: 1.4, // Maximum seconds between object spawns
+    obstacleRatio: 0.4, // 0-1, percentage of spawns that are obstacles
+    jumpHeight: 2.5, // Player jump height
+    jumpDuration: 0.55, // Jump animation duration (seconds)
+  },
+
+  searescue: {
+    gameTime: 60,
+    totalTrash: 12,
+    maxHp: 10,
   },
 
   // Stage 2 - Sorter configuration
   sorter: {
-    timeLimit: 0,             // 0 = no time limit, otherwise seconds
-    penaltyOnWrong: false,    // If true, wrong sort subtracts from score
+    timeLimit: 0, // 0 = no time limit, otherwise seconds
+    penaltyOnWrong: false, // If true, wrong sort subtracts from score
   },
 
   // Rewards
@@ -44,7 +50,7 @@ export const DEFAULT_LEVEL_CONFIG = {
 
 export const DIFFICULTY_PRESETS = {
   easy: {
-    difficulty: 'easy',
+    difficulty: "easy",
     runner: {
       baseSpeed: 8,
       maxSpeed: 18,
@@ -65,7 +71,7 @@ export const DIFFICULTY_PRESETS = {
   },
 
   medium: {
-    difficulty: 'medium',
+    difficulty: "medium",
     runner: {
       baseSpeed: 12,
       maxSpeed: 28,
@@ -86,7 +92,7 @@ export const DIFFICULTY_PRESETS = {
   },
 
   hard: {
-    difficulty: 'hard',
+    difficulty: "hard",
     runner: {
       baseSpeed: 16,
       maxSpeed: 35,
@@ -130,6 +136,10 @@ export function mergeLevelConfig(apiConfig = {}) {
       ...DEFAULT_LEVEL_CONFIG.runner,
       ...preset.runner,
       ...(apiConfig.runner || {}),
+    },
+    searescue: {
+      ...DEFAULT_LEVEL_CONFIG.searescue,
+      ...(apiConfig.searescue || {}),
     },
     sorter: {
       ...DEFAULT_LEVEL_CONFIG.sorter,

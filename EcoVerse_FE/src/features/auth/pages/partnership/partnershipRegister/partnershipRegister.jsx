@@ -14,12 +14,7 @@ import {
   UploadOutlined,
   CheckCircleOutlined,
 } from "@ant-design/icons";
-import { z } from "zod";
-import {
-  VIETNAM_PROVINCES,
-  VIETNAM_DISTRICTS,
-  VIETNAM_WARDS,
-} from "./data/vietnam-divisions";
+import { getProvinces, getWards } from "../../../services";
 
 const { TextArea } = Input;
 const { Step } = Steps;
@@ -33,43 +28,6 @@ const PARTNERSHIP_TYPES = [
   { value: "other", label: "Khác" },
 ];
 
-const registrationSchema = z.object({
-  organization_name: z
-    .string()
-    .trim()
-    .min(3, { message: "Tên tổ chức phải có ít nhất 3 ký tự" })
-    .max(200),
-  email: z.string().trim().email({ message: "Email không hợp lệ" }),
-  phone: z
-    .string()
-    .trim()
-    .min(10, { message: "Số điện thoại không hợp lệ" })
-    .max(15),
-  address: z
-    .string()
-    .trim()
-    .min(5, { message: "Địa chỉ không hợp lệ" })
-    .max(500),
-  representative_name: z
-    .string()
-    .trim()
-    .min(2, { message: "Tên người đại diện phải có ít nhất 2 ký tự" })
-    .max(100),
-  representative_position: z.string().optional(),
-  partnership_type: z.enum([
-    "sponsor",
-    "ngo",
-    "media",
-    "technology",
-    "education",
-    "other",
-  ]),
-  website: z.string().url().optional().or(z.literal("")),
-  tax_code: z.string().optional(),
-  description: z.string().max(1000).optional(),
-  collaboration_proposal: z.string().max(2000).optional(),
-});
-
 export default function PartnershipRegister() {
   const navigate = useNavigate();
   const [isLoading, setIsLoading] = useState(false);
@@ -78,9 +36,9 @@ export default function PartnershipRegister() {
   const [licenseFile, setLicenseFile] = useState(null);
   const [logoPreview, setLogoPreview] = useState(null);
 
-  // Location state
+  const [vnProvinces, setVnProvinces] = useState([]);
+  const [vnWards, setVnWards] = useState([]);
   const [province, setProvince] = useState("");
-  const [district, setDistrict] = useState("");
   const [ward, setWard] = useState("");
   const [streetAddress, setStreetAddress] = useState("");
 
@@ -97,34 +55,39 @@ export default function PartnershipRegister() {
     description: "",
     collaboration_proposal: "",
   });
-
   const [errors, setErrors] = useState({});
 
-  // Reset district/ward on province change
-  useEffect(() => {
-    if (province) {
-      setDistrict("");
-      setWard("");
+  const fecthVietNamDivisions = async () => {
+    try {
+      const res = await getProvinces();
+      const res2 = await getWards();
+      setVnWards(res2);
+      setVnProvinces(res);
+    } catch (error) {
+      console.log(error);
+      setErrors(error);
     }
-  }, [province]);
-  useEffect(() => {
-    if (district) setWard("");
-  }, [district]);
+  };
 
-  // Build full address
   useEffect(() => {
-    const pName =
-      VIETNAM_PROVINCES.find((p) => p.code === province)?.name || "";
-    const dName = province
-      ? VIETNAM_DISTRICTS[province]?.find((d) => d.code === district)?.name ||
-        ""
+    fecthVietNamDivisions();
+  }, []);
+
+  // Reset ward khi đổi tỉnh
+  useEffect(() => {
+    if (province) setWard("");
+  }, [province]);
+
+  useEffect(() => {
+    const pName = vnProvinces.find((p) => p.code === province)?.name || "";
+    const wName = province
+      ? vnWards
+          .filter((item) => item.province_code === province)
+          .find((w) => w.code === ward)?.name || ""
       : "";
-    const wName = district
-      ? VIETNAM_WARDS[district]?.find((w) => w.code === ward)?.name || ""
-      : "";
-    const parts = [streetAddress, wName, dName, pName].filter((s) => s.trim());
+    const parts = [streetAddress, wName, pName].filter((s) => s.trim());
     setFormData((prev) => ({ ...prev, address: parts.join(", ") }));
-  }, [province, district, ward, streetAddress]);
+  }, [province, ward, streetAddress]);
 
   const handleChange = (field, value) => {
     setFormData((prev) => ({ ...prev, [field]: value }));
@@ -155,27 +118,27 @@ export default function PartnershipRegister() {
   };
 
   const validateStep1 = () => {
-    const errs = {};
+    const e = {};
     if (
       !formData.organization_name.trim() ||
       formData.organization_name.trim().length < 3
     )
-      errs.organization_name = "Tên tổ chức phải có ít nhất 3 ký tự";
+      e.organization_name = "Tên tổ chức phải có ít nhất 3 ký tự";
     if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email.trim()))
-      errs.email = "Email không hợp lệ";
+      e.email = "Email không hợp lệ";
     if (!formData.phone.trim() || formData.phone.trim().length < 10)
-      errs.phone = "Số điện thoại không hợp lệ";
-    if (!province) errs.province = "Vui lòng chọn Tỉnh/Thành phố";
-    if (!district) errs.district = "Vui lòng chọn Quận/Huyện";
+      e.phone = "Số điện thoại không hợp lệ";
+    if (!province) e.province = "Vui lòng chọn Tỉnh/Thành phố";
+    if (!ward) e.ward = "Vui lòng chọn Phường/Xã";
     if (!streetAddress.trim())
-      errs.streetAddress = "Vui lòng nhập số nhà, tên đường";
+      e.streetAddress = "Vui lòng nhập số nhà, tên đường";
     if (
       !formData.representative_name.trim() ||
       formData.representative_name.trim().length < 2
     )
-      errs.representative_name = "Tên người đại diện phải có ít nhất 2 ký tự";
-    setErrors(errs);
-    return Object.keys(errs).length === 0;
+      e.representative_name = "Tên người đại diện phải có ít nhất 2 ký tự";
+    setErrors(e);
+    return Object.keys(e).length === 0;
   };
 
   const handleNext = () => {
@@ -183,24 +146,10 @@ export default function PartnershipRegister() {
   };
 
   const handleSubmit = async () => {
-    const result = registrationSchema.safeParse(formData);
-    if (!result.success) {
-      const fe = {};
-      result.error.errors.forEach((e) => {
-        fe[e.path[0]] = e.message;
-      });
-      setErrors(fe);
-      result.error.errors.forEach((e) => message.error(e.message));
-      return;
-    }
-
     setIsLoading(true);
     try {
-      // Simulate API call
       await new Promise((r) => setTimeout(r, 2000));
-      message.success(
-        "Đăng ký thành công! Đơn đăng ký của bạn đang chờ Admin duyệt.",
-      );
+      message.success("Đăng ký thành công! Đơn đăng ký đang chờ Admin duyệt.");
       navigate("/auth/partnership/pending");
     } catch (err) {
       message.error(err.message || "Đã xảy ra lỗi khi đăng ký");
@@ -209,14 +158,14 @@ export default function PartnershipRegister() {
     }
   };
 
-  const containerVariants = {
-    hidden: { opacity: 0, y: 20 },
-    visible: {
-      opacity: 1,
-      y: 0,
-      transition: { duration: 0.5, ease: "easeOut" },
-    },
-  };
+  const wardOptions = province
+    ? vnWards
+        .filter((item) => item.province_code === province)
+        .map((w) => ({
+          value: w.code,
+          label: w.name,
+        }))
+    : [];
 
   const cardVariants = {
     hidden: { opacity: 0, scale: 0.95 },
@@ -228,37 +177,20 @@ export default function PartnershipRegister() {
     exit: { opacity: 0, scale: 0.95, transition: { duration: 0.3 } },
   };
 
-  const provinceOptions = VIETNAM_PROVINCES.map((p) => ({
-    value: p.code,
-    label: p.name,
-  }));
-  const districtOptions = province
-    ? (VIETNAM_DISTRICTS[province] || []).map((d) => ({
-        value: d.code,
-        label: d.name,
-      }))
-    : [];
-  const wardOptions = district
-    ? (VIETNAM_WARDS[district] || []).map((w) => ({
-        value: w.code,
-        label: w.name,
-      }))
-    : [];
-
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-green-50 py-8 px-4">
       <motion.div
         className="max-w-2xl mx-auto"
-        variants={containerVariants}
-        initial="hidden"
-        animate="visible"
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.5 }}
       >
         {/* Header */}
         <motion.div
           className="text-center mb-8"
           initial={{ opacity: 0, y: -20 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.2, duration: 0.5 }}
+          transition={{ delay: 0.2 }}
         >
           <div className="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-blue-100 mb-4">
             <TeamOutlined className="text-3xl text-blue-600" />
@@ -273,7 +205,7 @@ export default function PartnershipRegister() {
         <motion.div
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
-          transition={{ delay: 0.4, duration: 0.5 }}
+          transition={{ delay: 0.4 }}
           className="mb-8"
         >
           <Steps current={currentStep} className="px-4">
@@ -312,7 +244,7 @@ export default function PartnershipRegister() {
                 }
               >
                 <div className="space-y-4">
-                  {/* Org name */}
+                  {/* Tên tổ chức */}
                   <div>
                     <label className="block text-sm font-medium mb-2">
                       Tên tổ chức/công ty *
@@ -334,7 +266,7 @@ export default function PartnershipRegister() {
                     )}
                   </div>
 
-                  {/* Email + Phone */}
+                  {/* Email + SĐT */}
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div>
                       <label className="block text-sm font-medium mb-2">
@@ -375,13 +307,24 @@ export default function PartnershipRegister() {
                     </div>
                   </div>
 
-                  {/* Address */}
+                  {/* ── Địa chỉ 2 cấp ── */}
                   <div className="space-y-3">
                     <label className="block text-sm font-medium">
                       Địa chỉ *
                     </label>
 
-                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    {/* Banner thông báo */}
+                    <div className="flex items-start gap-2 bg-blue-50 border border-blue-100 rounded-lg px-3 py-2.5 text-xs text-blue-600">
+                      <span className="text-sm mt-0.5">ℹ️</span>
+                      <span>
+                        Theo cơ cấu hành chính mới sau sáp nhập, địa chỉ gồm{" "}
+                        <strong>Tỉnh/Thành phố</strong> và{" "}
+                        <strong>Phường/Xã</strong> — không còn cấp Quận/Huyện.
+                      </span>
+                    </div>
+
+                    {/* Tỉnh/TP + Phường/Xã — 2 cột */}
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                       <div>
                         <label className="block text-xs text-gray-500 mb-1">
                           Tỉnh/Thành phố
@@ -389,10 +332,13 @@ export default function PartnershipRegister() {
                         <Select
                           className="w-full"
                           size="large"
-                          placeholder="Chọn Tỉnh/Thành"
+                          placeholder="Chọn Tỉnh/Thành phố"
                           value={province || undefined}
                           onChange={(v) => setProvince(v)}
-                          options={provinceOptions}
+                          options={vnProvinces.map((p) => ({
+                            value: p.code,
+                            label: p.name,
+                          }))}
                           showSearch
                           filterOption={(input, opt) =>
                             opt.label
@@ -409,15 +355,30 @@ export default function PartnershipRegister() {
                       </div>
                       <div>
                         <label className="block text-xs text-gray-500 mb-1">
-                          Quận/Huyện
+                          Phường/Xã
                         </label>
                         <Select
                           className="w-full"
                           size="large"
-                          placeholder="Chọn Quận/Huyện"
-                          value={district || undefined}
-                          onChange={(v) => setDistrict(v)}
-                          options={districtOptions}
+                          placeholder={
+                            province
+                              ? "Chọn Phường/Xã"
+                              : "Chọn Tỉnh/Thành phố trước"
+                          }
+                          value={ward || undefined}
+                          onChange={(v) => setWard(v)}
+                          options={
+                            wardOptions.length > 0
+                              ? wardOptions
+                              : province
+                                ? [
+                                    {
+                                      value: "_other",
+                                      label: "Khác (nhập trong địa chỉ)",
+                                    },
+                                  ]
+                                : []
+                          }
                           disabled={!province}
                           showSearch
                           filterOption={(input, opt) =>
@@ -425,40 +386,17 @@ export default function PartnershipRegister() {
                               .toLowerCase()
                               .includes(input.toLowerCase())
                           }
-                          status={errors.district ? "error" : ""}
+                          status={errors.ward ? "error" : ""}
                         />
-                        {errors.district && (
+                        {errors.ward && (
                           <p className="text-red-500 text-xs mt-1">
-                            {errors.district}
+                            {errors.ward}
                           </p>
                         )}
                       </div>
-                      <div>
-                        <label className="block text-xs text-gray-500 mb-1">
-                          Phường/Xã (nếu có)
-                        </label>
-                        <Select
-                          className="w-full"
-                          size="large"
-                          placeholder={
-                            district && !wardOptions.length
-                              ? "Không có dữ liệu"
-                              : "Chọn Phường/Xã"
-                          }
-                          value={ward || undefined}
-                          onChange={(v) => setWard(v)}
-                          options={wardOptions}
-                          disabled={!district || !wardOptions.length}
-                          showSearch
-                          filterOption={(input, opt) =>
-                            opt.label
-                              .toLowerCase()
-                              .includes(input.toLowerCase())
-                          }
-                        />
-                      </div>
                     </div>
 
+                    {/* Số nhà, tên đường — full width */}
                     <div>
                       <label className="block text-xs text-gray-500 mb-1">
                         Số nhà, tên đường
@@ -480,6 +418,7 @@ export default function PartnershipRegister() {
                       )}
                     </div>
 
+                    {/* Preview */}
                     {formData.address && (
                       <div className="bg-blue-50 border border-blue-100 rounded-lg p-3">
                         <p className="text-xs text-blue-500 mb-1">
@@ -492,7 +431,7 @@ export default function PartnershipRegister() {
                     )}
                   </div>
 
-                  {/* Representative */}
+                  {/* Người đại diện */}
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div>
                       <label className="block text-sm font-medium mb-2">
@@ -566,7 +505,6 @@ export default function PartnershipRegister() {
                 }
               >
                 <div className="space-y-4">
-                  {/* Partnership type + Tax code */}
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div>
                       <label className="block text-sm font-medium mb-2">
@@ -598,7 +536,6 @@ export default function PartnershipRegister() {
                     </div>
                   </div>
 
-                  {/* Website */}
                   <div>
                     <label className="block text-sm font-medium mb-2">
                       Website
@@ -618,7 +555,6 @@ export default function PartnershipRegister() {
                     )}
                   </div>
 
-                  {/* Description */}
                   <div>
                     <label className="block text-sm font-medium mb-2">
                       Mô tả về tổ chức
@@ -636,7 +572,6 @@ export default function PartnershipRegister() {
                     />
                   </div>
 
-                  {/* Collaboration proposal */}
                   <div>
                     <label className="block text-sm font-medium mb-2">
                       Đề xuất hợp tác
@@ -654,7 +589,6 @@ export default function PartnershipRegister() {
                     />
                   </div>
 
-                  {/* Uploads */}
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div>
                       <label className="block text-sm font-medium mb-2">
@@ -728,7 +662,7 @@ export default function PartnershipRegister() {
           transition={{ delay: 0.6 }}
         >
           <button
-            onClick={() => message.info("Đăng xuất thành công")}
+            onClick={() => navigate("/auth/partnership")}
             className="text-blue-600 hover:text-blue-700 transition-colors"
           >
             Đăng xuất
