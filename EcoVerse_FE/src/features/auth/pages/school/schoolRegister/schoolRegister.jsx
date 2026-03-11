@@ -19,7 +19,7 @@ import {
 const { Option } = Select;
 const { TextArea } = Input;
 
-// Vietnam administrative data
+// ─── Dữ liệu địa chính sau sáp nhập — chỉ 2 cấp: Tỉnh/TP → Phường/Xã ────────
 const PROVINCES = [
   { code: "HCM", name: "TP. Hồ Chí Minh" },
   { code: "HN", name: "Hà Nội" },
@@ -32,14 +32,17 @@ const PROVINCES = [
   { code: "AG", name: "An Giang" },
   { code: "BR", name: "Bà Rịa - Vũng Tàu" },
   { code: "BG", name: "Bắc Giang" },
-  { code: "BK", name: "Bắc Kạn" },
-  { code: "BL", name: "Bạc Liêu" },
   { code: "BN", name: "Bắc Ninh" },
+  { code: "BL", name: "Bạc Liêu" },
+  { code: "BDH", name: "Bình Định" },
   { code: "BTH", name: "Bình Thuận" },
   { code: "BP", name: "Bình Phước" },
-  { code: "BDH", name: "Bình Định" },
   { code: "CM", name: "Cà Mau" },
   { code: "CB", name: "Cao Bằng" },
+  { code: "DL", name: "Đắk Lắk" },
+  { code: "DKN", name: "Đắk Nông" },
+  { code: "DB", name: "Điện Biên" },
+  { code: "DT", name: "Đồng Tháp" },
   { code: "GL", name: "Gia Lai" },
   { code: "HG", name: "Hà Giang" },
   { code: "HNM", name: "Hà Nam" },
@@ -48,6 +51,7 @@ const PROVINCES = [
   { code: "HBH", name: "Hòa Bình" },
   { code: "HU", name: "Huế" },
   { code: "HY", name: "Hưng Yên" },
+  { code: "HGG", name: "Hậu Giang" },
   { code: "KH", name: "Khánh Hòa" },
   { code: "KG", name: "Kiên Giang" },
   { code: "KT", name: "Kon Tum" },
@@ -78,119 +82,67 @@ const PROVINCES = [
   { code: "VL", name: "Vĩnh Long" },
   { code: "VP", name: "Vĩnh Phúc" },
   { code: "YB", name: "Yên Bái" },
-  { code: "DL", name: "Đắk Lắk" },
-  { code: "DKN", name: "Đắk Nông" },
-  { code: "DB", name: "Điện Biên" },
-  { code: "DT", name: "Đồng Tháp" },
-  { code: "HGG", name: "Hậu Giang" },
 ];
 
-const DISTRICTS_BY_PROVINCE = {
+// Phường/Xã trực thuộc Tỉnh/TP (mẫu — bổ sung đầy đủ từ API địa chính)
+const WARDS_BY_PROVINCE = {
   HCM: [
-    { code: "Q1", name: "Quận 1" },
-    { code: "Q2", name: "Quận 2 (TP. Thủ Đức)" },
-    { code: "Q3", name: "Quận 3" },
-    { code: "Q4", name: "Quận 4" },
-    { code: "Q5", name: "Quận 5" },
-    { code: "Q6", name: "Quận 6" },
-    { code: "Q7", name: "Quận 7" },
-    { code: "Q8", name: "Quận 8" },
-    { code: "Q9", name: "Quận 9 (TP. Thủ Đức)" },
-    { code: "Q10", name: "Quận 10" },
-    { code: "Q11", name: "Quận 11" },
-    { code: "Q12", name: "Quận 12" },
-    { code: "BT", name: "Quận Bình Thạnh" },
-    { code: "TB", name: "Quận Tân Bình" },
-    { code: "TP", name: "Quận Tân Phú" },
-    { code: "PN", name: "Quận Phú Nhuận" },
-    { code: "GV", name: "Quận Gò Vấp" },
-    { code: "BC", name: "Quận Bình Chánh" },
-    { code: "CC", name: "Huyện Củ Chi" },
-    { code: "HM", name: "Huyện Hóc Môn" },
-    { code: "NB", name: "Huyện Nhà Bè" },
-    { code: "CG", name: "Huyện Cần Giờ" },
-  ],
-  HN: [
-    { code: "HK", name: "Quận Hoàn Kiếm" },
-    { code: "BD", name: "Quận Ba Đình" },
-    { code: "DD", name: "Quận Đống Đa" },
-    { code: "HBT", name: "Quận Hai Bà Trưng" },
-    { code: "HM", name: "Quận Hoàng Mai" },
-    { code: "TX", name: "Quận Thanh Xuân" },
-    { code: "CG", name: "Quận Cầu Giấy" },
-    { code: "LB", name: "Quận Long Biên" },
-    { code: "TL", name: "Quận Tây Hồ" },
-    { code: "BT", name: "Quận Bắc Từ Liêm" },
-    { code: "NTL", name: "Quận Nam Từ Liêm" },
-    { code: "HD", name: "Quận Hà Đông" },
-    { code: "ST", name: "Huyện Sóc Sơn" },
-    { code: "DA", name: "Huyện Đông Anh" },
-    { code: "GL", name: "Huyện Gia Lâm" },
-    { code: "TT", name: "Huyện Thanh Trì" },
-  ],
-  DN: [
-    { code: "HC", name: "Quận Hải Châu" },
-    { code: "TK", name: "Quận Thanh Khê" },
-    { code: "ST", name: "Quận Sơn Trà" },
-    { code: "NK", name: "Quận Ngũ Hành Sơn" },
-    { code: "LC", name: "Quận Liên Chiểu" },
-    { code: "CM", name: "Quận Cẩm Lệ" },
-    { code: "HV", name: "Huyện Hòa Vang" },
-  ],
-};
-
-const WARDS_BY_DISTRICT = {
-  Q1: [
     { code: "BN", name: "Phường Bến Nghé" },
     { code: "BT", name: "Phường Bến Thành" },
-    { code: "CT", name: "Phường Cầu Ông Lãnh" },
-    { code: "CK", name: "Phường Cô Giang" },
-    { code: "DP", name: "Phường Đa Kao" },
-    { code: "NK", name: "Phường Nguyễn Cư Trinh" },
-    { code: "NT", name: "Phường Nguyễn Thái Bình" },
-    { code: "PNL", name: "Phường Phạm Ngũ Lão" },
-    { code: "TD", name: "Phường Tân Định" },
-  ],
-  Q3: [
-    { code: "P1", name: "Phường 1" },
-    { code: "P2", name: "Phường 2" },
-    { code: "P3", name: "Phường 3" },
-    { code: "P4", name: "Phường 4" },
-    { code: "P5", name: "Phường 5" },
-    { code: "VCT", name: "Phường Võ Thị Sáu" },
-  ],
-  Q7: [
-    { code: "TK", name: "Phường Tân Kiểng" },
-    { code: "TQ", name: "Phường Tân Quy" },
-    { code: "TH", name: "Phường Tân Hưng" },
+    { code: "BT2", name: "Phường Bình Thạnh" },
+    { code: "TB", name: "Phường Tân Bình" },
     { code: "TP", name: "Phường Tân Phú" },
-    { code: "PP", name: "Phường Phú Mỹ" },
-    { code: "BTH", name: "Phường Bình Thuận" },
+    { code: "PN", name: "Phường Phú Nhuận" },
+    { code: "GV", name: "Phường Gò Vấp" },
+    { code: "TD", name: "Phường Thủ Đức" },
+    { code: "BC", name: "Phường Bình Chánh" },
+    { code: "HM", name: "Xã Hóc Môn" },
+    { code: "CC", name: "Xã Củ Chi" },
+    { code: "NB2", name: "Xã Nhà Bè" },
+    { code: "CG", name: "Xã Cần Giờ" },
   ],
-  BT: [
-    { code: "P1", name: "Phường 1" },
-    { code: "P2", name: "Phường 2" },
-    { code: "P3", name: "Phường 3" },
-    { code: "P11", name: "Phường 11" },
-    { code: "P12", name: "Phường 12" },
-    { code: "P13", name: "Phường 13" },
-    { code: "P14", name: "Phường 14" },
-    { code: "P15", name: "Phường 15" },
+  HN: [
+    { code: "HK", name: "Phường Hoàn Kiếm" },
+    { code: "BDH", name: "Phường Ba Đình" },
+    { code: "DD", name: "Phường Đống Đa" },
+    { code: "HBT", name: "Phường Hai Bà Trưng" },
+    { code: "HM", name: "Phường Hoàng Mai" },
+    { code: "TX", name: "Phường Thanh Xuân" },
+    { code: "CG", name: "Phường Cầu Giấy" },
+    { code: "LB", name: "Phường Long Biên" },
+    { code: "TL", name: "Phường Tây Hồ" },
+    { code: "HD2", name: "Phường Hà Đông" },
+    { code: "SS", name: "Xã Sóc Sơn" },
+    { code: "DA", name: "Xã Đông Anh" },
+    { code: "GL2", name: "Xã Gia Lâm" },
+    { code: "TT", name: "Xã Thanh Trì" },
   ],
-  HK: [
-    { code: "CT", name: "Phường Chương Dương" },
-    { code: "CL", name: "Phường Cửa Đông" },
-    { code: "HT", name: "Phường Hàng Trống" },
-    { code: "HB", name: "Phường Hàng Bông" },
-    { code: "HC", name: "Phường Hàng Gai" },
-    { code: "LT", name: "Phường Lý Thái Tổ" },
-    { code: "PN", name: "Phường Phan Chu Trinh" },
+  DN: [
+    { code: "HC", name: "Phường Hải Châu" },
+    { code: "TK", name: "Phường Thanh Khê" },
+    { code: "ST", name: "Phường Sơn Trà" },
+    { code: "NK", name: "Phường Ngũ Hành Sơn" },
+    { code: "LC", name: "Phường Liên Chiểu" },
+    { code: "CM2", name: "Phường Cẩm Lệ" },
+    { code: "HV", name: "Xã Hòa Vang" },
+  ],
+  HP: [
+    { code: "HHB", name: "Phường Hồng Bàng" },
+    { code: "LC", name: "Phường Lê Chân" },
+    { code: "NQ", name: "Phường Ngô Quyền" },
+    { code: "KA", name: "Phường Kiến An" },
+    { code: "DK", name: "Phường Dương Kinh" },
+    { code: "HA", name: "Phường Hải An" },
+    { code: "TN2", name: "Xã Thủy Nguyên" },
+    { code: "AD", name: "Xã An Dương" },
+    { code: "VB", name: "Xã Vĩnh Bảo" },
+    { code: "TL2", name: "Xã Tiên Lãng" },
+    { code: "CH", name: "Xã Cát Hải" },
   ],
 };
 
-// Simple validation helpers
 const validate = {
-  required: (val, msg) => (!val || !val.trim() ? msg : ""),
+  required: (val, msg) => (!val || !String(val).trim() ? msg : ""),
   minLen: (val, len, msg) => (!val || val.trim().length < len ? msg : ""),
   email: (val) =>
     !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(val) ? "Email không hợp lệ" : "",
@@ -211,7 +163,6 @@ export default function SchoolRegister() {
     email: "",
     phone: "",
     province: "",
-    district: "",
     ward: "",
     street_address: "",
     representative_name: "",
@@ -225,11 +176,8 @@ export default function SchoolRegister() {
 
   const [errors, setErrors] = useState({});
 
-  const availableDistricts = formData.province
-    ? DISTRICTS_BY_PROVINCE[formData.province] || []
-    : [];
-  const availableWards = formData.district
-    ? WARDS_BY_DISTRICT[formData.district] || []
+  const availableWards = formData.province
+    ? WARDS_BY_PROVINCE[formData.province] || []
     : [];
 
   const buildFullAddress = () => {
@@ -238,10 +186,6 @@ export default function SchoolRegister() {
     if (formData.ward) {
       const w = availableWards.find((w) => w.code === formData.ward);
       if (w) parts.push(w.name);
-    }
-    if (formData.district) {
-      const d = availableDistricts.find((d) => d.code === formData.district);
-      if (d) parts.push(d.name);
     }
     if (formData.province) {
       const p = PROVINCES.find((p) => p.code === formData.province);
@@ -258,14 +202,7 @@ export default function SchoolRegister() {
 
   const handleSelectChange = (field, value) => {
     if (field === "province") {
-      setFormData((prev) => ({
-        ...prev,
-        province: value,
-        district: "",
-        ward: "",
-      }));
-    } else if (field === "district") {
-      setFormData((prev) => ({ ...prev, district: value, ward: "" }));
+      setFormData((prev) => ({ ...prev, province: value, ward: "" }));
     } else {
       setFormData((prev) => ({ ...prev, [field]: value }));
     }
@@ -300,39 +237,30 @@ export default function SchoolRegister() {
   };
 
   const validateStep1 = () => {
-    const newErrors = {};
-    newErrors.school_name = validate.minLen(
+    const e = {};
+    e.school_name = validate.minLen(
       formData.school_name,
       3,
       "Tên trường phải có ít nhất 3 ký tự",
     );
-    newErrors.email = validate.email(formData.email);
-    newErrors.phone = validate.phone(formData.phone);
-    newErrors.province = validate.required(
+    e.email = validate.email(formData.email);
+    e.phone = validate.phone(formData.phone);
+    e.province = validate.required(
       formData.province,
       "Vui lòng chọn tỉnh/thành phố",
     );
-    newErrors.district = validate.required(
-      formData.district,
-      "Vui lòng chọn quận/huyện",
-    );
-    newErrors.ward = validate.required(
-      formData.ward,
-      "Vui lòng chọn phường/xã",
-    );
-    newErrors.street_address = validate.minLen(
+    e.ward = validate.required(formData.ward, "Vui lòng chọn phường/xã");
+    e.street_address = validate.minLen(
       formData.street_address,
       5,
       "Địa chỉ phải có ít nhất 5 ký tự",
     );
-    newErrors.representative_name = validate.minLen(
+    e.representative_name = validate.minLen(
       formData.representative_name,
       2,
       "Tên người đại diện phải có ít nhất 2 ký tự",
     );
-    const filtered = Object.fromEntries(
-      Object.entries(newErrors).filter(([, v]) => v),
-    );
+    const filtered = Object.fromEntries(Object.entries(e).filter(([, v]) => v));
     setErrors(filtered);
     return Object.keys(filtered).length === 0;
   };
@@ -340,34 +268,25 @@ export default function SchoolRegister() {
   const handleSubmit = async (e) => {
     e.preventDefault();
     if (!validateStep1()) return;
-
     setIsLoading(true);
     try {
-      // TODO: replace with your API call
-      // const fullAddress = buildFullAddress();
-      // await api.post('/school_registrations', { ...formData, address: fullAddress, logoFile, licenseFile });
-      await new Promise((r) => setTimeout(r, 1000)); // mock delay
+      await new Promise((r) => setTimeout(r, 1000));
       notification.success({
         message: "Đăng ký thành công!",
         description: "Đơn đăng ký đang chờ Admin duyệt.",
       });
       navigate("/auth/school/pending");
-    } catch (error) {
+    } catch (err) {
       notification.error({
         message: "Lỗi",
-        description: error?.message || "Đã xảy ra lỗi khi đăng ký",
+        description: err?.message || "Đã xảy ra lỗi khi đăng ký",
       });
     } finally {
       setIsLoading(false);
     }
   };
 
-  const handleLogout = () => {
-    navigate("/auth/school");
-  };
-
-  // Shared input class
-  const inputCls =
+  const cls =
     "rounded-xl border-gray-200 hover:border-green-400 focus:border-green-500";
 
   return (
@@ -390,7 +309,7 @@ export default function SchoolRegister() {
           </p>
         </motion.div>
 
-        {/* Progress Steps */}
+        {/* Progress */}
         <motion.div
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
@@ -407,7 +326,8 @@ export default function SchoolRegister() {
                 className={`flex items-center gap-2 ${step >= num ? "text-green-600" : "text-gray-400"}`}
               >
                 <div
-                  className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold transition-all ${step >= num ? "bg-green-500 text-white shadow-md" : "bg-gray-100 text-gray-400"}`}
+                  className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold transition-all
+                  ${step >= num ? "bg-green-500 text-white shadow-md" : "bg-gray-100 text-gray-400"}`}
                 >
                   {step > num ? <CheckCircle2 className="w-4 h-4" /> : num}
                 </div>
@@ -421,7 +341,7 @@ export default function SchoolRegister() {
 
         <form onSubmit={handleSubmit}>
           <AnimatePresence mode="wait">
-            {/* Step 1 */}
+            {/* ── Step 1 ── */}
             {step === 1 && (
               <motion.div
                 key="step1"
@@ -445,7 +365,7 @@ export default function SchoolRegister() {
                       Nhập thông tin cơ bản về trường học của bạn
                     </p>
 
-                    {/* School name */}
+                    {/* Tên trường */}
                     <div className="space-y-1">
                       <label className="text-sm font-semibold text-gray-700">
                         Tên trường học <span className="text-red-500">*</span>
@@ -455,7 +375,7 @@ export default function SchoolRegister() {
                         placeholder="VD: Trường Tiểu học Nguyễn Du"
                         value={formData.school_name}
                         onChange={handleInputChange}
-                        className={inputCls}
+                        className={cls}
                         size="large"
                       />
                       {errors.school_name && (
@@ -465,7 +385,7 @@ export default function SchoolRegister() {
                       )}
                     </div>
 
-                    {/* Email & Phone */}
+                    {/* Email & SĐT */}
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                       <div className="space-y-1">
                         <label className="text-sm font-semibold text-gray-700">
@@ -478,7 +398,7 @@ export default function SchoolRegister() {
                           value={formData.email}
                           onChange={handleInputChange}
                           prefix={<Mail className="w-4 h-4 text-gray-400" />}
-                          className={inputCls}
+                          className={cls}
                           size="large"
                         />
                         {errors.email && (
@@ -495,7 +415,7 @@ export default function SchoolRegister() {
                           value={formData.phone}
                           onChange={handleInputChange}
                           prefix={<Phone className="w-4 h-4 text-gray-400" />}
-                          className={inputCls}
+                          className={cls}
                           size="large"
                         />
                         {errors.phone && (
@@ -504,7 +424,7 @@ export default function SchoolRegister() {
                       </div>
                     </div>
 
-                    {/* Address Section */}
+                    {/* ── Địa chỉ 2 cấp ── */}
                     <div className="space-y-3 pt-1">
                       <div className="flex items-center gap-2">
                         <MapPin className="w-4 h-4 text-green-500" />
@@ -514,10 +434,22 @@ export default function SchoolRegister() {
                         </label>
                       </div>
 
+                      {/* Banner thông báo cơ cấu mới */}
+                      <div className="flex items-start gap-2 bg-blue-50 border border-blue-100 rounded-xl px-3 py-2.5 text-xs text-blue-600">
+                        <span className="text-sm mt-0.5">ℹ️</span>
+                        <span>
+                          Theo cơ cấu hành chính mới sau sáp nhập, địa chỉ gồm{" "}
+                          <strong>Tỉnh/Thành phố</strong> và{" "}
+                          <strong>Phường/Xã</strong> — không còn cấp Quận/Huyện.
+                        </span>
+                      </div>
+
+                      {/* Tỉnh/TP và Phường/Xã — 2 cột */}
                       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                         <div className="space-y-1">
                           <label className="text-xs font-semibold text-gray-600">
-                            Tỉnh/Thành phố
+                            Tỉnh/Thành phố{" "}
+                            <span className="text-red-400">*</span>
                           </label>
                           <Select
                             className="w-full"
@@ -540,68 +472,36 @@ export default function SchoolRegister() {
                             </p>
                           )}
                         </div>
+
                         <div className="space-y-1">
                           <label className="text-xs font-semibold text-gray-600">
-                            Quận/Huyện
+                            Phường/Xã <span className="text-red-400">*</span>
                           </label>
                           <Select
                             className="w-full"
                             size="large"
                             placeholder={
                               formData.province
-                                ? "Chọn quận/huyện"
+                                ? "Chọn phường/xã"
                                 : "Chọn tỉnh/thành phố trước"
                             }
-                            value={formData.district || undefined}
-                            onChange={(v) => handleSelectChange("district", v)}
+                            value={formData.ward || undefined}
+                            onChange={(v) => handleSelectChange("ward", v)}
                             disabled={!formData.province}
                             showSearch
                             optionFilterProp="children"
                           >
-                            {availableDistricts.map((d) => (
-                              <Option key={d.code} value={d.code}>
-                                {d.name}
-                              </Option>
-                            ))}
-                          </Select>
-                          {errors.district && (
-                            <p className="text-xs text-red-500">
-                              {errors.district}
-                            </p>
-                          )}
-                        </div>
-                      </div>
-
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        <div className="space-y-1">
-                          <label className="text-xs font-semibold text-gray-600">
-                            Phường/Xã
-                          </label>
-                          <Select
-                            className="w-full"
-                            size="large"
-                            placeholder={
-                              formData.district
-                                ? "Chọn phường/xã"
-                                : "Chọn quận/huyện trước"
-                            }
-                            value={formData.ward || undefined}
-                            onChange={(v) => handleSelectChange("ward", v)}
-                            disabled={!formData.district}
-                            showSearch
-                            optionFilterProp="children"
-                          >
-                            {availableWards.length > 0 ? (
-                              availableWards.map((w) => (
-                                <Option key={w.code} value={w.code}>
-                                  {w.name}
-                                </Option>
-                              ))
-                            ) : (
-                              <Option value="_other">
-                                Khác (nhập trong địa chỉ cụ thể)
-                              </Option>
-                            )}
+                            {availableWards.length > 0
+                              ? availableWards.map((w) => (
+                                  <Option key={w.code} value={w.code}>
+                                    {w.name}
+                                  </Option>
+                                ))
+                              : formData.province && (
+                                  <Option value="_other">
+                                    Khác (nhập trong địa chỉ cụ thể)
+                                  </Option>
+                                )}
                           </Select>
                           {errors.ward && (
                             <p className="text-xs text-red-500">
@@ -609,30 +509,32 @@ export default function SchoolRegister() {
                             </p>
                           )}
                         </div>
-                        <div className="space-y-1">
-                          <label className="text-xs font-semibold text-gray-600">
-                            Số nhà, tên đường
-                          </label>
-                          <Input
-                            name="street_address"
-                            placeholder="VD: 123 Nguyễn Văn Linh"
-                            value={formData.street_address}
-                            onChange={handleInputChange}
-                            className={inputCls}
-                            size="large"
-                          />
-                          {errors.street_address && (
-                            <p className="text-xs text-red-500">
-                              {errors.street_address}
-                            </p>
-                          )}
-                        </div>
                       </div>
 
-                      {/* Address preview */}
+                      {/* Số nhà, tên đường — full width */}
+                      <div className="space-y-1">
+                        <label className="text-xs font-semibold text-gray-600">
+                          Số nhà, tên đường
+                        </label>
+                        <Input
+                          name="street_address"
+                          placeholder="VD: 123 Nguyễn Văn Linh"
+                          value={formData.street_address}
+                          onChange={handleInputChange}
+                          prefix={<MapPin className="w-4 h-4 text-gray-300" />}
+                          className={cls}
+                          size="large"
+                        />
+                        {errors.street_address && (
+                          <p className="text-xs text-red-500">
+                            {errors.street_address}
+                          </p>
+                        )}
+                      </div>
+
+                      {/* Preview địa chỉ */}
                       {(formData.street_address ||
                         formData.ward ||
-                        formData.district ||
                         formData.province) && (
                         <motion.div
                           initial={{ opacity: 0, height: 0 }}
@@ -649,7 +551,7 @@ export default function SchoolRegister() {
                       )}
                     </div>
 
-                    {/* Representative */}
+                    {/* Người đại diện */}
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                       <div className="space-y-1">
                         <label className="text-sm font-semibold text-gray-700">
@@ -661,7 +563,7 @@ export default function SchoolRegister() {
                           value={formData.representative_name}
                           onChange={handleInputChange}
                           prefix={<User className="w-4 h-4 text-gray-400" />}
-                          className={inputCls}
+                          className={cls}
                           size="large"
                         />
                         {errors.representative_name && (
@@ -679,7 +581,7 @@ export default function SchoolRegister() {
                           placeholder="VD: Hiệu trưởng"
                           value={formData.representative_position}
                           onChange={handleInputChange}
-                          className={inputCls}
+                          className={cls}
                           size="large"
                         />
                       </div>
@@ -703,7 +605,7 @@ export default function SchoolRegister() {
               </motion.div>
             )}
 
-            {/* Step 2 */}
+            {/* ── Step 2 ── */}
             {step === 2 && (
               <motion.div
                 key="step2"
@@ -727,7 +629,6 @@ export default function SchoolRegister() {
                       Thông tin bổ sung và tài liệu đính kèm
                     </p>
 
-                    {/* School type & student count */}
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                       <div className="space-y-1">
                         <label className="text-sm font-semibold text-gray-700">
@@ -753,13 +654,12 @@ export default function SchoolRegister() {
                           placeholder="VD: 500"
                           value={formData.student_count}
                           onChange={handleInputChange}
-                          className={inputCls}
+                          className={cls}
                           size="large"
                         />
                       </div>
                     </div>
 
-                    {/* Website & Tax */}
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                       <div className="space-y-1">
                         <label className="text-sm font-semibold text-gray-700">
@@ -771,14 +671,9 @@ export default function SchoolRegister() {
                           value={formData.website}
                           onChange={handleInputChange}
                           prefix={<Globe className="w-4 h-4 text-gray-400" />}
-                          className={inputCls}
+                          className={cls}
                           size="large"
                         />
-                        {errors.website && (
-                          <p className="text-xs text-red-500">
-                            {errors.website}
-                          </p>
-                        )}
                       </div>
                       <div className="space-y-1">
                         <label className="text-sm font-semibold text-gray-700">
@@ -789,13 +684,12 @@ export default function SchoolRegister() {
                           placeholder="VD: 0123456789"
                           value={formData.tax_code}
                           onChange={handleInputChange}
-                          className={inputCls}
+                          className={cls}
                           size="large"
                         />
                       </div>
                     </div>
 
-                    {/* Description */}
                     <div className="space-y-1">
                       <label className="text-sm font-semibold text-gray-700">
                         Mô tả về trường
@@ -806,13 +700,11 @@ export default function SchoolRegister() {
                         value={formData.description}
                         onChange={handleInputChange}
                         rows={4}
-                        className={inputCls}
+                        className={cls}
                       />
                     </div>
 
-                    {/* File uploads */}
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                      {/* Logo */}
                       <div className="space-y-1">
                         <label className="text-sm font-semibold text-gray-700">
                           Logo trường
@@ -822,7 +714,7 @@ export default function SchoolRegister() {
                             <div className="space-y-2">
                               <img
                                 src={logoPreview}
-                                alt="Logo preview"
+                                alt="Logo"
                                 className="w-20 h-20 mx-auto object-contain rounded-xl"
                               />
                               <p className="text-xs text-gray-500 truncate">
@@ -848,8 +740,6 @@ export default function SchoolRegister() {
                           />
                         </label>
                       </div>
-
-                      {/* License */}
                       <div className="space-y-1">
                         <label className="text-sm font-semibold text-gray-700">
                           Giấy phép hoạt động
@@ -883,7 +773,6 @@ export default function SchoolRegister() {
                       </div>
                     </div>
 
-                    {/* Actions */}
                     <div className="flex justify-between pt-2">
                       <motion.button
                         type="button"
@@ -918,10 +807,9 @@ export default function SchoolRegister() {
           </AnimatePresence>
         </form>
 
-        {/* Logout */}
         <p className="text-center text-sm text-gray-400 mt-6">
           <button
-            onClick={handleLogout}
+            onClick={() => navigate("/auth/school")}
             className="hover:text-green-600 transition-colors underline underline-offset-2"
           >
             Đăng xuất
