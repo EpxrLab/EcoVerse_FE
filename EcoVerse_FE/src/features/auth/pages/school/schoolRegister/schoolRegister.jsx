@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import { Card, Input, Select, notification } from "antd";
@@ -15,131 +15,10 @@ import {
   Globe,
   FileText,
 } from "lucide-react";
+import { getProvinces, getWards } from "../../../services";
 
 const { Option } = Select;
 const { TextArea } = Input;
-
-// ─── Dữ liệu địa chính sau sáp nhập — chỉ 2 cấp: Tỉnh/TP → Phường/Xã ────────
-const PROVINCES = [
-  { code: "HCM", name: "TP. Hồ Chí Minh" },
-  { code: "HN", name: "Hà Nội" },
-  { code: "DN", name: "Đà Nẵng" },
-  { code: "HP", name: "Hải Phòng" },
-  { code: "CT", name: "Cần Thơ" },
-  { code: "BD", name: "Bình Dương" },
-  { code: "DNG", name: "Đồng Nai" },
-  { code: "LA", name: "Long An" },
-  { code: "AG", name: "An Giang" },
-  { code: "BR", name: "Bà Rịa - Vũng Tàu" },
-  { code: "BG", name: "Bắc Giang" },
-  { code: "BN", name: "Bắc Ninh" },
-  { code: "BL", name: "Bạc Liêu" },
-  { code: "BDH", name: "Bình Định" },
-  { code: "BTH", name: "Bình Thuận" },
-  { code: "BP", name: "Bình Phước" },
-  { code: "CM", name: "Cà Mau" },
-  { code: "CB", name: "Cao Bằng" },
-  { code: "DL", name: "Đắk Lắk" },
-  { code: "DKN", name: "Đắk Nông" },
-  { code: "DB", name: "Điện Biên" },
-  { code: "DT", name: "Đồng Tháp" },
-  { code: "GL", name: "Gia Lai" },
-  { code: "HG", name: "Hà Giang" },
-  { code: "HNM", name: "Hà Nam" },
-  { code: "HT", name: "Hà Tĩnh" },
-  { code: "HD", name: "Hải Dương" },
-  { code: "HBH", name: "Hòa Bình" },
-  { code: "HU", name: "Huế" },
-  { code: "HY", name: "Hưng Yên" },
-  { code: "HGG", name: "Hậu Giang" },
-  { code: "KH", name: "Khánh Hòa" },
-  { code: "KG", name: "Kiên Giang" },
-  { code: "KT", name: "Kon Tum" },
-  { code: "LC", name: "Lai Châu" },
-  { code: "LD", name: "Lâm Đồng" },
-  { code: "LS", name: "Lạng Sơn" },
-  { code: "LCA", name: "Lào Cai" },
-  { code: "ND", name: "Nam Định" },
-  { code: "NA", name: "Nghệ An" },
-  { code: "NB", name: "Ninh Bình" },
-  { code: "NT", name: "Ninh Thuận" },
-  { code: "PT", name: "Phú Thọ" },
-  { code: "PY", name: "Phú Yên" },
-  { code: "QB", name: "Quảng Bình" },
-  { code: "QN", name: "Quảng Nam" },
-  { code: "QNG", name: "Quảng Ngãi" },
-  { code: "QNH", name: "Quảng Ninh" },
-  { code: "QT", name: "Quảng Trị" },
-  { code: "ST", name: "Sóc Trăng" },
-  { code: "SL", name: "Sơn La" },
-  { code: "TN", name: "Tây Ninh" },
-  { code: "TB", name: "Thái Bình" },
-  { code: "TNG", name: "Thái Nguyên" },
-  { code: "TH", name: "Thanh Hóa" },
-  { code: "TG", name: "Tiền Giang" },
-  { code: "TV", name: "Trà Vinh" },
-  { code: "TQ", name: "Tuyên Quang" },
-  { code: "VL", name: "Vĩnh Long" },
-  { code: "VP", name: "Vĩnh Phúc" },
-  { code: "YB", name: "Yên Bái" },
-];
-
-// Phường/Xã trực thuộc Tỉnh/TP (mẫu — bổ sung đầy đủ từ API địa chính)
-const WARDS_BY_PROVINCE = {
-  HCM: [
-    { code: "BN", name: "Phường Bến Nghé" },
-    { code: "BT", name: "Phường Bến Thành" },
-    { code: "BT2", name: "Phường Bình Thạnh" },
-    { code: "TB", name: "Phường Tân Bình" },
-    { code: "TP", name: "Phường Tân Phú" },
-    { code: "PN", name: "Phường Phú Nhuận" },
-    { code: "GV", name: "Phường Gò Vấp" },
-    { code: "TD", name: "Phường Thủ Đức" },
-    { code: "BC", name: "Phường Bình Chánh" },
-    { code: "HM", name: "Xã Hóc Môn" },
-    { code: "CC", name: "Xã Củ Chi" },
-    { code: "NB2", name: "Xã Nhà Bè" },
-    { code: "CG", name: "Xã Cần Giờ" },
-  ],
-  HN: [
-    { code: "HK", name: "Phường Hoàn Kiếm" },
-    { code: "BDH", name: "Phường Ba Đình" },
-    { code: "DD", name: "Phường Đống Đa" },
-    { code: "HBT", name: "Phường Hai Bà Trưng" },
-    { code: "HM", name: "Phường Hoàng Mai" },
-    { code: "TX", name: "Phường Thanh Xuân" },
-    { code: "CG", name: "Phường Cầu Giấy" },
-    { code: "LB", name: "Phường Long Biên" },
-    { code: "TL", name: "Phường Tây Hồ" },
-    { code: "HD2", name: "Phường Hà Đông" },
-    { code: "SS", name: "Xã Sóc Sơn" },
-    { code: "DA", name: "Xã Đông Anh" },
-    { code: "GL2", name: "Xã Gia Lâm" },
-    { code: "TT", name: "Xã Thanh Trì" },
-  ],
-  DN: [
-    { code: "HC", name: "Phường Hải Châu" },
-    { code: "TK", name: "Phường Thanh Khê" },
-    { code: "ST", name: "Phường Sơn Trà" },
-    { code: "NK", name: "Phường Ngũ Hành Sơn" },
-    { code: "LC", name: "Phường Liên Chiểu" },
-    { code: "CM2", name: "Phường Cẩm Lệ" },
-    { code: "HV", name: "Xã Hòa Vang" },
-  ],
-  HP: [
-    { code: "HHB", name: "Phường Hồng Bàng" },
-    { code: "LC", name: "Phường Lê Chân" },
-    { code: "NQ", name: "Phường Ngô Quyền" },
-    { code: "KA", name: "Phường Kiến An" },
-    { code: "DK", name: "Phường Dương Kinh" },
-    { code: "HA", name: "Phường Hải An" },
-    { code: "TN2", name: "Xã Thủy Nguyên" },
-    { code: "AD", name: "Xã An Dương" },
-    { code: "VB", name: "Xã Vĩnh Bảo" },
-    { code: "TL2", name: "Xã Tiên Lãng" },
-    { code: "CH", name: "Xã Cát Hải" },
-  ],
-};
 
 const validate = {
   required: (val, msg) => (!val || !String(val).trim() ? msg : ""),
@@ -154,10 +33,11 @@ export default function SchoolRegister() {
   const navigate = useNavigate();
   const [isLoading, setIsLoading] = useState(false);
   const [step, setStep] = useState(1);
+  const [vnProvinces, setVnProvinces] = useState([]);
+  const [vnWards, setVnWards] = useState([]);
   const [logoFile, setLogoFile] = useState(null);
   const [licenseFile, setLicenseFile] = useState(null);
   const [logoPreview, setLogoPreview] = useState(null);
-
   const [formData, setFormData] = useState({
     school_name: "",
     email: "",
@@ -174,10 +54,26 @@ export default function SchoolRegister() {
     description: "",
   });
 
+  const fetchVietNamDivisions = async () => {
+    try {
+      const res1 = await getProvinces();
+      const res2 = await getWards();
+
+      setVnProvinces(res1);
+      setVnWards(res2);
+    } catch (error) {
+      console.log(error);
+    }
+  };
+
+  useEffect(() => {
+    fetchVietNamDivisions();
+  }, []);
+
   const [errors, setErrors] = useState({});
 
   const availableWards = formData.province
-    ? WARDS_BY_PROVINCE[formData.province] || []
+    ? vnWards.filter((item) => item.province_code === formData.province) || []
     : [];
 
   const buildFullAddress = () => {
@@ -188,7 +84,7 @@ export default function SchoolRegister() {
       if (w) parts.push(w.name);
     }
     if (formData.province) {
-      const p = PROVINCES.find((p) => p.code === formData.province);
+      const p = vnProvinces.find((p) => p.code === formData.province);
       if (p) parts.push(p.name);
     }
     return parts.join(", ");
@@ -460,7 +356,7 @@ export default function SchoolRegister() {
                             showSearch
                             optionFilterProp="children"
                           >
-                            {PROVINCES.map((p) => (
+                            {vnProvinces.map((p) => (
                               <Option key={p.code} value={p.code}>
                                 {p.name}
                               </Option>
