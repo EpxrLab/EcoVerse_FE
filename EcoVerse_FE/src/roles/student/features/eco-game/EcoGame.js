@@ -157,9 +157,6 @@ export default class EcoGame {
   /**
    * Start Stage 2 - Sorting Game
    */
-  triggerStage2() {
-    this.switchToStage2();
-  }
   startStage2() {
     this.stateManager.setState(GameState.STAGE_2);
 
@@ -271,6 +268,14 @@ export default class EcoGame {
   /** Get the current level config */
   getLevelConfig() {
     return this.levelConfig;
+  }
+
+  /**
+   * Public method for EcoSeaRescueHUD to trigger Stage 2 transition
+   * (switchToStage2 is internal — this exposes it safely)
+   */
+  triggerStage2() {
+    this.switchToStage2();
   }
 
   // ─── Game Loop ──────────────────────────────────────────────────────────────

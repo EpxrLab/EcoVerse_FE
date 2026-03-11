@@ -87,9 +87,16 @@ export function initScene(container) {
 
 /* ===================== INIT WORLD ===================== */
 export function initWorld(scene) {
+  // Set sea background
+  scene.background = new THREE.Color(0x7dd3fc);
+
   // Ocean ground
   const gltfLoaderGround = new GLTFLoader();
-  const oceanState = { oceanModel: null, oceanMixer: null };
+  const oceanState = {
+    oceanModel: null,
+    oceanMixer: null,
+    fallbackPlane: null,
+  };
 
   gltfLoaderGround.load(
     "/asset/ocean__water_perfect_loop.glb",
@@ -115,10 +122,11 @@ export function initWorld(scene) {
       const fallback = makeMesh(new THREE.PlaneGeometry(100, 100), 0x0ea5e9);
       fallback.rotation.x = -Math.PI / 2;
       scene.add(fallback);
+      oceanState.fallbackPlane = fallback; // track for disposal
     },
   );
 
-  // Underwater depth plane
+  // Underwater depth plane — tracked for disposal
   const underwaterPlane = new THREE.Mesh(
     new THREE.PlaneGeometry(200, 200),
     new THREE.MeshStandardMaterial({
@@ -130,6 +138,7 @@ export function initWorld(scene) {
   underwaterPlane.rotation.x = -Math.PI / 2;
   underwaterPlane.position.y = -2;
   scene.add(underwaterPlane);
+  oceanState.underwaterPlane = underwaterPlane; // track for disposal
 
   return oceanState;
 }

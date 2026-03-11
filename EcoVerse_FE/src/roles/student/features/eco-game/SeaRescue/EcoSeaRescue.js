@@ -240,11 +240,16 @@ export default class EcoSeaRescue {
     if (this._keyDown) window.removeEventListener("keydown", this._keyDown);
     if (this._keyUp) window.removeEventListener("keyup", this._keyUp);
     if (this._gameState) this._gameState.stopped = true;
+    this.scene.background = null;
+    this.scene.fog = null;
 
     // Remove Three.js objects from the shared scene
     const toRemove = [
       this._player,
       this._gameState?.storage,
+      this._gameState?.underwaterPlane,
+      this._gameState?.oceanModel,
+      this._gameState?.fallbackPlane,
       ...(this._gameState?.trash ?? []),
       ...(this._gameState?.obstacles ?? []),
       ...(this._gameState?.allZones ?? []),

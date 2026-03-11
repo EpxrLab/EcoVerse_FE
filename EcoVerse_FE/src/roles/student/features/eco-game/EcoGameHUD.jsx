@@ -158,6 +158,8 @@ export default function EcoGameHUD({ game, onBack, levelConfig }) {
           !showGameOver &&
           !showTransition &&
           (isSeaRescue ? (
+            // EcoSeaRescueHUD wires itself directly into game.runner
+            // — it does NOT run its own loop, only shows reactive UI
             <EcoSeaRescueHUD
               key="searescue"
               game={game}
