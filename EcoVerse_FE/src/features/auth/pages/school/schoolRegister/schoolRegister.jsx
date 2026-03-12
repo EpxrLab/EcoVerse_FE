@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
-import { Card, Input, Select, notification } from "antd";
+import { Card, Input, Select, message, notification } from "antd";
 import {
   Loader2,
   School,
@@ -15,7 +15,12 @@ import {
   Globe,
   FileText,
 } from "lucide-react";
-import { getProvinces, getWards } from "../../../services";
+import {
+  getProvinces,
+  getWards,
+  uploadFile,
+  schoolRegister,
+} from "../../../services";
 
 const { Option } = Select;
 const { TextArea } = Input;
@@ -118,7 +123,7 @@ export default function SchoolRegister() {
     if (errors[field]) setErrors((prev) => ({ ...prev, [field]: "" }));
   };
 
-  const handleLogoChange = (e) => {
+  const handleLogoChange = async (e) => {
     const file = e.target.files?.[0];
     if (!file) return;
     if (file.size > 5 * 1024 * 1024) {
@@ -128,11 +133,25 @@ export default function SchoolRegister() {
       });
       return;
     }
+
+    try {
+      const data = new FormData();
+      data.append("file", file);
+      const res = await uploadFile(data);
+      if (res) {
+        message.success("Logo tải lên thành công!");
+        setFormData((prev) => ({ ...prev, logoUrl: res.data.url }));
+      } else {
+        message.error("Logo tải lên thất bại!");
+      }
+    } catch (error) {
+      console.log(error);
+    }
     setLogoFile(file);
     setLogoPreview(URL.createObjectURL(file));
   };
 
-  const handleLicenseChange = (e) => {
+  const handleLicenseChange = async (e) => {
     const file = e.target.files?.[0];
     if (!file) return;
     if (file.size > 10 * 1024 * 1024) {
@@ -141,6 +160,20 @@ export default function SchoolRegister() {
         description: "Giấy phép không được vượt quá 10MB",
       });
       return;
+    }
+
+    try {
+      const data = new FormData();
+      data.append("file", file);
+      const res = await uploadFile(data);
+      if (res) {
+        message.success("Giấy phép lao động tải lên thành công!");
+        setFormData((prev) => ({ ...prev, licenseUrl: res.data.url }));
+      } else {
+        message.error("Giấy phép lao động tải lên thất bại!");
+      }
+    } catch (error) {
+      console.log(error);
     }
     setLicenseFile(file);
   };
@@ -179,13 +212,19 @@ export default function SchoolRegister() {
     if (!validateStep1()) return;
     setIsLoading(true);
     try {
-      await new Promise((r) => setTimeout(r, 1000));
-      console.log("AAAAAAAAAAAAAa", formData);
-      notification.success({
-        message: "Đăng ký thành công!",
-        description: "Đơn đăng ký đang chờ Admin duyệt.",
-      });
-      navigate("/auth/school/pending");
+      const res = await schoolRegister(formData);
+      if (res) {
+        notification.success({
+          message: "Đăng ký thành công!",
+          description: "Đơn đăng ký đang chờ Admin duyệt.",
+        });
+        navigate("/auth/school/pending");
+      } else {
+        notification.error({
+          message: "Lỗi",
+          description: "Đã xảy ra lỗi khi đăng ký, vui lòng thử lại!",
+        });
+      }
     } catch (err) {
       notification.error({
         message: "Lỗi",
