@@ -120,6 +120,9 @@ export default function SchoolAuth() {
     try {
       await new Promise((resolve) => setTimeout(resolve, 1500));
       message.success("Xác thực thành công! Đang chuyển đến trang đăng ký...");
+      sessionStorage.setItem("otpCode", code);
+      sessionStorage.setItem("mail", email);
+      sessionStorage.setItem("pass", password);
       navigate("/auth/school/register");
     } catch (error) {
       message.error("Đã xảy ra lỗi khi xác thực");
@@ -418,21 +421,6 @@ export default function SchoolAuth() {
                           )}
                         </p>
                       </div>
-
-                      {/* Dev Mode OTP Display */}
-                      {devModeOtp && (
-                        <div className="rounded-lg border-2 border-dashed border-amber-400 bg-amber-50 p-4 text-center mb-4">
-                          <p className="text-xs text-amber-600 mb-2 font-medium">
-                            🔧 DEV MODE - Mã OTP của bạn:
-                          </p>
-                          <p className="text-2xl font-mono font-bold text-amber-700 tracking-widest">
-                            {devModeOtp}
-                          </p>
-                          <p className="text-xs text-amber-600/70 mt-2">
-                            (Email không được gửi trong chế độ dev)
-                          </p>
-                        </div>
-                      )}
 
                       {/* OTP Input */}
                       <div className="flex justify-center gap-2 py-4">
