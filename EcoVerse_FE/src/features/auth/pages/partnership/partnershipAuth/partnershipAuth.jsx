@@ -14,6 +14,11 @@ import {
 import { z } from "zod";
 import { useNavigate } from "react-router-dom";
 import toast from "react-hot-toast";
+import {
+  loginFunction,
+  sendOTPVerification,
+  verifyOTP,
+} from "../../../services";
 
 const { TabPane } = Tabs;
 
@@ -32,7 +37,6 @@ export default function PartnershipAuth() {
 
   const [registerStep, setRegisterStep] = useState("credentials");
   const [otpCode, setOtpCode] = useState(["", "", "", "", "", ""]);
-  const [devModeOtp, setDevModeOtp] = useState(null);
   const [isResending, setIsResending] = useState(false);
   const [resendCountdown, setResendCountdown] = useState(0);
 
@@ -61,9 +65,19 @@ export default function PartnershipAuth() {
     if (!validate()) return;
     setIsLoading(true);
     try {
-      await new Promise((r) => setTimeout(r, 1500));
-      toast.success("Đăng nhập thành công!");
-      navigate("/partnership");
+      const payload = {
+        emailOrUsername: email,
+        password: password,
+      };
+      const res = await loginFunction(payload);
+      if (res && res.data.role === "THIRD_PARTY_PARTNERSHIP") {
+        toast.success("Đăng nhập thành công!");
+        sessionStorage.setItem("accessToken", res?.data?.accessToken);
+        sessionStorage.setItem("refreshToken", res?.data?.refreshToken);
+        navigate("/partnership");
+      } else {
+        toast.error("Đăng nhập thất bại!");
+      }
     } catch {
       toast.error("Đã xảy ra lỗi khi đăng nhập");
     } finally {
@@ -75,14 +89,18 @@ export default function PartnershipAuth() {
     if (!validate()) return;
     setIsLoading(true);
     try {
-      await new Promise((r) => setTimeout(r, 1500));
-      const mockOtp = "123456";
-      setDevModeOtp(mockOtp);
-      message.success(`Dev Mode – Mã OTP: ${mockOtp}`);
-      setRegisterStep("verify");
-      setResendCountdown(60);
-    } catch {
-      message.error("Đã xảy ra lỗi khi gửi mã xác thực");
+      const res = await sendOTPVerification({ email });
+      if (res) {
+        message.success(
+          "Vui lòng nhập mã xác thực gồm 6 chữ số được gửi qua Email bạn vừa đăng ky!",
+        );
+        setRegisterStep("verify");
+        setResendCountdown(60);
+      } else {
+        message.error("Đã xảy ra lỗi, vui lòng thử lại!");
+      }
+    } catch (error) {
+      message.error(error.response.data.message);
     } finally {
       setIsLoading(false);
     }
@@ -96,13 +114,28 @@ export default function PartnershipAuth() {
     }
     setIsLoading(true);
     try {
-      await new Promise((r) => setTimeout(r, 1500));
-      toast.success(
-        "Xác thực thành công! Đang chuyển đến trang đăng ký thông tin đối tác...",
-      );
-      navigate("/auth/partnership/register");
-    } catch {
-      toast.error("Đã xảy ra lỗi khi xác thực");
+      const payload = {
+        email: email,
+        otp: String(code),
+      };
+
+      const res = await verifyOTP(payload);
+
+      if (res) {
+        toast.success(
+          "Xác thực thành công! Đang chuyển đến trang đăng ký thông tin đối tác...",
+        );
+        sessionStorage.setItem("otpCode", code);
+        sessionStorage.setItem("mail", email);
+        sessionStorage.setItem("pass", password);
+        navigate("/auth/partnership/register");
+      } else {
+        message.error(
+          "Xác thực thất bại! Vui lòng kiểm tra lại mã được gửi trong mail của bạn.",
+        );
+      }
+    } catch (error) {
+      toast.error(error.response.data.message);
     } finally {
       setIsLoading(false);
     }
@@ -126,7 +159,6 @@ export default function PartnershipAuth() {
   const handleBackToCredentials = () => {
     setRegisterStep("credentials");
     setOtpCode(["", "", "", "", "", ""]);
-    setDevModeOtp(null);
   };
 
   const handleOtpChange = (index, value) => {
@@ -400,33 +432,13 @@ export default function PartnershipAuth() {
                           Nhập mã xác thực
                         </h2>
                         <p className="text-gray-600 text-sm mt-2">
-                          {devModeOtp ? (
-                            <>Chế độ Dev - Nhập mã bên dưới</>
-                          ) : (
-                            <>
-                              Nhập mã 6 số đã gửi đến
-                              <br />
-                              <span className="font-medium text-gray-800">
-                                {email}
-                              </span>
-                            </>
-                          )}
+                          Nhập mã 6 số đã gửi đến
+                          <br />
+                          <span className="font-medium text-gray-800">
+                            {email}
+                          </span>
                         </p>
                       </div>
-
-                      {devModeOtp && (
-                        <div className="rounded-lg border-2 border-dashed border-amber-400 bg-amber-50 p-4 text-center mb-4">
-                          <p className="text-xs text-amber-600 mb-2 font-medium">
-                            🔧 DEV MODE - Mã OTP của bạn:
-                          </p>
-                          <p className="text-2xl font-mono font-bold text-amber-700 tracking-widest">
-                            {devModeOtp}
-                          </p>
-                          <p className="text-xs text-amber-600/70 mt-2">
-                            (Email không được gửi trong chế độ dev)
-                          </p>
-                        </div>
-                      )}
 
                       <div className="flex justify-center gap-2 py-4">
                         {otpCode.map((digit, index) => (

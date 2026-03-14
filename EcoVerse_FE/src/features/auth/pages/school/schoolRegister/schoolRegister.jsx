@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
-import { Card, Input, Select, notification } from "antd";
+import { Card, Input, Select, message, notification } from "antd";
 import {
   Loader2,
   School,
@@ -15,7 +15,12 @@ import {
   Globe,
   FileText,
 } from "lucide-react";
-import { getProvinces, getWards } from "../../../services";
+import {
+  getProvinces,
+  getWards,
+  uploadFile,
+  schoolRegister,
+} from "../../../services";
 
 const { Option } = Select;
 const { TextArea } = Input;
@@ -35,23 +40,33 @@ export default function SchoolRegister() {
   const [step, setStep] = useState(1);
   const [vnProvinces, setVnProvinces] = useState([]);
   const [vnWards, setVnWards] = useState([]);
+  const [pCode, setPCode] = useState(null);
   const [logoFile, setLogoFile] = useState(null);
   const [licenseFile, setLicenseFile] = useState(null);
   const [logoPreview, setLogoPreview] = useState(null);
   const [formData, setFormData] = useState({
-    school_name: "",
-    email: "",
-    phone: "",
+    schoolName: "",
+    contactEmail: sessionStorage.getItem("mail")
+      ? sessionStorage.getItem("mail")
+      : "",
+    password: sessionStorage.getItem("pass")
+      ? sessionStorage.getItem("pass")
+      : "",
+    phoneNumber: "",
     province: "",
     ward: "",
-    street_address: "",
-    representative_name: "",
-    representative_position: "",
-    student_count: "",
-    school_type: "public",
-    website: "",
-    tax_code: "",
+    streetAddress: "",
+    principalName: "",
+    position: "",
+    schoolType: "PUBLIC",
+    linkWeb: "",
+    taxCode: "",
     description: "",
+    otp: sessionStorage.getItem("otpCode")
+      ? sessionStorage.getItem("otpCode")
+      : "",
+    logoUrl: "",
+    licenseUrl: "",
   });
 
   const fetchVietNamDivisions = async () => {
@@ -73,20 +88,15 @@ export default function SchoolRegister() {
   const [errors, setErrors] = useState({});
 
   const availableWards = formData.province
-    ? vnWards.filter((item) => item.province_code === formData.province) || []
+    ? vnWards.filter((item) => item.province_code === pCode) || []
     : [];
 
   const buildFullAddress = () => {
     const parts = [];
-    if (formData.street_address) parts.push(formData.street_address);
-    if (formData.ward) {
-      const w = availableWards.find((w) => w.code === formData.ward);
-      if (w) parts.push(w.name);
-    }
-    if (formData.province) {
-      const p = vnProvinces.find((p) => p.code === formData.province);
-      if (p) parts.push(p.name);
-    }
+    if (formData.streetAddress) parts.push(formData.streetAddress);
+    if (formData.ward) parts.push(formData.ward);
+    if (formData.province) parts.push(formData.province);
+
     return parts.join(", ");
   };
 
@@ -98,14 +108,22 @@ export default function SchoolRegister() {
 
   const handleSelectChange = (field, value) => {
     if (field === "province") {
+      const province = vnProvinces.find((p) => p.name === value);
+      setPCode(province?.code);
       setFormData((prev) => ({ ...prev, province: value, ward: "" }));
+    } else if (field === "ward") {
+      const ward = vnWards.find((w) => w.name === value);
+      setFormData((prev) => ({
+        ...prev,
+        ward: ward?.name || value,
+      }));
     } else {
       setFormData((prev) => ({ ...prev, [field]: value }));
     }
     if (errors[field]) setErrors((prev) => ({ ...prev, [field]: "" }));
   };
 
-  const handleLogoChange = (e) => {
+  const handleLogoChange = async (e) => {
     const file = e.target.files?.[0];
     if (!file) return;
     if (file.size > 5 * 1024 * 1024) {
@@ -115,11 +133,25 @@ export default function SchoolRegister() {
       });
       return;
     }
+
+    try {
+      const data = new FormData();
+      data.append("file", file);
+      const res = await uploadFile(data);
+      if (res) {
+        message.success("Logo tải lên thành công!");
+        setFormData((prev) => ({ ...prev, logoUrl: res.data.url }));
+      } else {
+        message.error("Logo tải lên thất bại!");
+      }
+    } catch (error) {
+      console.log(error);
+    }
     setLogoFile(file);
     setLogoPreview(URL.createObjectURL(file));
   };
 
-  const handleLicenseChange = (e) => {
+  const handleLicenseChange = async (e) => {
     const file = e.target.files?.[0];
     if (!file) return;
     if (file.size > 10 * 1024 * 1024) {
@@ -129,30 +161,44 @@ export default function SchoolRegister() {
       });
       return;
     }
+
+    try {
+      const data = new FormData();
+      data.append("file", file);
+      const res = await uploadFile(data);
+      if (res) {
+        message.success("Giấy phép lao động tải lên thành công!");
+        setFormData((prev) => ({ ...prev, licenseUrl: res.data.url }));
+      } else {
+        message.error("Giấy phép lao động tải lên thất bại!");
+      }
+    } catch (error) {
+      console.log(error);
+    }
     setLicenseFile(file);
   };
 
   const validateStep1 = () => {
     const e = {};
     e.school_name = validate.minLen(
-      formData.school_name,
+      formData.schoolName,
       3,
       "Tên trường phải có ít nhất 3 ký tự",
     );
-    e.email = validate.email(formData.email);
-    e.phone = validate.phone(formData.phone);
+    e.email = validate.email(formData.contactEmail);
+    e.phone = validate.phone(formData.phoneNumber);
     e.province = validate.required(
       formData.province,
       "Vui lòng chọn tỉnh/thành phố",
     );
     e.ward = validate.required(formData.ward, "Vui lòng chọn phường/xã");
     e.street_address = validate.minLen(
-      formData.street_address,
+      formData.streetAddress,
       5,
       "Địa chỉ phải có ít nhất 5 ký tự",
     );
-    e.representative_name = validate.minLen(
-      formData.representative_name,
+    e.principalName = validate.minLen(
+      formData.principalName,
       2,
       "Tên người đại diện phải có ít nhất 2 ký tự",
     );
@@ -166,12 +212,20 @@ export default function SchoolRegister() {
     if (!validateStep1()) return;
     setIsLoading(true);
     try {
-      await new Promise((r) => setTimeout(r, 1000));
-      notification.success({
-        message: "Đăng ký thành công!",
-        description: "Đơn đăng ký đang chờ Admin duyệt.",
-      });
-      navigate("/auth/school/pending");
+      const res = await schoolRegister(formData);
+      if (res) {
+        notification.success({
+          message: "Đăng ký thành công!",
+          description: "Đơn đăng ký đang chờ Admin duyệt.",
+        });
+        navigate("/auth/school/pending");
+        sessionStorage.clear();
+      } else {
+        notification.error({
+          message: "Lỗi",
+          description: "Đã xảy ra lỗi khi đăng ký, vui lòng thử lại!",
+        });
+      }
     } catch (err) {
       notification.error({
         message: "Lỗi",
@@ -267,9 +321,9 @@ export default function SchoolRegister() {
                         Tên trường học <span className="text-red-500">*</span>
                       </label>
                       <Input
-                        name="school_name"
+                        name="schoolName"
                         placeholder="VD: Trường Tiểu học Nguyễn Du"
-                        value={formData.school_name}
+                        value={formData.schoolName}
                         onChange={handleInputChange}
                         className={cls}
                         size="large"
@@ -288,14 +342,15 @@ export default function SchoolRegister() {
                           Email liên hệ <span className="text-red-500">*</span>
                         </label>
                         <Input
-                          name="email"
+                          name="contactEmail"
                           type="email"
                           placeholder="contact@school.edu.vn"
-                          value={formData.email}
+                          value={formData.contactEmail}
                           onChange={handleInputChange}
                           prefix={<Mail className="w-4 h-4 text-gray-400" />}
                           className={cls}
                           size="large"
+                          disabled
                         />
                         {errors.email && (
                           <p className="text-xs text-red-500">{errors.email}</p>
@@ -306,9 +361,9 @@ export default function SchoolRegister() {
                           Số điện thoại <span className="text-red-500">*</span>
                         </label>
                         <Input
-                          name="phone"
+                          name="phoneNumber"
                           placeholder="0123 456 789"
-                          value={formData.phone}
+                          value={formData.phoneNumber}
                           onChange={handleInputChange}
                           prefix={<Phone className="w-4 h-4 text-gray-400" />}
                           className={cls}
@@ -357,7 +412,7 @@ export default function SchoolRegister() {
                             optionFilterProp="children"
                           >
                             {vnProvinces.map((p) => (
-                              <Option key={p.code} value={p.code}>
+                              <Option key={p.code} value={p.name}>
                                 {p.name}
                               </Option>
                             ))}
@@ -389,7 +444,7 @@ export default function SchoolRegister() {
                           >
                             {availableWards.length > 0
                               ? availableWards.map((w) => (
-                                  <Option key={w.code} value={w.code}>
+                                  <Option key={w.code} value={w.name}>
                                     {w.name}
                                   </Option>
                                 ))
@@ -413,9 +468,9 @@ export default function SchoolRegister() {
                           Số nhà, tên đường
                         </label>
                         <Input
-                          name="street_address"
+                          name="streetAddress"
                           placeholder="VD: 123 Nguyễn Văn Linh"
-                          value={formData.street_address}
+                          value={formData.streetAddress}
                           onChange={handleInputChange}
                           prefix={<MapPin className="w-4 h-4 text-gray-300" />}
                           className={cls}
@@ -429,7 +484,7 @@ export default function SchoolRegister() {
                       </div>
 
                       {/* Preview địa chỉ */}
-                      {(formData.street_address ||
+                      {(formData.streetAddress ||
                         formData.ward ||
                         formData.province) && (
                         <motion.div
@@ -454,17 +509,17 @@ export default function SchoolRegister() {
                           Người đại diện <span className="text-red-500">*</span>
                         </label>
                         <Input
-                          name="representative_name"
+                          name="principalName"
                           placeholder="Họ và tên"
-                          value={formData.representative_name}
+                          value={formData.principalName}
                           onChange={handleInputChange}
                           prefix={<User className="w-4 h-4 text-gray-400" />}
                           className={cls}
                           size="large"
                         />
-                        {errors.representative_name && (
+                        {errors.principalName && (
                           <p className="text-xs text-red-500">
-                            {errors.representative_name}
+                            {errors.principalName}
                           </p>
                         )}
                       </div>
@@ -473,9 +528,9 @@ export default function SchoolRegister() {
                           Chức vụ
                         </label>
                         <Input
-                          name="representative_position"
+                          name="position"
                           placeholder="VD: Hiệu trưởng"
-                          value={formData.representative_position}
+                          value={formData.position}
                           onChange={handleInputChange}
                           className={cls}
                           size="large"
@@ -533,52 +588,38 @@ export default function SchoolRegister() {
                         <Select
                           className="w-full"
                           size="large"
-                          value={formData.school_type}
-                          onChange={(v) => handleSelectChange("school_type", v)}
+                          value={formData.schoolType}
+                          onChange={(v) => handleSelectChange("schoolType", v)}
                         >
-                          <Option value="public">Công lập</Option>
-                          <Option value="private">Tư thục</Option>
+                          <Option value="PUBLIC">Công lập</Option>
+                          <Option value="PRIVATE">Tư thục</Option>
                         </Select>
                       </div>
-                      <div className="space-y-1">
-                        <label className="text-sm font-semibold text-gray-700">
-                          Số lượng học sinh
-                        </label>
-                        <Input
-                          name="student_count"
-                          type="number"
-                          placeholder="VD: 500"
-                          value={formData.student_count}
-                          onChange={handleInputChange}
-                          className={cls}
-                          size="large"
-                        />
-                      </div>
-                    </div>
-
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                       <div className="space-y-1">
                         <label className="text-sm font-semibold text-gray-700">
                           Website
                         </label>
                         <Input
-                          name="website"
+                          name="linkWeb"
                           placeholder="https://school.edu.vn"
-                          value={formData.website}
+                          value={formData.linkWeb}
                           onChange={handleInputChange}
                           prefix={<Globe className="w-4 h-4 text-gray-400" />}
                           className={cls}
                           size="large"
                         />
                       </div>
+                    </div>
+
+                    <div className="grid grid-cols-1 md:grid-cols-1 gap-4">
                       <div className="space-y-1">
                         <label className="text-sm font-semibold text-gray-700">
                           Mã số thuế
                         </label>
                         <Input
-                          name="tax_code"
+                          name="taxCode"
                           placeholder="VD: 0123456789"
-                          value={formData.tax_code}
+                          value={formData.taxCode}
                           onChange={handleInputChange}
                           className={cls}
                           size="large"

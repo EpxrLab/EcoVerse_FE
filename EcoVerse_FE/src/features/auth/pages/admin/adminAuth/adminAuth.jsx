@@ -10,6 +10,8 @@ import {
   CrownOutlined,
 } from "@ant-design/icons";
 import { useNavigate } from "react-router-dom";
+import { loginFunction } from "../../../services";
+import { pass } from "three/src/nodes/TSL.js";
 
 const validateForm = (email, password) => {
   const errors = {};
@@ -38,10 +40,20 @@ export default function AdminAuth() {
     setErrors({});
     setIsLoading(true);
     try {
-      await new Promise((r) => setTimeout(r, 1500));
-      // TODO: replace with real auth API call
-      message.success("Đăng nhập thành công!");
-      navigate("/admin");
+      const payload = {
+        emailOrUsername: email,
+        password: password,
+      };
+      const res = await loginFunction(payload);
+
+      if (res && res.data.role === "ADMINISTRATOR") {
+        message.success("Đăng nhập thành công!");
+        sessionStorage.setItem("accessToken", res.data.accessToken);
+        sessionStorage.setItem("refreshToken", res.data.refreshToken);
+        navigate("/admin");
+      } else {
+        message.error("Đăng nhập thất bại!");
+      }
     } catch {
       message.error("Đã xảy ra lỗi khi đăng nhập");
     } finally {

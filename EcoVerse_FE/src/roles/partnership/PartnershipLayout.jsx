@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Outlet, NavLink, useLocation } from "react-router-dom";
+import { Outlet, NavLink, useLocation, useNavigate } from "react-router-dom";
 import {
   Sidebar,
   SidebarContent,
@@ -13,10 +13,10 @@ import {
   SidebarTrigger,
   useSidebar,
 } from "@/shared/components/ui/sidebar";
-import { 
-  LayoutDashboard, 
+import {
+  LayoutDashboard,
   Gift,
-  Settings, 
+  Settings,
   LogOut,
   Handshake,
   Loader2,
@@ -26,11 +26,17 @@ import {
   BarChart3,
   FileQuestion,
   Flag,
-  Trophy
+  Trophy,
 } from "lucide-react";
 import { Avatar, AvatarFallback } from "@/shared/components/ui/avatar";
 import { cn } from "@/shared/lib/utils";
-import { Tooltip, TooltipContent, TooltipTrigger } from "@/shared/components/ui/tooltip";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from "@/shared/components/ui/tooltip";
+import { logoutFunction } from "../../features/auth/services";
+import toast from "react-hot-toast";
 
 const menuItems = [
   { title: "Tổng quan", url: "/partnership", icon: LayoutDashboard },
@@ -42,38 +48,70 @@ const menuItems = [
 ];
 
 function PartnershipSidebar({ partnershipInfo }) {
+  const navigate = useNavigate();
   const location = useLocation();
   const { state } = useSidebar();
   const isCollapsed = state === "collapsed";
 
-  const handleLogout = () => {
-    // Logout logic handled by parent/router
+  const handleLogout = async () => {
+    try {
+      const res = await logoutFunction();
+      if (res) {
+        toast.success("Đăng xuất thành công!");
+        sessionStorage.clear();
+        navigate("/auth");
+      } else {
+        toast.error("Đăng xuất thất bại!");
+      }
+    } catch (error) {
+      console.log(error);
+    }
   };
 
   const getPartnershipTypeLabel = (type) => {
     const types = {
-      'sponsor': 'Nhà tài trợ',
-      'ngo': 'Tổ chức phi chính phủ',
-      'media': 'Truyền thông',
-      'technology': 'Công nghệ',
-      'education': 'Giáo dục',
-      'other': 'Khác',
+      sponsor: "Nhà tài trợ",
+      ngo: "Tổ chức phi chính phủ",
+      media: "Truyền thông",
+      technology: "Công nghệ",
+      education: "Giáo dục",
+      other: "Khác",
     };
     return types[type] || type;
   };
 
   return (
-    <Sidebar collapsible="icon" className="border-r-2 border-eco-blue/15 bg-sidebar">
+    <Sidebar
+      collapsible="icon"
+      className="border-r-2 border-eco-blue/15 bg-sidebar"
+    >
       <SidebarContent>
         {/* Partnership Info Header */}
-        <div className={cn("border-b-2 border-eco-blue/15", isCollapsed ? "p-2" : "p-5")}>
-          <div className={cn("flex items-center mb-5", isCollapsed ? "justify-center" : "gap-3")}>
+        <div
+          className={cn(
+            "border-b-2 border-eco-blue/15",
+            isCollapsed ? "p-2" : "p-5",
+          )}
+        >
+          <div
+            className={cn(
+              "flex items-center mb-5",
+              isCollapsed ? "justify-center" : "gap-3",
+            )}
+          >
             <div className="relative">
-              <div className={cn(
-                "rounded-2xl bg-eco-blue flex items-center justify-center",
-                isCollapsed ? "w-8 h-8" : "w-12 h-12"
-              )}>
-                <Handshake className={cn(isCollapsed ? "w-4 h-4" : "w-6 h-6", "text-primary-foreground")} />
+              <div
+                className={cn(
+                  "rounded-2xl bg-eco-blue flex items-center justify-center",
+                  isCollapsed ? "w-8 h-8" : "w-12 h-12",
+                )}
+              >
+                <Handshake
+                  className={cn(
+                    isCollapsed ? "w-4 h-4" : "w-6 h-6",
+                    "text-primary-foreground",
+                  )}
+                />
               </div>
               {!isCollapsed && (
                 <div className="absolute -bottom-0.5 -right-0.5 w-4 h-4 rounded-full bg-eco-blue border-2 border-sidebar flex items-center justify-center">
@@ -93,11 +131,13 @@ function PartnershipSidebar({ partnershipInfo }) {
               </div>
             )}
           </div>
-          
+
           {/* Quick Info - hide when collapsed */}
           {!isCollapsed && partnershipInfo && (
             <div className="p-3 rounded-xl bg-eco-blue/8 border border-eco-blue/20">
-              <p className="text-xs text-muted-foreground font-medium mb-1">Lĩnh vực</p>
+              <p className="text-xs text-muted-foreground font-medium mb-1">
+                Lĩnh vực
+              </p>
               <p className="text-sm font-bold text-eco-blue">
                 {getPartnershipTypeLabel(partnershipInfo.partnership_type)}
               </p>
@@ -115,28 +155,34 @@ function PartnershipSidebar({ partnershipInfo }) {
           <SidebarGroupContent className={cn(isCollapsed ? "px-1" : "px-3")}>
             <SidebarMenu className="space-y-1">
               {menuItems.map((item) => {
-                const isActive = location.pathname === item.url || 
-                  (item.url !== "/partnership" && location.pathname.startsWith(item.url));
-                
+                const isActive =
+                  location.pathname === item.url ||
+                  (item.url !== "/partnership" &&
+                    location.pathname.startsWith(item.url));
+
                 const menuButton = (
                   <SidebarMenuButton asChild>
                     <NavLink
                       to={item.url}
                       className={cn(
                         "flex items-center rounded-xl transition-all duration-200 w-full group",
-                        isCollapsed ? "justify-center p-2" : "gap-3 px-3 py-2.5",
-                        isActive 
-                          ? "bg-eco-blue/12 text-eco-blue font-semibold border border-eco-blue/25" 
-                          : "text-muted-foreground hover:bg-muted/60 hover:text-foreground border border-transparent"
+                        isCollapsed
+                          ? "justify-center p-2"
+                          : "gap-3 px-3 py-2.5",
+                        isActive
+                          ? "bg-eco-blue/12 text-eco-blue font-semibold border border-eco-blue/25"
+                          : "text-muted-foreground hover:bg-muted/60 hover:text-foreground border border-transparent",
                       )}
                     >
-                      <div className={cn(
-                        "rounded-lg flex items-center justify-center transition-all duration-200",
-                        isCollapsed ? "w-8 h-8" : "w-8 h-8",
-                        isActive 
-                          ? "bg-eco-blue text-primary-foreground" 
-                          : "bg-muted/60 group-hover:bg-muted"
-                      )}>
+                      <div
+                        className={cn(
+                          "rounded-lg flex items-center justify-center transition-all duration-200",
+                          isCollapsed ? "w-8 h-8" : "w-8 h-8",
+                          isActive
+                            ? "bg-eco-blue text-primary-foreground"
+                            : "bg-muted/60 group-hover:bg-muted",
+                        )}
+                      >
                         <item.icon className="w-4 h-4" />
                       </div>
                       {!isCollapsed && (
@@ -155,9 +201,7 @@ function PartnershipSidebar({ partnershipInfo }) {
                   <SidebarMenuItem key={item.title}>
                     {isCollapsed ? (
                       <Tooltip>
-                        <TooltipTrigger asChild>
-                          {menuButton}
-                        </TooltipTrigger>
+                        <TooltipTrigger asChild>{menuButton}</TooltipTrigger>
                         <TooltipContent side="right" className="font-medium">
                           {item.title}
                         </TooltipContent>
@@ -279,8 +323,12 @@ export default function PartnershipLayout({ partnershipInfo = null }) {
                   <Leaf className="w-5 h-5 text-primary" />
                 </div>
                 <div>
-                  <span className="text-sm font-bold text-foreground">EcoVerse</span>
-                  <p className="text-[10px] text-muted-foreground font-medium">Partnership Portal</p>
+                  <span className="text-sm font-bold text-foreground">
+                    EcoVerse
+                  </span>
+                  <p className="text-[10px] text-muted-foreground font-medium">
+                    Partnership Portal
+                  </p>
                 </div>
               </div>
             </div>
@@ -290,7 +338,9 @@ export default function PartnershipLayout({ partnershipInfo = null }) {
                   <p className="text-sm font-semibold text-foreground">
                     {partnershipInfo?.organization_name || "Partner"}
                   </p>
-                  <p className="text-[10px] text-muted-foreground font-medium">Đối tác</p>
+                  <p className="text-[10px] text-muted-foreground font-medium">
+                    Đối tác
+                  </p>
                 </div>
                 <Avatar className="w-9 h-9 border-2 border-primary/20">
                   <AvatarFallback className="bg-primary text-primary-foreground font-bold text-sm">
@@ -300,7 +350,7 @@ export default function PartnershipLayout({ partnershipInfo = null }) {
               </div>
             </div>
           </header>
-          
+
           {/* Content Area */}
           <div className="flex-1 overflow-auto p-6 bg-background">
             <Outlet />

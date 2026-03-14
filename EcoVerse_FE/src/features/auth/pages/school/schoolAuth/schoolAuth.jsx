@@ -14,12 +14,25 @@ import {
 import { z } from "zod";
 import { useNavigate } from "react-router-dom";
 import toast from "react-hot-toast";
+import {
+  loginFunction,
+  sendOTPVerification,
+  verifyOTP,
+} from "../../../services";
 
 const { TabPane } = Tabs;
 
+const passwordRegex =
+  /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,}$/;
+
 const loginSchema = z.object({
   email: z.string().trim().email({ message: "Email không hợp lệ" }),
-  password: z.string().min(6, { message: "Mật khẩu phải có ít nhất 6 ký tự" }),
+  password: z
+    .string()
+    .regex(
+      passwordRegex,
+      "Mật khẩu phải có ít nhất 8 ký tự, bao gồm chữ hoa, chữ thường, số và ký tự đặc biệt (@$!%*?&)",
+    ),
 });
 
 export default function SchoolAuth() {
@@ -33,7 +46,6 @@ export default function SchoolAuth() {
   // Email verification state
   const [registerStep, setRegisterStep] = useState("credentials");
   const [otpCode, setOtpCode] = useState(["", "", "", "", "", ""]);
-  const [devModeOtp, setDevModeOtp] = useState(null);
   const [isResending, setIsResending] = useState(false);
   const [resendCountdown, setResendCountdown] = useState(0);
 
@@ -65,9 +77,20 @@ export default function SchoolAuth() {
 
     setIsLoading(true);
     try {
-      await new Promise((resolve) => setTimeout(resolve, 2000));
-      toast.success("Đăng nhập thành công!");
-      navigate("/school");
+      const infor = {
+        emailOrUsername: email,
+        password: password,
+      };
+      const res = await loginFunction(infor);
+
+      if (res && res.data.role === "PARTNERSHIP_SCHOOL") {
+        toast.success("Đăng nhập thành công!");
+        sessionStorage.setItem("accessToken", res?.data?.accessToken);
+        sessionStorage.setItem("refreshToken", res?.data?.refreshToken);
+        navigate("/school");
+      } else {
+        toast.error("Đăng nhập thất bại!");
+      }
     } catch (error) {
       toast.error("Đã xảy ra lỗi khi đăng nhập");
     } finally {
@@ -92,18 +115,19 @@ export default function SchoolAuth() {
 
     setIsLoading(true);
     try {
-      // Simulate sending OTP
-      await new Promise((resolve) => setTimeout(resolve, 1500));
+      const res = await sendOTPVerification({ email });
 
-      // Simulate dev mode OTP
-      const mockOtp = "123456";
-      setDevModeOtp(mockOtp);
-
-      message.success(`Mã OTP: ${mockOtp} (chế độ dev)`);
-      setRegisterStep("verify");
-      setResendCountdown(60);
+      if (res) {
+        message.success(
+          "Vui lòng nhập mã xác thực gồm 6 chữ số được gửi qua Email bạn vừa đăng ky!",
+        );
+        setRegisterStep("verify");
+        setResendCountdown(60);
+      } else {
+        message.error("Đã xảy ra lỗi, vui lòng thử lại!");
+      }
     } catch (error) {
-      message.error("Đã xảy ra lỗi khi gửi mã xác thực");
+      message.error(error.response.data.message);
     } finally {
       setIsLoading(false);
     }
@@ -118,11 +142,26 @@ export default function SchoolAuth() {
 
     setIsLoading(true);
     try {
-      await new Promise((resolve) => setTimeout(resolve, 1500));
-      message.success("Xác thực thành công! Đang chuyển đến trang đăng ký...");
-      navigate("/auth/school/register");
+      const info = {
+        email: email,
+        otp: String(code),
+      };
+      const res = await verifyOTP(info);
+      if (res) {
+        message.success(
+          "Xác thực thành công! Đang chuyển đến trang đăng ký...",
+        );
+        sessionStorage.setItem("otpCode", code);
+        sessionStorage.setItem("mail", email);
+        sessionStorage.setItem("pass", password);
+        navigate("/auth/school/register");
+      } else {
+        message.error(
+          "Xác thực thất bại! Vui lòng kiểm tra lại mã được gửi trong mail của bạn.",
+        );
+      }
     } catch (error) {
-      message.error("Đã xảy ra lỗi khi xác thực");
+      message.error(error.response.data.message);
     } finally {
       setIsLoading(false);
     }
@@ -348,7 +387,7 @@ export default function SchoolAuth() {
                         </label>
                         <Input.Password
                           prefix={<LockOutlined className="text-gray-400" />}
-                          placeholder="Ít nhất 6 ký tự"
+                          placeholder="Ít nhất 8 ký tự, gồm chữ hoa, chữ thường, số và ký tự đặc biệt"
                           value={password}
                           onChange={(e) => setPassword(e.target.value)}
                           size="large"
@@ -405,34 +444,13 @@ export default function SchoolAuth() {
                           Nhập mã xác thực
                         </h2>
                         <p className="text-gray-600 text-sm mt-2">
-                          {devModeOtp ? (
-                            <>Chế độ Dev - Nhập mã bên dưới</>
-                          ) : (
-                            <>
-                              Nhập mã 6 số đã gửi đến
-                              <br />
-                              <span className="font-medium text-gray-800">
-                                {email}
-                              </span>
-                            </>
-                          )}
+                          Nhập mã 6 số đã gửi đến
+                          <br />
+                          <span className="font-medium text-gray-800">
+                            {email}
+                          </span>
                         </p>
                       </div>
-
-                      {/* Dev Mode OTP Display */}
-                      {devModeOtp && (
-                        <div className="rounded-lg border-2 border-dashed border-amber-400 bg-amber-50 p-4 text-center mb-4">
-                          <p className="text-xs text-amber-600 mb-2 font-medium">
-                            🔧 DEV MODE - Mã OTP của bạn:
-                          </p>
-                          <p className="text-2xl font-mono font-bold text-amber-700 tracking-widest">
-                            {devModeOtp}
-                          </p>
-                          <p className="text-xs text-amber-600/70 mt-2">
-                            (Email không được gửi trong chế độ dev)
-                          </p>
-                        </div>
-                      )}
 
                       {/* OTP Input */}
                       <div className="flex justify-center gap-2 py-4">

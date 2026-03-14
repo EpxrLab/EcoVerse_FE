@@ -1,17 +1,15 @@
-import React, { useState, useEffect } from "react";
-import { motion } from "framer-motion";
+import React, { useState, useEffect, lazy, Suspense } from "react";
 import {
-  Card,
+  Table,
   Input,
   Button,
-  Table,
-  Tag,
+  Badge,
+  Tabs,
   Modal,
   Dropdown,
-  Menu,
-  Tabs,
-  Spin,
-  message,
+  Card,
+  Statistic,
+  Tag,
 } from "antd";
 import {
   SearchOutlined,
@@ -25,652 +23,790 @@ import {
   PhoneOutlined,
   EnvironmentOutlined,
   UserOutlined,
-  TeamOutlined,
   GlobalOutlined,
   FileTextOutlined,
-  PictureOutlined,
   LinkOutlined,
   ReloadOutlined,
-  DownloadOutlined,
-  LockOutlined,
+  StopOutlined,
   UnlockOutlined,
 } from "@ant-design/icons";
-import { format } from "date-fns";
-import { vi } from "date-fns/locale";
+import { motion, AnimatePresence } from "framer-motion";
+import {
+  getAllSchoolAccounts,
+  updateSchoolAccountStatus,
+} from "../../services";
+import toast from "react-hot-toast";
 
-const { TextArea } = Input;
-const { TabPane } = Tabs;
+// ─── Lazy Detail ──────────────────────────────────────────────────────────────
+const SchoolDetailContent = lazy(() =>
+  Promise.resolve({
+    default: ({ reg }) => (
+      <div className="space-y-5">
+        {/* School Header */}
+        <div className="flex items-start gap-4">
+          {reg.logoUrl ? (
+            <img
+              src={reg.logoUrl}
+              alt="Logo"
+              className="w-20 h-20 rounded-2xl object-cover shadow-md"
+            />
+          ) : (
+            <div
+              className={`w-20 h-20 rounded-2xl flex items-center justify-center shadow-inner
+              ${reg.accountStatus === "BANNED" ? "bg-red-50" : "bg-green-50"}`}
+            >
+              <BankOutlined
+                style={{
+                  fontSize: 32,
+                  color: reg.accountStatus === "BANNED" ? "#ef4444" : "#16a34a",
+                }}
+              />
+            </div>
+          )}
+          <div>
+            <h3 className="text-xl font-bold text-gray-800">
+              {reg.schoolName}
+            </h3>
+            <div className="flex items-center gap-2 mt-1 flex-wrap">
+              <Tag color={reg.schoolType === "PUBLIC" ? "blue" : "default"}>
+                {reg.schoolType === "PUBLIC" ? "Công lập" : "Tư thục"}
+              </Tag>
+              {reg.accountStatus === "BANNED" && (
+                <Tag color="red" icon={<StopOutlined />}>
+                  Đã cấm
+                </Tag>
+              )}
+            </div>
+          </div>
+        </div>
+
+        {/* Contact Grid */}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+          <div className="flex items-center gap-2 text-sm text-gray-600">
+            <MailOutlined className="text-gray-400" />
+            <span>{reg.contactEmail}</span>
+          </div>
+          <div className="flex items-center gap-2 text-sm text-gray-600">
+            <PhoneOutlined className="text-gray-400" />
+            <span>{reg.phoneNumber}</span>
+          </div>
+          <div className="flex items-start gap-2 text-sm text-gray-600 md:col-span-2">
+            <EnvironmentOutlined className="text-gray-400 mt-0.5" />
+            <span>
+              {[reg.address, reg.ward, reg.province].filter(Boolean).join(", ")}
+            </span>
+          </div>
+          {reg.linkWeb && (
+            <div className="flex items-center gap-2 text-sm">
+              <GlobalOutlined className="text-gray-400" />
+              <a
+                href={reg.linkWeb}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-blue-500 hover:underline flex items-center gap-1"
+              >
+                {reg.linkWeb}
+                <LinkOutlined style={{ fontSize: 11 }} />
+              </a>
+            </div>
+          )}
+          {reg.taxCode && (
+            <div className="flex items-center gap-2 text-sm text-gray-600">
+              <FileTextOutlined className="text-gray-400" />
+              <span>Mã số thuế: {reg.taxCode}</span>
+            </div>
+          )}
+        </div>
+
+        {/* Representative */}
+        <div className="p-4 rounded-xl bg-gray-50 border border-gray-100">
+          <div className="flex items-center gap-2 mb-2">
+            <UserOutlined className="text-gray-400" />
+            <span className="font-semibold text-gray-700">Người đại diện</span>
+          </div>
+          <p className="text-gray-800">{reg.principalName}</p>
+          {reg.position && (
+            <p className="text-sm text-gray-500">{reg.position}</p>
+          )}
+        </div>
+
+        {reg.licenseUrl && (
+          <div>
+            <h4 className="font-semibold text-gray-700 mb-1">
+              Giấy phép hoạt động
+            </h4>
+            <a
+              href={reg.licenseUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex items-center gap-2 text-sm text-blue-500 hover:underline"
+            >
+              <FileTextOutlined />
+              Xem giấy phép
+              <LinkOutlined style={{ fontSize: 11 }} />
+            </a>
+          </div>
+        )}
+
+        {reg.approvalStatus === "REJECTED" && reg.rejectionReason && (
+          <div className="p-4 rounded-xl bg-red-50 border border-red-100">
+            <h4 className="font-semibold text-red-600 mb-1">Lý do từ chối</h4>
+            <p className="text-sm text-red-500">{reg.rejectionReason}</p>
+          </div>
+        )}
+      </div>
+    ),
+  }),
+);
+
+// ─── Constants ────────────────────────────────────────────────────────────────
+
+const STATUS_CONFIG = {
+  PENDING: {
+    icon: <ClockCircleOutlined />,
+    label: "Chờ duyệt",
+    tagColor: "gold",
+  },
+  APPROVED: {
+    icon: <CheckCircleOutlined />,
+    label: "Đã duyệt",
+    tagColor: "green",
+  },
+  REJECTED: {
+    icon: <CloseCircleOutlined />,
+    label: "Từ chối",
+    tagColor: "red",
+  },
+};
+
+// ─── Animations ───────────────────────────────────────────────────────────────
+
+const containerVariants = {
+  hidden: { opacity: 0 },
+  visible: { opacity: 1, transition: { staggerChildren: 0.08 } },
+};
+const cardVariants = {
+  hidden: { opacity: 0, y: 20 },
+  visible: { opacity: 1, y: 0, transition: { duration: 0.4, ease: "easeOut" } },
+};
+const tableRowVariants = {
+  hidden: { opacity: 0, x: -10 },
+  visible: { opacity: 1, x: 0 },
+};
+
+// ─── Stat Card ────────────────────────────────────────────────────────────────
+
+const StatCard = ({ icon, value, label, bgClass, iconClass, delay }) => (
+  <motion.div variants={cardVariants} custom={delay}>
+    <Card
+      className="rounded-2xl border-0 shadow-sm hover:shadow-md transition-shadow duration-300"
+      bodyStyle={{ padding: "16px 20px" }}
+    >
+      <div className="flex items-center gap-3">
+        <div
+          className={`w-11 h-11 rounded-xl flex items-center justify-center ${bgClass}`}
+        >
+          <span className={`text-xl ${iconClass}`}>{icon}</span>
+        </div>
+        <Statistic
+          value={value}
+          title={label}
+          valueStyle={{ fontSize: 22, fontWeight: 700, lineHeight: 1.2 }}
+        />
+      </div>
+    </Card>
+  </motion.div>
+);
+
+// ─── Main ─────────────────────────────────────────────────────────────────────
 
 const AdminSchools = () => {
   const [registrations, setRegistrations] = useState([]);
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState("");
-  const [activeTab, setActiveTab] = useState("pending");
+  const [activeTab, setActiveTab] = useState("PENDING");
   const [selectedRegistration, setSelectedRegistration] = useState(null);
   const [isDetailOpen, setIsDetailOpen] = useState(false);
   const [isRejectDialogOpen, setIsRejectDialogOpen] = useState(false);
   const [rejectionReason, setRejectionReason] = useState("");
   const [actionLoading, setActionLoading] = useState(false);
 
-  // Mock data - replace with your actual data fetching
-  useEffect(() => {
-    fetchRegistrations();
-  }, []);
-
+  // ── Fetch ──
   const fetchRegistrations = async () => {
-    setLoading(true);
     try {
-      // Simulate API call
-      await new Promise((resolve) => setTimeout(resolve, 1000));
-      const mockData = [
-        {
-          id: "1",
-          school_name: "THPT Nguyễn Du",
-          email: "nguyendu@edu.vn",
-          phone: "0123456789",
-          address: "123 Đường Nguyễn Du, Q1, TP.HCM",
-          representative_name: "Nguyễn Văn A",
-          representative_position: "Hiệu trưởng",
-          school_type: "public",
-          student_count: 1200,
-          website: "https://nguyendu.edu.vn",
-          tax_code: "0123456789",
-          description: "Trường THPT công lập có lịch sử lâu đời",
-          logo_url: null,
-          license_url: null,
-          status: "pending",
-          rejection_reason: null,
-          created_at: new Date().toISOString(),
-          updated_at: new Date().toISOString(),
-          user_id: "user1",
-          is_banned: false,
-        },
-        {
-          id: "2",
-          school_name: "THCS Lê Lợi",
-          email: "leloi@edu.vn",
-          phone: "0987654321",
-          address: "456 Đường Lê Lợi, Q3, TP.HCM",
-          representative_name: "Trần Thị B",
-          representative_position: "Hiệu trưởng",
-          school_type: "private",
-          student_count: 800,
-          website: null,
-          tax_code: "9876543210",
-          description: "Trường THCS tư thục chất lượng cao",
-          logo_url: null,
-          license_url: null,
-          status: "approved",
-          rejection_reason: null,
-          created_at: new Date(Date.now() - 86400000).toISOString(),
-          updated_at: new Date(Date.now() - 86400000).toISOString(),
-          user_id: "user2",
-          is_banned: false,
-        },
-      ];
-      setRegistrations(mockData);
+      setLoading(true);
+      const res = await getAllSchoolAccounts();
+      setRegistrations(res.data || []);
     } catch (error) {
-      message.error("Không thể tải danh sách");
+      console.error("Lỗi tải dữ liệu:", error.message);
     } finally {
       setLoading(false);
     }
   };
 
-  // Filter registrations
-  const filteredRegistrations = registrations.filter((reg) => {
+  useEffect(() => {
+    fetchRegistrations();
+  }, []);
+
+  // ── Filters ──
+  // Tab "BANNED": lọc accountStatus === "BANNED" (bất kể approvalStatus)
+  // Các tab khác: lọc approvalStatus VÀ accountStatus !== "BANNED"
+  const filteredRegistrations = registrations?.filter((reg) => {
+    const q = searchQuery.toLowerCase();
     const matchesSearch =
-      reg.school_name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      reg.email.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      reg.representative_name.toLowerCase().includes(searchQuery.toLowerCase());
-    const matchesStatus = reg.status === activeTab;
-    return matchesSearch && matchesStatus;
+      reg.schoolName?.toLowerCase().includes(q) ||
+      reg.contactEmail?.toLowerCase().includes(q) ||
+      reg.principalName?.toLowerCase().includes(q);
+    if (activeTab === "BANNED")
+      return matchesSearch && reg.accountStatus === "BANNED";
+    return (
+      matchesSearch &&
+      reg.approvalStatus === activeTab &&
+      reg.accountStatus !== "BANNED"
+    );
   });
 
-  // Stats
+  // ── Stats ──
   const stats = {
-    pending: registrations.filter((r) => r.status === "pending").length,
-    approved: registrations.filter((r) => r.status === "approved").length,
-    rejected: registrations.filter((r) => r.status === "rejected").length,
+    PENDING: registrations?.filter(
+      (r) => r.approvalStatus === "PENDING" && r.accountStatus !== "BANNED",
+    ).length,
+    APPROVED: registrations?.filter(
+      (r) => r.approvalStatus === "APPROVED" && r.accountStatus !== "BANNED",
+    ).length,
+    REJECTED: registrations?.filter(
+      (r) => r.approvalStatus === "REJECTED" && r.accountStatus !== "BANNED",
+    ).length,
+    BANNED: registrations?.filter((r) => r.accountStatus === "BANNED").length,
   };
 
-  // Approve registration
+  // ── Actions ──
   const handleApprove = async (registration) => {
-    setActionLoading(true);
     try {
-      await new Promise((resolve) => setTimeout(resolve, 1000));
-      message.success(`Đã duyệt "${registration.school_name}"`);
+      setActionLoading(true);
+      const res = await updateSchoolAccountStatus(registration.id, {
+        status: "APPROVED",
+      });
+      if (res) {
+        toast.success("Phê duyệt tài khoản thành công!");
+        fetchRegistrations();
+      } else {
+        toast.error("Phê duyệt tài khoản thất bại!");
+      }
       setIsDetailOpen(false);
-      setSelectedRegistration(null);
-      fetchRegistrations();
     } catch (error) {
-      message.error("Không thể duyệt");
+      console.error("Lỗi duyệt trường:", error.message);
     } finally {
       setActionLoading(false);
     }
   };
 
-  // Reject registration
   const handleReject = async () => {
-    if (!selectedRegistration || !rejectionReason.trim()) {
-      message.error("Vui lòng nhập lý do từ chối");
-      return;
-    }
-
-    setActionLoading(true);
+    if (!selectedRegistration) return;
     try {
-      await new Promise((resolve) => setTimeout(resolve, 1000));
-      message.success(`Đã từ chối "${selectedRegistration.school_name}"`);
+      setActionLoading(true);
+      const res = await updateSchoolAccountStatus(selectedRegistration.id, {
+        status: "REJECTED",
+        reason: rejectionReason,
+      });
+      if (res) {
+        toast.success("Từ chối tài khoản thành công!");
+        fetchRegistrations();
+      } else {
+        toast.error("Từ chối tài khoản thất bại!");
+      }
       setIsRejectDialogOpen(false);
       setIsDetailOpen(false);
-      setSelectedRegistration(null);
       setRejectionReason("");
-      fetchRegistrations();
     } catch (error) {
-      message.error("Không thể từ chối");
+      console.error("Lỗi từ chối trường:", error.message);
     } finally {
       setActionLoading(false);
     }
   };
 
-  // Ban/Unban school
+  // accountStatus: "BANNED" ↔ "ACTIVE" — giống adminPartnerships
   const handleToggleBan = async (registration) => {
-    setActionLoading(true);
     try {
-      await new Promise((resolve) => setTimeout(resolve, 1000));
-      const newBanStatus = !registration.is_banned;
-      message.success(
-        newBanStatus
-          ? `Đã khóa tài khoản "${registration.school_name}"`
-          : `Đã mở khóa tài khoản "${registration.school_name}"`,
-      );
-      fetchRegistrations();
+      setActionLoading(true);
+      const isBanned = registration.accountStatus === "BANNED";
+      const newStatus = isBanned ? "ACTIVE" : "BANNED";
+      const res = await updateSchoolAccountStatus(registration.id, {
+        status: newStatus,
+      });
+      if (res) {
+        toast.success(isBanned ? "Đã gỡ cấm tài khoản!" : "Đã cấm tài khoản!");
+        fetchRegistrations();
+      } else {
+        toast.error("Cập nhật trạng thái thất bại!");
+      }
     } catch (error) {
-      message.error("Không thể thực hiện");
+      console.error("Lỗi cập nhật trạng thái:", error.message);
     } finally {
       setActionLoading(false);
     }
   };
 
-  const getStatusTag = (status, isBanned) => {
-    if (isBanned) {
-      return (
-        <Tag icon={<LockOutlined />} color="error">
-          Bị khóa
-        </Tag>
-      );
-    }
-    switch (status) {
-      case "pending":
-        return (
-          <Tag icon={<ClockCircleOutlined />} color="warning">
-            Chờ duyệt
-          </Tag>
-        );
-      case "approved":
-        return (
-          <Tag icon={<CheckCircleOutlined />} color="success">
-            Đã duyệt
-          </Tag>
-        );
-      case "rejected":
-        return (
-          <Tag icon={<CloseCircleOutlined />} color="error">
-            Từ chối
-          </Tag>
-        );
-      default:
-        return <Tag>{status}</Tag>;
-    }
-  };
-
-  const getSchoolTypeTag = (type) => {
-    return type === "public" ? (
-      <Tag color="blue">Công lập</Tag>
-    ) : (
-      <Tag color="default">Tư thục</Tag>
-    );
-  };
-
-  const getActionsMenu = (record) => (
-    <Menu>
-      <Menu.Item
-        key="view"
-        icon={<EyeOutlined />}
-        onClick={() => {
-          setSelectedRegistration(record);
-          setIsDetailOpen(true);
-        }}
-      >
-        Xem chi tiết
-      </Menu.Item>
-      {record.status === "pending" && (
-        <>
-          <Menu.Item
-            key="approve"
-            icon={<CheckCircleOutlined />}
-            onClick={() => handleApprove(record)}
-          >
-            <span className="text-green-600">Duyệt</span>
-          </Menu.Item>
-          <Menu.Item
-            key="reject"
-            icon={<CloseCircleOutlined />}
-            onClick={() => {
-              setSelectedRegistration(record);
-              setIsRejectDialogOpen(true);
-            }}
-          >
-            <span className="text-red-600">Từ chối</span>
-          </Menu.Item>
-        </>
-      )}
-      {record.status === "approved" && (
-        <Menu.Item
-          key="ban"
-          icon={record.is_banned ? <UnlockOutlined /> : <LockOutlined />}
-          onClick={() => handleToggleBan(record)}
-        >
-          <span className={record.is_banned ? "text-blue-600" : "text-red-600"}>
-            {record.is_banned ? "Mở khóa tài khoản" : "Khóa tài khoản"}
-          </span>
-        </Menu.Item>
-      )}
-    </Menu>
-  );
-
+  // ── Table Columns ──
   const columns = [
     {
-      title: "Trường",
+      title: "Trường học",
       key: "school",
-      render: (_, record) => (
+      render: (_, reg) => (
         <div className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-lg bg-blue-100 flex items-center justify-center">
-            <BankOutlined className="text-blue-600" />
-          </div>
+          {reg.logoUrl ? (
+            <img
+              src={reg.logoUrl}
+              alt="Logo"
+              className="w-10 h-10 rounded-xl object-cover"
+            />
+          ) : (
+            <div
+              className={`w-10 h-10 rounded-xl flex items-center justify-center
+              ${reg.accountStatus === "BANNED" ? "bg-red-50" : "bg-green-50"}`}
+            >
+              <BankOutlined
+                style={{
+                  color: reg.accountStatus === "BANNED" ? "#ef4444" : "#16a34a",
+                }}
+              />
+            </div>
+          )}
           <div>
-            <p className="font-medium">{record.school_name}</p>
-            <p className="text-xs text-gray-500 truncate max-w-[200px]">
-              {record.address}
+            <p className="font-semibold text-gray-800 leading-tight">
+              {reg.schoolName}
             </p>
+            <p className="text-xs text-gray-400">{reg.contactEmail}</p>
           </div>
         </div>
       ),
     },
     {
-      title: "Loại",
-      dataIndex: "school_type",
+      title: "Loại trường",
       key: "type",
-      render: (type) => getSchoolTypeTag(type),
+      render: (_, reg) => (
+        <Tag
+          color={reg.schoolType === "PUBLIC" ? "blue" : "default"}
+          className="rounded-full"
+        >
+          {reg.schoolType === "PUBLIC" ? "Công lập" : "Tư thục"}
+        </Tag>
+      ),
     },
     {
       title: "Người đại diện",
       key: "rep",
-      render: (_, record) => (
+      render: (_, reg) => (
         <div>
-          <p className="font-medium">{record.representative_name}</p>
-          {record.representative_position && (
-            <p className="text-xs text-gray-500">
-              {record.representative_position}
-            </p>
+          <p className="font-medium text-gray-700">{reg.principalName}</p>
+          {reg.position && (
+            <p className="text-xs text-gray-400">{reg.position}</p>
           )}
         </div>
       ),
     },
     {
       title: "Liên hệ",
-      key: "contact",
-      render: (_, record) => (
-        <div className="space-y-1">
-          <div className="flex items-center gap-1 text-sm">
-            <MailOutlined className="text-gray-400" />
-            <span className="truncate max-w-[150px]">{record.email}</span>
-          </div>
-          <div className="flex items-center gap-1 text-sm">
-            <PhoneOutlined className="text-gray-400" />
-            {record.phone}
-          </div>
-        </div>
-      ),
+      dataIndex: "phoneNumber",
+      key: "phoneNumber",
+      render: (phone) => <span className="text-sm text-gray-600">{phone}</span>,
     },
     {
       title: "Ngày đăng ký",
-      dataIndex: "created_at",
-      key: "created",
-      render: (date) => format(new Date(date), "dd/MM/yyyy", { locale: vi }),
+      key: "date",
+      render: (_, reg) => (
+        <span className="text-sm text-gray-500">
+          {new Date(reg.createdAt).toLocaleDateString("vi-VN")}
+        </span>
+      ),
     },
     {
       title: "Trạng thái",
       key: "status",
-      render: (_, record) => getStatusTag(record.status, record.is_banned),
+      render: (_, reg) => {
+        const cfg = STATUS_CONFIG[reg.approvalStatus];
+        return (
+          <div className="flex items-center gap-2 flex-wrap">
+            {cfg && (
+              <Tag color={cfg.tagColor} icon={cfg.icon}>
+                {cfg.label}
+              </Tag>
+            )}
+            {reg.accountStatus === "BANNED" && (
+              <Tag color="red" icon={<StopOutlined />}>
+                Đã cấm
+              </Tag>
+            )}
+          </div>
+        );
+      },
     },
     {
       title: "",
       key: "actions",
-      width: 80,
-      render: (_, record) => (
-        <Dropdown overlay={getActionsMenu(record)} trigger={["click"]}>
-          <Button type="text" icon={<MoreOutlined />} />
-        </Dropdown>
+      align: "right",
+      render: (_, reg) => {
+        const isBanned = reg.accountStatus === "BANNED";
+        const menuItems = [
+          {
+            key: "view",
+            icon: <EyeOutlined />,
+            label: "Xem chi tiết",
+            onClick: () => {
+              setSelectedRegistration(reg);
+              setIsDetailOpen(true);
+            },
+          },
+          // Pending: duyệt / từ chối (chỉ khi không bị cấm)
+          ...(reg.approvalStatus === "PENDING" && !isBanned
+            ? [
+                {
+                  key: "approve",
+                  icon: <CheckCircleOutlined />,
+                  label: <span className="text-green-600">Duyệt</span>,
+                  onClick: () => handleApprove(reg),
+                },
+                {
+                  key: "reject",
+                  icon: <CloseCircleOutlined />,
+                  label: <span className="text-red-500">Từ chối</span>,
+                  onClick: () => {
+                    setSelectedRegistration(reg);
+                    setIsRejectDialogOpen(true);
+                  },
+                },
+              ]
+            : []),
+          // Approved: cấm tài khoản (chỉ khi chưa bị cấm)
+          ...(reg.approvalStatus === "APPROVED" && !isBanned
+            ? [
+                {
+                  key: "ban",
+                  icon: <StopOutlined />,
+                  label: <span className="text-red-500">Cấm tài khoản</span>,
+                  onClick: () => handleToggleBan(reg),
+                },
+              ]
+            : []),
+          // Bị cấm: chỉ hiện gỡ cấm
+          ...(isBanned
+            ? [
+                {
+                  key: "unban",
+                  icon: <UnlockOutlined />,
+                  label: <span className="text-green-600">Gỡ cấm</span>,
+                  onClick: () => handleToggleBan(reg),
+                },
+              ]
+            : []),
+        ];
+
+        return (
+          <Dropdown
+            menu={{ items: menuItems }}
+            trigger={["click"]}
+            placement="bottomRight"
+          >
+            <Button
+              type="text"
+              icon={<MoreOutlined />}
+              className="text-gray-400 hover:text-gray-700"
+            />
+          </Dropdown>
+        );
+      },
+    },
+  ];
+
+  // ── Tab Items ──
+  const tabItems = [
+    {
+      key: "PENDING",
+      label: (
+        <span className="flex items-center gap-1.5">
+          <ClockCircleOutlined />
+          Chờ duyệt
+          <Badge count={stats.PENDING} color="#faad14" />
+        </span>
+      ),
+    },
+    {
+      key: "APPROVED",
+      label: (
+        <span className="flex items-center gap-1.5">
+          <CheckCircleOutlined />
+          Đã duyệt
+          <Badge count={stats.APPROVED} color="#52c41a" />
+        </span>
+      ),
+    },
+    {
+      key: "REJECTED",
+      label: (
+        <span className="flex items-center gap-1.5">
+          <CloseCircleOutlined />
+          Từ chối
+          <Badge count={stats.REJECTED} color="#ff4d4f" />
+        </span>
+      ),
+    },
+    {
+      key: "BANNED",
+      label: (
+        <span className="flex items-center gap-1.5">
+          <StopOutlined />
+          Đã cấm
+          <Badge count={stats.BANNED} color="#6b7280" />
+        </span>
       ),
     },
   ];
 
-  const containerVariants = {
-    hidden: { opacity: 0 },
-    visible: {
-      opacity: 1,
-      transition: { staggerChildren: 0.1 },
-    },
-  };
-
-  const itemVariants = {
-    hidden: { opacity: 0, y: 20 },
-    visible: { opacity: 1, y: 0, transition: { duration: 0.4 } },
-  };
-
+  // ── Render ──
   return (
-    <motion.div
-      className="space-y-6"
-      variants={containerVariants}
-      initial="hidden"
-      animate="visible"
-    >
-      {/* Header */}
-      <motion.div variants={itemVariants}>
-        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+    <div className="min-h-screen bg-gray-50 p-6">
+      <motion.div
+        className="max-w-7xl mx-auto space-y-6"
+        variants={containerVariants}
+        initial="hidden"
+        animate="visible"
+      >
+        {/* Header */}
+        <motion.div
+          variants={cardVariants}
+          className="flex flex-col md:flex-row md:items-center md:justify-between gap-4"
+        >
           <div>
-            <h1 className="text-3xl font-bold text-gray-800">
-              Quản lý trường học
+            <h1 className="text-2xl font-bold text-gray-800 tracking-tight">
+              Quản lý Trường học
             </h1>
-            <p className="text-gray-600">
-              Duyệt đăng ký và quản lý các trường sử dụng EcoVerse
+            <p className="text-gray-400 text-sm mt-0.5">
+              Duyệt và quản lý đăng ký trường học
             </p>
           </div>
-          <div className="flex gap-2">
-            <Button
-              icon={<ReloadOutlined spin={loading} />}
-              onClick={fetchRegistrations}
-            >
-              Làm mới
-            </Button>
-            <Button icon={<DownloadOutlined />}>Xuất Excel</Button>
-          </div>
+          <Button
+            icon={<ReloadOutlined spin={loading} />}
+            onClick={fetchRegistrations}
+            disabled={loading}
+            className="rounded-xl"
+          >
+            Làm mới
+          </Button>
+        </motion.div>
+
+        {/* Stat Cards */}
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+          <StatCard
+            icon={<ClockCircleOutlined />}
+            value={stats.PENDING}
+            label="Chờ duyệt"
+            bgClass="bg-amber-50"
+            iconClass="text-amber-500"
+            delay={0}
+          />
+          <StatCard
+            icon={<CheckCircleOutlined />}
+            value={stats.APPROVED}
+            label="Đã duyệt"
+            bgClass="bg-green-50"
+            iconClass="text-green-500"
+            delay={1}
+          />
+          <StatCard
+            icon={<CloseCircleOutlined />}
+            value={stats.REJECTED}
+            label="Từ chối"
+            bgClass="bg-red-50"
+            iconClass="text-red-500"
+            delay={2}
+          />
+          <StatCard
+            icon={<StopOutlined />}
+            value={stats.BANNED}
+            label="Đã cấm"
+            bgClass="bg-gray-100"
+            iconClass="text-gray-500"
+            delay={3}
+          />
         </div>
-      </motion.div>
 
-      {/* Stats Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        {[
-          {
-            key: "pending",
-            label: "Chờ duyệt",
-            count: stats.pending,
-            icon: ClockCircleOutlined,
-            color: "orange",
-          },
-          {
-            key: "approved",
-            label: "Đang hoạt động",
-            count: stats.approved,
-            icon: BankOutlined,
-            color: "blue",
-          },
-          {
-            key: "rejected",
-            label: "Từ chối",
-            count: stats.rejected,
-            icon: CloseCircleOutlined,
-            color: "red",
-          },
-        ].map((stat, idx) => {
-          const Icon = stat.icon;
-          return (
-            <motion.div key={stat.key} variants={itemVariants}>
-              <Card
-                hoverable
-                className={`cursor-pointer transition-all ${
-                  activeTab === stat.key ? `ring-2 ring-${stat.color}-500` : ""
-                }`}
-                onClick={() => setActiveTab(stat.key)}
-              >
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="text-sm text-gray-600">{stat.label}</p>
-                    <p className={`text-3xl font-bold text-${stat.color}-600`}>
-                      {stat.count}
-                    </p>
-                  </div>
-                  <div
-                    className={`w-12 h-12 rounded-full bg-${stat.color}-100 flex items-center justify-center`}
-                  >
-                    <Icon className={`text-2xl text-${stat.color}-600`} />
-                  </div>
-                </div>
-              </Card>
-            </motion.div>
-          );
-        })}
-      </div>
-
-      {/* Tabs & Table */}
-      <motion.div variants={itemVariants}>
-        <Card>
-          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mb-4">
-            <Tabs activeKey={activeTab} onChange={setActiveTab}>
-              <TabPane
-                tab={
-                  <span>
-                    <ClockCircleOutlined /> Chờ duyệt ({stats.pending})
-                  </span>
-                }
-                key="pending"
+        {/* Main Card */}
+        <motion.div variants={cardVariants}>
+          <Card
+            className="rounded-2xl border-0 shadow-sm"
+            bodyStyle={{ padding: 0 }}
+          >
+            <div className="p-4 border-b border-gray-100 flex flex-col md:flex-row md:items-center gap-4">
+              <Input
+                prefix={<SearchOutlined className="text-gray-300" />}
+                placeholder="Tìm kiếm trường học..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="flex-1 rounded-xl"
+                allowClear
               />
-              <TabPane
-                tab={
-                  <span>
-                    <CheckCircleOutlined /> Đang hoạt động ({stats.approved})
-                  </span>
-                }
-                key="approved"
+              <Tabs
+                activeKey={activeTab}
+                onChange={setActiveTab}
+                items={tabItems}
+                size="small"
+                className="mb-0"
               />
-              <TabPane
-                tab={
-                  <span>
-                    <CloseCircleOutlined /> Từ chối ({stats.rejected})
-                  </span>
-                }
-                key="rejected"
-              />
-            </Tabs>
-
-            <Input
-              placeholder="Tìm kiếm..."
-              prefix={<SearchOutlined />}
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full sm:w-64"
-            />
-          </div>
-
-          {loading ? (
-            <div className="flex items-center justify-center py-12">
-              <Spin size="large" />
             </div>
-          ) : filteredRegistrations.length === 0 ? (
-            <div className="text-center py-12 text-gray-500">
-              <BankOutlined className="text-5xl mb-4 opacity-50" />
-              <p>Không có trường nào</p>
+
+            <div className="overflow-x-auto">
+              <AnimatePresence mode="wait">
+                <motion.div
+                  key={activeTab}
+                  initial={{ opacity: 0, y: 8 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, y: -8 }}
+                  transition={{ duration: 0.25 }}
+                >
+                  <Table
+                    dataSource={filteredRegistrations}
+                    columns={columns}
+                    rowKey="id"
+                    loading={loading}
+                    pagination={{
+                      pageSize: 10,
+                      showSizeChanger: false,
+                      showTotal: (total) => `${total} kết quả`,
+                      className: "px-6 pb-4",
+                    }}
+                    locale={{ emptyText: "Không có trường nào" }}
+                    className="[&_.ant-table-thead_th]:bg-gray-50 [&_.ant-table-thead_th]:text-gray-500 [&_.ant-table-thead_th]:font-medium"
+                    components={{
+                      body: {
+                        row: ({ children, ...props }) => (
+                          <motion.tr
+                            {...props}
+                            variants={tableRowVariants}
+                            initial="hidden"
+                            animate="visible"
+                            transition={{ duration: 0.2 }}
+                            className={`transition-colors ${activeTab === "BANNED" ? "hover:bg-red-50/30" : "hover:bg-green-50/30"}`}
+                          >
+                            {children}
+                          </motion.tr>
+                        ),
+                      },
+                    }}
+                  />
+                </motion.div>
+              </AnimatePresence>
             </div>
-          ) : (
-            <Table
-              columns={columns}
-              dataSource={filteredRegistrations}
-              rowKey="id"
-              pagination={{ pageSize: 10 }}
-            />
-          )}
-        </Card>
+          </Card>
+        </motion.div>
       </motion.div>
 
       {/* Detail Modal */}
       <Modal
-        title={
-          <div className="flex items-center gap-2">
-            <BankOutlined />
-            <span>Chi tiết trường</span>
-          </div>
-        }
         open={isDetailOpen}
         onCancel={() => setIsDetailOpen(false)}
-        width={800}
-        footer={
-          selectedRegistration?.status === "pending"
-            ? [
-                <Button
-                  key="reject"
-                  onClick={() => setIsRejectDialogOpen(true)}
-                >
-                  <CloseCircleOutlined /> Từ chối
-                </Button>,
-                <Button
-                  key="approve"
-                  type="primary"
-                  onClick={() => handleApprove(selectedRegistration)}
-                  loading={actionLoading}
-                  className="bg-green-600"
-                >
-                  <CheckCircleOutlined /> Duyệt
-                </Button>,
-              ]
-            : null
+        title={
+          <div className="flex items-center gap-2 text-gray-800">
+            <BankOutlined className="text-green-500" />
+            Chi tiết đăng ký trường học
+          </div>
         }
+        footer={
+          selectedRegistration?.approvalStatus === "PENDING" &&
+          selectedRegistration?.accountStatus !== "BANNED" ? (
+            <div className="flex justify-end gap-3 pt-2">
+              <Button
+                danger
+                icon={<CloseCircleOutlined />}
+                disabled={actionLoading}
+                onClick={() => {
+                  setIsDetailOpen(false);
+                  setIsRejectDialogOpen(true);
+                }}
+              >
+                Từ chối
+              </Button>
+              <Button
+                type="primary"
+                icon={<CheckCircleOutlined />}
+                loading={actionLoading}
+                onClick={() => handleApprove(selectedRegistration)}
+                className="bg-green-500 border-green-500 hover:bg-green-600"
+              >
+                Duyệt trường học
+              </Button>
+            </div>
+          ) : selectedRegistration?.accountStatus === "BANNED" ? (
+            // Footer gỡ cấm — giống adminPartnerships
+            <div className="flex justify-end gap-3 pt-2">
+              <Button
+                icon={<UnlockOutlined />}
+                loading={actionLoading}
+                className="text-green-600 border-green-500 hover:bg-green-50"
+                onClick={() => {
+                  handleToggleBan(selectedRegistration);
+                  setIsDetailOpen(false);
+                }}
+              >
+                Gỡ cấm tài khoản
+              </Button>
+            </div>
+          ) : null
+        }
+        width={680}
+        centered
+        className="[&_.ant-modal-content]:rounded-2xl"
+        styles={{
+          body: { maxHeight: "70vh", overflowY: "auto", paddingTop: 8 },
+        }}
       >
         {selectedRegistration && (
-          <div className="space-y-6">
-            <div className="flex items-center justify-between">
-              {getStatusTag(
-                selectedRegistration.status,
-                selectedRegistration.is_banned,
-              )}
-              <span className="text-sm text-gray-500">
-                Đăng ký:{" "}
-                {format(
-                  new Date(selectedRegistration.created_at),
-                  "dd/MM/yyyy HH:mm",
-                  { locale: vi },
-                )}
-              </span>
-            </div>
-
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div className="space-y-3">
-                <div className="flex items-start gap-3">
-                  <BankOutlined className="text-gray-400 mt-1" />
-                  <div>
-                    <p className="text-sm text-gray-500">Tên trường</p>
-                    <p className="font-medium">
-                      {selectedRegistration.school_name}
-                    </p>
-                  </div>
-                </div>
-                <div className="flex items-start gap-3">
-                  <EnvironmentOutlined className="text-gray-400 mt-1" />
-                  <div>
-                    <p className="text-sm text-gray-500">Địa chỉ</p>
-                    <p className="font-medium">
-                      {selectedRegistration.address}
-                    </p>
-                  </div>
-                </div>
-                <div className="flex items-start gap-3">
-                  <TeamOutlined className="text-gray-400 mt-1" />
-                  <div>
-                    <p className="text-sm text-gray-500">Số học sinh</p>
-                    <p className="font-medium">
-                      {selectedRegistration.student_count || "Chưa cung cấp"}
-                    </p>
-                  </div>
-                </div>
+          <Suspense
+            fallback={
+              <div className="flex items-center justify-center h-40 text-gray-400">
+                <ReloadOutlined spin className="mr-2" />
+                Đang tải...
               </div>
-              <div className="space-y-3">
-                <div className="flex items-start gap-3">
-                  <UserOutlined className="text-gray-400 mt-1" />
-                  <div>
-                    <p className="text-sm text-gray-500">Người đại diện</p>
-                    <p className="font-medium">
-                      {selectedRegistration.representative_name}
-                    </p>
-                    {selectedRegistration.representative_position && (
-                      <p className="text-sm text-gray-500">
-                        {selectedRegistration.representative_position}
-                      </p>
-                    )}
-                  </div>
-                </div>
-                <div className="flex items-start gap-3">
-                  <MailOutlined className="text-gray-400 mt-1" />
-                  <div>
-                    <p className="text-sm text-gray-500">Email</p>
-                    <p className="font-medium">{selectedRegistration.email}</p>
-                  </div>
-                </div>
-                <div className="flex items-start gap-3">
-                  <PhoneOutlined className="text-gray-400 mt-1" />
-                  <div>
-                    <p className="text-sm text-gray-500">Điện thoại</p>
-                    <p className="font-medium">{selectedRegistration.phone}</p>
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            {selectedRegistration.description && (
-              <div className="pt-4 border-t">
-                <p className="text-sm text-gray-500 mb-2">Mô tả</p>
-                <p className="text-sm">{selectedRegistration.description}</p>
-              </div>
-            )}
-
-            {selectedRegistration.status === "rejected" &&
-              selectedRegistration.rejection_reason && (
-                <div className="pt-4 border-t">
-                  <p className="text-sm text-red-600 font-medium mb-2">
-                    Lý do từ chối
-                  </p>
-                  <p className="text-sm bg-red-50 p-3 rounded-lg">
-                    {selectedRegistration.rejection_reason}
-                  </p>
-                </div>
-              )}
-          </div>
+            }
+          >
+            <SchoolDetailContent reg={selectedRegistration} />
+          </Suspense>
         )}
       </Modal>
 
       {/* Reject Modal */}
       <Modal
-        title="Từ chối đăng ký"
         open={isRejectDialogOpen}
         onCancel={() => setIsRejectDialogOpen(false)}
-        onOk={handleReject}
-        okText="Xác nhận từ chối"
-        okButtonProps={{
-          danger: true,
-          loading: actionLoading,
-          disabled: !rejectionReason.trim(),
-        }}
-        cancelText="Hủy"
+        title="Từ chối đăng ký trường học"
+        centered
+        className="[&_.ant-modal-content]:rounded-2xl"
+        footer={
+          <div className="flex justify-end gap-3">
+            <Button onClick={() => setIsRejectDialogOpen(false)}>Hủy</Button>
+            <Button
+              danger
+              type="primary"
+              onClick={handleReject}
+              disabled={!rejectionReason.trim() || actionLoading}
+              loading={actionLoading}
+            >
+              Xác nhận từ chối
+            </Button>
+          </div>
+        }
       >
-        <p className="mb-4 text-gray-600">
-          Vui lòng nhập lý do từ chối để thông báo cho trường
+        <p className="text-gray-500 text-sm mb-3">
+          Vui lòng nhập lý do từ chối để thông báo cho trường học.
         </p>
-        <TextArea
+        <Input.TextArea
           placeholder="Nhập lý do từ chối..."
           value={rejectionReason}
           onChange={(e) => setRejectionReason(e.target.value)}
           rows={4}
+          className="rounded-xl"
         />
       </Modal>
-    </motion.div>
+    </div>
   );
 };
 
