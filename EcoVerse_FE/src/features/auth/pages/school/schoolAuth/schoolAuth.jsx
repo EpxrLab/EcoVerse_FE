@@ -14,7 +14,11 @@ import {
 import { z } from "zod";
 import { useNavigate } from "react-router-dom";
 import toast from "react-hot-toast";
-import { schoolLogin, schoolRegisterEmail, verifyOTP } from "../../../services";
+import {
+  loginFunction,
+  sendOTPVerification,
+  verifyOTP,
+} from "../../../services";
 
 const { TabPane } = Tabs;
 
@@ -74,15 +78,15 @@ export default function SchoolAuth() {
     setIsLoading(true);
     try {
       const infor = {
-        email: email,
+        emailOrUsername: email,
         password: password,
       };
-      const res = await schoolLogin(infor);
+      const res = await loginFunction(infor);
 
-      if (res) {
+      if (res && res.data.role === "PARTNERSHIP_SCHOOL") {
         toast.success("Đăng nhập thành công!");
-        sessionStorage.setItem("accessToken", res?.accessToken);
-        sessionStorage.setItem("refreshToken", res?.refreshToken);
+        sessionStorage.setItem("accessToken", res?.data?.accessToken);
+        sessionStorage.setItem("refreshToken", res?.data?.refreshToken);
         navigate("/school");
       } else {
         toast.error("Đăng nhập thất bại!");
@@ -111,7 +115,7 @@ export default function SchoolAuth() {
 
     setIsLoading(true);
     try {
-      const res = await schoolRegisterEmail({ email });
+      const res = await sendOTPVerification({ email });
 
       if (res) {
         message.success(
@@ -123,7 +127,7 @@ export default function SchoolAuth() {
         message.error("Đã xảy ra lỗi, vui lòng thử lại!");
       }
     } catch (error) {
-      message.error("Đã xảy ra lỗi khi gửi mã xác thực");
+      message.error(error.response.data.message);
     } finally {
       setIsLoading(false);
     }
@@ -157,7 +161,7 @@ export default function SchoolAuth() {
         );
       }
     } catch (error) {
-      message.error("Đã xảy ra lỗi khi xác thực");
+      message.error(error.response.data.message);
     } finally {
       setIsLoading(false);
     }

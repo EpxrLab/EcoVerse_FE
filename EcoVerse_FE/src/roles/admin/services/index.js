@@ -1,36 +1,39 @@
 // Admin - Services
 import axios from "../../../utils/axios.customize";
 
-const getApprovedSchoolList = async () => {
+const getAllSchoolAccounts = async () => {
   try {
-    const res = await axios.get("/admin/schools/approved");
+    const res = await axios.get("/admin/schools");
     return res.data;
   } catch (error) {
     console.log(error);
   }
 };
 
-const getPendingSchoolList = async () => {
+const getAllPartnershipAccounts = async () => {
   try {
-    const res = await axios.get("/admin/schools/pending");
+    const res = await axios.get("/admin/partnerships");
     return res.data;
   } catch (error) {
     console.log(error);
   }
 };
 
-const getApprovedPartnershipList = async () => {
+const updateSchoolAccountStatus = async (schoolId, payload) => {
   try {
-    const res = await axios.get("/admin/partnerships/approved");
+    const res = await axios.put(`/admin/schools/${schoolId}/approve`, payload);
     return res.data;
   } catch (error) {
     console.log(error);
   }
 };
 
-const getPendingPartnershipList = async () => {
+const updatePartnershipAccountStatus = async (partnershipId, payload) => {
   try {
-    const res = await axios.get("/admin/partnerships/pending");
+    const res = await axios.put(
+      `/admin/partnerships/${partnershipId}/approve`,
+      payload,
+    );
     return res.data;
   } catch (error) {
     console.log(error);
@@ -38,10 +41,10 @@ const getPendingPartnershipList = async () => {
 };
 
 export {
-  getPendingSchoolList,
-  getApprovedSchoolList,
-  getApprovedPartnershipList,
-  getPendingPartnershipList,
+  getAllSchoolAccounts,
+  getAllPartnershipAccounts,
+  updateSchoolAccountStatus,
+  updatePartnershipAccountStatus,
 };
 
 // Re-export admin-specific services as needed

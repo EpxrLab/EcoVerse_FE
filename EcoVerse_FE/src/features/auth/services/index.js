@@ -20,12 +20,13 @@ const getWards = async () => {
   }
 };
 
-const schoolRegisterEmail = async (payload) => {
+const sendOTPVerification = async (payload) => {
   try {
     const res = await axios.post("/auth/register", payload);
     return res.data;
   } catch (error) {
     console.log(error);
+    throw error;
   }
 };
 
@@ -60,9 +61,28 @@ const schoolRegister = async (payload) => {
   }
 };
 
-const schoolLogin = async (payload) => {
+const partnershipRegister = async (payload) => {
+  try {
+    const res = await axios.post("/auth/verify-register/partnership", payload);
+    return res.data;
+  } catch (error) {
+    console.log(error);
+  }
+};
+
+const loginFunction = async (payload) => {
   try {
     const res = await axios.post("/auth/login", payload);
+    console.log(res.data);
+    return res.data;
+  } catch (error) {
+    console.log(error);
+  }
+};
+
+const logoutFunction = async () => {
+  try {
+    const res = await axios.post("/auth/logout");
     return res.data;
   } catch (error) {
     console.log(error);
@@ -74,9 +94,11 @@ export {
   getWards,
   verifyOTP,
   uploadFile,
-  schoolRegisterEmail,
+  sendOTPVerification,
   schoolRegister,
-  schoolLogin,
+  partnershipRegister,
+  loginFunction,
+  logoutFunction,
 };
 
 // Re-export auth services as needed

@@ -219,6 +219,7 @@ export default function SchoolRegister() {
           description: "Đơn đăng ký đang chờ Admin duyệt.",
         });
         navigate("/auth/school/pending");
+        sessionStorage.clear();
       } else {
         notification.error({
           message: "Lỗi",
