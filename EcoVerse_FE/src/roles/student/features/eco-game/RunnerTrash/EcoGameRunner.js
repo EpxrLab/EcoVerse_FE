@@ -6,8 +6,8 @@
  */
 import * as THREE from 'three';
 import gsap from 'gsap';
-import { SPAWNABLE_TRASH } from './EcoGameStateManager';
-import { DEFAULT_LEVEL_CONFIG } from './gameConfig';
+import { SPAWNABLE_TRASH } from '../EcoGameStateManager';
+import { DEFAULT_LEVEL_CONFIG } from '../gameConfig';
 
 // ─── Fixed Constants (not configurable) ──────────────────────────────────────
 

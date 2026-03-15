@@ -68,7 +68,6 @@ export function StudentListView({
   onUpdateStudent,
   onDeleteStudent,
   onToggleStudentStatus,
-  onImportStudents,
 }) {
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
@@ -388,7 +387,7 @@ export function StudentListView({
                         </TableCell>
                         <TableCell className="text-center">
                           <span className="font-mono text-sm text-muted-foreground">
-                            {student.student_username || student.student_code || '-'}
+                            {student.student_code || '-'}
                           </span>
                         </TableCell>
                         <TableCell className="text-center">

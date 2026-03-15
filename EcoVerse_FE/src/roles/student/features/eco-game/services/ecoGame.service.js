@@ -9,7 +9,7 @@
  *   GET /api/campaigns/:campaignId/game-levels     → list of levels for a campaign
  *   GET /api/game-levels/:levelId                  → single level config
  */
-import { mergeLevelConfig, DIFFICULTY_PRESETS } from "./gameConfig";
+import { mergeLevelConfig, DIFFICULTY_PRESETS } from "../gameConfig";
 
 // ─── Config ──────────────────────────────────────────────────────────────────
 
