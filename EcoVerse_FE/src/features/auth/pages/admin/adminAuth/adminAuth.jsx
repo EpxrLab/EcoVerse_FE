@@ -50,6 +50,7 @@ export default function AdminAuth() {
         message.success("Đăng nhập thành công!");
         sessionStorage.setItem("accessToken", res.data.accessToken);
         sessionStorage.setItem("refreshToken", res.data.refreshToken);
+        sessionStorage.setItem("role", res.data.role);
         navigate("/admin");
       } else {
         message.error("Đăng nhập thất bại!");

@@ -2,7 +2,7 @@ import { Toaster } from "@/shared/components/ui/toaster";
 import { Toaster as Sonner } from "@/shared/components/ui/sonner";
 import { TooltipProvider } from "@/shared/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { BrowserRouter, Routes, Route } from "react-router-dom";
+import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { HelmetProvider } from "react-helmet-async";
 
 import Index from "./roles/guest";
@@ -70,8 +70,27 @@ import {
 } from "@/roles/partnership";
 
 import NotFound from "./roles/notFound";
+import toast from "react-hot-toast";
 
 const queryClient = new QueryClient();
+
+const ProtectedRoute = ({ children, role }) => {
+  const accessToken = sessionStorage.getItem("accessToken");
+  const userRole = sessionStorage.getItem("role");
+
+  if (!accessToken) {
+    return <Navigate to="/auth" replace />;
+  }
+
+  if (role && userRole !== role) {
+    toast.error("Bạn không có quyền truy cập trang này!");
+    sessionStorage.clear();
+
+    return <Navigate to="/" replace />;
+  }
+
+  return children;
+};
 
 const App = () => (
   <HelmetProvider>
@@ -86,7 +105,6 @@ const App = () => (
 
               {/* Authentication Router*/}
               <Route path="/auth" element={<OptionPage />} />
-              {/* <Route path="/student" element={<StudentApp />} /> */}
               <Route path="/auth/student" element={<StudentLogin />} />
               <Route path="/auth/partnership" element={<PartnershipAuth />} />
               <Route
@@ -115,7 +133,14 @@ const App = () => (
               <Route path="/auth/admin" element={<AdminAuth />} />
 
               {/* Student Routes */}
-              <Route path="/student" element={<StudentLayout />}>
+              <Route
+                path="/student"
+                element={
+                  <ProtectedRoute role="STUDENT">
+                    <StudentLayout />
+                  </ProtectedRoute>
+                }
+              >
                 <Route index element={<CampaignSelection />} />
                 <Route path="profile" element={<StudentProfile />} />
                 <Route path="rewards" element={<StudentRewards />} />
@@ -132,7 +157,14 @@ const App = () => (
               </Route>
 
               {/* Admin Routes */}
-              <Route path="/admin" element={<AdminLayout />}>
+              <Route
+                path="/admin"
+                element={
+                  <ProtectedRoute role="ADMINISTRATOR">
+                    <AdminLayout />
+                  </ProtectedRoute>
+                }
+              >
                 <Route index element={<AdminDashboard />} />
                 <Route path="schools" element={<AdminSchool />} />
                 <Route path="partnerships" element={<AdminPartnership />} />
@@ -144,7 +176,14 @@ const App = () => (
               </Route>
 
               {/* School Routes (Protected) */}
-              <Route path="/school" element={<SchoolAdminLayout />}>
+              <Route
+                path="/school"
+                element={
+                  <ProtectedRoute role="PARTNERSHIP_SCHOOL">
+                    <SchoolAdminLayout />
+                  </ProtectedRoute>
+                }
+              >
                 <Route index element={<SchoolDashboard />} />
                 {/* <Route path="students" element={<SchoolStudents />} /> */}
                 <Route path="classes" element={<SchoolClasses />} />
@@ -156,7 +195,14 @@ const App = () => (
               </Route>
 
               {/* Partnership Routes (Protected) */}
-              <Route path="/partnership" element={<PartnershipLayout />}>
+              <Route
+                path="/partnership"
+                element={
+                  <ProtectedRoute role="THIRD_PARTY_PARTNERSHIP">
+                    <PartnershipLayout />
+                  </ProtectedRoute>
+                }
+              >
                 <Route index element={<PartnershipDashboard />} />
                 <Route path="campaigns" element={<PartnershipCampaigns />} />
                 <Route path="quizzes" element={<PartnershipQuizzes />} />
