@@ -83,6 +83,7 @@ const loginFunction = async (payload) => {
 const logoutFunction = async () => {
   try {
     const res = await axios.post("/auth/logout");
+    sessionStorage.clear();
     return res.data;
   } catch (error) {
     console.log(error);
