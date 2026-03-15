@@ -74,6 +74,7 @@ export default function PartnershipAuth() {
         toast.success("Đăng nhập thành công!");
         sessionStorage.setItem("accessToken", res?.data?.accessToken);
         sessionStorage.setItem("refreshToken", res?.data?.refreshToken);
+        sessionStorage.setItem("role", res.data.role);
         navigate("/partnership");
       } else {
         toast.error("Đăng nhập thất bại!");
@@ -197,7 +198,7 @@ export default function PartnershipAuth() {
     <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-green-50 flex items-center justify-center p-4">
       {/* Back button — fixed top-left, same as SchoolAuth */}
       <motion.button
-        onClick={() => console.log("navigate /auth")}
+        onClick={() => navigate("/auth")}
         className="fixed top-6 left-6 z-50 flex items-center gap-2
                    bg-white/80 backdrop-blur-md px-4 py-2 rounded-full shadow-lg
                    text-gray-600 hover:text-blue-600 transition-colors group"

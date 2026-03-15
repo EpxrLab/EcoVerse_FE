@@ -87,6 +87,7 @@ export default function SchoolAuth() {
         toast.success("Đăng nhập thành công!");
         sessionStorage.setItem("accessToken", res?.data?.accessToken);
         sessionStorage.setItem("refreshToken", res?.data?.refreshToken);
+        sessionStorage.setItem("role", res.data.role);
         navigate("/school");
       } else {
         toast.error("Đăng nhập thất bại!");

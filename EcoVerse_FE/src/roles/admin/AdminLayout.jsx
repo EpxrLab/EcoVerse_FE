@@ -85,7 +85,7 @@ const AdminLayout = ({ children }) => {
 
       if (res) {
         toast.success("Đăng xuất thành công!");
-        navigate("/auth");
+        navigate("/auth/admin");
       } else {
         toast.error("Đăng xuất thất bại!");
       }
