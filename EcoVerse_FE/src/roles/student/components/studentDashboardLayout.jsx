@@ -15,6 +15,8 @@ import {
 import { motion } from "framer-motion";
 import { useCampaignContext, useStudentContext } from "../context";
 import { useStudentCampaigns } from "../hooks/useStudentCampaign";
+import { logoutFunction } from "../../../features/auth/services";
+import toast from "react-hot-toast";
 
 const { Sider, Header, Content } = Layout;
 
@@ -87,6 +89,21 @@ export default function StudentDashboardLayout() {
   const activeKey =
     menuItems.find((item) => location.pathname === item.path)?.key ||
     "dashboard";
+
+  const handleLogout = async () => {
+    try {
+      const res = await logoutFunction();
+
+      if (res) {
+        toast.success("Đăng xuất thành công!");
+        navigate("/auth/student");
+      } else {
+        toast.error("Đăng xuất thất bại!");
+      }
+    } catch (error) {
+      console.log(error);
+    }
+  };
 
   // Click menu
   const handleMenuClick = ({ key }) => {
@@ -206,7 +223,7 @@ export default function StudentDashboardLayout() {
         <Button
           type="text"
           icon={<LogoutOutlined />}
-          onClick={() => navigate("/")}
+          onClick={handleLogout}
           className="w-full justify-start text-gray-400 hover:text-gray-700"
         >
           Đăng xuất
