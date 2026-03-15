@@ -66,7 +66,7 @@ function SchoolAdminSidebar({ schoolInfo }) {
       const res = await logoutFunction();
       if (res) {
         toast.success("Đăng xuất thành công!");
-        navigate("/auth");
+        navigate("/auth/school");
       } else {
         toast.error("Đăng xuất thất bại!");
       }
