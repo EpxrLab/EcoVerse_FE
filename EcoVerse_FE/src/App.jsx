@@ -2,19 +2,26 @@ import { Toaster } from "@/shared/components/ui/toaster";
 import { Toaster as Sonner } from "@/shared/components/ui/sonner";
 import { TooltipProvider } from "@/shared/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { BrowserRouter, Routes, Route } from "react-router-dom";
+import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { HelmetProvider } from "react-helmet-async";
 
 import Index from "./roles/guest";
 
 //=====================Authenticate Routes=======================
 import OptionPage from "./features/auth/pages/optionPage/optionPage";
-import SchoolAdminLayout from "@/roles/school/SchoolAdminLayout";
+import StudentLogin from "./features/auth/pages/student/studentLogin/studentLogin";
+
+import AdminAuth from "./features/auth/pages/admin/adminAuth/adminAuth";
+
 import SchoolAuth from "./features/auth/pages/school/schoolAuth/schoolAuth";
 import SchoolRegister from "./features/auth/pages/school/schoolRegister/schoolRegister";
-import StudentLogin from "./features/auth/pages/student/studentLogin/studentLogin";
+import SchoolPending from "./features/auth/pages/school/schoolPending/schoolPending";
+import SchoolRejected from "./features/auth/pages/school/schoolRejected/schoolRejected";
+
 import PartnershipAuth from "./features/auth/pages/partnership/partnershipAuth/partnershipAuth";
 import PartnershipRegister from "./features/auth/pages/partnership/partnershipRegister/partnershipRegister";
+import PartnershipPending from "./features/auth/pages/partnership/partnershipPending/partnershipPending";
+import PartnershipRejected from "./features/auth/pages/partnership/partnershipRejected/partnershipRejected";
 
 //======================Admin Routes==============================
 import AdminLayout from "./roles/admin/AdminLayout";
@@ -28,6 +35,7 @@ import AdminContent from "./roles/admin/pages/adminContent/adminContent";
 import AdminMarketPlace from "./roles/admin/pages/adminMarketPlace/adminMarketPlace";
 
 //=======================Student Routes==============================
+import { StudentProvider } from "./roles/student/context";
 import CampaignSelection from "./roles/student/pages/studentCampaignSelection/campaignSelection";
 import StudentProfile from "./roles/student/pages/studentProfile/studentProfile";
 import StudentLayout from "./roles/student/StudentLayout";
@@ -35,36 +43,55 @@ import StudentRewards from "./roles/student/pages/studentRewards/studentRewards"
 import StudentDashboardLayout from "./roles/student/components/studentDashboardLayout";
 import CampaignDashboard from "./roles/student/pages/studentCampaignDashboard/campaignDashboard";
 import StudentLeaderboard from "./roles/student/pages/studentLeaderboard/studentLeaderboard";
-import { StudentProvider } from "./roles/student/context";
 import StudentGame from "./roles/student/pages/studentGameSelection/studentGame";
 import StudentQuiz from "./roles/student/pages/studentQuizSelection/studentQuiz";
+import StudentQuizPlay from "./roles/student/pages/studentQuizPlay/StudentQuizPlay";
+import EcoGamePage from "./roles/student/pages/ecoGamePlay/EcoGamePage";
 
-//=========================School Routes===============================
+//========================School Routes==============================
+import SchoolAdminLayout from "@/roles/school/SchoolAdminLayout";
 import {
-  // SchoolDashboard,
-  // SchoolStudents,
+  SchoolDashboard,
   SchoolClasses,
   SchoolQuizzes,
   SchoolRewards,
-  // SchoolSubscription,
-  // SchoolLeaderboardPage
+  SchoolCampaigns,
+  SchoolSubscription,
+  SchoolLeaderboardPage,
 } from "@/roles/school";
 
-// import ParentLayout from "./components/parent/ParentLayout";
-// import {
-//   ParentHome,
-//   ParentChildren,
-//   ParentChildDetail,
-//   ParentStats,
-//   ParentSettings
-// } from "@/modules/parent";
+//========================Partnership Routes==============================
+import PartnershipLayout from "@/roles/partnership/PartnershipLayout";
+import {
+  PartnershipDashboard,
+  PartnershipCampaigns,
+  PartnershipQuizzes,
+  PartnershipLeaderboard,
+  PartnershipRewards,
+} from "@/roles/partnership";
 
-// import SchoolPending from "./pages/auth/SchoolPending";
-// import SchoolRejected from "./pages/auth/SchoolRejected";
-// import AdminAuth from "./pages/auth/AdminAuth";
-// import NotFound from "./pages/NotFound";
+import NotFound from "./roles/notFound";
+import toast from "react-hot-toast";
 
 const queryClient = new QueryClient();
+
+const ProtectedRoute = ({ children, role }) => {
+  const accessToken = sessionStorage.getItem("accessToken");
+  const userRole = sessionStorage.getItem("role");
+
+  if (!accessToken) {
+    return <Navigate to="/auth" replace />;
+  }
+
+  if (role && userRole !== role) {
+    toast.error("Bạn không có quyền truy cập trang này!");
+    sessionStorage.clear();
+
+    return <Navigate to="/" replace />;
+  }
+
+  return children;
+};
 
 const App = () => (
   <HelmetProvider>
@@ -79,12 +106,19 @@ const App = () => (
 
               {/* Authentication Router*/}
               <Route path="/auth" element={<OptionPage />} />
-              {/* <Route path="/student" element={<StudentApp />} /> */}
               <Route path="/auth/student" element={<StudentLogin />} />
               <Route path="/auth/partnership" element={<PartnershipAuth />} />
               <Route
                 path="/auth/partnership/register"
                 element={<PartnershipRegister />}
+              />
+              <Route
+                path="/auth/partnership/pending"
+                element={<PartnershipPending />}
+              />
+              <Route
+                path="/auth/partnership/rejected"
+                element={<PartnershipRejected />}
               />
 
               <Route path="/auth/school" element={<SchoolAuth />} />
@@ -92,11 +126,22 @@ const App = () => (
                 path="/auth/school/register"
                 element={<SchoolRegister />}
               />
-              {/* <Route path="/auth/school/pending" element={<SchoolPending />} />
-            <Route path="/auth/school/rejected" element={<SchoolRejected />} /> */}
+              <Route path="/auth/school/pending" element={<SchoolPending />} />
+              <Route
+                path="/auth/school/rejected"
+                element={<SchoolRejected />}
+              />
+              <Route path="/auth/admin" element={<AdminAuth />} />
 
               {/* Student Routes */}
-              <Route path="/student" element={<StudentLayout />}>
+              <Route
+                path="/student"
+                element={
+                  <ProtectedRoute role="STUDENT">
+                    <StudentLayout />
+                  </ProtectedRoute>
+                }
+              >
                 <Route index element={<CampaignSelection />} />
                 <Route path="profile" element={<StudentProfile />} />
                 <Route path="rewards" element={<StudentRewards />} />
@@ -106,13 +151,22 @@ const App = () => (
                 >
                   <Route index element={<CampaignDashboard />} />
                   <Route path="game" element={<StudentGame />} />
+                  <Route path="game/play" element={<EcoGamePage />} />
                   <Route path="quiz" element={<StudentQuiz />} />
+                  <Route path="quiz/:quizId" element={<StudentQuizPlay />} />
                   <Route path="leaderboard" element={<StudentLeaderboard />} />
                 </Route>
               </Route>
 
               {/* Admin Routes */}
-              <Route path="/admin" element={<AdminLayout />}>
+              <Route
+                path="/admin"
+                element={
+                  <ProtectedRoute role="ADMINISTRATOR">
+                    <AdminLayout />
+                  </ProtectedRoute>
+                }
+              >
                 <Route index element={<AdminDashboard />} />
                 <Route path="schools" element={<AdminSchool />} />
                 <Route path="partnerships" element={<AdminPartnership />} />
@@ -124,26 +178,44 @@ const App = () => (
               </Route>
 
               {/* School Routes (Protected) */}
-              <Route path="/school" element={<SchoolAdminLayout />}>
-                {/* <Route index element={<SchoolDashboard />} />
-              <Route path="students" element={<SchoolStudents />} /> */}
+              <Route
+                path="/school"
+                element={
+                  <ProtectedRoute role="PARTNERSHIP_SCHOOL">
+                    <SchoolAdminLayout />
+                  </ProtectedRoute>
+                }
+              >
+                <Route index element={<SchoolDashboard />} />
+                {/* <Route path="students" element={<SchoolStudents />} /> */}
                 <Route path="classes" element={<SchoolClasses />} />
                 <Route path="quizzes" element={<SchoolQuizzes />} />
                 <Route path="rewards" element={<SchoolRewards />} />
-                {/* <Route path="subscription" element={<SchoolSubscription />} />
-              <Route path="leaderboard" element={<SchoolLeaderboardPage />} /> */}
+                <Route path="campaigns" element={<SchoolCampaigns />} />
+                <Route path="subscription" element={<SchoolSubscription />} />
+                <Route path="leaderboard" element={<SchoolLeaderboardPage />} />
               </Route>
 
-              {/* Parent Routes (Mobile UI) */}
-              {/* <Route path="/parent" element={<ParentLayout />}>
-              <Route index element={<ParentHome />} />
-              <Route path="children" element={<ParentChildren />} />
-              <Route path="children/:childId" element={<ParentChildDetail />} />
-              <Route path="stats" element={<ParentStats />} />
-              <Route path="settings" element={<ParentSettings />} />
-            </Route> */}
+              {/* Partnership Routes (Protected) */}
+              <Route
+                path="/partnership"
+                element={
+                  <ProtectedRoute role="THIRD_PARTY_PARTNERSHIP">
+                    <PartnershipLayout />
+                  </ProtectedRoute>
+                }
+              >
+                <Route index element={<PartnershipDashboard />} />
+                <Route path="campaigns" element={<PartnershipCampaigns />} />
+                <Route path="quizzes" element={<PartnershipQuizzes />} />
+                <Route
+                  path="leaderboard"
+                  element={<PartnershipLeaderboard />}
+                />
+                <Route path="rewards" element={<PartnershipRewards />} />
+              </Route>
 
-              {/* <Route path="*" element={<NotFound />} /> */}
+              <Route path="*" element={<NotFound />} />
             </Routes>
           </BrowserRouter>
         </StudentProvider>

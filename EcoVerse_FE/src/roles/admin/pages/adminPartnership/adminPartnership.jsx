@@ -31,33 +31,66 @@ import {
   TeamOutlined,
 } from "@ant-design/icons";
 import { motion, AnimatePresence } from "framer-motion";
+import {
+  getAllPartnershipAccounts,
+  updatePartnershipAccountStatus,
+} from "../../services";
+import toast from "react-hot-toast";
 
-// Lazy-loaded detail content
+// ─── BE Schema (tham khảo) ────────────────────────────────────────────────────
+// {
+//   id, userId,
+//   organizationName, partnershipType,
+//   taxCode, contactEmail, phoneNumber,
+//   registeredAddress, geographicScopeWard, geographicScopeProvince,
+//   contactPerson, position,
+//   linkWeb, description,
+//   logoUrl, licenseUrl,
+//   approvalStatus ("PENDING"|"APPROVED"|"REJECTED"),
+//   accountStatus, isActive,
+//   createdAt, updatedAt
+// }
+
+// ─── Lazy Detail ──────────────────────────────────────────────────────────────
 const PartnerDetailContent = lazy(() =>
   Promise.resolve({
     default: ({ reg, PARTNERSHIP_TYPE_LABELS }) => (
       <div className="space-y-5">
         {/* Org Header */}
         <div className="flex items-start gap-4">
-          {reg.logo_url ? (
+          {reg.logoUrl ? (
             <img
-              src={reg.logo_url}
+              src={reg.logoUrl}
               alt="Logo"
               className="w-20 h-20 rounded-2xl object-cover shadow-md"
             />
           ) : (
-            <div className="w-20 h-20 rounded-2xl bg-blue-50 flex items-center justify-center shadow-inner">
-              <TeamOutlined style={{ fontSize: 32, color: "#3b82f6" }} />
+            <div
+              className={`w-20 h-20 rounded-2xl flex items-center justify-center shadow-inner ${reg.isBanned ? "bg-red-50" : "bg-blue-50"}`}
+            >
+              <TeamOutlined
+                style={{
+                  fontSize: 32,
+                  color: reg.isBanned ? "#ef4444" : "#3b82f6",
+                }}
+              />
             </div>
           )}
           <div>
             <h3 className="text-xl font-bold text-gray-800">
-              {reg.organization_name}
+              {reg.organizationName}
             </h3>
-            <Tag color="blue" className="mt-1">
-              {PARTNERSHIP_TYPE_LABELS[reg.partnership_type] ||
-                reg.partnership_type}
-            </Tag>
+            <div className="flex items-center gap-2 mt-1 flex-wrap">
+              <Tag color="blue">
+                {PARTNERSHIP_TYPE_LABELS[reg.partnershipType] ||
+                  reg.partnershipType}
+              </Tag>
+              {reg.accountStatus === "BANNED" && (
+                <Tag color="red" icon={<StopOutlined />}>
+                  Đã cấm
+                </Tag>
+              )}
+            </div>
           </div>
         </div>
 
@@ -65,28 +98,43 @@ const PartnerDetailContent = lazy(() =>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
           <div className="flex items-center gap-2 text-sm text-gray-600">
             <MailOutlined className="text-gray-400" />
-            <span>{reg.email}</span>
+            <span>{reg.contactEmail}</span>
           </div>
           <div className="flex items-center gap-2 text-sm text-gray-600">
             <PhoneOutlined className="text-gray-400" />
-            <span>{reg.phone}</span>
+            <span>{reg.phoneNumber}</span>
           </div>
+          {/* Ghép địa chỉ từ 3 field BE */}
           <div className="flex items-start gap-2 text-sm text-gray-600 md:col-span-2">
             <EnvironmentOutlined className="text-gray-400 mt-0.5" />
-            <span>{reg.address}</span>
+            <span>
+              {[
+                reg.registeredAddress,
+                reg.geographicScopeWard,
+                reg.geographicScopeProvince,
+              ]
+                .filter(Boolean)
+                .join(", ")}
+            </span>
           </div>
-          {reg.website && (
+          {reg.linkWeb && (
             <div className="flex items-center gap-2 text-sm">
               <GlobalOutlined className="text-gray-400" />
               <a
-                href={reg.website}
+                href={reg.linkWeb}
                 target="_blank"
                 rel="noopener noreferrer"
                 className="text-blue-500 hover:underline flex items-center gap-1"
               >
-                {reg.website}
+                {reg.linkWeb}
                 <LinkOutlined style={{ fontSize: 11 }} />
               </a>
+            </div>
+          )}
+          {reg.taxCode && (
+            <div className="flex items-center gap-2 text-sm text-gray-600">
+              <FileTextOutlined className="text-gray-400" />
+              <span>Mã số thuế: {reg.taxCode}</span>
             </div>
           )}
         </div>
@@ -95,13 +143,11 @@ const PartnerDetailContent = lazy(() =>
         <div className="p-4 rounded-xl bg-gray-50 border border-gray-100">
           <div className="flex items-center gap-2 mb-2">
             <UserOutlined className="text-gray-400" />
-            <span className="font-semibold text-gray-700">Người đại diện</span>
+            <span className="font-semibold text-gray-700">Người liên hệ</span>
           </div>
-          <p className="text-gray-800">{reg.representative_name}</p>
-          {reg.representative_position && (
-            <p className="text-sm text-gray-500">
-              {reg.representative_position}
-            </p>
+          <p className="text-gray-800">{reg.contactPerson}</p>
+          {reg.position && (
+            <p className="text-sm text-gray-500">{reg.position}</p>
           )}
         </div>
 
@@ -114,24 +160,13 @@ const PartnerDetailContent = lazy(() =>
           </div>
         )}
 
-        {reg.collaboration_proposal && (
-          <div>
-            <h4 className="font-semibold text-gray-700 mb-1">
-              Đề xuất hợp tác
-            </h4>
-            <p className="text-sm text-gray-500 leading-relaxed">
-              {reg.collaboration_proposal}
-            </p>
-          </div>
-        )}
-
-        {reg.license_url && (
+        {reg.licenseUrl && (
           <div>
             <h4 className="font-semibold text-gray-700 mb-1">
               Giấy phép kinh doanh
             </h4>
             <a
-              href={reg.license_url}
+              href={reg.licenseUrl}
               target="_blank"
               rel="noopener noreferrer"
               className="inline-flex items-center gap-2 text-sm text-blue-500 hover:underline"
@@ -143,10 +178,10 @@ const PartnerDetailContent = lazy(() =>
           </div>
         )}
 
-        {reg.status === "rejected" && reg.rejection_reason && (
+        {reg.approvalStatus === "REJECTED" && reg.rejectionReason && (
           <div className="p-4 rounded-xl bg-red-50 border border-red-100">
             <h4 className="font-semibold text-red-600 mb-1">Lý do từ chối</h4>
-            <p className="text-sm text-red-500">{reg.rejection_reason}</p>
+            <p className="text-sm text-red-500">{reg.rejectionReason}</p>
           </div>
         )}
       </div>
@@ -154,53 +189,48 @@ const PartnerDetailContent = lazy(() =>
   }),
 );
 
-// ─── Constants ───────────────────────────────────────────────────────────────
+// ─── Constants ────────────────────────────────────────────────────────────────
 
 const PARTNERSHIP_TYPE_LABELS = {
-  sponsor: "Nhà tài trợ",
-  ngo: "Tổ chức phi chính phủ",
-  media: "Truyền thông",
-  technology: "Công nghệ",
-  education: "Giáo dục",
-  other: "Khác",
+  SPONSOR: "Nhà tài trợ",
+  NGO: "Tổ chức phi chính phủ",
+  MEDIA: "Truyền thông",
+  TECHNOLOGY: "Công nghệ",
+  EDUCATION: "Giáo dục",
+  YOUTH_UNION: "Đoàn Thanh Niên",
+  WARD_GOVERNMENT: "Chính quyền phường",
+  OTHER: "Khác",
 };
 
+// approvalStatus từ BE (PENDING / APPROVED / REJECTED)
 const STATUS_CONFIG = {
-  pending: {
-    color: "warning",
+  PENDING: {
     icon: <ClockCircleOutlined />,
     label: "Chờ duyệt",
     tagColor: "gold",
   },
-  approved: {
-    color: "success",
+  APPROVED: {
     icon: <CheckCircleOutlined />,
     label: "Đã duyệt",
     tagColor: "green",
   },
-  rejected: {
-    color: "error",
+  REJECTED: {
     icon: <CloseCircleOutlined />,
     label: "Từ chối",
     tagColor: "red",
   },
 };
 
-// ─── Animation Variants ───────────────────────────────────────────────────────
+// ─── Animations ───────────────────────────────────────────────────────────────
 
 const containerVariants = {
   hidden: { opacity: 0 },
-  visible: {
-    opacity: 1,
-    transition: { staggerChildren: 0.08 },
-  },
+  visible: { opacity: 1, transition: { staggerChildren: 0.08 } },
 };
-
 const cardVariants = {
   hidden: { opacity: 0, y: 20 },
   visible: { opacity: 1, y: 0, transition: { duration: 0.4, ease: "easeOut" } },
 };
-
 const tableRowVariants = {
   hidden: { opacity: 0, x: -10 },
   visible: { opacity: 1, x: 0 },
@@ -230,13 +260,13 @@ const StatCard = ({ icon, value, label, bgClass, iconClass, delay }) => (
   </motion.div>
 );
 
-// ─── Main Component ────────────────────────────────────────────────────────────
+// ─── Main ─────────────────────────────────────────────────────────────────────
 
 const AdminPartnerships = () => {
   const [registrations, setRegistrations] = useState([]);
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState("");
-  const [activeTab, setActiveTab] = useState("pending");
+  const [activeTab, setActiveTab] = useState("PENDING");
   const [selectedRegistration, setSelectedRegistration] = useState(null);
   const [isDetailOpen, setIsDetailOpen] = useState(false);
   const [isRejectDialogOpen, setIsRejectDialogOpen] = useState(false);
@@ -247,81 +277,8 @@ const AdminPartnerships = () => {
   const fetchRegistrations = async () => {
     try {
       setLoading(true);
-      // Replace with your actual data fetching logic (supabase, axios, etc.)
-      // const { data, error } = await supabase.from('partnership_registrations').select('*').order('created_at', { ascending: false });
-      // if (error) throw error;
-      // setRegistrations(data || []);
-
-      // Demo data for preview
-      setRegistrations([
-        {
-          id: "1",
-          organization_name: "GreenTech Corp",
-          email: "contact@greentech.vn",
-          phone: "028 1234 5678",
-          address: "123 Nguyễn Huệ, Q.1, TP.HCM",
-          representative_name: "Nguyễn Văn A",
-          representative_position: "Giám đốc",
-          partnership_type: "technology",
-          website: "https://greentech.vn",
-          tax_code: "0123456789",
-          description: "Công ty công nghệ xanh hàng đầu Việt Nam.",
-          collaboration_proposal:
-            "Đề xuất hợp tác phát triển phần mềm bền vững.",
-          logo_url: null,
-          license_url: null,
-          status: "pending",
-          rejection_reason: null,
-          created_at: new Date().toISOString(),
-          updated_at: new Date().toISOString(),
-          user_id: "u1",
-          is_banned: false,
-        },
-        {
-          id: "2",
-          organization_name: "EcoMedia VN",
-          email: "hello@ecomedia.vn",
-          phone: "024 9876 5432",
-          address: "45 Hoàng Diệu, Ba Đình, Hà Nội",
-          representative_name: "Trần Thị B",
-          representative_position: "Trưởng phòng",
-          partnership_type: "media",
-          website: null,
-          tax_code: null,
-          description: "Truyền thông số về môi trường.",
-          collaboration_proposal: null,
-          logo_url: null,
-          license_url: null,
-          status: "approved",
-          rejection_reason: null,
-          created_at: new Date(Date.now() - 86400000).toISOString(),
-          updated_at: new Date().toISOString(),
-          user_id: "u2",
-          is_banned: false,
-        },
-        {
-          id: "3",
-          organization_name: "CleanFund NGO",
-          email: "info@cleanfund.org",
-          phone: "0909 123 456",
-          address: "88 Lê Lợi, Q.3, TP.HCM",
-          representative_name: "Lê Văn C",
-          representative_position: null,
-          partnership_type: "ngo",
-          website: "https://cleanfund.org",
-          tax_code: null,
-          description: null,
-          collaboration_proposal: "Tài trợ cho các dự án môi trường cộng đồng.",
-          logo_url: null,
-          license_url: null,
-          status: "rejected",
-          rejection_reason: "Hồ sơ chưa đầy đủ thông tin pháp lý.",
-          created_at: new Date(Date.now() - 172800000).toISOString(),
-          updated_at: new Date().toISOString(),
-          user_id: "u3",
-          is_banned: false,
-        },
-      ]);
+      const res = await getAllPartnershipAccounts();
+      setRegistrations(res.data || []);
     } catch (error) {
       console.error("Lỗi tải dữ liệu:", error.message);
     } finally {
@@ -333,26 +290,52 @@ const AdminPartnerships = () => {
     fetchRegistrations();
   }, []);
 
-  // ── Filters ──
   const filteredRegistrations = registrations.filter((reg) => {
     const q = searchQuery.toLowerCase();
     const matchesSearch =
-      reg.organization_name.toLowerCase().includes(q) ||
-      reg.email.toLowerCase().includes(q) ||
-      reg.representative_name.toLowerCase().includes(q);
-    return matchesSearch && reg.status === activeTab;
+      reg.organizationName?.toLowerCase().includes(q) ||
+      reg.contactEmail?.toLowerCase().includes(q) ||
+      reg.contactPerson?.toLowerCase().includes(q);
+    if (activeTab === "BANNED")
+      return matchesSearch && reg.accountStatus === "BANNED";
+    return (
+      matchesSearch &&
+      reg.approvalStatus === activeTab &&
+      reg.accountStatus !== "BANNED"
+    );
   });
+
+  // ── Stats ──
+  const stats = {
+    PENDING: registrations.filter(
+      (r) => r.approvalStatus === "PENDING" && r.accountStatus !== "BANNED",
+    ).length,
+    APPROVED: registrations.filter(
+      (r) => r.approvalStatus === "APPROVED" && r.accountStatus !== "BANNED",
+    ).length,
+    REJECTED: registrations.filter(
+      (r) => r.approvalStatus === "REJECTED" && r.accountStatus !== "BANNED",
+    ).length,
+    BANNED: registrations.filter((r) => r.accountStatus === "BANNED").length,
+  };
 
   // ── Actions ──
   const handleApprove = async (registration) => {
     try {
       setActionLoading(true);
-      // await supabase.from('partnership_registrations').update({ status: 'approved', reviewed_at: new Date().toISOString() }).eq('id', registration.id);
-      setRegistrations((prev) =>
-        prev.map((r) =>
-          r.id === registration.id ? { ...r, status: "approved" } : r,
-        ),
+      const payload = {
+        status: "APPROVED",
+      };
+      const res = await updatePartnershipAccountStatus(
+        registration.id,
+        payload,
       );
+      if (res) {
+        toast.success("Phê duyệt tài khoản thành công!");
+        fetchRegistrations();
+      } else {
+        toast.error("Phê duyệt tài khoản thất bại!");
+      }
       setIsDetailOpen(false);
     } catch (error) {
       console.error("Lỗi duyệt đối tác:", error.message);
@@ -365,14 +348,22 @@ const AdminPartnerships = () => {
     if (!selectedRegistration) return;
     try {
       setActionLoading(true);
-      // await supabase.from('partnership_registrations').update({ status: 'rejected', rejection_reason: rejectionReason, reviewed_at: new Date().toISOString() }).eq('id', selectedRegistration.id);
-      setRegistrations((prev) =>
-        prev.map((r) =>
-          r.id === selectedRegistration.id
-            ? { ...r, status: "rejected", rejection_reason: rejectionReason }
-            : r,
-        ),
+
+      const payload = {
+        status: "REJECTED",
+        reason: rejectionReason,
+      };
+      const res = await updatePartnershipAccountStatus(
+        selectedRegistration.id,
+        payload,
       );
+      if (res) {
+        toast.success("Từ chối tài khoản thành công!");
+        fetchRegistrations();
+      } else {
+        toast.error("Từ chối tài khoản thất bại!");
+      }
+
       setIsRejectDialogOpen(false);
       setIsDetailOpen(false);
       setRejectionReason("");
@@ -386,11 +377,12 @@ const AdminPartnerships = () => {
   const handleToggleBan = async (registration) => {
     try {
       setActionLoading(true);
-      const newBanStatus = !registration.is_banned;
-      // await supabase.from('partnership_registrations').update({ is_banned: newBanStatus }).eq('id', registration.id);
+      const isBanned = registration.accountStatus === "BANNED";
+      const newStatus = isBanned ? "ACTIVE" : "BANNED";
+      // await api.patch(`/admin/partnership-registrations/${registration.id}`, { accountStatus: newStatus });
       setRegistrations((prev) =>
         prev.map((r) =>
-          r.id === registration.id ? { ...r, is_banned: newBanStatus } : r,
+          r.id === registration.id ? { ...r, accountStatus: newStatus } : r,
         ),
       );
     } catch (error) {
@@ -400,14 +392,6 @@ const AdminPartnerships = () => {
     }
   };
 
-  // ── Stats ──
-  const stats = {
-    pending: registrations.filter((r) => r.status === "pending").length,
-    approved: registrations.filter((r) => r.status === "approved").length,
-    rejected: registrations.filter((r) => r.status === "rejected").length,
-    banned: registrations.filter((r) => r.is_banned).length,
-  };
-
   // ── Table Columns ──
   const columns = [
     {
@@ -415,22 +399,29 @@ const AdminPartnerships = () => {
       key: "org",
       render: (_, reg) => (
         <div className="flex items-center gap-3">
-          {reg.logo_url ? (
+          {reg.logoUrl ? (
             <img
-              src={reg.logo_url}
+              src={reg.logoUrl}
               alt="Logo"
               className="w-10 h-10 rounded-xl object-cover"
             />
           ) : (
-            <div className="w-10 h-10 rounded-xl bg-blue-50 flex items-center justify-center">
-              <TeamOutlined style={{ color: "#3b82f6" }} />
+            <div
+              className={`w-10 h-10 rounded-xl flex items-center justify-center
+              ${reg.accountStatus === "BANNED" ? "bg-red-50" : "bg-blue-50"}`}
+            >
+              <TeamOutlined
+                style={{
+                  color: reg.accountStatus === "BANNED" ? "#ef4444" : "#3b82f6",
+                }}
+              />
             </div>
           )}
           <div>
             <p className="font-semibold text-gray-800 leading-tight">
-              {reg.organization_name}
+              {reg.organizationName}
             </p>
-            <p className="text-xs text-gray-400">{reg.email}</p>
+            <p className="text-xs text-gray-400">{reg.contactEmail}</p>
           </div>
         </div>
       ),
@@ -440,29 +431,26 @@ const AdminPartnerships = () => {
       key: "type",
       render: (_, reg) => (
         <Tag color="blue" className="rounded-full">
-          {PARTNERSHIP_TYPE_LABELS[reg.partnership_type] ||
-            reg.partnership_type}
+          {PARTNERSHIP_TYPE_LABELS[reg.partnershipType] || reg.partnershipType}
         </Tag>
       ),
     },
     {
-      title: "Người đại diện",
+      title: "Người liên hệ",
       key: "rep",
       render: (_, reg) => (
         <div>
-          <p className="font-medium text-gray-700">{reg.representative_name}</p>
-          {reg.representative_position && (
-            <p className="text-xs text-gray-400">
-              {reg.representative_position}
-            </p>
+          <p className="font-medium text-gray-700">{reg.contactPerson}</p>
+          {reg.position && (
+            <p className="text-xs text-gray-400">{reg.position}</p>
           )}
         </div>
       ),
     },
     {
       title: "Liên hệ",
-      dataIndex: "phone",
-      key: "phone",
+      dataIndex: "phoneNumber",
+      key: "phoneNumber",
       render: (phone) => <span className="text-sm text-gray-600">{phone}</span>,
     },
     {
@@ -470,7 +458,7 @@ const AdminPartnerships = () => {
       key: "date",
       render: (_, reg) => (
         <span className="text-sm text-gray-500">
-          {new Date(reg.created_at).toLocaleDateString("vi-VN")}
+          {new Date(reg.createdAt).toLocaleDateString("vi-VN")}
         </span>
       ),
     },
@@ -478,13 +466,15 @@ const AdminPartnerships = () => {
       title: "Trạng thái",
       key: "status",
       render: (_, reg) => {
-        const cfg = STATUS_CONFIG[reg.status];
+        const cfg = STATUS_CONFIG[reg.approvalStatus];
         return (
           <div className="flex items-center gap-2 flex-wrap">
-            <Tag color={cfg.tagColor} icon={cfg.icon}>
-              {cfg.label}
-            </Tag>
-            {reg.is_banned && (
+            {cfg && (
+              <Tag color={cfg.tagColor} icon={cfg.icon}>
+                {cfg.label}
+              </Tag>
+            )}
+            {reg.accountStatus === "BANNED" && (
               <Tag color="red" icon={<StopOutlined />}>
                 Đã cấm
               </Tag>
@@ -498,6 +488,7 @@ const AdminPartnerships = () => {
       key: "actions",
       align: "right",
       render: (_, reg) => {
+        const isBanned = reg.accountStatus === "BANNED";
         const menuItems = [
           {
             key: "view",
@@ -508,7 +499,7 @@ const AdminPartnerships = () => {
               setIsDetailOpen(true);
             },
           },
-          ...(reg.status === "pending"
+          ...(reg.approvalStatus === "PENDING" && !isBanned
             ? [
                 {
                   key: "approve",
@@ -527,16 +518,22 @@ const AdminPartnerships = () => {
                 },
               ]
             : []),
-          ...(reg.status === "approved"
+          ...(reg.approvalStatus === "APPROVED" && !isBanned
             ? [
                 {
                   key: "ban",
-                  icon: reg.is_banned ? <UnlockOutlined /> : <StopOutlined />,
-                  label: reg.is_banned ? (
-                    <span className="text-green-600">Gỡ cấm</span>
-                  ) : (
-                    <span className="text-red-500">Cấm tài khoản</span>
-                  ),
+                  icon: <StopOutlined />,
+                  label: <span className="text-red-500">Cấm tài khoản</span>,
+                  onClick: () => handleToggleBan(reg),
+                },
+              ]
+            : []),
+          ...(isBanned
+            ? [
+                {
+                  key: "unban",
+                  icon: <UnlockOutlined />,
+                  label: <span className="text-green-600">Gỡ cấm</span>,
                   onClick: () => handleToggleBan(reg),
                 },
               ]
@@ -560,35 +557,45 @@ const AdminPartnerships = () => {
     },
   ];
 
-  // ── Tab Items ──
+  // ── Tab Items — key là BE enum value ──
   const tabItems = [
     {
-      key: "pending",
+      key: "PENDING",
       label: (
         <span className="flex items-center gap-1.5">
           <ClockCircleOutlined />
           Chờ duyệt
-          <Badge count={stats.pending} color="#faad14" />
+          <Badge count={stats.PENDING} color="#faad14" />
         </span>
       ),
     },
     {
-      key: "approved",
+      key: "APPROVED",
       label: (
         <span className="flex items-center gap-1.5">
           <CheckCircleOutlined />
           Đã duyệt
-          <Badge count={stats.approved} color="#52c41a" />
+          <Badge count={stats.APPROVED} color="#52c41a" />
         </span>
       ),
     },
     {
-      key: "rejected",
+      key: "REJECTED",
       label: (
         <span className="flex items-center gap-1.5">
           <CloseCircleOutlined />
           Từ chối
-          <Badge count={stats.rejected} color="#ff4d4f" />
+          <Badge count={stats.REJECTED} color="#ff4d4f" />
+        </span>
+      ),
+    },
+    {
+      key: "BANNED",
+      label: (
+        <span className="flex items-center gap-1.5">
+          <StopOutlined />
+          Đã cấm
+          <Badge count={stats.BANNED} color="#6b7280" />
         </span>
       ),
     },
@@ -630,7 +637,7 @@ const AdminPartnerships = () => {
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
           <StatCard
             icon={<ClockCircleOutlined />}
-            value={stats.pending}
+            value={stats.PENDING}
             label="Chờ duyệt"
             bgClass="bg-amber-50"
             iconClass="text-amber-500"
@@ -638,7 +645,7 @@ const AdminPartnerships = () => {
           />
           <StatCard
             icon={<CheckCircleOutlined />}
-            value={stats.approved}
+            value={stats.APPROVED}
             label="Đã duyệt"
             bgClass="bg-green-50"
             iconClass="text-green-500"
@@ -646,7 +653,7 @@ const AdminPartnerships = () => {
           />
           <StatCard
             icon={<CloseCircleOutlined />}
-            value={stats.rejected}
+            value={stats.REJECTED}
             label="Từ chối"
             bgClass="bg-red-50"
             iconClass="text-red-500"
@@ -654,7 +661,7 @@ const AdminPartnerships = () => {
           />
           <StatCard
             icon={<StopOutlined />}
-            value={stats.banned}
+            value={stats.BANNED}
             label="Đã cấm"
             bgClass="bg-gray-100"
             iconClass="text-gray-500"
@@ -668,7 +675,6 @@ const AdminPartnerships = () => {
             className="rounded-2xl border-0 shadow-sm"
             bodyStyle={{ padding: 0 }}
           >
-            {/* Search + Tabs header */}
             <div className="p-4 border-b border-gray-100 flex flex-col md:flex-row md:items-center gap-4">
               <Input
                 prefix={<SearchOutlined className="text-gray-300" />}
@@ -687,7 +693,6 @@ const AdminPartnerships = () => {
               />
             </div>
 
-            {/* Table with animated rows */}
             <div className="overflow-x-auto">
               <AnimatePresence mode="wait">
                 <motion.div
@@ -719,7 +724,7 @@ const AdminPartnerships = () => {
                             initial="hidden"
                             animate="visible"
                             transition={{ duration: 0.2 }}
-                            className="hover:bg-blue-50/30 transition-colors"
+                            className={`transition-colors ${activeTab === "BANNED" ? "hover:bg-red-50/30" : "hover:bg-blue-50/30"}`}
                           >
                             {children}
                           </motion.tr>
@@ -734,7 +739,7 @@ const AdminPartnerships = () => {
         </motion.div>
       </motion.div>
 
-      {/* ── Detail Modal ── */}
+      {/* Detail Modal */}
       <Modal
         open={isDetailOpen}
         onCancel={() => setIsDetailOpen(false)}
@@ -745,27 +750,42 @@ const AdminPartnerships = () => {
           </div>
         }
         footer={
-          selectedRegistration?.status === "pending" ? (
+          selectedRegistration?.approvalStatus === "PENDING" &&
+          selectedRegistration?.accountStatus !== "BANNED" ? (
             <div className="flex justify-end gap-3 pt-2">
               <Button
+                danger
+                icon={<CloseCircleOutlined />}
+                disabled={actionLoading}
                 onClick={() => {
                   setIsDetailOpen(false);
                   setIsRejectDialogOpen(true);
                 }}
-                danger
-                icon={<CloseCircleOutlined />}
-                disabled={actionLoading}
               >
                 Từ chối
               </Button>
               <Button
                 type="primary"
-                onClick={() => handleApprove(selectedRegistration)}
-                loading={actionLoading}
                 icon={<CheckCircleOutlined />}
+                loading={actionLoading}
+                onClick={() => handleApprove(selectedRegistration)}
                 className="bg-green-500 border-green-500 hover:bg-green-600"
               >
                 Duyệt đối tác
+              </Button>
+            </div>
+          ) : selectedRegistration?.accountStatus === "BANNED" ? (
+            <div className="flex justify-end gap-3 pt-2">
+              <Button
+                icon={<UnlockOutlined />}
+                loading={actionLoading}
+                className="text-green-600 border-green-500 hover:bg-green-50"
+                onClick={() => {
+                  handleToggleBan(selectedRegistration);
+                  setIsDetailOpen(false);
+                }}
+              >
+                Gỡ cấm tài khoản
               </Button>
             </div>
           ) : null
@@ -794,7 +814,7 @@ const AdminPartnerships = () => {
         )}
       </Modal>
 
-      {/* ── Reject Modal ── */}
+      {/* Reject Modal */}
       <Modal
         open={isRejectDialogOpen}
         onCancel={() => setIsRejectDialogOpen(false)}

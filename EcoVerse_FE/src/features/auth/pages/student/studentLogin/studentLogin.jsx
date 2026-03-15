@@ -12,6 +12,7 @@ import {
 import { z } from "zod";
 import { useNavigate } from "react-router-dom";
 import toast from "react-hot-toast";
+import { loginFunction } from "../../../services";
 
 const loginSchema = z.object({
   username: z
@@ -45,10 +46,22 @@ export default function StudentLogin() {
 
     setIsLoading(true);
     try {
-      // Simulate API call
-      await new Promise((resolve) => setTimeout(resolve, 2000));
-      toast.success("Đăng nhập thành công! Chào mừng bạn đến với EcoVerse 🌱");
-      navigate("/student");
+      const payload = {
+        emailOrUsername: username,
+        password: password,
+      };
+      const res = await loginFunction(payload);
+      if (res && res.data.role === "STUDENT") {
+        toast.success(
+          "Đăng nhập thành công! Chào mừng bạn đến với EcoVerse 🌱",
+        );
+        sessionStorage.setItem("accessToken", res?.data?.accessToken);
+        sessionStorage.setItem("refreshToken", res?.data?.refreshToken);
+        sessionStorage.setItem("role", res.data.role);
+        navigate("/student");
+      } else {
+        toast.error("Đăng nhập thất bại!");
+      }
     } catch (error) {
       toast.error("Đã xảy ra lỗi khi đăng nhập");
     } finally {

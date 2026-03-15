@@ -1,14 +1,7 @@
-import { useRef, useState } from "react";
+import { useState } from "react";
 import { Button } from "@/shared/components/ui/button";
 import { Card, CardContent } from "@/shared/components/ui/card";
 import { Input } from "@/shared/components/ui/input";
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-} from "@/shared/components/ui/dialog";
 import {
   Table,
   TableBody,
@@ -33,23 +26,24 @@ import {
   Target,
   Trophy,
   GraduationCap,
-  FileSpreadsheet,
   Search,
   MoreVertical,
   Pencil,
   Trash2,
   Coins,
   Flame,
-  Recycle,
   Phone,
   Mail,
   User,
   Lock,
   Eye,
   EyeOff,
+  Ban,
+  CheckCircle,
 } from "lucide-react";
 import { cn } from "@/shared/lib/utils";
 import { StudentFormDialog } from "./StudentFormDialog";
+import { EmailPreviewDialog } from "./EmailPreviewDialog";
 
 const initialStudentForm = {
   student_name: '',
@@ -73,22 +67,22 @@ export function StudentListView({
   onAddStudent,
   onUpdateStudent,
   onDeleteStudent,
-  onImportStudents,
+  onToggleStudentStatus,
 }) {
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
-  const [isImportDialogOpen, setIsImportDialogOpen] = useState(false);
   const [studentForm, setStudentForm] = useState(initialStudentForm);
   const [editingStudentId, setEditingStudentId] = useState(null);
-  const [importedStudents, setImportedStudents] = useState([]);
   const [searchQuery, setSearchQuery] = useState('');
   const [activeTab, setActiveTab] = useState('students');
   const [highlightedParentId, setHighlightedParentId] = useState(null);
-  const fileInputRef = useRef(null);
 
   // State for showing/hiding passwords
   const [showStudentPasswords, setShowStudentPasswords] = useState({});
   const [showParentPasswords, setShowParentPasswords] = useState({});
+
+  // Email sending state
+  const [emailPreviewData, setEmailPreviewData] = useState(null); // { parent, student }
 
   const filteredStudents = students.filter(s => 
     s.student_name.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -106,9 +100,11 @@ export function StudentListView({
           name: student.parent_name || '',
           phone: student.parent_phone || '',
           email: student.parent_email || '',
+          username: student.parent_username || '',
           password: student.parent_password || '',
           studentName: student.student_name,
           studentId: student.id,
+          student: student,
         });
       }
       return acc;
@@ -126,6 +122,10 @@ export function StudentListView({
     setActiveTab('parents');
     setHighlightedParentId(studentId);
     setTimeout(() => setHighlightedParentId(null), 2000);
+  };
+
+  const openEmailPreview = (parent, student) => {
+    setEmailPreviewData({ parent, student });
   };
 
   const handleAddStudent = async () => {
@@ -166,37 +166,6 @@ export function StudentListView({
     setIsEditDialogOpen(true);
   };
 
-  const handleFileChange = (e) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-
-    const reader = new FileReader();
-    reader.onload = (event) => {
-      const text = event.target?.result;
-      const lines = text.split('\n').filter(line => line.trim());
-      const startIndex = lines[0]?.toLowerCase().includes('name') || lines[0]?.toLowerCase().includes('tên') ? 1 : 0;
-      
-      const parsed = lines.slice(startIndex).map((line, index) => {
-        const parts = line.split(',');
-        return {
-          student_name: parts[0]?.trim() || line.trim(),
-          rowIndex: index + startIndex + 1,
-        };
-      }).filter(s => s.student_name);
-
-      setImportedStudents(parsed);
-    };
-    reader.readAsText(file);
-  };
-
-  const handleImport = async () => {
-    const success = await onImportStudents(selectedClass.id, importedStudents);
-    if (success) {
-      setImportedStudents([]);
-      setIsImportDialogOpen(false);
-      if (fileInputRef.current) fileInputRef.current.value = '';
-    }
-  };
 
   return (
     <div className="space-y-6 animate-fade-in">
@@ -224,68 +193,6 @@ export function StudentListView({
         </div>
 
         <div className="flex items-center gap-3">
-          <Dialog open={isImportDialogOpen} onOpenChange={setIsImportDialogOpen}>
-            <DialogTrigger asChild>
-              <Button variant="outline" className="border-eco-blue/30 hover:bg-eco-blue/10 hover:border-eco-blue/50">
-                <Upload className="w-4 h-4 mr-2" />
-                Import
-              </Button>
-            </DialogTrigger>
-            <DialogContent className="max-w-lg">
-              <DialogHeader>
-                <DialogTitle className="flex items-center gap-2">
-                  <div className="w-10 h-10 rounded-xl bg-eco-blue/10 flex items-center justify-center">
-                    <FileSpreadsheet className="w-5 h-5 text-eco-blue" />
-                  </div>
-                  Import danh sách học sinh
-                </DialogTitle>
-              </DialogHeader>
-              <div className="space-y-4 py-4">
-                <div className="p-4 rounded-xl bg-muted/50 border border-border">
-                  <p className="text-sm text-muted-foreground mb-3">
-                    Hỗ trợ file CSV hoặc TXT. Mỗi dòng là tên một học sinh.
-                  </p>
-                  <Input
-                    ref={fileInputRef}
-                    type="file"
-                    accept=".csv,.txt"
-                    onChange={handleFileChange}
-                    className="bg-background"
-                  />
-                </div>
-
-                {importedStudents.length > 0 && (
-                  <div className="space-y-2">
-                    <p className="text-sm font-medium">
-                      Xem trước ({importedStudents.length} học sinh):
-                    </p>
-                    <div className="max-h-48 overflow-y-auto space-y-1 p-3 rounded-lg bg-muted/30 border">
-                      {importedStudents.slice(0, 10).map((student, index) => (
-                        <div key={index} className="text-sm py-1.5 px-3 rounded-lg bg-background">
-                          {student.student_name}
-                        </div>
-                      ))}
-                      {importedStudents.length > 10 && (
-                        <p className="text-xs text-muted-foreground text-center py-2">
-                          ... và {importedStudents.length - 10} học sinh khác
-                        </p>
-                      )}
-                    </div>
-                  </div>
-                )}
-
-                <Button
-                  className="w-full bg-eco-blue hover:bg-eco-blue/90"
-                  onClick={handleImport}
-                  disabled={importedStudents.length === 0}
-                >
-                  <Upload className="w-4 h-4 mr-2" />
-                  Import {importedStudents.length} học sinh
-                </Button>
-              </div>
-            </DialogContent>
-          </Dialog>
-
           <Button 
             className="bg-eco-green hover:bg-eco-green/90 text-white font-semibold shadow-lg shadow-eco-green/20"
             onClick={() => {
@@ -327,19 +234,7 @@ export function StudentListView({
             </div>
           </CardContent>
         </Card>
-        <Card className="border-2 border-eco-leaf/20 hover:border-eco-leaf/40 transition-all hover:shadow-lg hover:-translate-y-0.5">
-          <CardContent className="p-4">
-            <div className="flex items-center gap-3">
-              <div className="w-11 h-11 rounded-xl bg-eco-leaf/10 flex items-center justify-center">
-                <GraduationCap className="w-5 h-5 text-eco-leaf" />
-              </div>
-              <div>
-                <p className="text-2xl font-bold">{selectedClass.total_items || 0}</p>
-                <p className="text-xs text-muted-foreground">Rác phân loại</p>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
+
         <Card className="border-2 border-eco-orange/20 hover:border-eco-orange/40 transition-all hover:shadow-lg hover:-translate-y-0.5">
           <CardContent className="p-4">
             <div className="flex items-center gap-3">
@@ -401,16 +296,18 @@ export function StudentListView({
         </Card>
       ) : (
         <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v)}>
-          <TabsList className="mb-4">
-            <TabsTrigger value="students" className="gap-2">
-              <Users className="w-4 h-4" />
-              Học sinh ({filteredStudents.length})
-            </TabsTrigger>
-            <TabsTrigger value="parents" className="gap-2">
-              <User className="w-4 h-4" />
-              Phụ huynh ({parentsData.length})
-            </TabsTrigger>
-          </TabsList>
+          <div className="flex items-center justify-between mb-4 gap-3">
+            <TabsList>
+              <TabsTrigger value="students" className="gap-2">
+                <Users className="w-4 h-4" />
+                Học sinh ({filteredStudents.length})
+              </TabsTrigger>
+              <TabsTrigger value="parents" className="gap-2">
+                <User className="w-4 h-4" />
+                Phụ huynh ({parentsData.length})
+              </TabsTrigger>
+            </TabsList>
+          </div>
 
           <TabsContent value="students">
             {filteredStudents.length === 0 ? (
@@ -429,7 +326,7 @@ export function StudentListView({
                     <TableRow className="bg-muted/50 hover:bg-muted/50">
                       <TableHead className="w-12 text-center">#</TableHead>
                       <TableHead>Học sinh</TableHead>
-                      <TableHead className="text-center">Mã HS</TableHead>
+                      <TableHead className="text-center">Tên đăng nhập</TableHead>
                       <TableHead className="text-center">
                         <div className="flex items-center justify-center gap-1">
                           <Lock className="w-4 h-4" />
@@ -437,12 +334,7 @@ export function StudentListView({
                         </div>
                       </TableHead>
                       <TableHead className="text-center">Giới tính</TableHead>
-                      <TableHead className="text-center">
-                        <div className="flex items-center justify-center gap-1">
-                          <Recycle className="w-4 h-4" />
-                          Rác
-                        </div>
-                      </TableHead>
+
                       <TableHead className="text-center">
                         <div className="flex items-center justify-center gap-1">
                           <Target className="w-4 h-4" />
@@ -461,7 +353,7 @@ export function StudentListView({
                           Streak
                         </div>
                       </TableHead>
-                      <TableHead className="text-center">Level</TableHead>
+
                       <TableHead className="text-center">Trạng thái</TableHead>
                       <TableHead className="w-12"></TableHead>
                     </TableRow>
@@ -529,9 +421,7 @@ export function StudentListView({
                             {student.gender === 'male' ? 'Nam' : student.gender === 'female' ? 'Nữ' : 'Khác'}
                           </Badge>
                         </TableCell>
-                        <TableCell className="text-center">
-                          <span className="font-semibold text-eco-leaf">{student.items_sorted}</span>
-                        </TableCell>
+
                         <TableCell className="text-center">
                           <div className="flex items-center justify-center gap-2">
                             <div className="w-16 h-2 bg-muted rounded-full overflow-hidden">
@@ -554,7 +444,7 @@ export function StudentListView({
                           </div>
                         </TableCell>
                         <TableCell className="text-center">
-                          <span className="font-semibold text-eco-orange">{student.coins.toLocaleString()}</span>
+                          <span className="font-semibold text-eco-orange">{(student.coins ?? 0).toLocaleString()}</span>
                         </TableCell>
                         <TableCell className="text-center">
                           <div className="flex items-center justify-center gap-1">
@@ -565,11 +455,7 @@ export function StudentListView({
                             <span className="font-semibold">{student.streak}</span>
                           </div>
                         </TableCell>
-                        <TableCell className="text-center">
-                          <Badge className="bg-eco-blue/10 text-eco-blue border-eco-blue/30 hover:bg-eco-blue/20">
-                            Lv.{student.level}
-                          </Badge>
-                        </TableCell>
+
                         <TableCell className="text-center">
                           <Badge 
                             variant={student.status === 'active' ? 'default' : 'secondary'}
@@ -598,6 +484,28 @@ export function StudentListView({
                                 <Pencil className="w-4 h-4 mr-2" />
                                 Chỉnh sửa
                               </DropdownMenuItem>
+                              {onToggleStudentStatus && (
+                                <DropdownMenuItem 
+                                  onClick={() => onToggleStudentStatus(student.id, student.status)}
+                                  className={cn(
+                                    student.status === 'active' 
+                                      ? "text-orange-600 focus:text-orange-600" 
+                                      : "text-eco-green focus:text-eco-green"
+                                  )}
+                                >
+                                  {student.status === 'active' ? (
+                                    <>
+                                      <Ban className="w-4 h-4 mr-2" />
+                                      Vô hiệu hóa
+                                    </>
+                                  ) : (
+                                    <>
+                                      <CheckCircle className="w-4 h-4 mr-2" />
+                                      Kích hoạt
+                                    </>
+                                  )}
+                                </DropdownMenuItem>
+                              )}
                               <DropdownMenuItem 
                                 onClick={() => onDeleteStudent(student.id)}
                                 className="text-destructive focus:text-destructive"
@@ -637,7 +545,7 @@ export function StudentListView({
                       <TableHead className="text-center">
                         <div className="flex items-center justify-center gap-1">
                           <Phone className="w-4 h-4" />
-                          Số điện thoại
+                          Số ĐT
                         </div>
                       </TableHead>
                       <TableHead className="text-center">
@@ -646,6 +554,7 @@ export function StudentListView({
                           Email
                         </div>
                       </TableHead>
+                      <TableHead className="text-center">Tên đăng nhập</TableHead>
                       <TableHead className="text-center">
                         <div className="flex items-center justify-center gap-1">
                           <Lock className="w-4 h-4" />
@@ -696,6 +605,11 @@ export function StudentListView({
                           ) : (
                             <span className="text-muted-foreground">-</span>
                           )}
+                        </TableCell>
+                        <TableCell className="text-center">
+                          <span className="font-mono text-sm text-muted-foreground">
+                            {parent.username || '-'}
+                          </span>
                         </TableCell>
                         <TableCell className="text-center">
                           <div className="flex items-center justify-center gap-1">
@@ -749,6 +663,18 @@ export function StudentListView({
         onFormChange={setStudentForm}
         onSubmit={handleUpdateStudent}
       />
+
+      {/* Email Preview Dialog */}
+      {emailPreviewData && (
+        <EmailPreviewDialog
+          isOpen={!!emailPreviewData}
+          onClose={() => {
+            setEmailPreviewData(null);
+          }}
+          parent={emailPreviewData.parent}
+          student={emailPreviewData.student}
+        />
+      )}
     </div>
   );
 }

@@ -1,7 +1,15 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
-import { Input, Select, Button, Card, Steps, Upload, message } from "antd";
+import {
+  Input,
+  Select,
+  Button,
+  Card,
+  Steps,
+  message,
+  notification,
+} from "antd";
 import {
   TeamOutlined,
   BuildOutlined,
@@ -11,64 +19,29 @@ import {
   EnvironmentOutlined,
   GlobalOutlined,
   FileTextOutlined,
-  UploadOutlined,
   CheckCircleOutlined,
 } from "@ant-design/icons";
-import { z } from "zod";
+// Lucide icons — giống SchoolRegister
+import { Upload, FileText, CheckCircle2 } from "lucide-react";
 import {
-  VIETNAM_PROVINCES,
-  VIETNAM_DISTRICTS,
-  VIETNAM_WARDS,
-} from "./data/vietnam-divisions";
+  getProvinces,
+  getWards,
+  partnershipRegister,
+  uploadFile,
+} from "../../../services";
 
 const { TextArea } = Input;
 const { Step } = Steps;
 
+// ─── BE enum values ───────────────────────────────────────────────────────────
 const PARTNERSHIP_TYPES = [
-  { value: "sponsor", label: "Nhà tài trợ" },
-  { value: "ngo", label: "Tổ chức phi chính phủ (NGO)" },
-  { value: "media", label: "Truyền thông" },
-  { value: "technology", label: "Công nghệ" },
-  { value: "education", label: "Giáo dục" },
-  { value: "other", label: "Khác" },
+  { value: "NGO", label: "Tổ chức phi chính phủ (NGO)" },
+  { value: "WARD_GOVERNMENT", label: "Chính quyền phường" },
+  { value: "PUBLIC_ORGANIZATION", label: "Tổ chức công cộng" },
+  { value: "COMMUNE_GOVERNMENT", label: "Chính quyền cộng đồng" },
+  { value: "YOUTH_UNION", label: "Đoàn Thanh Niên" },
+  { value: "OTHER", label: "Khác" },
 ];
-
-const registrationSchema = z.object({
-  organization_name: z
-    .string()
-    .trim()
-    .min(3, { message: "Tên tổ chức phải có ít nhất 3 ký tự" })
-    .max(200),
-  email: z.string().trim().email({ message: "Email không hợp lệ" }),
-  phone: z
-    .string()
-    .trim()
-    .min(10, { message: "Số điện thoại không hợp lệ" })
-    .max(15),
-  address: z
-    .string()
-    .trim()
-    .min(5, { message: "Địa chỉ không hợp lệ" })
-    .max(500),
-  representative_name: z
-    .string()
-    .trim()
-    .min(2, { message: "Tên người đại diện phải có ít nhất 2 ký tự" })
-    .max(100),
-  representative_position: z.string().optional(),
-  partnership_type: z.enum([
-    "sponsor",
-    "ngo",
-    "media",
-    "technology",
-    "education",
-    "other",
-  ]),
-  website: z.string().url().optional().or(z.literal("")),
-  tax_code: z.string().optional(),
-  description: z.string().max(1000).optional(),
-  collaboration_proposal: z.string().max(2000).optional(),
-});
 
 export default function PartnershipRegister() {
   const navigate = useNavigate();
@@ -78,663 +51,782 @@ export default function PartnershipRegister() {
   const [licenseFile, setLicenseFile] = useState(null);
   const [logoPreview, setLogoPreview] = useState(null);
 
-  // Location state
-  const [province, setProvince] = useState("");
-  const [district, setDistrict] = useState("");
-  const [ward, setWard] = useState("");
-  const [streetAddress, setStreetAddress] = useState("");
+  const [vnProvinces, setVnProvinces] = useState([]);
+  const [vnWards, setVnWards] = useState([]);
+  const [provinceCode, setProvinceCode] = useState("");
+  const [wardCode, setWardCode] = useState("");
 
+  // ── formData — đúng BE schema ────────────────────────────────────────────
   const [formData, setFormData] = useState({
-    organization_name: "",
-    email: "",
-    phone: "",
-    address: "",
-    representative_name: "",
-    representative_position: "",
-    partnership_type: "other",
-    website: "",
-    tax_code: "",
+    organizationName: "",
+    contactEmail: sessionStorage.getItem("mail") || "",
+    phoneNumber: "",
+    province: "",
+    ward: "",
+    streetAddress: "",
+    contactPerson: "",
+    position: "",
+    taxCode: "",
+    linkWeb: "",
     description: "",
-    collaboration_proposal: "",
+    partnershipType: "OTHER",
+    logoUrl: "",
+    licenseUrl: "",
+    password: sessionStorage.getItem("pass") || "",
+    otp: sessionStorage.getItem("otpCode") || "",
   });
 
   const [errors, setErrors] = useState({});
 
-  // Reset district/ward on province change
+  // ── Fetch divisions ───────────────────────────────────────────────────────
   useEffect(() => {
-    if (province) {
-      setDistrict("");
-      setWard("");
-    }
-  }, [province]);
-  useEffect(() => {
-    if (district) setWard("");
-  }, [district]);
+    const fetchDivisions = async () => {
+      try {
+        const [provinces, wards] = await Promise.all([
+          getProvinces(),
+          getWards(),
+        ]);
+        setVnProvinces(provinces);
+        setVnWards(wards);
+      } catch (err) {
+        console.error(err);
+      }
+    };
+    fetchDivisions();
+  }, []);
 
-  // Build full address
   useEffect(() => {
-    const pName =
-      VIETNAM_PROVINCES.find((p) => p.code === province)?.name || "";
-    const dName = province
-      ? VIETNAM_DISTRICTS[province]?.find((d) => d.code === district)?.name ||
-        ""
+    if (provinceCode) setWardCode("");
+  }, [provinceCode]);
+
+  useEffect(() => {
+    const provinceName =
+      vnProvinces.find((p) => p.code === provinceCode)?.name || "";
+    const wardName = provinceCode
+      ? vnWards
+          .filter((w) => w.province_code === provinceCode)
+          .find((w) => w.code === wardCode)?.name || ""
       : "";
-    const wName = district
-      ? VIETNAM_WARDS[district]?.find((w) => w.code === ward)?.name || ""
-      : "";
-    const parts = [streetAddress, wName, dName, pName].filter((s) => s.trim());
-    setFormData((prev) => ({ ...prev, address: parts.join(", ") }));
-  }, [province, district, ward, streetAddress]);
+    setFormData((prev) => ({
+      ...prev,
+      province: provinceName,
+      ward: wardName,
+    }));
+  }, [provinceCode, wardCode, vnProvinces, vnWards]);
 
   const handleChange = (field, value) => {
     setFormData((prev) => ({ ...prev, [field]: value }));
     if (errors[field]) setErrors((prev) => ({ ...prev, [field]: "" }));
   };
 
-  const handleLogoChange = (info) => {
-    const file = info.file.originFileObj || info.file;
+  // ── Upload handlers — giống SchoolRegister (native input + uploadFile) ────
+  const handleLogoChange = async (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
     if (file.size > 5 * 1024 * 1024) {
-      message.error("Logo không được vượt quá 5MB");
-      return false;
+      notification.error({
+        message: "File quá lớn",
+        description: "Logo không được vượt quá 5MB",
+      });
+      return;
+    }
+    try {
+      const data = new FormData();
+      data.append("file", file);
+      const res = await uploadFile(data);
+      if (res) {
+        message.success("Logo tải lên thành công!");
+        setFormData((prev) => ({ ...prev, logoUrl: res.data.url }));
+      } else {
+        message.error("Logo tải lên thất bại!");
+      }
+    } catch (error) {
+      console.error(error);
     }
     setLogoFile(file);
-    const reader = new FileReader();
-    reader.onload = (e) => setLogoPreview(e.target.result);
-    reader.readAsDataURL(file);
-    return false;
+    setLogoPreview(URL.createObjectURL(file));
   };
 
-  const handleLicenseChange = (info) => {
-    const file = info.file.originFileObj || info.file;
+  const handleLicenseChange = async (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
     if (file.size > 10 * 1024 * 1024) {
-      message.error("Giấy phép không được vượt quá 10MB");
-      return false;
+      notification.error({
+        message: "File quá lớn",
+        description: "Giấy phép không được vượt quá 10MB",
+      });
+      return;
+    }
+    try {
+      const data = new FormData();
+      data.append("file", file);
+      const res = await uploadFile(data);
+      if (res) {
+        message.success("Giấy phép tải lên thành công!");
+        setFormData((prev) => ({ ...prev, licenseUrl: res.data.url }));
+      } else {
+        message.error("Giấy phép tải lên thất bại!");
+      }
+    } catch (error) {
+      console.error(error);
     }
     setLicenseFile(file);
-    return false;
   };
 
+  // ── Validation ────────────────────────────────────────────────────────────
   const validateStep1 = () => {
-    const errs = {};
+    const e = {};
     if (
-      !formData.organization_name.trim() ||
-      formData.organization_name.trim().length < 3
+      !formData.organizationName.trim() ||
+      formData.organizationName.trim().length < 3
     )
-      errs.organization_name = "Tên tổ chức phải có ít nhất 3 ký tự";
-    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email.trim()))
-      errs.email = "Email không hợp lệ";
-    if (!formData.phone.trim() || formData.phone.trim().length < 10)
-      errs.phone = "Số điện thoại không hợp lệ";
-    if (!province) errs.province = "Vui lòng chọn Tỉnh/Thành phố";
-    if (!district) errs.district = "Vui lòng chọn Quận/Huyện";
-    if (!streetAddress.trim())
-      errs.streetAddress = "Vui lòng nhập số nhà, tên đường";
+      e.organizationName = "Tên tổ chức phải có ít nhất 3 ký tự";
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.contactEmail.trim()))
+      e.contactEmail = "Email không hợp lệ";
+    if (!formData.phoneNumber.trim() || formData.phoneNumber.trim().length < 10)
+      e.phoneNumber = "Số điện thoại không hợp lệ";
+    if (!provinceCode) e.province = "Vui lòng chọn Tỉnh/Thành phố";
+    if (!wardCode) e.ward = "Vui lòng chọn Phường/Xã";
     if (
-      !formData.representative_name.trim() ||
-      formData.representative_name.trim().length < 2
+      !formData.streetAddress.trim() ||
+      formData.streetAddress.trim().length < 5
     )
-      errs.representative_name = "Tên người đại diện phải có ít nhất 2 ký tự";
-    setErrors(errs);
-    return Object.keys(errs).length === 0;
+      e.streetAddress = "Địa chỉ phải có ít nhất 5 ký tự";
+    if (
+      !formData.contactPerson.trim() ||
+      formData.contactPerson.trim().length < 2
+    )
+      e.contactPerson = "Tên người liên hệ phải có ít nhất 2 ký tự";
+    setErrors(e);
+    return Object.keys(e).length === 0;
   };
 
   const handleNext = () => {
     if (validateStep1()) setCurrentStep(1);
   };
 
-  const handleSubmit = async () => {
-    const result = registrationSchema.safeParse(formData);
-    if (!result.success) {
-      const fe = {};
-      result.error.errors.forEach((e) => {
-        fe[e.path[0]] = e.message;
-      });
-      setErrors(fe);
-      result.error.errors.forEach((e) => message.error(e.message));
-      return;
-    }
-
+  const handleSubmit = async (e) => {
+    e.preventDefault();
     setIsLoading(true);
     try {
-      // Simulate API call
-      await new Promise((r) => setTimeout(r, 2000));
-      message.success(
-        "Đăng ký thành công! Đơn đăng ký của bạn đang chờ Admin duyệt.",
-      );
-      navigate("/partnership/pending");
+      const res = await partnershipRegister(formData);
+      if (res) {
+        notification.success({
+          message: "Đăng ký thành công!",
+          description: "Đơn đăng ký đang chờ Admin duyệt.",
+        });
+        navigate("/auth/partnership/pending");
+        sessionStorage.clear();
+      } else {
+        notification.error({
+          message: "Lỗi",
+          description: "Đã xảy ra lỗi khi đăng ký, vui lòng thử lại!",
+        });
+      }
     } catch (err) {
-      message.error(err.message || "Đã xảy ra lỗi khi đăng ký");
+      notification.error({
+        message: "Lỗi",
+        description: err?.message || "Đã xảy ra lỗi khi đăng ký",
+      });
     } finally {
       setIsLoading(false);
     }
   };
 
-  const containerVariants = {
-    hidden: { opacity: 0, y: 20 },
-    visible: {
-      opacity: 1,
-      y: 0,
-      transition: { duration: 0.5, ease: "easeOut" },
-    },
-  };
-
-  const cardVariants = {
-    hidden: { opacity: 0, scale: 0.95 },
-    visible: {
-      opacity: 1,
-      scale: 1,
-      transition: { duration: 0.4, ease: "easeOut" },
-    },
-    exit: { opacity: 0, scale: 0.95, transition: { duration: 0.3 } },
-  };
-
-  const provinceOptions = VIETNAM_PROVINCES.map((p) => ({
-    value: p.code,
-    label: p.name,
-  }));
-  const districtOptions = province
-    ? (VIETNAM_DISTRICTS[province] || []).map((d) => ({
-        value: d.code,
-        label: d.name,
-      }))
+  const wardOptions = provinceCode
+    ? vnWards
+        .filter((w) => w.province_code === provinceCode)
+        .map((w) => ({ value: w.code, label: w.name }))
     : [];
-  const wardOptions = district
-    ? (VIETNAM_WARDS[district] || []).map((w) => ({
-        value: w.code,
-        label: w.name,
-      }))
-    : [];
+
+  const fullAddressPreview = [
+    formData.streetAddress,
+    formData.ward,
+    formData.province,
+  ]
+    .filter(Boolean)
+    .join(", ");
+
+  // Shared input className — giống SchoolRegister
+  const cls =
+    "rounded-xl border-gray-200 hover:border-blue-400 focus:border-blue-500";
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-green-50 py-8 px-4">
-      <motion.div
-        className="max-w-2xl mx-auto"
-        variants={containerVariants}
-        initial="hidden"
-        animate="visible"
-      >
+      <div className="max-w-2xl mx-auto">
         {/* Header */}
         <motion.div
           className="text-center mb-8"
           initial={{ opacity: 0, y: -20 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.2, duration: 0.5 }}
         >
-          <div className="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-blue-100 mb-4">
+          <div className="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-blue-100 mb-4 shadow-md">
             <TeamOutlined className="text-3xl text-blue-600" />
           </div>
-          <h1 className="text-3xl font-bold text-gray-800">Đăng ký Đối tác</h1>
-          <p className="text-gray-600 mt-2">
+          <h1 className="text-3xl font-extrabold text-gray-800">
+            Đăng ký Đối tác
+          </h1>
+          <p className="text-gray-500 mt-2">
             Điền đầy đủ thông tin để trở thành đối tác của EcoVerse
           </p>
         </motion.div>
 
-        {/* Steps */}
+        {/* Progress — giống SchoolRegister */}
         <motion.div
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
-          transition={{ delay: 0.4, duration: 0.5 }}
-          className="mb-8"
+          transition={{ delay: 0.1 }}
+          className="flex items-center justify-center gap-4 mb-8"
         >
-          <Steps current={currentStep} className="px-4">
-            <Step
-              title="Thông tin cơ bản"
-              icon={
-                currentStep > 0 ? <CheckCircleOutlined /> : <BuildOutlined />
-              }
-            />
-            <Step
-              title="Chi tiết & Tài liệu"
-              icon={
-                currentStep > 1 ? <CheckCircleOutlined /> : <FileTextOutlined />
-              }
-            />
-          </Steps>
+          {[
+            { num: 1, label: "Thông tin cơ bản" },
+            { num: 2, label: "Chi tiết & Tài liệu" },
+          ].map(({ num, label }, i) => (
+            <div key={num} className="flex items-center gap-2">
+              {i > 0 && <div className="w-10 h-0.5 bg-gray-200" />}
+              <div
+                className={`flex items-center gap-2 ${currentStep + 1 >= num ? "text-blue-600" : "text-gray-400"}`}
+              >
+                <div
+                  className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold transition-all
+                  ${currentStep + 1 >= num ? "bg-blue-500 text-white shadow-md" : "bg-gray-100 text-gray-400"}`}
+                >
+                  {currentStep + 1 > num ? (
+                    <CheckCircle2 className="w-4 h-4" />
+                  ) : (
+                    num
+                  )}
+                </div>
+                <span className="font-medium text-sm hidden sm:block">
+                  {label}
+                </span>
+              </div>
+            </div>
+          ))}
         </motion.div>
 
-        <AnimatePresence mode="wait">
-          {/* ── Step 1 ── */}
-          {currentStep === 0 && (
-            <motion.div
-              key="step1"
-              variants={cardVariants}
-              initial="hidden"
-              animate="visible"
-              exit="exit"
-            >
-              <Card
-                className="shadow-lg"
-                title={
-                  <div className="flex items-center gap-2">
-                    <BuildOutlined className="text-blue-600" />
-                    <span>Thông tin cơ bản</span>
-                  </div>
-                }
+        <form onSubmit={handleSubmit}>
+          <AnimatePresence mode="wait">
+            {/* ── Step 1 ── */}
+            {currentStep === 0 && (
+              <motion.div
+                key="step1"
+                initial={{ opacity: 0, x: 30 }}
+                animate={{ opacity: 1, x: 0 }}
+                exit={{ opacity: 0, x: -30 }}
+                transition={{ duration: 0.3 }}
               >
-                <div className="space-y-4">
-                  {/* Org name */}
-                  <div>
-                    <label className="block text-sm font-medium mb-2">
-                      Tên tổ chức/công ty *
-                    </label>
-                    <Input
-                      prefix={<BuildOutlined className="text-gray-400" />}
-                      placeholder="VD: Công ty TNHH ABC"
-                      size="large"
-                      value={formData.organization_name}
-                      onChange={(e) =>
-                        handleChange("organization_name", e.target.value)
-                      }
-                      status={errors.organization_name ? "error" : ""}
-                    />
-                    {errors.organization_name && (
-                      <p className="text-red-500 text-sm mt-1">
-                        {errors.organization_name}
-                      </p>
-                    )}
-                  </div>
+                <Card
+                  className="rounded-3xl shadow-xl border-0"
+                  bodyStyle={{ padding: "32px 28px" }}
+                >
+                  <div className="space-y-5">
+                    <div className="flex items-center gap-2 mb-1">
+                      <BuildOutlined className="text-blue-500 text-lg" />
+                      <h2 className="text-lg font-bold text-gray-800">
+                        Thông tin cơ bản
+                      </h2>
+                    </div>
+                    <p className="text-sm text-gray-500 -mt-3">
+                      Nhập thông tin cơ bản về tổ chức của bạn
+                    </p>
 
-                  {/* Email + Phone */}
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div>
-                      <label className="block text-sm font-medium mb-2">
-                        Email liên hệ *
+                    {/* organizationName */}
+                    <div className="space-y-1">
+                      <label className="text-sm font-semibold text-gray-700">
+                        Tên tổ chức/công ty{" "}
+                        <span className="text-red-500">*</span>
                       </label>
                       <Input
-                        prefix={<MailOutlined className="text-gray-400" />}
-                        type="email"
-                        placeholder="contact@company.com"
+                        name="organizationName"
+                        placeholder="VD: Đoàn Thanh Niên Quận 1"
+                        value={formData.organizationName}
+                        className={cls}
                         size="large"
-                        value={formData.email}
-                        onChange={(e) => handleChange("email", e.target.value)}
-                        status={errors.email ? "error" : ""}
+                        onChange={(e) =>
+                          handleChange("organizationName", e.target.value)
+                        }
+                        status={errors.organizationName ? "error" : ""}
+                        prefix={<BuildOutlined className="text-gray-400" />}
                       />
-                      {errors.email && (
-                        <p className="text-red-500 text-sm mt-1">
-                          {errors.email}
+                      {errors.organizationName && (
+                        <p className="text-xs text-red-500">
+                          {errors.organizationName}
                         </p>
                       )}
                     </div>
-                    <div>
-                      <label className="block text-sm font-medium mb-2">
-                        Số điện thoại *
-                      </label>
-                      <Input
-                        prefix={<PhoneOutlined className="text-gray-400" />}
-                        placeholder="0123 456 789"
-                        size="large"
-                        value={formData.phone}
-                        onChange={(e) => handleChange("phone", e.target.value)}
-                        status={errors.phone ? "error" : ""}
-                      />
-                      {errors.phone && (
-                        <p className="text-red-500 text-sm mt-1">
-                          {errors.phone}
-                        </p>
-                      )}
-                    </div>
-                  </div>
 
-                  {/* Address */}
-                  <div className="space-y-3">
-                    <label className="block text-sm font-medium">
-                      Địa chỉ *
-                    </label>
-
-                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                      <div>
-                        <label className="block text-xs text-gray-500 mb-1">
-                          Tỉnh/Thành phố
+                    {/* contactEmail + phoneNumber */}
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <div className="space-y-1">
+                        <label className="text-sm font-semibold text-gray-700">
+                          Email liên hệ <span className="text-red-500">*</span>
                         </label>
-                        <Select
-                          className="w-full"
+                        <Input
+                          name="contactEmail"
+                          type="email"
+                          placeholder="partner@example.com"
+                          value={formData.contactEmail}
+                          className={cls}
                           size="large"
-                          placeholder="Chọn Tỉnh/Thành"
-                          value={province || undefined}
-                          onChange={(v) => setProvince(v)}
-                          options={provinceOptions}
-                          showSearch
-                          filterOption={(input, opt) =>
-                            opt.label
-                              .toLowerCase()
-                              .includes(input.toLowerCase())
+                          disabled
+                          onChange={(e) =>
+                            handleChange("contactEmail", e.target.value)
                           }
-                          status={errors.province ? "error" : ""}
+                          prefix={<MailOutlined className="text-gray-400" />}
                         />
-                        {errors.province && (
-                          <p className="text-red-500 text-xs mt-1">
-                            {errors.province}
+                        {errors.contactEmail && (
+                          <p className="text-xs text-red-500">
+                            {errors.contactEmail}
                           </p>
                         )}
                       </div>
-                      <div>
-                        <label className="block text-xs text-gray-500 mb-1">
-                          Quận/Huyện
+                      <div className="space-y-1">
+                        <label className="text-sm font-semibold text-gray-700">
+                          Số điện thoại <span className="text-red-500">*</span>
                         </label>
-                        <Select
-                          className="w-full"
+                        <Input
+                          name="phoneNumber"
+                          placeholder="0901234567"
+                          value={formData.phoneNumber}
+                          className={cls}
                           size="large"
-                          placeholder="Chọn Quận/Huyện"
-                          value={district || undefined}
-                          onChange={(v) => setDistrict(v)}
-                          options={districtOptions}
-                          disabled={!province}
-                          showSearch
-                          filterOption={(input, opt) =>
-                            opt.label
-                              .toLowerCase()
-                              .includes(input.toLowerCase())
+                          onChange={(e) =>
+                            handleChange("phoneNumber", e.target.value)
                           }
-                          status={errors.district ? "error" : ""}
+                          prefix={<PhoneOutlined className="text-gray-400" />}
+                          status={errors.phoneNumber ? "error" : ""}
                         />
-                        {errors.district && (
-                          <p className="text-red-500 text-xs mt-1">
-                            {errors.district}
+                        {errors.phoneNumber && (
+                          <p className="text-xs text-red-500">
+                            {errors.phoneNumber}
                           </p>
                         )}
                       </div>
-                      <div>
-                        <label className="block text-xs text-gray-500 mb-1">
-                          Phường/Xã (nếu có)
+                    </div>
+
+                    {/* Địa chỉ 2 cấp */}
+                    <div className="space-y-3 pt-1">
+                      <div className="flex items-center gap-2">
+                        <EnvironmentOutlined className="text-blue-500" />
+                        <label className="text-sm font-bold text-gray-700">
+                          Địa chỉ tổ chức{" "}
+                          <span className="text-red-500">*</span>
                         </label>
-                        <Select
-                          className="w-full"
-                          size="large"
-                          placeholder={
-                            district && !wardOptions.length
-                              ? "Không có dữ liệu"
-                              : "Chọn Phường/Xã"
-                          }
-                          value={ward || undefined}
-                          onChange={(v) => setWard(v)}
-                          options={wardOptions}
-                          disabled={!district || !wardOptions.length}
-                          showSearch
-                          filterOption={(input, opt) =>
-                            opt.label
-                              .toLowerCase()
-                              .includes(input.toLowerCase())
-                          }
-                        />
                       </div>
-                    </div>
 
-                    <div>
-                      <label className="block text-xs text-gray-500 mb-1">
-                        Số nhà, tên đường
-                      </label>
-                      <Input
-                        prefix={
-                          <EnvironmentOutlined className="text-gray-400" />
-                        }
-                        placeholder="VD: 123 Đường Nguyễn Huệ"
-                        size="large"
-                        value={streetAddress}
-                        onChange={(e) => setStreetAddress(e.target.value)}
-                        status={errors.streetAddress ? "error" : ""}
-                      />
-                      {errors.streetAddress && (
-                        <p className="text-red-500 text-xs mt-1">
-                          {errors.streetAddress}
-                        </p>
-                      )}
-                    </div>
-
-                    {formData.address && (
-                      <div className="bg-blue-50 border border-blue-100 rounded-lg p-3">
-                        <p className="text-xs text-blue-500 mb-1">
-                          Địa chỉ đầy đủ:
-                        </p>
-                        <p className="text-sm font-medium text-gray-800">
-                          {formData.address}
-                        </p>
+                      <div className="flex items-start gap-2 bg-blue-50 border border-blue-100 rounded-xl px-3 py-2.5 text-xs text-blue-600">
+                        <span className="text-sm mt-0.5">ℹ️</span>
+                        <span>
+                          Theo cơ cấu hành chính mới sau sáp nhập, địa chỉ gồm{" "}
+                          <strong>Tỉnh/Thành phố</strong> và{" "}
+                          <strong>Phường/Xã</strong> — không còn cấp Quận/Huyện.
+                        </span>
                       </div>
-                    )}
-                  </div>
 
-                  {/* Representative */}
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div>
-                      <label className="block text-sm font-medium mb-2">
-                        Người đại diện *
-                      </label>
-                      <Input
-                        prefix={<UserOutlined className="text-gray-400" />}
-                        placeholder="Họ và tên"
-                        size="large"
-                        value={formData.representative_name}
-                        onChange={(e) =>
-                          handleChange("representative_name", e.target.value)
-                        }
-                        status={errors.representative_name ? "error" : ""}
-                      />
-                      {errors.representative_name && (
-                        <p className="text-red-500 text-sm mt-1">
-                          {errors.representative_name}
-                        </p>
-                      )}
-                    </div>
-                    <div>
-                      <label className="block text-sm font-medium mb-2">
-                        Chức vụ
-                      </label>
-                      <Input
-                        placeholder="VD: Giám đốc"
-                        size="large"
-                        value={formData.representative_position}
-                        onChange={(e) =>
-                          handleChange(
-                            "representative_position",
-                            e.target.value,
-                          )
-                        }
-                      />
-                    </div>
-                  </div>
-
-                  <div className="flex justify-end pt-4">
-                    <Button
-                      type="primary"
-                      size="large"
-                      onClick={handleNext}
-                      className="bg-blue-600 hover:bg-blue-700"
-                    >
-                      Tiếp tục
-                    </Button>
-                  </div>
-                </div>
-              </Card>
-            </motion.div>
-          )}
-
-          {/* ── Step 2 ── */}
-          {currentStep === 1 && (
-            <motion.div
-              key="step2"
-              variants={cardVariants}
-              initial="hidden"
-              animate="visible"
-              exit="exit"
-            >
-              <Card
-                className="shadow-lg"
-                title={
-                  <div className="flex items-center gap-2">
-                    <FileTextOutlined className="text-blue-600" />
-                    <span>Chi tiết & Tài liệu</span>
-                  </div>
-                }
-              >
-                <div className="space-y-4">
-                  {/* Partnership type + Tax code */}
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div>
-                      <label className="block text-sm font-medium mb-2">
-                        Lĩnh vực *
-                      </label>
-                      <Select
-                        size="large"
-                        className="w-full"
-                        value={formData.partnership_type}
-                        onChange={(v) => handleChange("partnership_type", v)}
-                        options={PARTNERSHIP_TYPES.map((t) => ({
-                          value: t.value,
-                          label: t.label,
-                        }))}
-                      />
-                    </div>
-                    <div>
-                      <label className="block text-sm font-medium mb-2">
-                        Mã số thuế
-                      </label>
-                      <Input
-                        placeholder="VD: 0123456789"
-                        size="large"
-                        value={formData.tax_code}
-                        onChange={(e) =>
-                          handleChange("tax_code", e.target.value)
-                        }
-                      />
-                    </div>
-                  </div>
-
-                  {/* Website */}
-                  <div>
-                    <label className="block text-sm font-medium mb-2">
-                      Website
-                    </label>
-                    <Input
-                      prefix={<GlobalOutlined className="text-gray-400" />}
-                      placeholder="https://company.com"
-                      size="large"
-                      value={formData.website}
-                      onChange={(e) => handleChange("website", e.target.value)}
-                      status={errors.website ? "error" : ""}
-                    />
-                    {errors.website && (
-                      <p className="text-red-500 text-sm mt-1">
-                        {errors.website}
-                      </p>
-                    )}
-                  </div>
-
-                  {/* Description */}
-                  <div>
-                    <label className="block text-sm font-medium mb-2">
-                      Mô tả về tổ chức
-                    </label>
-                    <TextArea
-                      placeholder="Giới thiệu ngắn về tổ chức/công ty..."
-                      rows={4}
-                      size="large"
-                      maxLength={1000}
-                      showCount
-                      value={formData.description}
-                      onChange={(e) =>
-                        handleChange("description", e.target.value)
-                      }
-                    />
-                  </div>
-
-                  {/* Collaboration proposal */}
-                  <div>
-                    <label className="block text-sm font-medium mb-2">
-                      Đề xuất hợp tác
-                    </label>
-                    <TextArea
-                      placeholder="Mô tả cách bạn muốn hợp tác với EcoVerse (tài trợ, đồng tổ chức sự kiện, hỗ trợ công nghệ, v.v.)"
-                      rows={5}
-                      size="large"
-                      maxLength={2000}
-                      showCount
-                      value={formData.collaboration_proposal}
-                      onChange={(e) =>
-                        handleChange("collaboration_proposal", e.target.value)
-                      }
-                    />
-                  </div>
-
-                  {/* Uploads */}
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div>
-                      <label className="block text-sm font-medium mb-2">
-                        Logo tổ chức
-                      </label>
-                      <Upload
-                        beforeUpload={handleLogoChange}
-                        maxCount={1}
-                        accept="image/*"
-                        listType="picture-card"
-                        showUploadList={false}
-                      >
-                        {logoPreview ? (
-                          <img
-                            src={logoPreview}
-                            alt="Logo"
-                            className="w-full h-full object-contain"
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div className="space-y-1">
+                          <label className="text-xs font-semibold text-gray-600">
+                            Tỉnh/Thành phố{" "}
+                            <span className="text-red-400">*</span>
+                          </label>
+                          <Select
+                            className="w-full"
+                            size="large"
+                            placeholder="Chọn tỉnh/thành phố"
+                            value={provinceCode || undefined}
+                            onChange={(v) => setProvinceCode(v)}
+                            options={vnProvinces.map((p) => ({
+                              value: p.code,
+                              label: p.name,
+                            }))}
+                            showSearch
+                            filterOption={(input, opt) =>
+                              opt.label
+                                .toLowerCase()
+                                .includes(input.toLowerCase())
+                            }
+                            status={errors.province ? "error" : ""}
                           />
-                        ) : (
-                          <div className="text-center">
-                            <UploadOutlined className="text-2xl mb-2" />
-                            <div className="text-xs text-gray-600">
-                              Tải lên logo
-                              <br />
-                              (tối đa 5MB)
-                            </div>
-                          </div>
+                          {errors.province && (
+                            <p className="text-xs text-red-500">
+                              {errors.province}
+                            </p>
+                          )}
+                        </div>
+                        <div className="space-y-1">
+                          <label className="text-xs font-semibold text-gray-600">
+                            Phường/Xã <span className="text-red-400">*</span>
+                          </label>
+                          <Select
+                            className="w-full"
+                            size="large"
+                            placeholder={
+                              provinceCode
+                                ? "Chọn phường/xã"
+                                : "Chọn tỉnh/thành phố trước"
+                            }
+                            value={wardCode || undefined}
+                            onChange={(v) => setWardCode(v)}
+                            options={
+                              wardOptions.length > 0
+                                ? wardOptions
+                                : provinceCode
+                                  ? [
+                                      {
+                                        value: "_other",
+                                        label:
+                                          "Khác (nhập trong địa chỉ cụ thể)",
+                                      },
+                                    ]
+                                  : []
+                            }
+                            disabled={!provinceCode}
+                            showSearch
+                            filterOption={(input, opt) =>
+                              opt.label
+                                .toLowerCase()
+                                .includes(input.toLowerCase())
+                            }
+                            status={errors.ward ? "error" : ""}
+                          />
+                          {errors.ward && (
+                            <p className="text-xs text-red-500">
+                              {errors.ward}
+                            </p>
+                          )}
+                        </div>
+                      </div>
+
+                      {/* streetAddress */}
+                      <div className="space-y-1">
+                        <label className="text-xs font-semibold text-gray-600">
+                          Số nhà, tên đường
+                        </label>
+                        <Input
+                          name="streetAddress"
+                          placeholder="VD: 456 Nguyễn Huệ"
+                          value={formData.streetAddress}
+                          className={cls}
+                          size="large"
+                          onChange={(e) =>
+                            handleChange("streetAddress", e.target.value)
+                          }
+                          prefix={
+                            <EnvironmentOutlined className="text-gray-300" />
+                          }
+                          status={errors.streetAddress ? "error" : ""}
+                        />
+                        {errors.streetAddress && (
+                          <p className="text-xs text-red-500">
+                            {errors.streetAddress}
+                          </p>
                         )}
-                      </Upload>
+                      </div>
+
+                      {/* Address preview */}
+                      {(formData.streetAddress ||
+                        formData.ward ||
+                        formData.province) && (
+                        <motion.div
+                          initial={{ opacity: 0, height: 0 }}
+                          animate={{ opacity: 1, height: "auto" }}
+                          className="bg-blue-50 border border-blue-100 rounded-xl p-3 text-sm"
+                        >
+                          <span className="text-gray-500">
+                            Địa chỉ đầy đủ:{" "}
+                          </span>
+                          <span className="font-medium text-gray-700">
+                            {fullAddressPreview || "Đang nhập..."}
+                          </span>
+                        </motion.div>
+                      )}
                     </div>
-                    <div>
-                      <label className="block text-sm font-medium mb-2">
-                        Giấy phép kinh doanh
-                      </label>
-                      <Upload
-                        beforeUpload={handleLicenseChange}
-                        maxCount={1}
-                        accept=".pdf,.jpg,.jpeg,.png"
+
+                    {/* contactPerson + position */}
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <div className="space-y-1">
+                        <label className="text-sm font-semibold text-gray-700">
+                          Người liên hệ <span className="text-red-500">*</span>
+                        </label>
+                        <Input
+                          name="contactPerson"
+                          placeholder="Họ và tên"
+                          value={formData.contactPerson}
+                          className={cls}
+                          size="large"
+                          onChange={(e) =>
+                            handleChange("contactPerson", e.target.value)
+                          }
+                          prefix={<UserOutlined className="text-gray-400" />}
+                          status={errors.contactPerson ? "error" : ""}
+                        />
+                        {errors.contactPerson && (
+                          <p className="text-xs text-red-500">
+                            {errors.contactPerson}
+                          </p>
+                        )}
+                      </div>
+                      <div className="space-y-1">
+                        <label className="text-sm font-semibold text-gray-700">
+                          Chức vụ
+                        </label>
+                        <Input
+                          name="position"
+                          placeholder="VD: Trưởng phòng"
+                          value={formData.position}
+                          className={cls}
+                          size="large"
+                          onChange={(e) =>
+                            handleChange("position", e.target.value)
+                          }
+                        />
+                      </div>
+                    </div>
+
+                    <div className="flex justify-end pt-2">
+                      <motion.button
+                        type="button"
+                        whileHover={{ scale: 1.02 }}
+                        whileTap={{ scale: 0.97 }}
+                        onClick={handleNext}
+                        className="px-6 py-2.5 rounded-xl bg-blue-500 hover:bg-blue-600 text-white font-semibold text-sm transition-all shadow-md"
                       >
-                        <Button icon={<UploadOutlined />} size="large" block>
-                          {licenseFile ? licenseFile.name : "Tải lên giấy phép"}
-                        </Button>
-                      </Upload>
+                        Tiếp tục →
+                      </motion.button>
                     </div>
                   </div>
+                </Card>
+              </motion.div>
+            )}
 
-                  <div className="flex justify-between pt-4">
-                    <Button size="large" onClick={() => setCurrentStep(0)}>
-                      Quay lại
-                    </Button>
-                    <Button
-                      type="primary"
-                      size="large"
-                      onClick={handleSubmit}
-                      loading={isLoading}
-                      className="bg-blue-600 hover:bg-blue-700"
-                    >
-                      {isLoading ? "Đang gửi..." : "Gửi đăng ký"}
-                    </Button>
+            {/* ── Step 2 ── */}
+            {currentStep === 1 && (
+              <motion.div
+                key="step2"
+                initial={{ opacity: 0, x: 30 }}
+                animate={{ opacity: 1, x: 0 }}
+                exit={{ opacity: 0, x: -30 }}
+                transition={{ duration: 0.3 }}
+              >
+                <Card
+                  className="rounded-3xl shadow-xl border-0"
+                  bodyStyle={{ padding: "32px 28px" }}
+                >
+                  <div className="space-y-5">
+                    <div className="flex items-center gap-2 mb-1">
+                      <FileTextOutlined className="text-blue-500 text-lg" />
+                      <h2 className="text-lg font-bold text-gray-800">
+                        Chi tiết & Tài liệu
+                      </h2>
+                    </div>
+                    <p className="text-sm text-gray-500 -mt-3">
+                      Thông tin bổ sung và tài liệu đính kèm
+                    </p>
+
+                    {/* partnershipType + taxCode */}
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <div className="space-y-1">
+                        <label className="text-sm font-semibold text-gray-700">
+                          Lĩnh vực <span className="text-red-500">*</span>
+                        </label>
+                        <Select
+                          size="large"
+                          className="w-full"
+                          value={formData.partnershipType}
+                          onChange={(v) => handleChange("partnershipType", v)}
+                          options={PARTNERSHIP_TYPES.map((t) => ({
+                            value: t.value,
+                            label: t.label,
+                          }))}
+                        />
+                      </div>
+                      <div className="space-y-1">
+                        <label className="text-sm font-semibold text-gray-700">
+                          Mã số thuế
+                        </label>
+                        <Input
+                          name="taxCode"
+                          placeholder="VD: 0312345679"
+                          value={formData.taxCode}
+                          className={cls}
+                          size="large"
+                          onChange={(e) =>
+                            handleChange("taxCode", e.target.value)
+                          }
+                        />
+                      </div>
+                    </div>
+
+                    {/* linkWeb */}
+                    <div className="space-y-1">
+                      <label className="text-sm font-semibold text-gray-700">
+                        Website
+                      </label>
+                      <Input
+                        name="linkWeb"
+                        placeholder="https://partner.org.vn"
+                        value={formData.linkWeb}
+                        className={cls}
+                        size="large"
+                        onChange={(e) =>
+                          handleChange("linkWeb", e.target.value)
+                        }
+                        prefix={<GlobalOutlined className="text-gray-400" />}
+                      />
+                    </div>
+
+                    {/* description */}
+                    <div className="space-y-1">
+                      <label className="text-sm font-semibold text-gray-700">
+                        Mô tả về tổ chức
+                      </label>
+                      <TextArea
+                        name="description"
+                        placeholder="Giới thiệu ngắn về tổ chức/công ty..."
+                        value={formData.description}
+                        rows={4}
+                        className={cls}
+                        onChange={(e) =>
+                          handleChange("description", e.target.value)
+                        }
+                      />
+                    </div>
+
+                    {/* ── Upload — giống hệt SchoolRegister ── */}
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      {/* Logo */}
+                      <div className="space-y-1">
+                        <label className="text-sm font-semibold text-gray-700">
+                          Logo tổ chức
+                        </label>
+                        <label className="block border-2 border-dashed border-gray-200 rounded-2xl p-5 text-center cursor-pointer hover:border-blue-400 transition-colors">
+                          {logoPreview ? (
+                            <div className="space-y-2">
+                              <img
+                                src={logoPreview}
+                                alt="Logo"
+                                className="w-20 h-20 mx-auto object-contain rounded-xl"
+                              />
+                              <p className="text-xs text-gray-500 truncate">
+                                {logoFile?.name}
+                              </p>
+                            </div>
+                          ) : (
+                            <>
+                              <Upload className="w-8 h-8 mx-auto text-gray-400 mb-2" />
+                              <p className="text-sm text-gray-400">
+                                Tải lên logo
+                              </p>
+                              <p className="text-xs text-gray-300">
+                                Tối đa 5MB
+                              </p>
+                            </>
+                          )}
+                          <input
+                            type="file"
+                            accept="image/*"
+                            onChange={handleLogoChange}
+                            className="hidden"
+                          />
+                        </label>
+                      </div>
+
+                      {/* License */}
+                      <div className="space-y-1">
+                        <label className="text-sm font-semibold text-gray-700">
+                          Giấy phép kinh doanh
+                        </label>
+                        <label className="block border-2 border-dashed border-gray-200 rounded-2xl p-5 text-center cursor-pointer hover:border-blue-400 transition-colors">
+                          {licenseFile ? (
+                            <div className="space-y-2">
+                              <FileText className="w-8 h-8 mx-auto text-blue-500" />
+                              <p className="text-xs text-gray-500 truncate">
+                                {licenseFile.name}
+                              </p>
+                            </div>
+                          ) : (
+                            <>
+                              <Upload className="w-8 h-8 mx-auto text-gray-400 mb-2" />
+                              <p className="text-sm text-gray-400">
+                                Tải lên giấy phép
+                              </p>
+                              <p className="text-xs text-gray-300">
+                                PDF, tối đa 10MB
+                              </p>
+                            </>
+                          )}
+                          <input
+                            type="file"
+                            accept=".pdf,.jpg,.jpeg,.png"
+                            onChange={handleLicenseChange}
+                            className="hidden"
+                          />
+                        </label>
+                      </div>
+                    </div>
+
+                    <div className="flex justify-between pt-2">
+                      <motion.button
+                        type="button"
+                        whileHover={{ scale: 1.02 }}
+                        whileTap={{ scale: 0.97 }}
+                        onClick={() => setCurrentStep(0)}
+                        className="px-6 py-2.5 rounded-xl border-2 border-gray-200 text-gray-600 font-semibold text-sm hover:bg-gray-50 transition-all"
+                      >
+                        ← Quay lại
+                      </motion.button>
+                      <motion.button
+                        type="submit"
+                        whileHover={{ scale: isLoading ? 1 : 1.02 }}
+                        whileTap={{ scale: isLoading ? 1 : 0.97 }}
+                        disabled={isLoading}
+                        className="px-6 py-2.5 rounded-xl bg-blue-500 hover:bg-blue-600 disabled:opacity-60 text-white font-semibold text-sm transition-all shadow-md flex items-center gap-2"
+                      >
+                        {isLoading ? (
+                          <>
+                            <svg
+                              className="w-4 h-4 animate-spin"
+                              viewBox="0 0 24 24"
+                              fill="none"
+                            >
+                              <circle
+                                className="opacity-25"
+                                cx="12"
+                                cy="12"
+                                r="10"
+                                stroke="currentColor"
+                                strokeWidth="4"
+                              />
+                              <path
+                                className="opacity-75"
+                                fill="currentColor"
+                                d="M4 12a8 8 0 018-8v8z"
+                              />
+                            </svg>
+                            Đang gửi...
+                          </>
+                        ) : (
+                          "Gửi đăng ký"
+                        )}
+                      </motion.button>
+                    </div>
                   </div>
-                </div>
-              </Card>
-            </motion.div>
-          )}
-        </AnimatePresence>
+                </Card>
+              </motion.div>
+            )}
+          </AnimatePresence>
+        </form>
 
-        <motion.p
-          className="text-center text-sm text-gray-600 mt-6"
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          transition={{ delay: 0.6 }}
-        >
+        <p className="text-center text-sm text-gray-400 mt-6">
           <button
-            onClick={() => message.info("Đăng xuất thành công")}
-            className="text-blue-600 hover:text-blue-700 transition-colors"
+            onClick={() => navigate("/auth/partnership")}
+            className="hover:text-blue-600 transition-colors underline underline-offset-2"
           >
             Đăng xuất
           </button>
-        </motion.p>
-      </motion.div>
+        </p>
+      </div>
     </div>
   );
 }

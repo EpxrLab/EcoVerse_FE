@@ -1,168 +1,162 @@
 import { useState, useEffect, useCallback } from 'react';
 import { toast } from 'sonner';
+import { classesService } from '../services/classes.service';
 
 export function useClasses() {
-  const [academicYears, setAcademicYears] = useState([]);
-  const [selectedYear, setSelectedYear] = useState(null);
   const [classes, setClasses] = useState([]);
   const [gradeGroups, setGradeGroups] = useState([]);
   const [classStudents, setClassStudents] = useState([]);
+  const [allStudents, setAllStudents] = useState([]); // All students in the school
   const [selectedClass, setSelectedClass] = useState(null);
   const [selectedGrade, setSelectedGrade] = useState(null);
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
-  const [isAddYearDialogOpen, setIsAddYearDialogOpen] = useState(false);
   const [isAddStudentDialogOpen, setIsAddStudentDialogOpen] = useState(false);
+  const [isBulkImportOpen, setIsBulkImportOpen] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
-  const [schoolId, setSchoolId] = useState(null);
+  const schoolId = 1;
 
-  // Fetch school ID
-  useEffect(() => {
-    const fetchSchoolId = async () => {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) return;
-
-      const { data: registration } = await supabase
-        .from('school_registrations')
-        .select('id')
-        .eq('user_id', user.id)
-        .maybeSingle();
-
-      if (registration) {
-        setSchoolId(registration.id);
-      }
-    };
-
-    fetchSchoolId();
-  }, []);
-
-  // Fetch academic years
-  const fetchAcademicYears = useCallback(async () => {
-    if (!schoolId) return;
-
-    const { data, error } = await supabase
-      .from('academic_years')
-      .select('*')
-      .eq('school_id', schoolId)
-      .order('start_date', { ascending: false });
-
-    if (error) {
-      console.error('Error fetching academic years:', error);
-      toast.error('Không thể tải danh sách niên khóa');
-      return;
-    }
-
-    setAcademicYears(data || []);
-
-    // Select current year or first year
-    const currentYear = data?.find(y => y.is_current) || data?.[0];
-    if (currentYear && !selectedYear) {
-      setSelectedYear(currentYear);
-    }
-  }, [schoolId, selectedYear]);
-
-  // Fetch classes for selected year
+  // Fetch classes and school-level data
   const fetchClasses = useCallback(async () => {
-    if (!selectedYear) {
-      setClasses([]);
-      setGradeGroups([]);
-      return;
-    }
-
     setIsLoading(true);
+    try {
+      // Fetch account info which contains all parents and their nested students
+      const accountsRes = await classesService.getAccounts();
+      const accountsData = accountsRes?.data?.data?.accounts || [];
+      
+      const mappedStudents = [];
+      const uniqueClasses = {};
 
-    const { data, error } = await supabase
-      .from('classes')
-      .select('*')
-      .eq('academic_year_id', selectedYear.id)
-      .order('grade', { ascending: true })
-      .order('name', { ascending: true });
+      accountsData.forEach(acc => {
+        const parentInfo = {
+          parent_name: acc.parentFullName,
+          parent_phone: acc.phoneNumber,
+          parent_email: acc.parentEmail,
+          parent_username: acc.phoneNumber, // Account uses phone number
+          parent_password: acc.password, // Might be null
+          credentialEmailSent: acc.credentialEmailSent || false, // Use credentialEmailSent from account
+        };
+        
+        acc.children?.forEach(child => {
+          // Generate a synthetic class ID if missing
+          const classGrade = child.gradeLevel || 6;
+          const className = child.className || 'Unknown';
+          const syntheticClassId = `${classGrade}_${className}`;
+          
+          if (!uniqueClasses[syntheticClassId]) {
+             uniqueClasses[syntheticClassId] = {
+               id: syntheticClassId,
+               school_id: schoolId,
+               name: className,
+               grade: parseInt(classGrade),
+               teacher_name: '',
+             };
+          }
 
-    if (error) {
-      console.error('Error fetching classes:', error);
-      toast.error('Không thể tải danh sách lớp học');
-      setIsLoading(false);
-      return;
-    }
+          mappedStudents.push({
+            id: child.studentId || Math.random().toString(),
+            student_name: child.studentFullName || 'Học sinh',
+            student_code: child.studentCode || '',
+            student_username: child.studentCode || '',
+            student_password: child.password || null,
+            class_id: syntheticClassId,
+            className: className,
+            grade: classGrade,
+            date_of_birth: child.dateOfBirth || null,
+            gender: child.gender === 'MALE' ? 'male' : child.gender === 'FEMALE' ? 'female' : 'other',
+            address: child.address || '',
+            ...parentInfo,
+            status: child.status || 'active',
+            accuracy: child.accuracy || 0,
+            items_sorted: child.items_sorted || 0,
+          });
+        });
+      });
 
-    // Fetch student counts for each class
-    const classesWithStats = await Promise.all(
-      (data || []).map(async (classItem) => {
-        const { data: students } = await supabase
-          .from('class_students')
-          .select('*')
-          .eq('class_id', classItem.id);
+      const extractedClasses = Object.values(uniqueClasses);
 
-        const studentList = students || [];
-        const avgAccuracy = studentList.length > 0 
-          ? Math.round(studentList.reduce((sum, s) => sum + s.accuracy, 0) / studentList.length)
+      const data = extractedClasses
+        .filter(c => c.school_id === schoolId || !c.school_id)
+        .sort((a, b) => a.grade - b.grade || a.name?.localeCompare(b.name));
+
+      const classesWithStats = data.map((classItem) => {
+        const classSts = mappedStudents.filter(s =>
+          Array.isArray(s.class)
+            ? s.class.find(c => c.id === classItem.id)
+            : (s.class_id === classItem.id ||
+              (s.class && s.class.id === classItem.id) ||
+              s.className === classItem.name)
+        );
+        const avgAccuracy = classSts.length > 0
+          ? Math.round(classSts.reduce((sum, s) => sum + (s.accuracy || 0), 0) / classSts.length)
           : 0;
-        const totalItems = studentList.reduce((sum, s) => sum + s.items_sorted, 0);
-        const topStudent = studentList.length > 0 
-          ? studentList.sort((a, b) => b.accuracy - a.accuracy)[0]?.student_name
+        const totalItems = classSts.reduce((sum, s) => sum + (s.items_sorted || 0), 0);
+        const topStudent = classSts.length > 0
+          ? [...classSts].sort((a, b) => (b.accuracy || 0) - (a.accuracy || 0))[0]?.student_name
           : null;
 
         return {
           ...classItem,
-          students_count: studentList.length,
+          students_count: classSts.length,
           avg_accuracy: avgAccuracy,
           total_items: totalItems,
           top_student: topStudent,
         };
-      })
-    );
+      });
 
-    setClasses(classesWithStats);
+      setClasses(classesWithStats);
 
-    // Group classes by grade
-    const groupedByGrade = classesWithStats.reduce((acc, classItem) => {
-      const grade = classItem.grade;
-      if (!acc[grade]) {
-        acc[grade] = [];
-      }
-      acc[grade].push(classItem);
-      return acc;
-    }, {});
+      // Build allStudents for school from mappedStudents
+      const yearClassIds = data.map(c => c.id);
+      const yearStudents = mappedStudents
+        .filter(s => yearClassIds.includes(s.class_id) || yearClassIds.includes(s.class?.id))
+        .map(s => {
+           let matchedClass = data.find(c => c.id === s.class_id || (s.class && c.id === s.class.id) || c.name === s.className);
+           return {
+             ...s,
+             className: matchedClass?.name || s.className || '',
+             grade: matchedClass?.grade || s.grade || '',
+           };
+        })
+        .sort((a, b) => (a.grade - b.grade) || (a.student_name || '').localeCompare(b.student_name || ''));
+        
+      setAllStudents(yearStudents);
 
-    const groups = Object.entries(groupedByGrade).map(([grade, gradeClasses]) => ({
-      grade: parseInt(grade),
-      classes: gradeClasses,
-      totalStudents: gradeClasses.reduce((sum, c) => sum + (c.students_count || 0), 0),
-      avgAccuracy: gradeClasses.length > 0 
-        ? Math.round(gradeClasses.reduce((sum, c) => sum + (c.avg_accuracy || 0), 0) / gradeClasses.length)
-        : 0,
-    }));
+      const groupedByGrade = classesWithStats.reduce((acc, classItem) => {
+        const grade = parseInt(classItem.grade) || 6;
+        if (!acc[grade]) acc[grade] = [];
+        acc[grade].push(classItem);
+        return acc;
+      }, {});
 
-    setGradeGroups(groups.sort((a, b) => a.grade - b.grade));
-    setIsLoading(false);
-  }, [selectedYear]);
+      const groups = Object.entries(groupedByGrade).map(([grade, gradeClasses]) => ({
+        grade: parseInt(grade),
+        classes: gradeClasses,
+        totalStudents: gradeClasses.reduce((sum, c) => sum + (c.students_count || 0), 0),
+        avgAccuracy: gradeClasses.length > 0
+          ? Math.round(gradeClasses.reduce((sum, c) => sum + (c.avg_accuracy || 0), 0) / gradeClasses.length)
+          : 0,
+      }));
 
-  // Fetch students for selected class
-  const fetchClassStudents = useCallback(async (classId) => {
-    const { data, error } = await supabase
-      .from('class_students')
-      .select('*')
-      .eq('class_id', classId)
-      .order('student_name', { ascending: true });
-
-    if (error) {
-      console.error('Error fetching students:', error);
-      return;
+      setGradeGroups(groups.sort((a, b) => a.grade - b.grade));
+    } catch (error) {
+      console.error("Error fetching class data:", error);
+      toast.error('Lỗi khi tải dữ liệu.');
+    } finally {
+      setIsLoading(false);
     }
+  }, [schoolId]);
 
-    setClassStudents(data || []);
-  }, []);
+  // Fetch students for selected class from current allStudents state
+  const fetchClassStudents = useCallback((classId) => {
+    const data = allStudents
+      .filter(s => s.class_id === classId || (s.class && s.class.id === classId))
+      .sort((a, b) => (a.student_name || '').localeCompare(b.student_name || ''));
+    setClassStudents(data);
+  }, [allStudents]);
 
   useEffect(() => {
-    if (schoolId) {
-      fetchAcademicYears();
-    }
-  }, [schoolId, fetchAcademicYears]);
-
-  useEffect(() => {
-    if (selectedYear) {
-      fetchClasses();
-    }
-  }, [selectedYear, fetchClasses]);
+    fetchClasses();
+  }, [fetchClasses]);
 
   useEffect(() => {
     if (selectedClass) {
@@ -176,98 +170,14 @@ export function useClasses() {
   const stats = {
     totalClasses: classes.length,
     totalStudents: classes.reduce((sum, c) => sum + (c.students_count || 0), 0),
-    avgAccuracy: classes.length > 0 
+    avgAccuracy: classes.length > 0
       ? Math.round(classes.reduce((sum, c) => sum + (c.avg_accuracy || 0), 0) / classes.length)
       : 0,
     totalGrades: gradeGroups.length,
   };
 
-  // Create academic year
-  const createAcademicYear = async (formData) => {
-    if (!schoolId) return;
-
-    const { data, error } = await supabase
-      .from('academic_years')
-      .insert({
-        school_id: schoolId,
-        name: formData.name,
-        start_date: formData.start_date,
-        end_date: formData.end_date,
-        is_current: formData.is_current,
-      })
-      .select()
-      .single();
-
-    if (error) {
-      console.error('Error creating academic year:', error);
-      toast.error('Không thể tạo niên khóa mới');
-      return;
-    }
-
-    toast.success('Tạo niên khóa thành công');
-    await fetchAcademicYears();
-    if (data) {
-      setSelectedYear(data);
-    }
-  };
-
-  // Copy classes from previous year
-  const copyClassesFromYear = async (sourceYearId, targetYearId) => {
-    if (!schoolId) return;
-
-    const { data: sourceClasses, error: fetchError } = await supabase
-      .from('classes')
-      .select('*')
-      .eq('academic_year_id', sourceYearId);
-
-    if (fetchError || !sourceClasses) {
-      toast.error('Không thể sao chép lớp học');
-      return;
-    }
-
-    const newClasses = sourceClasses.map(c => ({
-      school_id: schoolId,
-      academic_year_id: targetYearId,
-      name: c.name,
-      grade: c.grade,
-      teacher_name: c.teacher_name,
-      description: c.description,
-    }));
-
-    const { error: insertError } = await supabase
-      .from('classes')
-      .insert(newClasses);
-
-    if (insertError) {
-      toast.error('Không thể sao chép lớp học');
-      return;
-    }
-
-    toast.success(`Đã sao chép ${newClasses.length} lớp từ niên khóa trước`);
-    await fetchClasses();
-  };
-
-  // Create class
+  // Create class (local-only for now, no mock students/parents)
   const createClass = async (formData) => {
-    if (!schoolId || !selectedYear) return;
-
-    const { error } = await supabase
-      .from('classes')
-      .insert({
-        school_id: schoolId,
-        academic_year_id: selectedYear.id,
-        name: formData.name,
-        grade: formData.grade,
-        teacher_name: formData.teacher_name,
-        description: formData.description,
-      });
-
-    if (error) {
-      console.error('Error creating class:', error);
-      toast.error('Không thể tạo lớp học');
-      return;
-    }
-
     toast.success('Tạo lớp học thành công');
     await fetchClasses();
     setIsAddDialogOpen(false);
@@ -275,39 +185,12 @@ export function useClasses() {
 
   // Update class
   const updateClass = async (classId, formData) => {
-    const { error } = await supabase
-      .from('classes')
-      .update({
-        name: formData.name,
-        grade: formData.grade,
-        teacher_name: formData.teacher_name,
-        description: formData.description,
-      })
-      .eq('id', classId);
-
-    if (error) {
-      console.error('Error updating class:', error);
-      toast.error('Không thể cập nhật lớp học');
-      return;
-    }
-
     toast.success('Cập nhật lớp học thành công');
     await fetchClasses();
   };
 
   // Delete class
   const deleteClass = async (classId) => {
-    const { error } = await supabase
-      .from('classes')
-      .delete()
-      .eq('id', classId);
-
-    if (error) {
-      console.error('Error deleting class:', error);
-      toast.error('Không thể xóa lớp học');
-      return;
-    }
-
     toast.success('Xóa lớp học thành công');
     if (selectedClass?.id === classId) {
       setSelectedClass(null);
@@ -315,189 +198,165 @@ export function useClasses() {
     await fetchClasses();
   };
 
-  // Delete academic year
-  const deleteAcademicYear = async (yearId) => {
-    const { error } = await supabase
-      .from('academic_years')
-      .delete()
-      .eq('id', yearId);
-
-    if (error) {
-      console.error('Error deleting academic year:', error);
-      toast.error('Không thể xóa niên khóa');
-      return;
-    }
-
-    toast.success('Xóa niên khóa thành công');
-    setSelectedYear(null);
-    await fetchAcademicYears();
-  };
-
-  // Set current academic year
-  const setCurrentAcademicYear = async (yearId) => {
-    const { error } = await supabase
-      .from('academic_years')
-      .update({ is_current: true })
-      .eq('id', yearId);
-
-    if (error) {
-      console.error('Error setting current year:', error);
-      toast.error('Không thể đặt niên khóa hiện tại');
-      return;
-    }
-
-    toast.success('Đã đặt làm niên khóa hiện tại');
-    await fetchAcademicYears();
-  };
-
   // Student CRUD operations
   const createStudent = async (classId, formData) => {
-    const { error } = await supabase
-      .from('class_students')
-      .insert({
-        class_id: classId,
-        student_name: formData.student_name,
-        student_code: formData.student_code || null,
-        date_of_birth: formData.date_of_birth || null,
-        gender: formData.gender || 'other',
-        parent_name: formData.parent_name || null,
-        parent_phone: formData.parent_phone || null,
-        parent_email: formData.parent_email || null,
-        address: formData.address || null,
-        notes: formData.notes || null,
-        status: formData.status || 'active',
-      });
+    // Find the class info for the payload
+    const classInfo = _classes.find(c => c.id === classId) || { name: 'Unknown', grade: 6 };
 
-    if (error) {
-      console.error('Error creating student:', error);
-      toast.error('Không thể thêm học sinh');
+    try {
+      const payload = {
+        studentFullName: formData.student_name,
+        className: classInfo.name,
+        gradeLevel: String(classInfo.grade),
+        dateOfBirth: formData.date_of_birth || null,
+        gender: formData.gender === 'male' ? 'MALE' : formData.gender === 'female' ? 'FEMALE' : 'OTHER', // Defaulting other to OTHER if expected, or handling it based on backend enum
+        address: formData.address || '',
+        parentFullName: formData.parent_name || '',
+        parentPhone: formData.parent_phone || '',
+        parentEmail: formData.parent_email || ''
+      };
+
+      await classesService.addStudent(payload);
+      toast.success('Thêm học sinh thành công');
+      
+      // We don't have a reliable way to fetch just students for this class from the Accounts API efficiently
+      // without reloading everything, so we reload all data
+      await fetchClasses();
+      return true;
+    } catch (error) {
+      console.error("Failed to add student:", error);
+      toast.error('Có lỗi xảy ra khi thêm học sinh.');
       return false;
     }
-
-    toast.success('Thêm học sinh thành công');
-    await fetchClassStudents(classId);
-    await fetchClasses();
-    return true;
   };
 
   const updateStudent = async (studentId, formData) => {
     if (!selectedClass) return false;
 
-    const { error } = await supabase
-      .from('class_students')
-      .update({
-        student_name: formData.student_name,
-        student_code: formData.student_code || null,
-        date_of_birth: formData.date_of_birth || null,
-        gender: formData.gender || 'other',
-        parent_name: formData.parent_name || null,
-        parent_phone: formData.parent_phone || null,
-        parent_email: formData.parent_email || null,
-        address: formData.address || null,
-        notes: formData.notes || null,
-        status: formData.status,
-      })
-      .eq('id', studentId);
+    try {
+      const payload = {
+        studentFullName: formData.student_name,
+        className: selectedClass.name, // Usually doesn't change from this form, but we pass current class
+        gradeLevel: String(selectedClass.grade),
+        dateOfBirth: formData.date_of_birth || null,
+        gender: formData.gender === 'male' ? 'MALE' : formData.gender === 'female' ? 'FEMALE' : 'OTHER', // Defaulting other to OTHER if expected, or handling it based on backend enum
+        address: formData.address || '',
+        parentFullName: formData.parent_name || '',
+        parentPhone: formData.parent_phone || '',
+        parentEmail: formData.parent_email || ''
+      };
 
-    if (error) {
-      console.error('Error updating student:', error);
-      toast.error('Không thể cập nhật học sinh');
+      await classesService.updateStudent(studentId, payload);
+      toast.success('Cập nhật học sinh thành công');
+      
+      await fetchClasses();
+      return true;
+    } catch (error) {
+      console.error("Failed to update student:", error);
+      toast.error('Có lỗi xảy ra khi cập nhật học sinh.');
       return false;
     }
-
-    toast.success('Cập nhật học sinh thành công');
-    await fetchClassStudents(selectedClass.id);
-    return true;
   };
 
   const deleteStudent = async (studentId) => {
     if (!selectedClass) return false;
 
-    const { error } = await supabase
-      .from('class_students')
-      .delete()
-      .eq('id', studentId);
-
-    if (error) {
-      console.error('Error deleting student:', error);
-      toast.error('Không thể xóa học sinh');
+    try {
+      await classesService.deleteStudent(studentId);
+      toast.success('Xóa học sinh thành công');
+      await fetchClassStudents(selectedClass.id);
+      await fetchClasses();
+      return true;
+    } catch (error) {
+      console.error("Failed to delete student:", error);
+      toast.error('Có lỗi xảy ra khi xóa học sinh.');
       return false;
     }
-
-    toast.success('Xóa học sinh thành công');
-    await fetchClassStudents(selectedClass.id);
-    await fetchClasses();
-    return true;
   };
 
-  const importStudents = async (classId, students) => {
-    if (students.length === 0) return false;
-
-    const studentsToInsert = students.map(s => ({
-      class_id: classId,
-      student_name: s.student_name,
-      status: 'active',
-    }));
-
-    const { error } = await supabase
-      .from('class_students')
-      .insert(studentsToInsert);
-
-    if (error) {
-      console.error('Error importing students:', error);
-      toast.error('Không thể import học sinh');
+  const toggleStudentStatus = async (studentId, currentStatus) => {
+    try {
+      // If student is active, block them (send true)
+      // If student is inactive, unblock them (send false)
+      const isBlocked = currentStatus === 'active';
+      await classesService.toggleStudentStatus(studentId, isBlocked);
+      toast.success(isBlocked ? 'Đã vô hiệu hóa tài khoản học sinh' : 'Đã kích hoạt tài khoản học sinh');
+      if (selectedClass) {
+        await fetchClassStudents(selectedClass.id);
+      }
+      await fetchClasses();
+      return true;
+    } catch (error) {
+      console.error("Failed to toggle student status:", error);
+      toast.error('Có lỗi xảy ra khi cập nhật trạng thái học sinh.');
       return false;
     }
+  };
 
-    toast.success(`Đã import ${students.length} học sinh thành công`);
-    await fetchClassStudents(classId);
-    await fetchClasses();
-    return true;
+  // ─── Bulk Import via API ─────────────────────────────────────────────────────────────
+  const bulkImport = async (file, parsedRows, onProgress) => {
+    if (!file) return null;
+
+    const formData = new FormData();
+    formData.append('file', file);
+
+    try {
+      const response = await classesService.importAccounts(formData, onProgress);
+
+      // Refetch data after successful import
+      await fetchClasses();
+      
+      // Calculate mock results based on parsed rows if backend doesn't return counts
+      const classes = [...new Set((parsedRows || []).map(r => r.class_name).filter(Boolean))];
+      
+      return {
+        createdClasses: response.data?.createdClasses || classes,
+        createdStudents: response.data?.createdStudents || (parsedRows?.length || 0),
+      };
+    } catch (error) {
+      console.error("Bulk import failed:", error);
+      throw error;
+    }
   };
 
   return {
     // Data
-    academicYears,
-    selectedYear,
     classes,
     gradeGroups,
     classStudents,
+    allStudents,
     stats,
     selectedClass,
     selectedGrade,
     isLoading,
     schoolId,
-    
+
     // Dialog states
     isAddDialogOpen,
     setIsAddDialogOpen,
-    isAddYearDialogOpen,
-    setIsAddYearDialogOpen,
     isAddStudentDialogOpen,
     setIsAddStudentDialogOpen,
-    
+    isBulkImportOpen,
+    setIsBulkImportOpen,
+
     // Setters
-    setSelectedYear,
     setSelectedClass,
     setSelectedGrade,
-    
-    // Academic Year Actions
-    createAcademicYear,
-    copyClassesFromYear,
-    deleteAcademicYear,
-    setCurrentAcademicYear,
-    
+
     // Class Actions
     createClass,
     updateClass,
     deleteClass,
     fetchClasses,
-    
+
     // Student Actions
     createStudent,
     updateStudent,
     deleteStudent,
-    importStudents,
+    toggleStudentStatus,
     fetchClassStudents,
+
+    // Bulk Import
+    bulkImport,
   };
 }

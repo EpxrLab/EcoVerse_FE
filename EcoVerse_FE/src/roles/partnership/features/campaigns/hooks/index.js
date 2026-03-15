@@ -1,0 +1,1 @@
+export { usePartnershipCampaigns } from './usePartnershipCampaigns';
