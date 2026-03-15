@@ -20,6 +20,7 @@ import {
 } from 'lucide-react';
 import { cn } from '@/shared/lib/utils';
 import { toast } from 'sonner';
+import { classesService } from '@/roles/school/features/classes/services/classes.service';
 
 function InfoRow({ label, value, mono = false, copyable = false, masked = false }) {
   const [show, setShow] = useState(false);
@@ -60,7 +61,7 @@ function InfoRow({ label, value, mono = false, copyable = false, masked = false 
   );
 }
 
-export function EmailPreviewDialog({ isOpen, onClose, parent, student }) {
+export function EmailPreviewDialog({ isOpen, onClose, onSent, parent, student }) {
   const [isSending, setIsSending] = useState(false);
   const [sent, setSent] = useState(false);
 
@@ -72,14 +73,35 @@ export function EmailPreviewDialog({ isOpen, onClose, parent, student }) {
       return;
     }
     setIsSending(true);
-    await new Promise(r => setTimeout(r, 1200));
-    setIsSending(false);
-    setSent(true);
-    toast.success(`Đã gửi email đến ${parent.email}`);
-    setTimeout(() => {
-      setSent(false);
-      onClose();
-    }, 1500);
+    try {
+      await classesService.sendCredentials({
+        student_id: student.id,
+        parent_email: parent.email,
+        student_name: student.student_name,
+        student_username: student.student_username || student.student_code,
+        student_password: student.student_password,
+        parent_name: parent.name,
+        parent_username: parent.username,
+        parent_password: parent.password,
+      });
+      setIsSending(false);
+      setSent(true);
+      toast.success(`Đã gửi email đến ${parent.email}`);
+      
+      // Call onSent callback to refresh data
+      if (onSent) {
+        onSent();
+      }
+      
+      setTimeout(() => {
+        setSent(false);
+        onClose();
+      }, 1500);
+    } catch (error) {
+      setIsSending(false);
+      console.error('Error sending credentials:', error);
+      toast.error(error?.response?.data?.message || 'Gửi email thất bại. Vui lòng thử lại.');
+    }
   };
 
   return (

@@ -25,8 +25,6 @@ import {
   MapPin,
   Calendar,
   FileText,
-  Hash,
-  Lock,
 } from "lucide-react";
 
 export function StudentFormDialog({ 
@@ -80,31 +78,8 @@ export function StudentFormDialog({
                   className="bg-background"
                 />
               </div>
-              <div className="space-y-2">
-                <Label className="flex items-center gap-1.5">
-                  <Hash className="w-3.5 h-3.5 text-muted-foreground" />
-                  Mã học sinh
-                </Label>
-                <Input
-                  placeholder="VD: HS001"
-                  value={form.student_code}
-                  onChange={(e) => onFormChange({ ...form, student_code: e.target.value })}
-                  className="bg-background font-mono"
-                />
-              </div>
-              <div className="space-y-2">
-                <Label className="flex items-center gap-1.5">
-                  <Lock className="w-3.5 h-3.5 text-muted-foreground" />
-                  Mật khẩu học sinh
-                </Label>
-                <Input
-                  type="password"
-                  placeholder="Nhập mật khẩu đăng nhập"
-                  value={form.student_password}
-                  onChange={(e) => onFormChange({ ...form, student_password: e.target.value })}
-                  className="bg-background"
-                />
-              </div>
+
+
               <div className="space-y-2">
                 <Label className="flex items-center gap-1.5">
                   <Calendar className="w-3.5 h-3.5 text-muted-foreground" />
@@ -201,19 +176,7 @@ export function StudentFormDialog({
                   className="bg-background"
                 />
               </div>
-              <div className="space-y-2">
-                <Label className="flex items-center gap-1.5">
-                  <Lock className="w-3.5 h-3.5 text-muted-foreground" />
-                  Mật khẩu phụ huynh
-                </Label>
-                <Input
-                  type="password"
-                  placeholder="Nhập mật khẩu đăng nhập"
-                  value={form.parent_password}
-                  onChange={(e) => onFormChange({ ...form, parent_password: e.target.value })}
-                  className="bg-background"
-                />
-              </div>
+
             </div>
           </div>
 

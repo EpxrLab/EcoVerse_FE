@@ -7,7 +7,6 @@ import { DialogFooter } from '@/shared/components/ui/dialog';
 export function ClassForm({
   mode,
   formData,
-  academicYearName,
   onFormChange,
   onSubmit,
   onCancel,
@@ -16,14 +15,6 @@ export function ClassForm({
 
   return (
     <div className="space-y-4 py-4">
-      {academicYearName && (
-        <div className="p-3 rounded-xl bg-eco-blue/10 border border-eco-blue/20">
-          <p className="text-sm text-muted-foreground">
-            Niên khóa: <span className="font-semibold text-foreground">{academicYearName}</span>
-          </p>
-        </div>
-      )}
-
       <div className="grid grid-cols-2 gap-4">
         <div className="space-y-2">
           <Label>

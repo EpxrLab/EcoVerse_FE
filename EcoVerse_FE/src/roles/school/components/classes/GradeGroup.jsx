@@ -1,14 +1,11 @@
 import { useState } from "react";
 import { Button } from "@/shared/components/ui/button";
-// import { Badge } from "@/components/ui/badge";
-// import { ScrollArea, ScrollBar } from "@/components/ui/scroll-area";
 import {
   Collapsible,
   CollapsibleContent,
   CollapsibleTrigger,
 } from "@/shared/components/ui/collapsible";
 import { 
-  Plus, 
   ChevronDown,
   ChevronRight,
   Users,
@@ -24,7 +21,6 @@ export function GradeGroup({
   group, 
   isExpanded, 
   onToggle, 
-  onAddClass,
   onSelectClass,
   onEditClass,
   onDeleteClass,
@@ -79,18 +75,6 @@ export function GradeGroup({
               </div>
             </div>
             <div className="flex items-center gap-2">
-              <Button 
-                variant="outline" 
-                size="sm"
-                className="h-8 text-xs border-eco-green/30 hover:bg-eco-green/10 hover:border-eco-green/50"
-                onClick={(e) => {
-                  e.stopPropagation();
-                  onAddClass(group.grade);
-                }}
-              >
-                <Plus className="w-3.5 h-3.5 mr-1" />
-                Thêm
-              </Button>
               <div className={cn(
                 "w-7 h-7 rounded-full flex items-center justify-center transition-all",
                 isExpanded ? "bg-eco-green/10" : "bg-muted"
