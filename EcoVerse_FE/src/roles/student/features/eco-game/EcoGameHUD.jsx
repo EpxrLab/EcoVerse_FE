@@ -4,7 +4,7 @@
 import { useState, useEffect, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { EcoSeaRescueHUD } from "./SeaRescue/EcoSeaRescueHUD";
-import { RunnerHUD } from "./UI/EcoRunner/RunnerHUD";
+import { RunnerHUD } from "./RunnerTrash/RunnerHUD";
 import { SorterHUD } from "./UI/EcoSorter/SorterHUD";
 import { ResultScreen } from "./UI/ResultScreen/ResultScreen";
 

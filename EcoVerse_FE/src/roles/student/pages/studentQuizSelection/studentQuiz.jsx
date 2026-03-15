@@ -243,8 +243,12 @@ export default function StudentQuiz() {
     0,
   );
 
-  const handleStartQuiz = (quizId) => {
-    alert(`Starting quiz ${quizId}`);
+  const handleStartQuiz = (quiz) => {
+    navigate(
+      `/student/campaign/${campaignId}/quiz/${quiz.id}?title=${encodeURIComponent(
+        quiz.title,
+      )}&time=${quiz.timeLimit}&reward=${quiz.coinReward}`,
+    );
   };
 
   return (
@@ -396,7 +400,7 @@ export default function StudentQuiz() {
                   <QuizCard
                     quiz={quiz}
                     getDifficultyConfig={getDifficultyConfig}
-                    onStart={handleStartQuiz}
+                    onStart={() => handleStartQuiz(quiz)}
                   />
                 </motion.div>
               ))}

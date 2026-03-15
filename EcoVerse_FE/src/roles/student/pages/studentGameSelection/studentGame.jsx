@@ -12,7 +12,7 @@ import {
 } from "@ant-design/icons";
 import { Star, Lock, Play } from "lucide-react";
 import { motion } from "framer-motion";
-import { fetchGameLevels } from "../../features/eco-game/ecoGame.service";
+import { fetchGameLevels } from "../../features/eco-game/services/ecoGame.service";
 
 // ─── CoinIcon ─────────────────────────────────────────────────────────────────
 

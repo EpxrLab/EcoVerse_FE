@@ -6,7 +6,7 @@
  */
 import * as THREE from "three";
 import EcoGameStateManager, { GameState } from "./EcoGameStateManager";
-import EcoGameRunner from "./EcoGameRunner";
+import EcoGameRunner from "./RunnerTrash/EcoGameRunner";
 import EcoGameSorter from "./EcoGameSorter";
 import EcoSeaRescue from "./SeaRescue/EcoSeaRescue";
 import { DEFAULT_LEVEL_CONFIG, mergeLevelConfig } from "./gameConfig";
