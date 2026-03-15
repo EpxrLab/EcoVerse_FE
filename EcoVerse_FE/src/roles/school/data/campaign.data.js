@@ -331,9 +331,9 @@ export const mockCampaignStats = {
 
 // Available classes mock
 export const mockAvailableClasses = [
-  { id: 'c1', academic_year_id: 'ay-2024', school_id: 'school-1', name: '1A', grade: 1, students_count: 30, created_at: '2024-01-01', updated_at: '2024-01-01', teacher_name: null, description: null },
-  { id: 'c2', academic_year_id: 'ay-2024', school_id: 'school-1', name: '1B', grade: 1, students_count: 28, created_at: '2024-01-01', updated_at: '2024-01-01', teacher_name: null, description: null },
-  { id: 'c3', academic_year_id: 'ay-2024', school_id: 'school-1', name: '2A', grade: 2, students_count: 32, created_at: '2024-01-01', updated_at: '2024-01-01', teacher_name: null, description: null },
-  { id: 'c4', academic_year_id: 'ay-2024', school_id: 'school-1', name: '2B', grade: 2, students_count: 30, created_at: '2024-01-01', updated_at: '2024-01-01', teacher_name: null, description: null },
-  { id: 'c5', academic_year_id: 'ay-2024', school_id: 'school-1', name: '3A', grade: 3, students_count: 28, created_at: '2024-01-01', updated_at: '2024-01-01', teacher_name: null, description: null },
+  { id: 'c1', school_id: 'school-1', name: '1A', grade: 1, students_count: 30, created_at: '2024-01-01', updated_at: '2024-01-01', teacher_name: null, description: null },
+  { id: 'c2', school_id: 'school-1', name: '1B', grade: 1, students_count: 28, created_at: '2024-01-01', updated_at: '2024-01-01', teacher_name: null, description: null },
+  { id: 'c3', school_id: 'school-1', name: '2A', grade: 2, students_count: 32, created_at: '2024-01-01', updated_at: '2024-01-01', teacher_name: null, description: null },
+  { id: 'c4', school_id: 'school-1', name: '2B', grade: 2, students_count: 30, created_at: '2024-01-01', updated_at: '2024-01-01', teacher_name: null, description: null },
+  { id: 'c5', school_id: 'school-1', name: '3A', grade: 3, students_count: 28, created_at: '2024-01-01', updated_at: '2024-01-01', teacher_name: null, description: null },
 ];

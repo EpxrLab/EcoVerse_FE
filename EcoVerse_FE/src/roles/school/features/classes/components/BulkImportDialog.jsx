@@ -1,6 +1,5 @@
 import { useState, useRef, useCallback } from 'react';
 import { Button } from '@/shared/components/ui/button';
-import { Badge } from '@/shared/components/ui/badge';
 import {
   Dialog,
   DialogContent,
@@ -16,7 +15,6 @@ import {
   TableRow,
 } from '@/shared/components/ui/table';
 import {
-  Upload,
   FileSpreadsheet,
   CheckCircle2,
   AlertCircle,
@@ -25,32 +23,40 @@ import {
   ChevronRight,
   GraduationCap,
   Users,
-  Calendar,
   Layers,
   ArrowLeft,
   Sparkles,
 } from 'lucide-react';
 import { cn } from '@/shared/lib/utils';
 import { toast } from 'sonner';
+import { read, utils } from 'xlsx';
 
 // ── CSV Parser ────────────────────────────────────────────────────────────────
 
 const HEADERS = [
-  'nien_khoa', 'khoi', 'lop', 'ten_hoc_sinh', 'ngay_sinh',
-  'gioi_tinh', 'ten_phu_huynh', 'sdt_phu_huynh', 'email_phu_huynh', 'dia_chi',
+  'student_name', 'class_name', 'grade', 'date_of_birth',
+  'gender', 'address', 'parent_name', 'parent_phone', 'parent_email'
 ];
 
 const HEADER_ALIASES = {
-  'niên khóa': 'nien_khoa', 'nien_khoa': 'nien_khoa', 'năm học': 'nien_khoa',
-  'khối': 'khoi', 'khoi': 'khoi', 'grade': 'khoi',
-  'lớp': 'lop', 'lop': 'lop', 'class': 'lop',
-  'tên học sinh': 'ten_hoc_sinh', 'ten_hoc_sinh': 'ten_hoc_sinh', 'họ tên': 'ten_hoc_sinh', 'hoten': 'ten_hoc_sinh',
-  'ngày sinh': 'ngay_sinh', 'ngay_sinh': 'ngay_sinh', 'dob': 'ngay_sinh',
-  'giới tính': 'gioi_tinh', 'gioi_tinh': 'gioi_tinh', 'gender': 'gioi_tinh',
-  'tên phụ huynh': 'ten_phu_huynh', 'ten_phu_huynh': 'ten_phu_huynh', 'phụ huynh': 'ten_phu_huynh',
-  'sdt phụ huynh': 'sdt_phu_huynh', 'sdt_phu_huynh': 'sdt_phu_huynh', 'sđt': 'sdt_phu_huynh', 'điện thoại': 'sdt_phu_huynh',
-  'email phụ huynh': 'email_phu_huynh', 'email_phu_huynh': 'email_phu_huynh', 'email': 'email_phu_huynh',
-  'địa chỉ': 'dia_chi', 'dia_chi': 'dia_chi', 'address': 'dia_chi',
+  'student full name': 'student_name',
+  'class name': 'class_name',
+  'grade level': 'grade',
+  'date of birth': 'date_of_birth',
+  'gender': 'gender',
+  'address': 'address',
+  'parent full name': 'parent_name',
+  'parent phone number': 'parent_phone',
+  'parent email': 'parent_email',
+  'khối': 'grade', 'khoi': 'grade',
+  'lớp': 'class_name', 'lop': 'class_name', 'class': 'class_name',
+  'tên học sinh': 'student_name', 'ten_hoc_sinh': 'student_name', 'họ tên': 'student_name', 'hoten': 'student_name',
+  'ngày sinh': 'date_of_birth', 'ngay_sinh': 'date_of_birth', 'dob': 'date_of_birth',
+  'giới tính': 'gender', 'gioi_tinh': 'gender',
+  'tên phụ huynh': 'parent_name', 'ten_phu_huynh': 'parent_name', 'phụ huynh': 'parent_name',
+  'sdt phụ huynh': 'parent_phone', 'sdt_phu_huynh': 'parent_phone', 'sđt': 'parent_phone', 'điện thoại': 'parent_phone',
+  'email phụ huynh': 'parent_email', 'email_phu_huynh': 'parent_email', 'email': 'parent_email',
+  'địa chỉ': 'address', 'dia_chi': 'address',
 };
 
 function parseCSV(text) {
@@ -77,36 +83,75 @@ function parseCSV(text) {
     const row = {};
     headers.forEach((h, i) => { row[h] = parts[i] || ''; });
     return {
-      academic_year: row.nien_khoa || '',
-      grade: row.khoi || '',
-      class_name: row.lop || '',
-      student_name: row.ten_hoc_sinh || '',
-      date_of_birth: row.ngay_sinh || '',
-      gender: row.gioi_tinh || '',
-      parent_name: row.ten_phu_huynh || '',
-      parent_phone: row.sdt_phu_huynh || '',
-      parent_email: row.email_phu_huynh || '',
-      address: row.dia_chi || '',
+      grade: row.grade || row.khoi || '',
+      class_name: row.class_name || row.lop || '',
+      student_name: row.student_name || row.ten_hoc_sinh || '',
+      date_of_birth: row.date_of_birth || row.ngay_sinh || '',
+      gender: row.gender || row.gioi_tinh || '',
+      parent_name: row.parent_name || row.ten_phu_huynh || '',
+      parent_phone: row.parent_phone || row.sdt_phu_huynh || '',
+      parent_email: row.parent_email || row.email_phu_huynh || '',
+      address: row.address || row.dia_chi || '',
     };
   }).filter(r => r.student_name);
 }
 
-// ── Sample CSV ────────────────────────────────────────────────────────────────
+// Ensure row data matches our needed keys from JSON array representation
+function parseExcelData(jsonRows) {
+  if (!jsonRows || jsonRows.length === 0) return [];
+  
+  // Find headers format
+  const rawHeaders = Object.keys(jsonRows[0] || {});
+  
+  // Create a mapping from raw header to our canonical header
+  const headerMap = {};
+  for (const h of rawHeaders) {
+    const canonical = HEADER_ALIASES[h.trim().toLowerCase()] || h;
+    headerMap[h] = canonical;
+  }
 
-const SAMPLE_CSV = `niên khóa,khối,lớp,tên học sinh,ngày sinh,giới tính,tên phụ huynh,sdt phụ huynh,email phụ huynh,địa chỉ
-2025-2026,6,6A,Nguyễn Văn An,2013-03-15,Nam,Nguyễn Văn Hùng,0901234567,hung@gmail.com,Hà Nội
-2025-2026,6,6A,Trần Thị Bình,2013-07-20,Nữ,Trần Văn Minh,0912345678,minh@gmail.com,Hà Nội
-2025-2026,6,6B,Lê Thị Cẩm,2013-01-10,Nữ,Lê Văn Tuấn,0923456789,tuan@gmail.com,HCM
-2025-2026,7,7A,Phạm Văn Dũng,2012-05-05,Nam,Phạm Thị Lan,0934567890,lan@gmail.com,Đà Nẵng`;
+  return jsonRows.map(row => {
+    const normalized = {};
+    for (const [rawH, val] of Object.entries(row)) {
+      if (val !== undefined && val !== null) {
+         normalized[headerMap[rawH]] = String(val).trim();
+      }
+    }
+    return {
+      grade: normalized.grade || normalized.khoi || '',
+      class_name: normalized.class_name || normalized.lop || '',
+      student_name: normalized.student_name || normalized.ten_hoc_sinh || '',
+      date_of_birth: normalized.date_of_birth || normalized.ngay_sinh || '',
+      gender: normalized.gender || normalized.gioi_tinh || '',
+      parent_name: normalized.parent_name || normalized.ten_phu_huynh || '',
+      parent_phone: normalized.parent_phone || normalized.sdt_phu_huynh || '',
+      parent_email: normalized.parent_email || normalized.email_phu_huynh || '',
+      address: normalized.address || normalized.dia_chi || '',
+    };
+  }).filter(r => r.student_name);
+}
 
-function downloadSampleCSV() {
-  const blob = new Blob([SAMPLE_CSV], { type: 'text/csv;charset=utf-8;' });
-  const url = URL.createObjectURL(blob);
-  const a = document.createElement('a');
-  a.href = url;
-  a.download = 'mau_import_hoc_sinh.csv';
-  a.click();
-  URL.revokeObjectURL(url);
+// ── Sample Excel/CSV ────────────────────────────────────────────────────────────────
+
+const SAMPLE_CSV = `Student Full Name,Class Name,Grade Level,Date of Birth,Gender,Address,Parent Full Name,Parent Phone Number,Parent Email
+Nguyễn Hoàng Nhật Ân,A1,1,2014-08-10,Male,8 Dương Văn Cam,Nguyễn Văn Quốc,0905324995,nguyenhoangnhatan31@gmail.com
+Trần Minh Khang,A1,1,2014-05-22,Male,Lương Định Của,Nguyễn Văn Hùng,0987654321,hung@gmail.com
+Lê Thảo Nguyên,B2,2,2013-11-03,Female,Nguyễn Trãi,Lê Thanh Bình,0901122334,binh@gmail.com`;
+
+function downloadSampleXLSX() {
+  const ws = utils.aoa_to_sheet([
+    ['Student Full Name', 'Class Name', 'Grade Level', 'Date of Birth', 'Gender', 'Address', 'Parent Full Name', 'Parent Phone Number', 'Parent Email'],
+    ['Nguyễn Hoàng Nhật Ân', 'A1', '1', '2014-08-10', 'Male', '8 Dương Văn Cam', 'Nguyễn Văn Quốc', '0905324995', 'nguyenhoangnhatan31@gmail.com'],
+    ['Trần Minh Khang', 'A1', '1', '2014-05-22', 'Male', 'Lương Định Của', 'Nguyễn Văn Hùng', '0987654321', 'hung@gmail.com'],
+    ['Lê Thảo Nguyên', 'B2', '2', '2013-11-03', 'Female', 'Nguyễn Trãi', 'Lê Thanh Bình', '0901122334', 'binh@gmail.com']
+  ]);
+  const wb = utils.book_new();
+  utils.book_append_sheet(wb, ws, "Danh_sach_hoc_sinh");
+  
+  // Use XLSX's built-in file saver if available, otherwise manual download.
+  import('xlsx').then(({ writeFile }) => {
+     writeFile(wb, "mau_import_hoc_sinh.xlsx");
+  });
 }
 
 // ── Steps ─────────────────────────────────────────────────────────────────────
@@ -142,7 +187,6 @@ function StepIndicator({ current }) {
 // ── Preview Table ─────────────────────────────────────────────────────────────
 
 function PreviewSummary({ rows }) {
-  const years = [...new Set(rows.map(r => r.academic_year).filter(Boolean))];
   const grades = [...new Set(rows.map(r => r.grade).filter(Boolean))];
   const classes = [...new Set(rows.map(r => `${r.grade}_${r.class_name}`).filter(r => r !== '_'))];
   const withParent = rows.filter(r => r.parent_name).length;
@@ -150,7 +194,6 @@ function PreviewSummary({ rows }) {
   return (
     <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-4">
       {[
-        { icon: Calendar, label: 'Niên khóa', value: years.length || 1, color: 'eco-blue' },
         { icon: Layers, label: 'Khối', value: grades.length, color: 'eco-leaf' },
         { icon: GraduationCap, label: 'Lớp', value: classes.length, color: 'eco-green' },
         { icon: Users, label: 'Học sinh', value: rows.length, color: 'eco-orange' },
@@ -182,12 +225,14 @@ export function BulkImportDialog({ isOpen, onClose, onImport }) {
   const [isImporting, setIsImporting] = useState(false);
   const [importResult, setImportResult] = useState(null);
   const [importError, setImportError] = useState('');
+  const [selectedFile, setSelectedFile] = useState(null);
   const fileInputRef = useRef(null);
 
   const reset = () => {
     setStep(0);
     setParsedRows([]);
     setFileName('');
+    setSelectedFile(null);
     setIsImporting(false);
     setImportResult(null);
     setImportError('');
@@ -202,26 +247,48 @@ export function BulkImportDialog({ isOpen, onClose, onImport }) {
     if (!file) return;
     setImportError('');
 
-    const allowed = ['.csv', '.txt'];
+    const allowed = ['.csv', '.txt', '.xlsx', '.xls'];
     const ext = '.' + file.name.split('.').pop().toLowerCase();
     if (!allowed.includes(ext)) {
-      setImportError('Chỉ hỗ trợ file CSV hoặc TXT');
+      setImportError('Chỉ hỗ trợ file Excel (.xlsx, .xls) hoặc CSV/TXT');
       return;
     }
 
     setFileName(file.name);
+    setSelectedFile(file);
+    
     const reader = new FileReader();
     reader.onload = (e) => {
-      const text = e.target?.result;
-      const rows = parseCSV(text);
-      if (rows.length === 0) {
-        setImportError('Không tìm thấy dữ liệu hợp lệ trong file. Hãy kiểm tra lại định dạng.');
-        return;
+      const data = e.target?.result;
+      let rows = [];
+      try {
+        if (ext === '.csv' || ext === '.txt') {
+          // If the data is read as ArrayBuffer (for unified excel/csv reading below), we decode to string first.
+          // In JS, readAsText is simpler for CSV, but readAsArrayBuffer is best for Excel.
+          // We will use readAsArrayBuffer for both and let SheetJS handle them or decode CSV to string ourselves.
+          const text = new TextDecoder("utf-8").decode(data);
+          rows = parseCSV(text);
+        } else {
+          // Read Excel file
+          const wb = read(data, { type: 'array' });
+          const firstSheetName = wb.SheetNames[0];
+          const ws = wb.Sheets[firstSheetName];
+          const jsonRows = utils.sheet_to_json(ws, { defval: "" }); // Convert sheet to JSON array
+          rows = parseExcelData(jsonRows);
+        }
+        
+        if (rows.length === 0) {
+          setImportError('Không tìm thấy dữ liệu hợp lệ trong file. Hãy kiểm tra lại định dạng.');
+          return;
+        }
+        setParsedRows(rows);
+        setStep(1);
+      } catch (err) {
+        setImportError('Đã xảy ra lỗi khi đọc file. Vui lòng kiểm tra lại định dạng file.');
+        console.error("File parse error:", err);
       }
-      setParsedRows(rows);
-      setStep(1);
     };
-    reader.readAsText(file, 'UTF-8');
+    reader.readAsArrayBuffer(file);
   }, []);
 
   const handleFileChange = (e) => processFile(e.target.files?.[0]);
@@ -235,7 +302,7 @@ export function BulkImportDialog({ isOpen, onClose, onImport }) {
   const handleImport = async () => {
     setIsImporting(true);
     try {
-      const result = await onImport(parsedRows);
+      const result = await onImport(selectedFile, parsedRows);
       setImportResult(result);
       setStep(2);
     } catch (err) {
@@ -255,7 +322,7 @@ export function BulkImportDialog({ isOpen, onClose, onImport }) {
             </div>
             <div>
               <p className="text-base font-bold">Import hàng loạt</p>
-              <p className="text-xs text-muted-foreground font-normal">Tạo niên khóa · khối · lớp · học sinh · phụ huynh từ 1 file</p>
+              <p className="text-xs text-muted-foreground font-normal">Tạo khối · lớp · học sinh · phụ huynh từ 1 file</p>
             </div>
           </DialogTitle>
         </DialogHeader>
@@ -282,7 +349,7 @@ export function BulkImportDialog({ isOpen, onClose, onImport }) {
               <input
                 ref={fileInputRef}
                 type="file"
-                accept=".csv,.txt"
+                accept=".csv,.txt,.xlsx,.xls"
                 className="hidden"
                 onChange={handleFileChange}
               />
@@ -292,7 +359,7 @@ export function BulkImportDialog({ isOpen, onClose, onImport }) {
               <p className="text-sm font-semibold mb-0.5">
                 {isDragging ? 'Thả file vào đây' : 'Kéo & thả file hoặc click để chọn'}
               </p>
-              <p className="text-xs text-muted-foreground">Hỗ trợ: CSV, TXT</p>
+              <p className="text-xs text-muted-foreground">Hỗ trợ: Excel (.xlsx), CSV, TXT</p>
             </div>
 
             {importError && (
@@ -306,22 +373,22 @@ export function BulkImportDialog({ isOpen, onClose, onImport }) {
             <div className="p-3 rounded-xl bg-muted/30 border border-border space-y-1.5">
               <p className="text-xs font-semibold flex items-center gap-1.5">
                 <FileSpreadsheet className="w-4 h-4 text-eco-blue" />
-                Định dạng file CSV
+                Định dạng file Excel / CSV
               </p>
               <div className="overflow-x-auto">
                 <code className="text-xs text-muted-foreground whitespace-pre block leading-relaxed">
-{`niên khóa,khối,lớp,tên học sinh,ngày sinh,giới tính,tên phụ huynh,sdt phụ huynh,email phụ huynh,địa chỉ
-2025-2026,6,6A,Nguyễn Văn An,2013-03-15,Nam,Nguyễn Văn Hùng,0901234567,hung@gmail.com,Hà Nội`}
+{`Student Full Name,Class Name,Grade Level,Date of Birth,Gender,Address,Parent Full Name,Parent Phone Number,Parent Email
+Nguyễn Hoàng Nhật Ân,A1,1,2014-08-10,Male,8 Dương Văn Cam,Nguyễn Văn Quốc,0905324995,nguyenhoangnhatan31@gmail.com`}
                 </code>
               </div>
               <Button
                 variant="outline"
                 size="sm"
                 className="mt-2 border-eco-blue/30 hover:bg-eco-blue/10 text-eco-blue"
-                onClick={(e) => { e.stopPropagation(); downloadSampleCSV(); }}
+                onClick={(e) => { e.stopPropagation(); downloadSampleXLSX(); }}
               >
                 <Download className="w-3.5 h-3.5 mr-1.5" />
-                Tải file mẫu
+                Tải file Excel mẫu
               </Button>
             </div>
 
@@ -359,7 +426,6 @@ export function BulkImportDialog({ isOpen, onClose, onImport }) {
                   <TableHeader>
                     <TableRow className="bg-muted/50 hover:bg-muted/50">
                       <TableHead className="text-xs w-8">#</TableHead>
-                      <TableHead className="text-xs">Niên khóa</TableHead>
                       <TableHead className="text-xs">Lớp</TableHead>
                       <TableHead className="text-xs">Học sinh</TableHead>
                       <TableHead className="text-xs">Phụ huynh</TableHead>
@@ -370,11 +436,6 @@ export function BulkImportDialog({ isOpen, onClose, onImport }) {
                     {parsedRows.slice(0, 50).map((row, i) => (
                       <TableRow key={i} className="text-xs hover:bg-muted/20">
                         <TableCell className="text-muted-foreground">{i + 1}</TableCell>
-                        <TableCell>
-                          <Badge variant="outline" className="text-xs border-eco-blue/30 text-eco-blue">
-                            {row.academic_year || '—'}
-                          </Badge>
-                        </TableCell>
                         <TableCell>
                           <span className="font-medium">
                             Khối {row.grade} — {row.class_name}
@@ -428,7 +489,6 @@ export function BulkImportDialog({ isOpen, onClose, onImport }) {
 
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
               {[
-                { label: 'Niên khóa', value: importResult.createdYears.length, icon: Calendar, color: 'eco-blue' },
                 { label: 'Lớp mới', value: importResult.createdClasses.length, icon: GraduationCap, color: 'eco-green' },
                 { label: 'Học sinh', value: importResult.createdStudents, icon: Users, color: 'eco-leaf' },
                 { label: 'Phụ huynh', value: importResult.createdStudents, icon: Users, color: 'eco-orange' },

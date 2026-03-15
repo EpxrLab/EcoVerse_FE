@@ -3,13 +3,6 @@ import { Button } from "@/shared/components/ui/button";
 import { Card, CardContent } from "@/shared/components/ui/card";
 import { Input } from "@/shared/components/ui/input";
 import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-} from "@/shared/components/ui/dialog";
-import {
   Table,
   TableBody,
   TableCell,
@@ -25,7 +18,6 @@ import {
   DropdownMenuTrigger,
 } from "@/shared/components/ui/dropdown-menu";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/shared/components/ui/tabs";
-import { Progress } from "@/shared/components/ui/progress";
 import { 
   ArrowLeft,
   Upload, 
@@ -34,26 +26,22 @@ import {
   Target,
   Trophy,
   GraduationCap,
-  FileSpreadsheet,
   Search,
   MoreVertical,
   Pencil,
   Trash2,
   Coins,
   Flame,
-  Recycle,
   Phone,
   Mail,
   User,
   Lock,
   Eye,
   EyeOff,
-  SendHorizonal,
-  CheckCircle2,
-  Loader2,
+  Ban,
+  CheckCircle,
 } from "lucide-react";
 import { cn } from "@/shared/lib/utils";
-import { toast } from "sonner";
 import { StudentFormDialog } from "./StudentFormDialog";
 import { EmailPreviewDialog } from "./EmailPreviewDialog";
 
@@ -79,6 +67,7 @@ export function StudentListView({
   onAddStudent,
   onUpdateStudent,
   onDeleteStudent,
+  onToggleStudentStatus,
   onImportStudents,
 }) {
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
@@ -95,8 +84,6 @@ export function StudentListView({
 
   // Email sending state
   const [emailPreviewData, setEmailPreviewData] = useState(null); // { parent, student }
-  const [isSendingAll, setIsSendingAll] = useState(false);
-  const [sentEmails, setSentEmails] = useState(new Set());
 
   const filteredStudents = students.filter(s => 
     s.student_name.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -140,23 +127,6 @@ export function StudentListView({
 
   const openEmailPreview = (parent, student) => {
     setEmailPreviewData({ parent, student });
-  };
-
-  const handleSendAllEmails = async () => {
-    const withEmail = parentsData.filter(p => p.email);
-    if (withEmail.length === 0) {
-      toast.error('Không có phụ huynh nào có email để gửi');
-      return;
-    }
-    setIsSendingAll(true);
-    const newSent = new Set(sentEmails);
-    for (const parent of withEmail) {
-      await new Promise(r => setTimeout(r, 400));
-      newSent.add(parent.id);
-      setSentEmails(new Set(newSent));
-    }
-    setIsSendingAll(false);
-    toast.success(`Đã gửi email đến ${withEmail.length} phụ huynh`);
   };
 
   const handleAddStudent = async () => {
@@ -265,19 +235,7 @@ export function StudentListView({
             </div>
           </CardContent>
         </Card>
-        <Card className="border-2 border-eco-leaf/20 hover:border-eco-leaf/40 transition-all hover:shadow-lg hover:-translate-y-0.5">
-          <CardContent className="p-4">
-            <div className="flex items-center gap-3">
-              <div className="w-11 h-11 rounded-xl bg-eco-leaf/10 flex items-center justify-center">
-                <GraduationCap className="w-5 h-5 text-eco-leaf" />
-              </div>
-              <div>
-                <p className="text-2xl font-bold">{selectedClass.total_items || 0}</p>
-                <p className="text-xs text-muted-foreground">Rác phân loại</p>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
+
         <Card className="border-2 border-eco-orange/20 hover:border-eco-orange/40 transition-all hover:shadow-lg hover:-translate-y-0.5">
           <CardContent className="p-4">
             <div className="flex items-center gap-3">
@@ -350,20 +308,6 @@ export function StudentListView({
                 Phụ huynh ({parentsData.length})
               </TabsTrigger>
             </TabsList>
-            {activeTab === 'parents' && parentsData.length > 0 && (
-              <Button
-                size="sm"
-                className="bg-eco-blue hover:bg-eco-blue/90 shadow-md"
-                onClick={handleSendAllEmails}
-                disabled={isSendingAll}
-              >
-                {isSendingAll ? (
-                  <><Loader2 className="w-3.5 h-3.5 mr-1.5 animate-spin" /> Đang gửi...</>
-                ) : (
-                  <><SendHorizonal className="w-3.5 h-3.5 mr-1.5" /> Gửi tất cả ({parentsData.filter(p => p.email).length})</>
-                )}
-              </Button>
-            )}
           </div>
 
           <TabsContent value="students">
@@ -391,12 +335,7 @@ export function StudentListView({
                         </div>
                       </TableHead>
                       <TableHead className="text-center">Giới tính</TableHead>
-                      <TableHead className="text-center">
-                        <div className="flex items-center justify-center gap-1">
-                          <Recycle className="w-4 h-4" />
-                          Rác
-                        </div>
-                      </TableHead>
+
                       <TableHead className="text-center">
                         <div className="flex items-center justify-center gap-1">
                           <Target className="w-4 h-4" />
@@ -415,7 +354,7 @@ export function StudentListView({
                           Streak
                         </div>
                       </TableHead>
-                      <TableHead className="text-center">Level</TableHead>
+
                       <TableHead className="text-center">Trạng thái</TableHead>
                       <TableHead className="w-12"></TableHead>
                     </TableRow>
@@ -483,9 +422,7 @@ export function StudentListView({
                             {student.gender === 'male' ? 'Nam' : student.gender === 'female' ? 'Nữ' : 'Khác'}
                           </Badge>
                         </TableCell>
-                        <TableCell className="text-center">
-                          <span className="font-semibold text-eco-leaf">{student.items_sorted}</span>
-                        </TableCell>
+
                         <TableCell className="text-center">
                           <div className="flex items-center justify-center gap-2">
                             <div className="w-16 h-2 bg-muted rounded-full overflow-hidden">
@@ -519,11 +456,7 @@ export function StudentListView({
                             <span className="font-semibold">{student.streak}</span>
                           </div>
                         </TableCell>
-                        <TableCell className="text-center">
-                          <Badge className="bg-eco-blue/10 text-eco-blue border-eco-blue/30 hover:bg-eco-blue/20">
-                            Lv.{student.level}
-                          </Badge>
-                        </TableCell>
+
                         <TableCell className="text-center">
                           <Badge 
                             variant={student.status === 'active' ? 'default' : 'secondary'}
@@ -552,6 +485,28 @@ export function StudentListView({
                                 <Pencil className="w-4 h-4 mr-2" />
                                 Chỉnh sửa
                               </DropdownMenuItem>
+                              {onToggleStudentStatus && (
+                                <DropdownMenuItem 
+                                  onClick={() => onToggleStudentStatus(student.id, student.status)}
+                                  className={cn(
+                                    student.status === 'active' 
+                                      ? "text-orange-600 focus:text-orange-600" 
+                                      : "text-eco-green focus:text-eco-green"
+                                  )}
+                                >
+                                  {student.status === 'active' ? (
+                                    <>
+                                      <Ban className="w-4 h-4 mr-2" />
+                                      Vô hiệu hóa
+                                    </>
+                                  ) : (
+                                    <>
+                                      <CheckCircle className="w-4 h-4 mr-2" />
+                                      Kích hoạt
+                                    </>
+                                  )}
+                                </DropdownMenuItem>
+                              )}
                               <DropdownMenuItem 
                                 onClick={() => onDeleteStudent(student.id)}
                                 className="text-destructive focus:text-destructive"
@@ -607,7 +562,6 @@ export function StudentListView({
                           Mật khẩu
                         </div>
                       </TableHead>
-                      <TableHead className="w-28 text-center">Email TK</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
@@ -679,30 +633,6 @@ export function StudentListView({
                             )}
                           </div>
                         </TableCell>
-                        <TableCell className="text-center">
-                          {sentEmails.has(parent.id) ? (
-                            <div className="flex items-center justify-center gap-1 text-eco-green text-xs">
-                              <CheckCircle2 className="w-3.5 h-3.5" />
-                              Đã gửi
-                            </div>
-                          ) : (
-                            <Button
-                              size="sm"
-                              variant="ghost"
-                              className={cn(
-                                "h-7 px-2 text-xs gap-1",
-                                parent.email
-                                  ? "text-eco-blue hover:bg-eco-blue/10"
-                                  : "text-muted-foreground cursor-not-allowed opacity-50"
-                              )}
-                              onClick={() => parent.email && openEmailPreview(parent, parent.student)}
-                              disabled={!parent.email}
-                            >
-                              <Mail className="w-3.5 h-3.5" />
-                              Gửi
-                            </Button>
-                          )}
-                        </TableCell>
                       </TableRow>
                     ))}
                   </TableBody>
@@ -741,9 +671,6 @@ export function StudentListView({
           isOpen={!!emailPreviewData}
           onClose={() => {
             setEmailPreviewData(null);
-            if (emailPreviewData?.parent) {
-              setSentEmails(prev => new Set([...prev, emailPreviewData.parent.id]));
-            }
           }}
           parent={emailPreviewData.parent}
           student={emailPreviewData.student}

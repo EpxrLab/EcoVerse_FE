@@ -37,10 +37,11 @@ import {
 import { cn } from '@/shared/lib/utils';
 import { toast } from 'sonner';
 import { EmailPreviewDialog } from './EmailPreviewDialog';
+import { classesService } from '@/roles/school/features/classes/services/classes.service';
 
 const PAGE_SIZE = 15;
 
-export function SchoolAccountsView({ allStudents }) {
+export function SchoolAccountsView({ allStudents, onRefresh }) {
   const [searchQuery, setSearchQuery] = useState('');
   const [filterGrade, setFilterGrade] = useState('all');
   const [filterClass, setFilterClass] = useState('all');
@@ -51,7 +52,6 @@ export function SchoolAccountsView({ allStudents }) {
 
   // Email state
   const [emailPreviewData, setEmailPreviewData] = useState(null);
-  const [sentEmails, setSentEmails] = useState(new Set());
   const [isSendingAll, setIsSendingAll] = useState(false);
 
   // Unique classes for filter
@@ -109,6 +109,11 @@ export function SchoolAccountsView({ allStudents }) {
     });
   }, [allStudents]);
 
+  // Count emails sent using credentialEmailSent from API
+  const sentEmailsCount = useMemo(() => {
+    return allStudents.filter(s => s.credentialEmailSent === true).length;
+  }, [allStudents]);
+
   const gradeOptions = [...new Set(allStudents.map(s => s.grade))].sort((a, b) => a - b);
 
   // Toggle password
@@ -119,19 +124,51 @@ export function SchoolAccountsView({ allStudents }) {
 
   // Batch send
   const handleSendAll = async () => {
-    if (parentsWithEmail.length === 0) {
-      toast.error('Không có phụ huynh nào có email');
+    // Filter only parents that haven't been sent yet
+    const parentsToSend = parentsWithEmail.filter(s => !s.credentialEmailSent);
+    
+    if (parentsToSend.length === 0) {
+      toast.info('Tất cả phụ huynh đã được gửi email');
       return;
     }
+    
     setIsSendingAll(true);
-    const newSent = new Set(sentEmails);
-    for (const s of parentsWithEmail) {
+    let successCount = 0;
+    let failCount = 0;
+
+    for (const s of parentsToSend) {
+      try {
+        await classesService.sendCredentials({
+          student_id: s.id,
+          parent_email: s.parent_email,
+          student_name: s.student_name,
+          student_username: s.student_username || s.student_code,
+          student_password: s.student_password,
+          parent_name: s.parent_name,
+          parent_username: s.parent_username,
+          parent_password: s.parent_password,
+        });
+        successCount++;
+      } catch (error) {
+        console.error(`Error sending email to ${s.parent_email}:`, error);
+        failCount++;
+      }
+      // Small delay to avoid overwhelming the server
       await new Promise(r => setTimeout(r, 250));
-      newSent.add(s.id);
-      setSentEmails(new Set(newSent));
     }
+    
     setIsSendingAll(false);
-    toast.success(`Đã gửi email đến ${parentsWithEmail.length} phụ huynh`);
+    
+    // Refresh data to get updated credentialEmailSent status
+    if (onRefresh && successCount > 0) {
+      await onRefresh();
+    }
+    
+    if (failCount === 0) {
+      toast.success(`Đã gửi email đến ${successCount} phụ huynh`);
+    } else {
+      toast.warning(`Đã gửi ${successCount} email thành công, ${failCount} email thất bại`);
+    }
   };
 
   if (allStudents.length === 0) {
@@ -191,7 +228,7 @@ export function SchoolAccountsView({ allStudents }) {
               <MailCheck className="w-4 h-4 text-eco-orange" />
             </div>
             <div>
-              <p className="text-lg font-bold leading-none">{sentEmails.size}</p>
+              <p className="text-lg font-bold leading-none">{sentEmailsCount}</p>
               <p className="text-[11px] text-muted-foreground">Đã gửi email</p>
             </div>
           </CardContent>
@@ -237,12 +274,12 @@ export function SchoolAccountsView({ allStudents }) {
           size="sm"
           className="h-9 ml-auto bg-gradient-to-r from-eco-blue to-eco-green hover:opacity-90 shadow-sm font-medium text-sm gap-1.5"
           onClick={handleSendAll}
-          disabled={isSendingAll || parentsWithEmail.length === 0}
+          disabled={isSendingAll || parentsWithEmail.filter(s => !s.credentialEmailSent).length === 0}
         >
           {isSendingAll ? (
-            <><Loader2 className="w-3.5 h-3.5 animate-spin" /> Đang gửi ({sentEmails.size}/{parentsWithEmail.length})</>
+            <><Loader2 className="w-3.5 h-3.5 animate-spin" /> Đang gửi...</>
           ) : (
-            <><SendHorizonal className="w-3.5 h-3.5" /> Gửi tất cả ({parentsWithEmail.length})</>
+            <><SendHorizonal className="w-3.5 h-3.5" /> Gửi tất cả ({parentsWithEmail.filter(s => !s.credentialEmailSent).length})</>
           )}
         </Button>
       </div>
@@ -378,7 +415,7 @@ export function SchoolAccountsView({ allStudents }) {
 
                     {/* Send button */}
                     <TableCell className="text-center">
-                      {sentEmails.has(s.id) ? (
+                      {s.credentialEmailSent ? (
                         <span className="inline-flex items-center gap-0.5 text-eco-green text-[11px] font-medium">
                           <CheckCircle2 className="w-3 h-3" /> Đã gửi
                         </span>
@@ -473,10 +510,13 @@ export function SchoolAccountsView({ allStudents }) {
         <EmailPreviewDialog
           isOpen={!!emailPreviewData}
           onClose={() => {
-            if (emailPreviewData?.parent) {
-              setSentEmails(prev => new Set([...prev, emailPreviewData.parent.id]));
-            }
             setEmailPreviewData(null);
+          }}
+          onSent={() => {
+            // Refresh data after sending to get updated credentialEmailSent status
+            if (onRefresh) {
+              onRefresh();
+            }
           }}
           parent={emailPreviewData.parent}
           student={emailPreviewData.student}
