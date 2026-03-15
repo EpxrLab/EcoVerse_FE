@@ -18,6 +18,8 @@ import {
   ControlOutlined,
 } from "@ant-design/icons";
 import { Outlet, useNavigate } from "react-router-dom";
+import { logoutFunction } from "../../features/auth/services";
+import toast from "react-hot-toast";
 
 const { Sider, Header, Content } = Layout;
 
@@ -77,8 +79,19 @@ const AdminLayout = ({ children }) => {
     setSelectedKey(currentPath);
   }, []);
 
-  const handleLogout = () => {
-    console.log("Logging out...");
+  const handleLogout = async () => {
+    try {
+      const res = await logoutFunction();
+
+      if (res) {
+        toast.success("Đăng xuất thành công!");
+        navigate("/auth");
+      } else {
+        toast.error("Đăng xuất thất bại!");
+      }
+    } catch (error) {
+      console.log(error);
+    }
   };
 
   const handleMenuClick = (item) => {
