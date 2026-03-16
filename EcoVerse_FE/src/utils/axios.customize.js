@@ -26,13 +26,45 @@ instance.interceptors.request.use(
 // Add a response interceptor
 instance.interceptors.response.use(
   function (response) {
-    // Any status code that lie within the range of 2xx cause this function to trigger
-    // Do something with response data
     return response;
   },
-  function (error) {
-    // Any status codes that falls outside the range of 2xx cause this function to trigger
-    // Do something with response error
+  async function (error) {
+    const originalRequest = error.config;
+
+    // Check if error is 401 and not already retried
+    if (error.response && error.response.status === 401 && !originalRequest._retry) {
+      originalRequest._retry = true;
+
+      try {
+        // Call refresh token API
+        // We use the base axios here to avoid interceptor recursion
+        const res = await axios.post(`${baseUrl}/auth/refresh`, {}, {
+          withCredentials: true // Important if using cookies for refresh token
+        });
+
+        if (res.data && res.data.data && res.data.data.accessToken) {
+          const newToken = res.data.data.accessToken;
+          
+          // Update sessionStorage
+          sessionStorage.setItem("accessToken", newToken);
+          
+          // Update default header for future requests
+          instance.defaults.headers.common["Authorization"] = `Bearer ${newToken}`;
+          
+          // Update current request header and retry
+          originalRequest.headers["Authorization"] = `Bearer ${newToken}`;
+          return instance(originalRequest);
+        }
+      } catch (refreshError) {
+        // If refresh fails, clear session and redirect (optional)
+        console.error("Refresh token failed:", refreshError);
+        sessionStorage.clear();
+        // You might want to trigger a logout or redirect to login here
+        // window.location.href = "/login";
+        return Promise.reject(refreshError);
+      }
+    }
+
     return Promise.reject(error);
   },
 );

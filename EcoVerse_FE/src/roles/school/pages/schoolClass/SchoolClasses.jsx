@@ -20,7 +20,6 @@ import {
   Edit,
   Loader2,
   Layers,
-  Sparkles,
   Mail,
 } from "lucide-react";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/shared/components/ui/tabs";
@@ -164,7 +163,6 @@ export default function SchoolClasses() {
             className="h-9 bg-gradient-to-r from-eco-blue to-eco-green hover:opacity-90 shadow-md shadow-eco-blue/15 text-white font-semibold gap-1.5"
             onClick={() => setIsBulkImportOpen(true)}
           >
-            <Sparkles className="w-4 h-4" />
             Import 
           </Button>
         </div>
@@ -225,8 +223,7 @@ export default function SchoolClasses() {
                       className="bg-gradient-to-r from-eco-blue to-eco-green hover:opacity-90 shadow-md"
                       onClick={() => setIsBulkImportOpen(true)}
                     >
-                      <Sparkles className="w-4 h-4 mr-1.5" />
-                      Import hàng loạt
+                      Import File
                     </Button>
                     <Button variant="outline" onClick={() => setIsAddDialogOpen(true)}>
                       <Plus className="w-4 h-4 mr-1.5" />

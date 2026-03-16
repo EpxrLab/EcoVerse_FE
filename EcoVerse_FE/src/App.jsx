@@ -58,6 +58,7 @@ import {
   SchoolCampaigns,
   SchoolSubscription,
   SchoolLeaderboardPage,
+  SchoolProfile,
 } from "@/roles/school";
 
 //========================Partnership Routes==============================
@@ -195,6 +196,14 @@ const App = () => (
                 <Route path="subscription" element={<SchoolSubscription />} />
                 <Route path="leaderboard" element={<SchoolLeaderboardPage />} />
               </Route>
+              <Route
+                path="/school/profile"
+                element={
+                  <ProtectedRoute role="PARTNERSHIP_SCHOOL">
+                    <SchoolProfile />
+                  </ProtectedRoute>
+                }
+              />
 
               {/* Partnership Routes (Protected) */}
               <Route

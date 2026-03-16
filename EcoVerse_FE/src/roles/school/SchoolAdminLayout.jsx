@@ -1,4 +1,3 @@
-import { useState } from "react";
 import { Outlet, NavLink, useLocation, useNavigate } from "react-router-dom";
 import {
   Sidebar,
@@ -15,7 +14,6 @@ import {
 } from "@/shared/components/ui/sidebar";
 import {
   LayoutDashboard,
-  Users,
   GraduationCap,
   FileQuestion,
   Gift,
@@ -23,7 +21,6 @@ import {
   Settings,
   LogOut,
   School,
-  Loader2,
   Leaf,
   TreePine,
   Sparkles,
@@ -44,6 +41,7 @@ import {
 } from "@/shared/components/ui/tooltip";
 import { logoutFunction } from "../../features/auth/services";
 import toast from "react-hot-toast";
+import { useProfile } from "./hooks";
 
 const menuItems = [
   { title: "Tổng quan", url: "/school", icon: LayoutDashboard },
@@ -55,7 +53,7 @@ const menuItems = [
   { title: "Gói đăng ký", url: "/school/subscription", icon: CreditCard },
 ];
 
-function SchoolAdminSidebar({ schoolInfo }) {
+function SchoolAdminSidebar({ schoolInfo, isProfileLoading }) {
   const navigate = useNavigate();
   const location = useLocation();
   const { state } = useSidebar();
@@ -95,9 +93,9 @@ function SchoolAdminSidebar({ schoolInfo }) {
             )}
           >
             <div className="relative">
-              {schoolInfo?.logo_url ? (
+              {schoolInfo?.logoUrl ? (
                 <img
-                  src={schoolInfo.logo_url}
+                  src={schoolInfo.logoUrl}
                   alt="School logo"
                   className={cn(
                     "rounded-2xl object-cover border-2 border-eco-green/20",
@@ -128,7 +126,7 @@ function SchoolAdminSidebar({ schoolInfo }) {
             {!isCollapsed && (
               <div className="overflow-hidden flex-1">
                 <h2 className="font-bold text-sidebar-foreground text-sm truncate">
-                  {schoolInfo?.school_name || "School Admin"}
+                  {schoolInfo?.schoolName || (isProfileLoading ? "Loading..." : "School Admin")}
                 </h2>
                 <p className="text-xs text-muted-foreground flex items-center gap-1">
                   <TreePine className="w-3 h-3" />
@@ -307,16 +305,13 @@ function SchoolAdminSidebar({ schoolInfo }) {
 }
 
 export default function SchoolAdminLayout() {
-  const [schoolInfo, setSchoolInfo] = useState({
-    school_name: "EcoVerse School",
-    logo_url: null,
-    representative_name: "Admin",
-  });
+  const navigate = useNavigate();
+  const { profile: schoolInfo, isLoading: isProfileLoading } = useProfile();
 
   return (
     <SidebarProvider>
       <div className="min-h-screen flex w-full bg-background">
-        <SchoolAdminSidebar schoolInfo={schoolInfo} />
+        <SchoolAdminSidebar schoolInfo={schoolInfo} isProfileLoading={isProfileLoading} />
         <main className="flex-1 flex flex-col">
           <header className="h-16 border-b-2 border-border bg-card flex items-center justify-between px-6 sticky top-0 z-10">
             <div className="flex items-center gap-4">
@@ -337,21 +332,27 @@ export default function SchoolAdminLayout() {
             </div>
             <div className="flex items-center gap-3">
               <SchoolNotificationDropdown />
-              <div className="flex items-center gap-3 pl-3 border-l-2 border-border">
+              <div 
+                className="flex items-center gap-3 pl-3 border-l-2 border-border cursor-pointer hover:opacity-80 transition-opacity"
+                onClick={() => {
+                  console.log("AVATAR CLICKED: Navigating to /school/profile");
+                  navigate("/school/profile");
+                }}
+              >
                 <div className="text-right hidden sm:block">
                   <p className="text-sm font-semibold text-foreground">
-                    {schoolInfo?.representative_name || "Admin"}
+                    {schoolInfo?.principalName || (isProfileLoading ? "Loading..." : "Admin")}
                   </p>
                   <p className="text-[10px] text-muted-foreground font-medium">
-                    Quản trị viên
+                    {schoolInfo?.position || "Quản trị viên"}
                   </p>
                 </div>
-                <Avatar className="w-9 h-9 border-2 border-primary/20">
-                  {schoolInfo?.logo_url ? (
-                    <AvatarImage src={schoolInfo.logo_url} />
+                <Avatar className="w-9 h-9 border-2 border-primary/20 transition-transform hover:scale-105">
+                  {schoolInfo?.logoUrl ? (
+                    <AvatarImage src={schoolInfo.logoUrl} />
                   ) : null}
                   <AvatarFallback className="bg-primary text-primary-foreground font-bold text-sm">
-                    {schoolInfo?.representative_name?.charAt(0) || "A"}
+                    {schoolInfo?.principalName?.charAt(0) || "A"}
                   </AvatarFallback>
                 </Avatar>
               </div>
