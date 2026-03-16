@@ -16,7 +16,7 @@ import {
   DollarOutlined,
 } from "@ant-design/icons";
 import { motion } from "framer-motion";
-import { useNavigate } from "react-router-dom";
+import { useNavigate } from "react-router";
 
 // ─── Demo Data ────────────────────────────────────────────────────────────────
 

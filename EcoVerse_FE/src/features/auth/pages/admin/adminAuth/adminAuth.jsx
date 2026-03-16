@@ -9,7 +9,7 @@ import {
   ArrowLeftOutlined,
   CrownOutlined,
 } from "@ant-design/icons";
-import { useNavigate } from "react-router-dom";
+import { useNavigate } from "react-router";
 import { loginFunction } from "../../../services";
 import { pass } from "three/src/nodes/TSL.js";
 

@@ -12,7 +12,7 @@ import {
   LoadingOutlined,
 } from "@ant-design/icons";
 import { z } from "zod";
-import { useNavigate } from "react-router-dom";
+import { useNavigate } from "react-router";
 import toast from "react-hot-toast";
 import {
   loginFunction,

@@ -17,7 +17,7 @@ import {
   GlobalOutlined,
   ControlOutlined,
 } from "@ant-design/icons";
-import { Outlet, useNavigate } from "react-router-dom";
+import { Outlet, useNavigate } from "react-router";
 import { logoutFunction } from "../../features/auth/services";
 import toast from "react-hot-toast";
 

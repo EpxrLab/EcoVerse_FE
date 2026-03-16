@@ -1,5 +1,5 @@
 import { lazy, Suspense } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate } from "react-router";
 import { motion } from "framer-motion";
 import { Card, Spin } from "antd";
 import { Clock, Handshake, Mail, LogOut } from "lucide-react";

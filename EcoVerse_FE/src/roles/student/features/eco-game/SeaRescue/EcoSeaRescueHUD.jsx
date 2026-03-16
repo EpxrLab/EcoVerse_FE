@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useParams } from "react-router";
 import * as THREE from "three";
 import {
   PLAYER_CAPACITY,

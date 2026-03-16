@@ -8,7 +8,7 @@
  * Route: /student/campaign/:campaignId/game/play?levelId=xxx
  */
 import { useRef, useEffect, useState, useCallback } from 'react';
-import { useNavigate, useParams, useSearchParams } from 'react-router-dom';
+import { useNavigate, useParams, useSearchParams } from "react-router";
 import { Spin } from 'antd';
 import { LoadingOutlined } from '@ant-design/icons';
 import EcoGame from '../../features/eco-game/EcoGame';
