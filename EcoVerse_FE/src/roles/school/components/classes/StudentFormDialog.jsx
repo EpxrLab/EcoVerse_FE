@@ -1,3 +1,4 @@
+import { useState, useEffect } from "react";
 import { Button } from "@/shared/components/ui/button";
 import { Input } from "@/shared/components/ui/input";
 import { Label } from "@/shared/components/ui/label";
@@ -25,6 +26,7 @@ import {
   MapPin,
   Calendar,
   FileText,
+  AlertCircle,
 } from "lucide-react";
 
 export function StudentFormDialog({ 
@@ -35,6 +37,57 @@ export function StudentFormDialog({
   onFormChange, 
   onSubmit 
 }) {
+  const [errors, setErrors] = useState({});
+
+  // Reset errors when dialog opens/closes
+  useEffect(() => {
+    if (!isOpen) {
+      setErrors({});
+    }
+  }, [isOpen]);
+
+  const validate = () => {
+    const newErrors = {};
+    
+    // Required fields
+    if (!form.student_name?.trim()) newErrors.student_name = "Họ tên không được để trống";
+    if (!form.gradeLevel) newErrors.gradeLevel = "Vui lòng chọn khối";
+    if (!form.className?.trim()) newErrors.className = "Vui lòng nhập tên lớp";
+    if (!form.date_of_birth) newErrors.date_of_birth = "Vui lòng chọn ngày sinh";
+    if (!form.gender) newErrors.gender = "Vui lòng chọn giới tính";
+    if (!form.parent_name?.trim()) newErrors.parent_name = "Vui lòng nhập tên phụ huynh";
+    if (!form.parent_phone?.trim()) {
+      newErrors.parent_phone = "Vui lòng nhập số điện thoại";
+    } else {
+      // Phone validation: 10 digits, starts with 03/05/07/08/09
+      const phoneRegex = /^0(3|5|7|8|9)\d{8}$/;
+      if (!phoneRegex.test(form.parent_phone.trim())) {
+        newErrors.parent_phone = "Số điện thoại không hợp lệ (10 số, bắt đầu bằng 03/05/07/08/09)";
+      }
+    }
+
+    if (!form.parent_email?.trim()) {
+      newErrors.parent_email = "Vui lòng nhập email phụ huynh";
+    } else {
+      // Email validation (optional but format check)
+      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+      if (!emailRegex.test(form.parent_email.trim())) {
+        newErrors.parent_email = "Email không đúng định dạng";
+      }
+    }
+
+    if (!form.address?.trim()) newErrors.address = "Vui lòng nhập địa chỉ";
+
+    setErrors(newErrors);
+    return Object.keys(newErrors).length === 0;
+  };
+
+  const handleSubmit = () => {
+    if (validate()) {
+      onSubmit();
+    }
+  };
+
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
       <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
@@ -75,60 +128,103 @@ export function StudentFormDialog({
                   placeholder="Nhập họ và tên học sinh"
                   value={form.student_name}
                   onChange={(e) => onFormChange({ ...form, student_name: e.target.value })}
-                  className="bg-background"
+                  className={errors.student_name ? "border-destructive bg-destructive/5" : "bg-background"}
                 />
+                {errors.student_name && (
+                  <p className="text-[11px] text-destructive flex items-center gap-1 mt-1">
+                    <AlertCircle className="w-3 h-3" />
+                    {errors.student_name}
+                  </p>
+                )}
               </div>
-
 
               <div className="space-y-2">
                 <Label className="flex items-center gap-1.5">
                   <Calendar className="w-3.5 h-3.5 text-muted-foreground" />
-                  Ngày sinh
+                  Khối <span className="text-destructive">*</span>
                 </Label>
-                <Input
-                  type="date"
-                  value={form.date_of_birth}
-                  onChange={(e) => onFormChange({ ...form, date_of_birth: e.target.value })}
-                  className="bg-background"
-                />
+                <Select
+                  value={form.gradeLevel}
+                  onValueChange={(v) => onFormChange({ ...form, gradeLevel: v })}
+                >
+                  <SelectTrigger className={errors.gradeLevel ? "border-destructive bg-destructive/5" : "bg-background"}>
+                    <SelectValue placeholder="Chọn khối" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {[1, 2, 3, 4, 5].map(g => (
+                      <SelectItem key={g} value={String(g)}>Khối {g}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                {errors.gradeLevel && (
+                  <p className="text-[11px] text-destructive flex items-center gap-1 mt-1">
+                    <AlertCircle className="w-3 h-3" />
+                    {errors.gradeLevel}
+                  </p>
+                )}
               </div>
               <div className="space-y-2">
                 <Label className="flex items-center gap-1.5">
                   <User className="w-3.5 h-3.5 text-muted-foreground" />
-                  Giới tính
+                  Lớp <span className="text-destructive">*</span>
+                </Label>
+                <Input
+                  placeholder="VD: A, B..."
+                  value={form.className}
+                  onChange={(e) => onFormChange({ ...form, className: e.target.value })}
+                  className={errors.className ? "border-destructive bg-destructive/5" : "bg-background"}
+                />
+                {errors.className && (
+                  <p className="text-[11px] text-destructive flex items-center gap-1 mt-1">
+                    <AlertCircle className="w-3 h-3" />
+                    {errors.className}
+                  </p>
+                )}
+              </div>
+
+              <div className="space-y-2">
+                <Label className="flex items-center gap-1.5">
+                  <Calendar className="w-3.5 h-3.5 text-muted-foreground" />
+                  Ngày sinh <span className="text-destructive">*</span>
+                </Label>
+                <Input
+                  type="date"
+                  value={form.date_of_birth}
+                  max={new Date().toISOString().split('T')[0]}
+                  onChange={(e) => onFormChange({ ...form, date_of_birth: e.target.value })}
+                  className={errors.date_of_birth ? "border-destructive bg-destructive/5" : "bg-background"}
+                />
+                {errors.date_of_birth && (
+                  <p className="text-[11px] text-destructive flex items-center gap-1 mt-1">
+                    <AlertCircle className="w-3 h-3" />
+                    {errors.date_of_birth}
+                  </p>
+                )}
+              </div>
+              <div className="space-y-2">
+                <Label className="flex items-center gap-1.5">
+                  <User className="w-3.5 h-3.5 text-muted-foreground" />
+                  Giới tính <span className="text-destructive">*</span>
                 </Label>
                 <Select
                   value={form.gender}
                   onValueChange={(v) => onFormChange({ ...form, gender: v })}
                 >
-                  <SelectTrigger className="bg-background">
+                  <SelectTrigger className={errors.gender ? "border-destructive bg-destructive/5" : "bg-background"}>
                     <SelectValue placeholder="Chọn giới tính" />
                   </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="male">Nam</SelectItem>
                     <SelectItem value="female">Nữ</SelectItem>
-                    <SelectItem value="other">Khác</SelectItem>
                   </SelectContent>
                 </Select>
+                {errors.gender && (
+                  <p className="text-[11px] text-destructive flex items-center gap-1 mt-1">
+                    <AlertCircle className="w-3 h-3" />
+                    {errors.gender}
+                  </p>
+                )}
               </div>
-              {isEditing && (
-                <div className="space-y-2 md:col-span-2">
-                  <Label>Trạng thái</Label>
-                  <Select
-                    value={form.status}
-                    onValueChange={(v) => onFormChange({ ...form, status: v })}
-                  >
-                    <SelectTrigger className="bg-background">
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="active">Đang học</SelectItem>
-                      <SelectItem value="inactive">Tạm nghỉ</SelectItem>
-                      <SelectItem value="transferred">Đã chuyển</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-              )}
             </div>
           </div>
 
@@ -142,39 +238,57 @@ export function StudentFormDialog({
               <div className="space-y-2">
                 <Label className="flex items-center gap-1.5">
                   <User className="w-3.5 h-3.5 text-muted-foreground" />
-                  Tên phụ huynh
+                  Tên phụ huynh <span className="text-destructive">*</span>
                 </Label>
                 <Input
                   placeholder="Họ và tên phụ huynh"
                   value={form.parent_name}
                   onChange={(e) => onFormChange({ ...form, parent_name: e.target.value })}
-                  className="bg-background"
+                  className={errors.parent_name ? "border-destructive bg-destructive/5" : "bg-background"}
                 />
+                {errors.parent_name && (
+                  <p className="text-[11px] text-destructive flex items-center gap-1 mt-1">
+                    <AlertCircle className="w-3 h-3" />
+                    {errors.parent_name}
+                  </p>
+                )}
               </div>
               <div className="space-y-2">
                 <Label className="flex items-center gap-1.5">
                   <Phone className="w-3.5 h-3.5 text-muted-foreground" />
-                  Số điện thoại
+                  Số điện thoại <span className="text-destructive">*</span>
                 </Label>
                 <Input
                   placeholder="0912345678"
                   value={form.parent_phone}
                   onChange={(e) => onFormChange({ ...form, parent_phone: e.target.value })}
-                  className="bg-background"
+                  className={errors.parent_phone ? "border-destructive bg-destructive/5" : "bg-background"}
                 />
+                {errors.parent_phone && (
+                  <p className="text-[11px] text-destructive flex items-center gap-1 mt-1">
+                    <AlertCircle className="w-3 h-3" />
+                    {errors.parent_phone}
+                  </p>
+                )}
               </div>
               <div className="space-y-2">
                 <Label className="flex items-center gap-1.5">
                   <Mail className="w-3.5 h-3.5 text-muted-foreground" />
-                  Email phụ huynh
+                  Email phụ huynh <span className="text-destructive">*</span>
                 </Label>
                 <Input
                   type="email"
                   placeholder="email@example.com"
                   value={form.parent_email}
                   onChange={(e) => onFormChange({ ...form, parent_email: e.target.value })}
-                  className="bg-background"
+                  className={errors.parent_email ? "border-destructive bg-destructive/5" : "bg-background"}
                 />
+                {errors.parent_email && (
+                  <p className="text-[11px] text-destructive flex items-center gap-1 mt-1">
+                    <AlertCircle className="w-3 h-3" />
+                    {errors.parent_email}
+                  </p>
+                )}
               </div>
 
             </div>
@@ -190,14 +304,20 @@ export function StudentFormDialog({
               <div className="space-y-2">
                 <Label className="flex items-center gap-1.5">
                   <MapPin className="w-3.5 h-3.5 text-muted-foreground" />
-                  Địa chỉ
+                  Địa chỉ <span className="text-destructive">*</span>
                 </Label>
                 <Input
                   placeholder="Địa chỉ nhà"
                   value={form.address}
                   onChange={(e) => onFormChange({ ...form, address: e.target.value })}
-                  className="bg-background"
+                  className={errors.address ? "border-destructive bg-destructive/5" : "bg-background"}
                 />
+                {errors.address && (
+                  <p className="text-[11px] text-destructive flex items-center gap-1 mt-1">
+                    <AlertCircle className="w-3 h-3" />
+                    {errors.address}
+                  </p>
+                )}
               </div>
               <div className="space-y-2">
                 <Label className="flex items-center gap-1.5">
@@ -222,8 +342,7 @@ export function StudentFormDialog({
           </Button>
           <Button 
             className={isEditing ? "bg-eco-blue hover:bg-eco-blue/90" : "bg-eco-green hover:bg-eco-green/90"}
-            onClick={onSubmit}
-            disabled={!form.student_name.trim()}
+            onClick={handleSubmit}
           >
             {isEditing ? "Lưu thay đổi" : "Thêm học sinh"}
           </Button>

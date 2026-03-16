@@ -31,11 +31,11 @@ export function ClassCard({ classItem, compact = false, onSelect, onEdit, onDele
         onClick={() => onSelect(classItem)}
       >
         <div className="w-10 h-10 shrink-0 rounded-lg bg-gradient-to-br from-eco-blue/20 to-eco-green/20 flex items-center justify-center border border-eco-blue/20">
-          <span className="font-bold text-eco-blue text-sm">{classItem.name}</span>
+          <span className="font-bold text-eco-blue text-sm">{classItem.grade}{classItem.name}</span>
         </div>
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-2">
-            <h3 className="font-semibold text-foreground text-sm truncate">Lớp {classItem.name}</h3>
+            <h3 className="font-semibold text-foreground text-sm truncate">Lớp {classItem.grade}{classItem.name}</h3>
             <Badge variant="secondary" className="text-[10px] px-1.5 py-0 bg-eco-blue/10 text-eco-blue shrink-0">
               {classItem.students_count || 0} HS
             </Badge>
@@ -80,7 +80,7 @@ export function ClassCard({ classItem, compact = false, onSelect, onEdit, onDele
               <AlertDialogHeader>
                 <AlertDialogTitle>Xóa lớp học?</AlertDialogTitle>
                 <AlertDialogDescription>
-                  Tất cả dữ liệu học sinh trong lớp "{classItem.name}" sẽ bị xóa vĩnh viễn.
+                  Tất cả dữ liệu học sinh trong lớp "{classItem.grade}{classItem.name}" sẽ bị xóa vĩnh viễn.
                 </AlertDialogDescription>
               </AlertDialogHeader>
               <AlertDialogFooter>
@@ -114,10 +114,10 @@ export function ClassCard({ classItem, compact = false, onSelect, onEdit, onDele
         <div className="flex items-center justify-between mb-3">
           <div className="flex items-center gap-2.5">
             <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-eco-blue/20 to-eco-green/20 flex items-center justify-center border border-eco-blue/20 group-hover:scale-105 transition-transform">
-              <span className="font-bold text-eco-blue">{classItem.name}</span>
+              <span className="font-bold text-eco-blue">{classItem.grade}{classItem.name}</span>
             </div>
             <div>
-              <h3 className="font-bold text-foreground">Lớp {classItem.name}</h3>
+              <h3 className="font-bold text-foreground">Lớp {classItem.grade}{classItem.name}</h3>
               <p className="text-xs text-muted-foreground">
                 {classItem.teacher_name || 'Chưa phân công'}
               </p>
@@ -176,7 +176,7 @@ export function ClassCard({ classItem, compact = false, onSelect, onEdit, onDele
                 <AlertDialogHeader>
                   <AlertDialogTitle>Xóa lớp học?</AlertDialogTitle>
                   <AlertDialogDescription>
-                    Tất cả dữ liệu học sinh trong lớp "{classItem.name}" sẽ bị xóa vĩnh viễn.
+                    Tất cả dữ liệu học sinh trong lớp "{classItem.grade}{classItem.name}" sẽ bị xóa vĩnh viễn.
                   </AlertDialogDescription>
                 </AlertDialogHeader>
                 <AlertDialogFooter>

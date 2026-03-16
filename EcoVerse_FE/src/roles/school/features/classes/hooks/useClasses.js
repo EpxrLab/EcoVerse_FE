@@ -9,7 +9,6 @@ export function useClasses() {
   const [allStudents, setAllStudents] = useState([]); // All students in the school
   const [selectedClass, setSelectedClass] = useState(null);
   const [selectedGrade, setSelectedGrade] = useState(null);
-  const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
   const [isAddStudentDialogOpen, setIsAddStudentDialogOpen] = useState(false);
   const [isBulkImportOpen, setIsBulkImportOpen] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
@@ -176,12 +175,6 @@ export function useClasses() {
     totalGrades: gradeGroups.length,
   };
 
-  // Create class (local-only for now, no mock students/parents)
-  const createClass = async (formData) => {
-    toast.success('Tạo lớp học thành công');
-    await fetchClasses();
-    setIsAddDialogOpen(false);
-  };
 
   // Update class
   const updateClass = async (classId, formData) => {
@@ -200,16 +193,26 @@ export function useClasses() {
 
   // Student CRUD operations
   const createStudent = async (classId, formData) => {
-    // Find the class info for the payload
-    const classInfo = _classes.find(c => c.id === classId) || { name: 'Unknown', grade: 6 };
+    // If classId is provided, we are adding to a specific class
+    // If not, we use the className and gradeLevel from formData
+    let className = formData.className;
+    let gradeLevel = formData.gradeLevel;
+
+    if (classId) {
+      const classInfo = classes.find(c => c.id === classId);
+      if (classInfo) {
+        className = classInfo.name;
+        gradeLevel = String(classInfo.grade);
+      }
+    }
 
     try {
       const payload = {
         studentFullName: formData.student_name,
-        className: classInfo.name,
-        gradeLevel: String(classInfo.grade),
+        className: className,
+        gradeLevel: String(gradeLevel),
         dateOfBirth: formData.date_of_birth || null,
-        gender: formData.gender === 'male' ? 'MALE' : formData.gender === 'female' ? 'FEMALE' : 'OTHER', // Defaulting other to OTHER if expected, or handling it based on backend enum
+        gender: formData.gender === 'male' ? 'MALE' : formData.gender === 'female' ? 'FEMALE' : 'OTHER',
         address: formData.address || '',
         parentFullName: formData.parent_name || '',
         parentPhone: formData.parent_phone || '',
@@ -219,8 +222,6 @@ export function useClasses() {
       await classesService.addStudent(payload);
       toast.success('Thêm học sinh thành công');
       
-      // We don't have a reliable way to fetch just students for this class from the Accounts API efficiently
-      // without reloading everything, so we reload all data
       await fetchClasses();
       return true;
     } catch (error) {
@@ -236,8 +237,8 @@ export function useClasses() {
     try {
       const payload = {
         studentFullName: formData.student_name,
-        className: selectedClass.name, // Usually doesn't change from this form, but we pass current class
-        gradeLevel: String(selectedClass.grade),
+        className: formData.className,
+        gradeLevel: String(formData.gradeLevel),
         dateOfBirth: formData.date_of_birth || null,
         gender: formData.gender === 'male' ? 'MALE' : formData.gender === 'female' ? 'FEMALE' : 'OTHER', // Defaulting other to OTHER if expected, or handling it based on backend enum
         address: formData.address || '',
@@ -332,8 +333,6 @@ export function useClasses() {
     schoolId,
 
     // Dialog states
-    isAddDialogOpen,
-    setIsAddDialogOpen,
     isAddStudentDialogOpen,
     setIsAddStudentDialogOpen,
     isBulkImportOpen,
@@ -343,8 +342,7 @@ export function useClasses() {
     setSelectedClass,
     setSelectedGrade,
 
-    // Class Actions
-    createClass,
+    // class Actions
     updateClass,
     deleteClass,
     fetchClasses,
