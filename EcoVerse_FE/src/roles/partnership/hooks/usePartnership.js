@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate } from "react-router";
 
 // TODO: Replace with real API calls when backend is ready
 // import api from '@/services/api';

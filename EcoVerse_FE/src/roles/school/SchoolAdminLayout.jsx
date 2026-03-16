@@ -1,4 +1,4 @@
-import { Outlet, NavLink, useLocation, useNavigate } from "react-router-dom";
+import { Outlet, NavLink, useLocation, useNavigate } from "react-router";
 import {
   Sidebar,
   SidebarContent,

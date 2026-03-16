@@ -1,5 +1,5 @@
 import { useState, useEffect, useMemo } from "react";
-import { useNavigate, useParams, useSearchParams } from "react-router-dom";
+import { useNavigate, useParams, useSearchParams } from "react-router";
 import { Spin, Result, Button } from "antd";
 import { LoadingOutlined } from "@ant-design/icons";
 import QuizPlay from "../../features/quizzes/components/QuizPlay";

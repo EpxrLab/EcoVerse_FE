@@ -1,4 +1,4 @@
-import { Outlet } from "react-router-dom";
+import { Outlet } from "react-router";
 import { CampaignProvider } from "./context";
 
 export default function StudentLayout() {

@@ -1,5 +1,5 @@
 import { useState, lazy, Suspense } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate } from "react-router";
 import { Card, Button, Badge, Tabs, Skeleton } from "antd";
 import {
   GiftOutlined,

@@ -18,7 +18,7 @@ import {
   Loader2
 } from "lucide-react";
 import { motion } from "framer-motion";
-import { useNavigate } from "react-router-dom";
+import { useNavigate } from "react-router";
 import { useProfile } from "../../hooks";
 import { cn } from "@/shared/lib/utils";
 import { Skeleton } from "@/shared/components/ui/skeleton";

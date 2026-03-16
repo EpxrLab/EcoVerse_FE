@@ -13,7 +13,7 @@ import {
 import { motion, AnimatePresence } from "framer-motion";
 import { useStudentCampaigns } from "../../hooks/useStudentCampaign";
 import { useCampaignContext } from "../../context";
-import { useNavigate } from "react-router-dom";
+import { useNavigate } from "react-router";
 
 // ─── Status & Type Config ─────────────────────────────────────────────────────
 

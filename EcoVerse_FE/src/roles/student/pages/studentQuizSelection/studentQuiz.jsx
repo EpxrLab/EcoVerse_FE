@@ -1,5 +1,5 @@
 import { useState, lazy, Suspense } from "react";
-import { useNavigate, useParams } from "react-router-dom";
+import { useNavigate, useParams } from "react-router";
 import { motion, AnimatePresence } from "framer-motion";
 import { Card, Badge, Button, Spin, Statistic } from "antd";
 import {
