@@ -8,12 +8,6 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/shared/components/ui/dialog";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from "@/shared/components/ui/dropdown-menu";
 import { 
   Plus, 
   GraduationCap,
@@ -25,7 +19,7 @@ import {
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/shared/components/ui/tabs";
 import { useClasses } from '../../features/classes/hooks/useClasses';
 import { useClassForm } from '../../features/classes/hooks';
-import { StudentListView, GradeGroup, SchoolAccountsView } from '../../components/classes';
+import { StudentListView, GradeGroup, SchoolAccountsView, StudentFormDialog } from '../../components/classes';
 import { ClassStats, ClassForm, BulkImportDialog } from '../../features/classes/components';
 import { cn } from "@/shared/lib/utils";
 
@@ -37,12 +31,9 @@ export default function SchoolClasses() {
     stats,
     selectedClass,
     isLoading,
-    isAddDialogOpen,
-    setIsAddDialogOpen,
     isBulkImportOpen,
     setIsBulkImportOpen,
     setSelectedClass,
-    createClass,
     updateClass,
     deleteClass,
     fetchClasses,
@@ -66,13 +57,24 @@ export default function SchoolClasses() {
   const [editingClass, setEditingClass] = useState(null);
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const [mainTab, setMainTab] = useState('classes');
+  
+  const initialStudentForm = {
+    student_name: '',
+    date_of_birth: '',
+    gender: '',
+    gradeLevel: '1',
+    className: '',
+    parent_name: '',
+    parent_phone: '',
+    parent_email: '',
+    address: '',
+    notes: '',
+    status: 'active',
+  };
+  const [studentForm, setStudentForm] = useState(initialStudentForm);
+  const [isAddStudentDialogOpen, setIsAddStudentDialogOpen] = useState(false);
 
   // Handlers
-  const handleCreateClass = async () => {
-    await createClass(classForm);
-    resetClassForm();
-    setIsAddDialogOpen(false);
-  };
 
   const handleUpdateClass = async () => {
     if (editingClass) {
@@ -84,10 +86,20 @@ export default function SchoolClasses() {
   };
 
   const handleAddStudent = async (data) => {
+    // This is for adding student within a specific class (passed from StudentListView)
     if (selectedClass) {
       return await createStudent(selectedClass.id, data);
     }
-    return false;
+    // This is for global addition (no classId)
+    return await createStudent(null, data);
+  };
+
+  const handleGlobalAddStudent = async () => {
+    const success = await handleAddStudent(studentForm);
+    if (success) {
+      setStudentForm(initialStudentForm);
+      setIsAddStudentDialogOpen(false);
+    }
   };
 
   const handleUpdateStudent = async (id, data) => {
@@ -116,7 +128,6 @@ export default function SchoolClasses() {
         selectedClass={selectedClass}
         students={classStudents}
         onBack={() => setSelectedClass(null)}
-        onAddStudent={handleAddStudent}
         onUpdateStudent={handleUpdateStudent}
         onDeleteStudent={deleteStudent}
         onToggleStudentStatus={toggleStudentStatus}
@@ -142,27 +153,24 @@ export default function SchoolClasses() {
 
         {/* Actions — compact */}
         <div className="flex items-center gap-2.5">
-          {/* More actions dropdown */}
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button variant="outline" size="sm" className="h-9 gap-1.5">
-                <Plus className="w-3.5 h-3.5" />
-                Tạo mới
-              </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="end" className="w-44">
-              <DropdownMenuItem onClick={() => setIsAddDialogOpen(true)} className="gap-2 cursor-pointer">
-                <Layers className="w-4 h-4 text-eco-green" />
-                Tạo lớp học
-              </DropdownMenuItem>
-            </DropdownMenuContent>
-          </DropdownMenu>
-
-          {/* Primary CTA */}
+          {/* Primary CTA: Add Student */}
           <Button
             className="h-9 bg-gradient-to-r from-eco-blue to-eco-green hover:opacity-90 shadow-md shadow-eco-blue/15 text-white font-semibold gap-1.5"
+            onClick={() => {
+              setStudentForm(initialStudentForm);
+              setIsAddStudentDialogOpen(true);
+            }}
+          >
+            <Plus className="w-4 h-4" />
+            Thêm học sinh
+          </Button>
+
+          <Button
+            variant="outline"
+            className="h-9 gap-1.5"
             onClick={() => setIsBulkImportOpen(true)}
           >
+            <Plus className="w-3.5 h-3.5" />
             Import 
           </Button>
         </div>
@@ -225,9 +233,12 @@ export default function SchoolClasses() {
                     >
                       Import File
                     </Button>
-                    <Button variant="outline" onClick={() => setIsAddDialogOpen(true)}>
+                    <Button variant="outline" onClick={() => {
+                      setStudentForm(initialStudentForm);
+                      setIsAddStudentDialogOpen(true);
+                    }}>
                       <Plus className="w-4 h-4 mr-1.5" />
-                      Tạo lớp
+                      Thêm học sinh
                     </Button>
                   </div>
                 </CardContent>
@@ -298,25 +309,14 @@ export default function SchoolClasses() {
         </Tabs>
 
       {/* ─── Dialogs ─── */}
-      <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
-        <DialogContent className="max-w-md">
-          <DialogHeader>
-            <DialogTitle className="flex items-center gap-2.5">
-              <div className="w-9 h-9 rounded-xl bg-eco-green/10 flex items-center justify-center">
-                <Plus className="w-4.5 h-4.5 text-eco-green" />
-              </div>
-              Tạo lớp học mới
-            </DialogTitle>
-          </DialogHeader>
-          <ClassForm
-            mode="create"
-            formData={classForm}
-            onFormChange={updateClassForm}
-            onSubmit={handleCreateClass}
-            onCancel={() => setIsAddDialogOpen(false)}
-          />
-        </DialogContent>
-      </Dialog>
+      <StudentFormDialog
+        isOpen={isAddStudentDialogOpen}
+        onClose={() => setIsAddStudentDialogOpen(false)}
+        isEditing={false}
+        form={studentForm}
+        onFormChange={setStudentForm}
+        onSubmit={handleGlobalAddStudent}
+      />
 
       <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
         <DialogContent className="max-w-md">

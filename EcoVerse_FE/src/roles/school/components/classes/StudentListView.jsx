@@ -21,7 +21,6 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/shared/components/ui
 import { 
   ArrowLeft,
   Upload, 
-  UserPlus,
   Users,
   Target,
   Trophy,
@@ -50,7 +49,7 @@ const initialStudentForm = {
   student_code: '',
   student_password: '',
   date_of_birth: '',
-  gender: 'other',
+  gender: '',
   parent_name: '',
   parent_phone: '',
   parent_email: '',
@@ -64,12 +63,10 @@ export function StudentListView({
   selectedClass,
   students,
   onBack,
-  onAddStudent,
   onUpdateStudent,
   onDeleteStudent,
   onToggleStudentStatus,
 }) {
-  const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const [studentForm, setStudentForm] = useState(initialStudentForm);
   const [editingStudentId, setEditingStudentId] = useState(null);
@@ -128,13 +125,7 @@ export function StudentListView({
     setEmailPreviewData({ parent, student });
   };
 
-  const handleAddStudent = async () => {
-    const success = await onAddStudent(studentForm);
-    if (success) {
-      setStudentForm(initialStudentForm);
-      setIsAddDialogOpen(false);
-    }
-  };
+
 
   const handleUpdateStudent = async () => {
     if (editingStudentId) {
@@ -155,6 +146,8 @@ export function StudentListView({
       student_password: student.student_password || '',
       date_of_birth: student.date_of_birth || '',
       gender: student.gender || 'other',
+      gradeLevel: String(student.grade || ''),
+      className: student.className || '',
       parent_name: student.parent_name || '',
       parent_phone: student.parent_phone || '',
       parent_email: student.parent_email || '',
@@ -184,7 +177,7 @@ export function StudentListView({
             <Users className="w-7 h-7 text-white" />
           </div>
           <div>
-            <h1 className="text-2xl font-bold text-foreground">Lớp {selectedClass.name}</h1>
+            <h1 className="text-2xl font-bold text-foreground">Lớp {selectedClass.grade}{selectedClass.name}</h1>
             <p className="text-muted-foreground flex items-center gap-2">
               <GraduationCap className="w-4 h-4" />
               Khối {selectedClass.grade} • GV: {selectedClass.teacher_name || 'Chưa phân công'}
@@ -192,18 +185,7 @@ export function StudentListView({
           </div>
         </div>
 
-        <div className="flex items-center gap-3">
-          <Button 
-            className="bg-eco-green hover:bg-eco-green/90 text-white font-semibold shadow-lg shadow-eco-green/20"
-            onClick={() => {
-              setStudentForm(initialStudentForm);
-              setIsAddDialogOpen(true);
-            }}
-          >
-            <UserPlus className="w-4 h-4 mr-2" />
-            Thêm học sinh
-          </Button>
-        </div>
+
       </div>
 
       {/* Stats Cards */}
@@ -281,16 +263,7 @@ export function StudentListView({
                 <Upload className="w-4 h-4 mr-2" />
                 Import từ file
               </Button>
-              <Button 
-                className="bg-eco-green hover:bg-eco-green/90"
-                onClick={() => {
-                  setStudentForm(initialStudentForm);
-                  setIsAddDialogOpen(true);
-                }}
-              >
-                <UserPlus className="w-4 h-4 mr-2" />
-                Thêm học sinh
-              </Button>
+
             </div>
           </CardContent>
         </Card>
@@ -643,14 +616,7 @@ export function StudentListView({
       )}
 
       {/* Add/Edit Dialogs */}
-      <StudentFormDialog
-        isOpen={isAddDialogOpen}
-        onClose={() => setIsAddDialogOpen(false)}
-        isEditing={false}
-        form={studentForm}
-        onFormChange={setStudentForm}
-        onSubmit={handleAddStudent}
-      />
+
 
       <StudentFormDialog
         isOpen={isEditDialogOpen}

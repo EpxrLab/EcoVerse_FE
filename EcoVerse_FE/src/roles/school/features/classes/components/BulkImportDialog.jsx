@@ -136,9 +136,9 @@ function parseExcelData(jsonRows) {
 function downloadSampleXLSX() {
   const ws = utils.aoa_to_sheet([
     ['Student Full Name', 'Class Name', 'Grade Level', 'Date of Birth', 'Gender', 'Address', 'Parent Full Name', 'Parent Phone Number', 'Parent Email'],
-    ['Nguyễn Hoàng Nhật Ân', 'A1', '1', '2014-08-10', 'Male', '8 Dương Văn Cam', 'Nguyễn Văn Quốc', '0905324995', 'nguyenhoangnhatan31@gmail.com'],
-    ['Trần Minh Khang', 'A1', '1', '2014-05-22', 'Male', 'Lương Định Của', 'Nguyễn Văn Hùng', '0987654321', 'hung@gmail.com'],
-    ['Lê Thảo Nguyên', 'B2', '2', '2013-11-03', 'Female', 'Nguyễn Trãi', 'Lê Thanh Bình', '0901122334', 'binh@gmail.com']
+    ['Nguyễn Hoàng Nhật Ân', 'A', '1', '2014-08-10', 'Male', '8 Dương Văn Cam', 'Nguyễn Văn Quốc', '0905324995', 'nguyenhoangnhatan31@gmail.com'],
+    ['Trần Minh Khang', 'A', '1', '2014-05-22', 'Male', 'Lương Định Của', 'Nguyễn Văn Hùng', '0987654321', 'hung@gmail.com'],
+    ['Lê Thảo Nguyên', 'B', '2', '2013-11-03', 'Female', 'Nguyễn Trãi', 'Lê Thanh Bình', '0901122334', 'binh@gmail.com']
   ]);
   const wb = utils.book_new();
   utils.book_append_sheet(wb, ws, "Danh_sach_hoc_sinh");
@@ -184,7 +184,6 @@ function StepIndicator({ current }) {
 function PreviewSummary({ rows }) {
   const grades = [...new Set(rows.map(r => r.grade).filter(Boolean))];
   const classes = [...new Set(rows.map(r => `${r.grade}_${r.class_name}`).filter(r => r !== '_'))];
-  const withParent = rows.filter(r => r.parent_name).length;
 
   return (
     <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-4">
@@ -433,7 +432,7 @@ Nguyễn Hoàng Nhật Ân,A1,1,2014-08-10,Male,8 Dương Văn Cam,Nguyễn Văn
                         <TableCell className="text-muted-foreground">{i + 1}</TableCell>
                         <TableCell>
                           <span className="font-medium">
-                            Khối {row.grade} — {row.class_name}
+                            {row.grade}{row.class_name}
                           </span>
                         </TableCell>
                         <TableCell className="font-medium">{row.student_name}</TableCell>
