@@ -278,7 +278,7 @@ const AdminPartnerships = () => {
     try {
       setLoading(true);
       const res = await getAllPartnershipAccounts();
-      setRegistrations(res.data || []);
+      setRegistrations(res.data.content || []);
     } catch (error) {
       console.error("Lỗi tải dữ liệu:", error.message);
     } finally {
