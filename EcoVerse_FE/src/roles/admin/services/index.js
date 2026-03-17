@@ -46,7 +46,7 @@ const updatePartnershipAccountStatus = async (partnershipId, payload) => {
 
 const getAllSubscriptionPackages = async () => {
   try {
-    const res = await axios.get("/admin/subscription-plans?page=0&size=10");
+    const res = await axios.get("/subscription-plans?page=0&size=10");
     return res.data.data.content;
   } catch (error) {
     console.log(error);
