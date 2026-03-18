@@ -73,6 +73,7 @@ import {
 
 import NotFound from "./roles/notFound";
 import toast from "react-hot-toast";
+import PartnershipProfile from "./roles/partnership/pages/partnershipProfile/partnershipProfile";
 
 const queryClient = new QueryClient();
 
@@ -223,6 +224,14 @@ const App = () => (
                 />
                 <Route path="rewards" element={<PartnershipRewards />} />
               </Route>
+              <Route
+                path="/partnership/profile"
+                element={
+                  <ProtectedRoute role="THIRD_PARTY_PARTNERSHIP">
+                    <PartnershipProfile />
+                  </ProtectedRoute>
+                }
+              />
 
               <Route path="*" element={<NotFound />} />
             </Routes>

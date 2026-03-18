@@ -295,6 +295,7 @@ function PartnershipSidebar({ partnershipInfo }) {
 
 export default function PartnershipLayout({ partnershipInfo = null }) {
   const [isLoading] = useState(false);
+  const navigate = useNavigate();
 
   if (isLoading) {
     return (
@@ -341,7 +342,10 @@ export default function PartnershipLayout({ partnershipInfo = null }) {
                     Đối tác
                   </p>
                 </div>
-                <Avatar className="w-9 h-9 border-2 border-primary/20">
+                <Avatar
+                  className="w-9 h-9 border-2 border-primary/20"
+                  onClick={() => navigate("/partnership/profile")}
+                >
                   <AvatarFallback className="bg-primary text-primary-foreground font-bold text-sm">
                     {partnershipInfo?.organization_name?.charAt(0) || "P"}
                   </AvatarFallback>

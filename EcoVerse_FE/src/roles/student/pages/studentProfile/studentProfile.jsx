@@ -1,7 +1,6 @@
-import { useState, lazy, Suspense } from "react";
-import { Card, Button, Badge, Skeleton } from "antd";
+import { useState, lazy, Suspense, useEffect } from "react";
+import { Card, Button, Badge, Skeleton, Tag } from "antd";
 import {
-  UserOutlined,
   HomeOutlined,
   TrophyOutlined,
   AimOutlined,
@@ -11,30 +10,59 @@ import {
   CalendarOutlined,
   RiseOutlined,
   BankOutlined,
-  MailOutlined,
-  PhoneOutlined,
-  DollarOutlined,
+  IdcardOutlined,
+  ManOutlined,
+  WomanOutlined,
+  EnvironmentOutlined,
+  UserOutlined,
 } from "@ant-design/icons";
 import { motion } from "framer-motion";
 import { useNavigate } from "react-router";
+import { getAuthenticatedStudentProfile } from "../../services";
 
-// ─── Demo Data ────────────────────────────────────────────────────────────────
+// ─── Helpers ──────────────────────────────────────────────────────────────────
+
+const formatDate = (iso) => {
+  if (!iso) return "—";
+  const [y, m, d] = iso.split("-");
+  return `${d}/${m}/${y}`;
+};
+
+const calcAge = (dob) => {
+  if (!dob) return null;
+  const diff = Date.now() - new Date(dob).getTime();
+  return Math.floor(diff / (1000 * 60 * 60 * 24 * 365.25));
+};
+
+const GENDER_MAP = {
+  MALE: { label: "Nam", icon: <ManOutlined />, color: "blue" },
+  FEMALE: { label: "Nữ", icon: <WomanOutlined />, color: "pink" },
+};
+
+// ─── Demo Data (shape matches BE response) ────────────────────────────────────
 
 const DEMO_STUDENT = {
-  avatar: "👨‍🎓",
-  name: "Nguyễn Văn An",
-  school: "THCS Trần Đại Nghĩa",
-  class: "8A1",
-  email: "nguyenvanan@email.com",
-  phone: "0912 345 678",
-  joinedDate: "01/09/2023",
-  coins: 2450,
+  id: "eae58856-85e5-40ae-af6d-83e110152420",
+  studentCode: "SV000001",
+  fullName: "Le Van D",
+  className: "10A1",
+  gradeLevel: "10",
+  dateOfBirth: "2005-01-15",
+  gender: "MALE",
+  address: null,
+  avatarUrl: null,
+  totalCoins: 0,
+  isFirstLogin: false,
+  school: {
+    id: "ad50f7fa-e974-480a-87e3-1c597e47f60a",
+    schoolName: "EcoVerse Demo School",
+  },
+  // stats — từ API riêng, giữ demo
   stats: {
     campaignsJoined: 12,
     quizzesCompleted: 48,
     gamesPlayed: 156,
     averageQuizScore: 87,
-    currentStreak: 15,
   },
   achievements: [
     {
@@ -124,14 +152,13 @@ const ACTIVITY_ICONS = {
   game: <RocketOutlined />,
   reward: <CrownOutlined />,
 };
-
 const ACTIVITY_COLORS = {
   quiz: { bg: "bg-blue-50", text: "text-blue-500" },
   game: { bg: "bg-purple-50", text: "text-purple-500" },
   reward: { bg: "bg-amber-50", text: "text-amber-500" },
 };
 
-// ─── CoinIcon (inline SVG) ────────────────────────────────────────────────────
+// ─── CoinIcon ────────────────────────────────────────────────────────────────
 
 const CoinIcon = ({ className = "w-8 h-8 text-white" }) => (
   <svg viewBox="0 0 24 24" fill="currentColor" className={className}>
@@ -150,7 +177,35 @@ const CoinIcon = ({ className = "w-8 h-8 text-white" }) => (
   </svg>
 );
 
-// ─── Lazy-loaded Achievement Card ─────────────────────────────────────────────
+// ─── Avatar fallback ─────────────────────────────────────────────────────────
+
+function StudentAvatar({ avatarUrl, fullName }) {
+  const initials = fullName
+    ? fullName
+        .split(" ")
+        .map((w) => w[0])
+        .slice(-2)
+        .join("")
+        .toUpperCase()
+    : "??";
+
+  if (avatarUrl) {
+    return (
+      <img
+        src={avatarUrl}
+        alt={fullName}
+        className="w-32 h-32 rounded-3xl object-cover shadow-2xl border-4 border-white"
+      />
+    );
+  }
+  return (
+    <div className="w-32 h-32 rounded-3xl bg-gradient-to-br from-green-400 to-blue-500 flex items-center justify-center shadow-2xl border-4 border-white">
+      <span className="text-4xl font-bold text-white">{initials}</span>
+    </div>
+  );
+}
+
+// ─── Achievement Card (lazy) ─────────────────────────────────────────────────
 
 const AchievementCard = lazy(() =>
   Promise.resolve({
@@ -179,27 +234,42 @@ const AchievementCard = lazy(() =>
   }),
 );
 
-// ─── Animation Variants ───────────────────────────────────────────────────────
+// ─── Animation variants ───────────────────────────────────────────────────────
 
 const containerVariants = {
   hidden: { opacity: 0 },
   visible: { opacity: 1, transition: { staggerChildren: 0.1 } },
 };
-
 const itemVariants = {
   hidden: { opacity: 0, y: 20 },
   visible: { opacity: 1, y: 0, transition: { duration: 0.4, ease: "easeOut" } },
 };
 
-// ─── Main Component ────────────────────────────────────────────────────────────
+// ─── Main Component ───────────────────────────────────────────────────────────
 
 export default function StudentProfile() {
   const navigate = useNavigate();
-  const [student] = useState(DEMO_STUDENT);
+  const [student, setStudent] = useState(DEMO_STUDENT);
 
-  const handleHome = () => {
-    navigate("/student");
+  const fetchStudentProfile = async () => {
+    try {
+      const res = await getAuthenticatedStudentProfile();
+      setStudent(res.data);
+    } catch (error) {
+      console.log(error);
+    }
   };
+  console.log(student);
+
+  useEffect(() => {
+    fetchStudentProfile();
+  }, []);
+
+  const gender = GENDER_MAP[student.gender] ?? {
+    label: student.gender ?? "—",
+    color: "default",
+  };
+  const age = calcAge(student.dateOfBirth);
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-white via-gray-50 to-gray-100">
@@ -214,7 +284,7 @@ export default function StudentProfile() {
             type="text"
             size="small"
             icon={<HomeOutlined />}
-            onClick={handleHome}
+            onClick={() => navigate("/student")}
             className="text-gray-400 hover:text-gray-700"
           >
             Home
@@ -223,7 +293,7 @@ export default function StudentProfile() {
           <span className="text-gray-700 font-medium">Hồ sơ</span>
         </motion.div>
 
-        {/* Profile Header Card */}
+        {/* ── Profile Header ── */}
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
@@ -234,56 +304,96 @@ export default function StudentProfile() {
             bodyStyle={{ padding: 0 }}
           >
             <div className="relative bg-gradient-to-br from-green-50 via-blue-50 to-purple-50 p-8">
-              {/* Decorative blobs */}
+              {/* decorative blobs */}
               <div className="absolute top-0 right-0 w-64 h-64 bg-gradient-to-br from-green-200/30 to-transparent rounded-full blur-3xl" />
               <div className="absolute bottom-0 left-0 w-48 h-48 bg-gradient-to-tr from-purple-200/30 to-transparent rounded-full blur-3xl" />
 
               <div className="relative flex flex-col lg:flex-row items-start gap-6">
                 {/* Avatar */}
-                <div className="w-32 h-32 rounded-3xl bg-gradient-to-br from-green-400 to-blue-500 flex items-center justify-center text-6xl shadow-2xl border-4 border-white">
-                  {student.avatar}
-                </div>
+                <StudentAvatar
+                  avatarUrl={student.avatarUrl}
+                  fullName={student.fullName}
+                />
 
-                {/* Info */}
+                {/* Info block */}
                 <div className="flex-1 space-y-4">
                   <div>
-                    <h1 className="text-4xl font-bold text-gray-800 mb-2">
-                      {student.name}
-                    </h1>
-                    <div className="flex items-center gap-4 text-gray-500">
-                      <div className="flex items-center gap-2">
+                    {/* Name + first-login badge */}
+                    <div className="flex items-center gap-3 flex-wrap mb-1">
+                      <h1 className="text-4xl font-bold text-gray-800">
+                        {student.fullName}
+                      </h1>
+                      {student.isFirstLogin && (
+                        <Tag
+                          color="volcano"
+                          className="rounded-full font-semibold"
+                        >
+                          Lần đầu đăng nhập
+                        </Tag>
+                      )}
+                    </div>
+
+                    {/* School + class + grade */}
+                    <div className="flex items-center gap-3 flex-wrap text-gray-500 text-sm">
+                      <div className="flex items-center gap-1.5">
                         <BankOutlined />
-                        <span>{student.school}</span>
+                        <span>{student.school?.schoolName ?? "—"}</span>
                       </div>
-                      <span className="px-3 py-1 rounded-full text-xs font-semibold bg-blue-100 text-blue-600 border border-blue-200">
-                        Lớp {student.class}
-                      </span>
+                      <Tag color="blue" className="rounded-full">
+                        Lớp {student.className}
+                      </Tag>
+                      <Tag color="green" className="rounded-full">
+                        Khối {student.gradeLevel}
+                      </Tag>
                     </div>
                   </div>
 
+                  {/* Detail grid — chỉ hiển thị field có trong BE */}
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-3 text-sm text-gray-600">
+                    {/* Mã học sinh */}
                     <div className="flex items-center gap-2">
-                      <MailOutlined className="text-gray-400" />
-                      <span>{student.email}</span>
+                      <IdcardOutlined className="text-gray-400" />
+                      <span className="text-gray-400">Mã HS:</span>
+                      <span className="font-mono font-semibold text-gray-700">
+                        {student.studentCode}
+                      </span>
                     </div>
-                    <div className="flex items-center gap-2">
-                      <PhoneOutlined className="text-gray-400" />
-                      <span>{student.phone}</span>
-                    </div>
+
+                    {/* Ngày sinh + tuổi */}
                     <div className="flex items-center gap-2">
                       <CalendarOutlined className="text-gray-400" />
-                      <span>Tham gia: {student.joinedDate}</span>
+                      <span className="text-gray-400">Ngày sinh:</span>
+                      <span>
+                        {formatDate(student.dateOfBirth)}
+                        {age ? ` (${age} tuổi)` : ""}
+                      </span>
                     </div>
+
+                    {/* Giới tính */}
                     <div className="flex items-center gap-2">
-                      <RiseOutlined className="text-gray-400" />
-                      <span>Streak: {student.stats.currentStreak} ngày</span>
+                      {gender.icon && (
+                        <span className="text-gray-400">{gender.icon}</span>
+                      )}
+                      <span className="text-gray-400">Giới tính:</span>
+                      <Tag color={gender.color} className="rounded-full m-0">
+                        {gender.label}
+                      </Tag>
                     </div>
+
+                    {/* Địa chỉ — hiện nếu có, ẩn nếu null */}
+                    {student.address && (
+                      <div className="flex items-center gap-2">
+                        <EnvironmentOutlined className="text-gray-400" />
+                        <span className="text-gray-400">Địa chỉ:</span>
+                        <span>{student.address}</span>
+                      </div>
+                    )}
                   </div>
                 </div>
 
-                {/* Coins Display */}
+                {/* Coin card */}
                 <Card
-                  className="border-2 border-amber-300 shadow-xl rounded-2xl bg-gradient-to-br from-amber-50 to-orange-50"
+                  className="border-2 border-amber-300 shadow-xl rounded-2xl bg-gradient-to-br from-amber-50 to-orange-50 flex-shrink-0"
                   bodyStyle={{ padding: "24px" }}
                 >
                   <div className="text-center space-y-2">
@@ -292,7 +402,7 @@ export default function StudentProfile() {
                     </div>
                     <p className="text-sm text-gray-500 font-medium">Tổng xu</p>
                     <p className="text-3xl font-bold bg-gradient-to-r from-amber-600 to-orange-600 bg-clip-text text-transparent">
-                      {student.coins}
+                      {(student.totalCoins ?? 0).toLocaleString()}
                     </p>
                   </div>
                 </Card>
@@ -301,7 +411,7 @@ export default function StudentProfile() {
           </Card>
         </motion.div>
 
-        {/* Statistics Grid */}
+        {/* ── Stats Grid ── */}
         <motion.div
           className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4"
           variants={containerVariants}
@@ -311,29 +421,29 @@ export default function StudentProfile() {
           {[
             {
               icon: <AimOutlined />,
-              label: "Chiến dịch",
-              value: student.stats.campaignsJoined,
+              label: "Chiến dịch tham gia",
+              value: student?.stats?.campaignsJoined,
               bg: "bg-green-50",
               color: "text-green-500",
             },
             {
               icon: <BookOutlined />,
               label: "Quiz hoàn thành",
-              value: student.stats.quizzesCompleted,
+              value: student?.stats?.quizzesCompleted,
               bg: "bg-blue-50",
               color: "text-blue-500",
             },
             {
               icon: <RocketOutlined />,
               label: "Game đã chơi",
-              value: student.stats.gamesPlayed,
+              value: student?.stats?.gamesPlayed,
               bg: "bg-purple-50",
               color: "text-purple-500",
             },
             {
               icon: <TrophyOutlined />,
               label: "Điểm TB Quiz",
-              value: `${student.stats.averageQuizScore}%`,
+              value: `${student?.stats?.averageQuizScore}%`,
               bg: "bg-amber-50",
               color: "text-amber-500",
             },
@@ -361,8 +471,9 @@ export default function StudentProfile() {
           ))}
         </motion.div>
 
+        {/* ── Achievements + Recent Activities ── */}
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          {/* Accomplishments */}
+          {/* Achievements */}
           <motion.div
             className="lg:col-span-2"
             initial={{ opacity: 0, x: -20 }}
@@ -380,7 +491,7 @@ export default function StudentProfile() {
               bodyStyle={{ padding: "24px" }}
             >
               <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
-                {student.achievements.map((achievement) => (
+                {student?.achievements?.map((achievement) => (
                   <Suspense
                     key={achievement.id}
                     fallback={
@@ -421,9 +532,9 @@ export default function StudentProfile() {
               bodyStyle={{ padding: "20px" }}
             >
               <div className="space-y-3">
-                {student.recentActivities.map((activity) => {
+                {student?.recentActivities?.map((activity) => {
                   const colors =
-                    ACTIVITY_COLORS[activity.type] || ACTIVITY_COLORS.quiz;
+                    ACTIVITY_COLORS[activity.type] ?? ACTIVITY_COLORS.quiz;
                   return (
                     <motion.div
                       key={activity.id}
@@ -441,11 +552,7 @@ export default function StudentProfile() {
                         </p>
                         <div className="flex items-center gap-2 mt-1">
                           <span
-                            className={`text-xs font-semibold ${
-                              activity.coins > 0
-                                ? "text-green-600"
-                                : "text-red-500"
-                            }`}
+                            className={`text-xs font-semibold ${activity.coins > 0 ? "text-green-600" : "text-red-500"}`}
                           >
                             {activity.coins > 0 ? "+" : ""}
                             {activity.coins} xu
