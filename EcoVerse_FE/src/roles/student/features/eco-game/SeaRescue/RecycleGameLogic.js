@@ -99,7 +99,7 @@ export function initWorld(scene) {
   };
 
   gltfLoaderGround.load(
-    "/asset/ocean__water_perfect_loop.glb",
+    "/assets/ocean__water_perfect_loop.glb",
     (gltf) => {
       const oceanModel = gltf.scene;
       oceanModel.scale.set(0.5, 0.5, 0.5);
@@ -149,7 +149,7 @@ export function initStorage(scene) {
   storage.position.set(0, 0, -15);
   scene.add(storage);
 
-  loadModel("/models/the_lighthouse.glb")
+  loadModel("/assets/the_lighthouse.glb")
     .then((model) => {
       const box = new THREE.Box3().setFromObject(model);
       const size = new THREE.Vector3();
@@ -184,7 +184,7 @@ export function initPlayer(scene) {
 
   const playerState = { mixer: null, actions: {}, activeAction: null };
 
-  loadModel("/models/boat.glb").then((model) => {
+  loadModel("/assets/boat.glb").then((model) => {
     const box = new THREE.Box3().setFromObject(model);
     const size = new THREE.Vector3();
     box.getSize(size);
@@ -263,7 +263,7 @@ export function initObstacles(scene) {
     scene.add(mesh);
   };
 
-  loadModel("/models/rock.glb")
+  loadModel("/assets/rock.glb")
     .then((rockModel) => {
       for (let i = 0; i < OBSTACLE_COUNT; i++) {
         const rock = rockModel.clone(true);
