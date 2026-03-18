@@ -60,11 +60,11 @@ export function useClasses() {
             class_id: syntheticClassId,
             className: className,
             grade: classGrade,
-            date_of_birth: child.dateOfBirth || null,
+            date_of_birth: child.dob || null,
             gender: child.gender === 'MALE' ? 'male' : child.gender === 'FEMALE' ? 'female' : 'other',
             address: child.address || '',
             ...parentInfo,
-            status: child.status || 'active',
+            status: child.active ? 'active' : 'suspended',
             accuracy: child.accuracy || 0,
             items_sorted: child.items_sorted || 0,
           });
@@ -277,11 +277,11 @@ export function useClasses() {
 
   const toggleStudentStatus = async (studentId, currentStatus) => {
     try {
-      // If student is active, block them (send true)
-      // If student is inactive, unblock them (send false)
-      const isBlocked = currentStatus === 'active';
-      await classesService.toggleStudentStatus(studentId, isBlocked);
-      toast.success(isBlocked ? 'Đã vô hiệu hóa tài khoản học sinh' : 'Đã kích hoạt tài khoản học sinh');
+      // isActive = true if we want to activate (current is not 'active')
+      // isActive = false if we want to deactivate (current is 'active')
+      const isActive = currentStatus !== 'active';
+      await classesService.toggleStudentStatus(studentId, isActive);
+      toast.success(isActive ? 'Đã kích hoạt tài khoản học sinh' : 'Đã vô hiệu hóa tài khoản học sinh');
       if (selectedClass) {
         await fetchClassStudents(selectedClass.id);
       }

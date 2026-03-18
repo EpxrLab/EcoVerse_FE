@@ -31,8 +31,8 @@ export const classesService = {
     return axios.post('/school/send-credentials', data);
   },
 
-  toggleStudentStatus: (studentId, isBlocked) => {
-    return axios.put(`/school/de-active/student/${studentId}`, isBlocked, {
+  toggleStudentStatus: (studentId, isActive) => {
+    return axios.put(`/school/de-active/student/${studentId}`, isActive, {
       headers: {
         'Content-Type': 'application/json',
       },
