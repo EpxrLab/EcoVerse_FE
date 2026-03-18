@@ -236,7 +236,7 @@ const AdminSchools = () => {
     try {
       setLoading(true);
       const res = await getAllSchoolAccounts();
-      setRegistrations(res.data || []);
+      setRegistrations(res.data.content || []);
     } catch (error) {
       console.error("Lỗi tải dữ liệu:", error.message);
     } finally {
@@ -248,9 +248,6 @@ const AdminSchools = () => {
     fetchRegistrations();
   }, []);
 
-  // ── Filters ──
-  // Tab "BANNED": lọc accountStatus === "BANNED" (bất kể approvalStatus)
-  // Các tab khác: lọc approvalStatus VÀ accountStatus !== "BANNED"
   const filteredRegistrations = registrations?.filter((reg) => {
     const q = searchQuery.toLowerCase();
     const matchesSearch =

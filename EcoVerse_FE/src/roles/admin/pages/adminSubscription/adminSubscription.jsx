@@ -650,7 +650,9 @@ const AdminSubscriptions = () => {
           className={`text-xs space-y-0.5 ${plan.isActive ? "text-gray-500" : "text-gray-400"}`}
         >
           <p>
-            {plan.maxStudents >= 9000 ? "∞" : plan.maxStudents.toLocaleString()}{" "}
+            {plan.maxStudents >= 9000
+              ? "∞"
+              : plan.maxStudents?.toLocaleString()}{" "}
             học sinh
           </p>
           <p>{plan.maxCampaignsPerMonth} chiến dịch/tháng</p>
