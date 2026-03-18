@@ -75,6 +75,11 @@ export default class EcoSeaRescue {
     this._hudSetters = { ...this._hudSetters, ...setters };
   }
 
+  // ─── Called by EcoSeaRescueHUD to receive endGame notification ───────────────
+  setEndGameCallback(cb) {
+    this._onEndGame = cb;
+  }
+
   // ─── init() — same interface as EcoGameRunner.init() ─────────────────────────
   init() {
     // TPS camera for sea view
@@ -84,7 +89,9 @@ export default class EcoSeaRescue {
     this.camera.updateProjectionMatrix();
 
     // Build world
-    const oceanState = initWorld(this.scene);
+    // ✅ Tạo _gameState TRƯỚC, sau đó truyền vào initWorld(scene, state).
+    // initWorld load ocean GLB async — callback gán thẳng state.oceanMixer vào object này.
+    // gameTick đọc state.oceanMixer mỗi frame và sẽ thấy giá trị được gán bởi callback.
     const storage = initStorage(this.scene);
     const { player, playerState } = initPlayer(this.scene);
     const trash = initTrash(this.scene);
@@ -95,7 +102,12 @@ export default class EcoSeaRescue {
     this._playerState = playerState;
 
     this._gameState = {
-      ...oceanState,
+      // ocean fields — sẽ được gán async bởi initWorld callback
+      oceanModel: null,
+      oceanMixer: null,
+      underwaterPlane: null,
+      fallbackPlane: null,
+
       player,
       storage,
       trash,
@@ -118,6 +130,9 @@ export default class EcoSeaRescue {
       speedMultiplier: 1,
       lastInventoryFullWarning: 0,
     };
+
+    // Gọi SAU khi _gameState đã tồn tại — callback gán thẳng state.oceanMixer vào object trên
+    initWorld(this.scene, this._gameState);
 
     // Countdown timer
     this._timerId = setInterval(() => {
@@ -201,6 +216,11 @@ export default class EcoSeaRescue {
     // Write distance equivalent into stateManager for ResultScreen
     this.stateManager.distance = this._gameState?.recycledInStorage ?? 0;
 
+    // Notify HUD to show GameOverScreen
+    if (this._onEndGame) {
+      this._onEndGame(reason, this._gameState?.recycledInStorage ?? 0);
+    }
+
     // Delay matches EcoGameRunner (1500ms after collision / 500ms after win)
     const delay = reason === "win" ? 500 : 1500;
     setTimeout(() => {
@@ -240,16 +260,20 @@ export default class EcoSeaRescue {
     if (this._keyDown) window.removeEventListener("keydown", this._keyDown);
     if (this._keyUp) window.removeEventListener("keyup", this._keyUp);
     if (this._gameState) this._gameState.stopped = true;
+
+    // Reset scene appearance so EcoGameSorter starts with a clean slate
+    // (EcoGameSorter._createEnvironment() will set its own background/fog)
     this.scene.background = null;
     this.scene.fog = null;
 
     // Remove Three.js objects from the shared scene
+    // — includes ocean world objects tracked in oceanState
     const toRemove = [
       this._player,
       this._gameState?.storage,
-      this._gameState?.underwaterPlane,
-      this._gameState?.oceanModel,
-      this._gameState?.fallbackPlane,
+      this._gameState?.underwaterPlane, // from initWorld
+      this._gameState?.oceanModel, // from initWorld (async, may be null if not loaded yet)
+      this._gameState?.fallbackPlane, // from initWorld fallback
       ...(this._gameState?.trash ?? []),
       ...(this._gameState?.obstacles ?? []),
       ...(this._gameState?.allZones ?? []),
