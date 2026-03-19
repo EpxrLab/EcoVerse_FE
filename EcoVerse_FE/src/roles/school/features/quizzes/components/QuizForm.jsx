@@ -7,9 +7,9 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/shared/components/ui
 import { Badge } from '@/shared/components/ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/shared/components/ui/select';
 import { RadioGroup, RadioGroupItem } from '@/shared/components/ui/radio-group';
-import { Plus, Trash2, Check, Leaf } from 'lucide-react';
+import { Plus, Trash2, Check, Leaf, Loader2, Pencil } from 'lucide-react';
 import { cn } from '@/shared/lib/utils';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 
 export function QuizForm({
   isOpen,
@@ -19,48 +19,70 @@ export function QuizForm({
   onFormChange,
   onAddQuestion,
   onRemoveQuestion,
+  onEditQuestion,
   onSubmit,
+  isSubmitting = false,
+  isEdit = false,
+  editingQuestionId = null,
+  onSaveQuestion,
+  onCancelAddQuestion,
+  questionForm: hookQuestionForm,
 }) {
   // Local state for new question creation
   const [currentQuestion, setCurrentQuestion] = useState({
     question: '',
     type: 'multiple_choice',
     options: ['', '', '', ''],
-    correctAnswer: 0, // index for multiple choice
-    trueFalseAnswer: 'true', // string for true/false
+    correctAnswer: 0,
+    trueFalseAnswer: 'true',
   });
+
+  // Sync with hook state when editing starts
+  useEffect(() => {
+    if (editingQuestionId && hookQuestionForm) {
+      const isMultipleChoice = hookQuestionForm.type === 'multiple_choice';
+      setCurrentQuestion({
+        question: hookQuestionForm.question,
+        type: hookQuestionForm.type,
+        options: hookQuestionForm.options || ['', '', '', ''],
+        correctAnswer: isMultipleChoice 
+          ? (hookQuestionForm.options?.indexOf(hookQuestionForm.correctAnswer) ?? 0)
+          : (hookQuestionForm.correctAnswer === 'true' ? 0 : 0),
+        trueFalseAnswer: isMultipleChoice ? 'true' : String(hookQuestionForm.correctAnswer),
+      });
+    } else if (!editingQuestionId) {
+      setCurrentQuestion({
+        question: '',
+        type: 'multiple_choice',
+        options: ['', '', '', ''],
+        correctAnswer: 0,
+        trueFalseAnswer: 'true',
+      });
+    }
+  }, [editingQuestionId, hookQuestionForm]);
 
   const handleAddQuestion = () => {
     if (!currentQuestion.question) {
-        // Basic validation
         return; 
     }
 
-    const newQuestion = {
-      id: Date.now().toString(),
+    const qData = {
+      id: editingQuestionId || Date.now().toString(),
       question: currentQuestion.question,
       type: currentQuestion.type,
       options: currentQuestion.type === 'multiple_choice' ? currentQuestion.options : undefined,
       correctAnswer: currentQuestion.type === 'multiple_choice' 
-        ? currentQuestion.options[currentQuestion.correctAnswer] // Store actual value or index? 
-        // Note: Partnership stores index but hook stores string in previous version.
-        // Let's adapt to hook: `correctAnswer` is string or boolean.
-        // If multiple choice, we store the value of the option?
-        // Let's store the index for now to be safe or string.
-        // Based on `useQuizForm`, `correctAnswer` is string | boolean.
+        ? currentQuestion.options[currentQuestion.correctAnswer]
         : currentQuestion.trueFalseAnswer,
     };
 
-    // If multiple choice, correct answer is the string value at index?
-    if (currentQuestion.type === 'multiple_choice') {
-        newQuestion.correctAnswer = currentQuestion.options[currentQuestion.correctAnswer];
-    } else if (currentQuestion.type === 'true_false') {
-        newQuestion.correctAnswer = currentQuestion.trueFalseAnswer;
+    if (editingQuestionId) {
+        onSaveQuestion(qData);
+    } else {
+        onAddQuestion(qData);
     }
 
-    onAddQuestion(newQuestion);
-    
-    // Reset
+    // Reset local state
     setCurrentQuestion({
       question: '',
       type: 'multiple_choice',
@@ -78,7 +100,7 @@ export function QuizForm({
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2 text-xl font-bold">
             <Leaf className="w-5 h-5 text-eco-green" />
-            Tạo Quiz mới
+            {isEdit ? 'Cập nhật bài Quiz' : 'Tạo Quiz mới'}
           </DialogTitle>
         </DialogHeader>
 
@@ -159,15 +181,12 @@ export function QuizForm({
                 />
               </div>
             </div>
-
-
           </TabsContent>
 
           {/* Tab 2: Questions */}
           <TabsContent value="questions" className="space-y-4">
-            {/* Add Question Form */}
             <div className="p-4 border-2 rounded-xl space-y-3 bg-muted/30">
-              <h3 className="font-bold">Thêm câu hỏi mới</h3>
+              <h3 className="font-bold">{editingQuestionId ? 'Sửa câu hỏi' : 'Thêm câu hỏi mới'}</h3>
               
               <div className="space-y-2">
                 <Label>Loại câu hỏi</Label>
@@ -247,13 +266,28 @@ export function QuizForm({
 
               <Button
                 type="button"
-                variant="outline"
-                className="w-full border-2"
+                variant={editingQuestionId ? "default" : "outline"}
+                className={cn(
+                    "w-full border-2 transition-all duration-300",
+                    editingQuestionId 
+                        ? "bg-eco-blue hover:bg-eco-blue-dark border-eco-blue text-white shadow-md" 
+                        : "border-dashed border-eco-green text-eco-green hover:bg-eco-green/10"
+                )}
                 onClick={handleAddQuestion}
               >
-                <Plus className="w-4 h-4 mr-2" />
-                Thêm câu hỏi
+                {editingQuestionId ? <Pencil className="w-4 h-4 mr-2" /> : <Plus className="w-4 h-4 mr-2" />}
+                {editingQuestionId ? 'Cập nhật câu hỏi' : 'Thêm câu hỏi'}
               </Button>
+              {editingQuestionId && (
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    className="w-full text-xs text-muted-foreground mt-1"
+                    onClick={onCancelAddQuestion}
+                  >
+                    Hủy sửa
+                  </Button>
+              )}
             </div>
 
             {/* Questions List */}
@@ -295,15 +329,26 @@ export function QuizForm({
                              </Badge>
                          )}
                       </div>
-                      <Button
-                        type="button"
-                        variant="ghost"
-                        size="sm"
-                        className="text-destructive"
-                        onClick={() => onRemoveQuestion(q.id)}
-                      >
-                        <Trash2 className="w-4 h-4" />
-                      </Button>
+                      <div className="flex items-center gap-1">
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="sm"
+                          className="text-eco-blue hover:text-eco-blue hover:bg-eco-blue/10"
+                          onClick={() => onEditQuestion(q.id)}
+                        >
+                          <Pencil className="w-4 h-4" />
+                        </Button>
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="sm"
+                          className="text-destructive hover:text-destructive hover:bg-destructive/10"
+                          onClick={() => onRemoveQuestion(q.id)}
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </Button>
+                      </div>
                     </div>
                   </div>
                 ))
@@ -320,9 +365,16 @@ export function QuizForm({
           <Button
             className="flex-1 bg-eco-orange hover:bg-eco-orange/90 text-primary-foreground font-semibold"
             onClick={onSubmit}
-            disabled={!isFormValid}
+            disabled={!isFormValid || isSubmitting}
           >
-            Tạo Quiz ({questions.length} câu)
+            {isSubmitting ? (
+              <>
+                <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                {isEdit ? 'Đang cập nhật...' : 'Đang tạo...'}
+              </>
+            ) : (
+              `${isEdit ? 'Cập nhật' : 'Tạo'} Quiz (${questions.length} câu)`
+            )}
           </Button>
         </div>
       </DialogContent>

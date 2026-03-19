@@ -1,7 +1,7 @@
 import { Card } from '@/shared/components/ui/card';
 import { Button } from '@/shared/components/ui/button';
 import { Badge } from '@/shared/components/ui/badge';
-import { Eye, Edit, Trash2, Lock, Star, MoreHorizontal } from 'lucide-react';
+import { Eye, Edit, Trash2, Lock, Star, MoreHorizontal, Globe } from 'lucide-react';
 import {
   Table,
   TableBody,
@@ -23,6 +23,7 @@ export function QuizList({
   onViewDetail,
   onEdit,
   onDelete,
+  onPublish,
   getDifficultyStars,
   getDifficultyColor,
 }) {
@@ -73,7 +74,12 @@ export function QuizList({
                 </div>
               </TableCell>
               <TableCell>
-                {'status' in quiz ? (
+                {quiz.type === 'default' ? (
+                  <Badge variant="outline" className="bg-muted/50 text-muted-foreground border-0 text-xs">
+                    <Lock className="w-3 h-3 mr-1" />
+                    Mặc định
+                  </Badge>
+                ) : (
                   <Badge 
                     variant="outline"
                     className={cn(
@@ -84,11 +90,6 @@ export function QuizList({
                     )}
                   >
                     {quiz.status === 'published' ? 'Đã xuất bản' : 'Nháp'}
-                  </Badge>
-                ) : (
-                  <Badge variant="outline" className="bg-muted/50 text-muted-foreground border-0 text-xs">
-                    <Lock className="w-3 h-3 mr-1" />
-                    Mặc định
                   </Badge>
                 )}
               </TableCell>
@@ -126,6 +127,18 @@ export function QuizList({
                                     <DropdownMenuItem onClick={() => onEdit(quiz)}>
                                     <Edit className="mr-2 h-4 w-4" />
                                     <span>Sửa</span>
+                                    </DropdownMenuItem>
+                                )}
+                                {quiz.status === 'draft' && onPublish && (
+                                    <DropdownMenuItem onClick={() => onPublish(quiz.id, true)}>
+                                    <Globe className="mr-2 h-4 w-4 text-eco-green" />
+                                    <span className="text-eco-green font-medium">Xuất bản</span>
+                                    </DropdownMenuItem>
+                                )}
+                                {quiz.status === 'published' && onPublish && (
+                                    <DropdownMenuItem onClick={() => onPublish(quiz.id, false)}>
+                                    <Lock className="mr-2 h-4 w-4 text-eco-orange" />
+                                    <span className="text-eco-orange font-medium">Chuyển về nháp</span>
                                     </DropdownMenuItem>
                                 )}
                                 {onDelete && (
