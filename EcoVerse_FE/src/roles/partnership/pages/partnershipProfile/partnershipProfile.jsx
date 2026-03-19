@@ -62,13 +62,17 @@ export default function PartnershipProfile() {
   const [wards, setWards] = useState([]);
   const [isEditing, setIsEditing] = useState(false);
   const [formData, setFormData] = useState(null);
-  const [localPreviews, setLocalPreviews] = useState({ logoUrl: null, licenseUrl: null });
+  const [localPreviews, setLocalPreviews] = useState({
+    logoUrl: null,
+    licenseUrl: null,
+  });
 
   // Cleanup object URLs to prevent memory leaks
   useEffect(() => {
     return () => {
       if (localPreviews.logoUrl) URL.revokeObjectURL(localPreviews.logoUrl);
-      if (localPreviews.licenseUrl) URL.revokeObjectURL(localPreviews.licenseUrl);
+      if (localPreviews.licenseUrl)
+        URL.revokeObjectURL(localPreviews.licenseUrl);
     };
   }, [localPreviews]);
 
@@ -177,11 +181,11 @@ export default function PartnershipProfile() {
 
     // Create immediate local preview
     const previewUrl = URL.createObjectURL(file);
-    setLocalPreviews(prev => ({ ...prev, [field]: previewUrl }));
+    setLocalPreviews((prev) => ({ ...prev, [field]: previewUrl }));
 
     setIsUploadingFile(true);
     const uploadData = new FormData();
-    uploadData.append('file', file);
+    uploadData.append("file", file);
 
     try {
       const response = await uploadFile(uploadData);
@@ -200,7 +204,7 @@ export default function PartnershipProfile() {
     } catch (err) {
       toast.error("Tải file thất bại!");
       // If upload fails, revert local preview
-      setLocalPreviews(prev => ({ ...prev, [field]: null }));
+      setLocalPreviews((prev) => ({ ...prev, [field]: null }));
       URL.revokeObjectURL(previewUrl);
     } finally {
       setIsUploadingFile(false);
@@ -804,7 +808,9 @@ export default function PartnershipProfile() {
                               <div className="w-20 h-20 rounded-2xl border-2 border-dashed border-eco-blue/20 overflow-hidden flex items-center justify-center bg-muted/20 shrink-0 shadow-inner group transition-all hover:border-eco-blue/40">
                                 {localPreviews.logoUrl || formData.logoUrl ? (
                                   <img
-                                    src={localPreviews.logoUrl || formData.logoUrl}
+                                    src={
+                                      localPreviews.logoUrl || formData.logoUrl
+                                    }
                                     alt="Logo Preview"
                                     className="w-full h-full object-cover transition-transform group-hover:scale-110"
                                   />
@@ -852,9 +858,13 @@ export default function PartnershipProfile() {
                             </label>
                             <div className="flex items-center gap-4">
                               <div className="w-20 h-20 rounded-2xl border-2 border-dashed border-eco-blue/20 overflow-hidden flex items-center justify-center bg-muted/20 shrink-0 shadow-inner group transition-all hover:border-eco-blue/40">
-                                {localPreviews.licenseUrl || formData.licenseUrl ? (
+                                {localPreviews.licenseUrl ||
+                                formData.licenseUrl ? (
                                   <img
-                                    src={localPreviews.licenseUrl || formData.licenseUrl}
+                                    src={
+                                      localPreviews.licenseUrl ||
+                                      formData.licenseUrl
+                                    }
                                     alt="License Preview"
                                     className="w-full h-full object-cover transition-transform group-hover:scale-110"
                                   />
