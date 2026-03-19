@@ -6,7 +6,7 @@ export function useQuizForm() {
     title: '',
     description: '',
     difficulty: 'easy',
-    timeLimit: 30, // Default 30s per question? Or total? Partnership has timeLimit input. Let's assume total or per question based on UI.
+    timeLimit: 30,
     passingScore: 60,
   });
 
@@ -24,6 +24,7 @@ export function useQuizForm() {
   // Dialog states
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
   const [isAddQuestionOpen, setIsAddQuestionOpen] = useState(false);
+  const [editingQuestionId, setEditingQuestionId] = useState(null);
 
   // Handlers
   const updateQuizForm = (data) => {
@@ -49,6 +50,42 @@ export function useQuizForm() {
     setQuestions(prev => [...prev, newQuestion]);
     resetQuestionForm();
     setIsAddQuestionOpen(false);
+  };
+
+  const saveQuestion = (data) => {
+    // If data is passed (from QuizForm local state), use it
+    if (data) {
+        setQuestions(prev => prev.map(q => q.id == data.id ? { ...q, ...data } : q));
+        setEditingQuestionId(null);
+        return;
+    }
+
+    const updatedQuestion = {
+      id: editingQuestionId,
+      question: questionForm.question,
+      type: questionForm.type,
+      options: questionForm.type === 'multiple_choice' ? questionForm.options : undefined,
+      correctAnswer: questionForm.correctAnswer,
+    };
+    
+    setQuestions(prev => prev.map(q => q.id == editingQuestionId ? { ...q, ...updatedQuestion } : q));
+    resetQuestionForm();
+    setEditingQuestionId(null);
+    setIsAddQuestionOpen(false);
+  };
+
+  const startEditQuestion = (id) => {
+    const q = questions.find(question => question.id === id);
+    if (q) {
+      setQuestionForm({
+        question: q.question,
+        type: q.type || 'multiple_choice',
+        options: q.options || ['', '', '', ''],
+        correctAnswer: q.correctAnswer,
+      });
+      setEditingQuestionId(id);
+      setIsAddQuestionOpen(true);
+    }
   };
 
   const removeQuestion = (id) => {
@@ -102,6 +139,16 @@ export function useQuizForm() {
     questionForm,
     updateQuestionForm,
     resetQuestionForm,
+
+    // Editing
+    editingQuestionId,
+    startEditQuestion,
+    saveQuestion,
+    cancelAddQuestion: () => {
+        setIsAddQuestionOpen(false);
+        resetQuestionForm();
+        setEditingQuestionId(null);
+    },
 
     // Dialog states
     isCreateDialogOpen,

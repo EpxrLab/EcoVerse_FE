@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/shared/components/ui/card';
 import { Button } from '@/shared/components/ui/button';
 import { Badge } from '@/shared/components/ui/badge';
@@ -6,60 +6,45 @@ import { Check, CreditCard, Crown, Sparkles, Users, Zap, AlertTriangle, Info, Hi
 import { toast } from '@/shared/hooks/use-toast';
 import { cn } from '@/shared/lib/utils';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/shared/components/ui/table';
+import { subscriptionService } from '@/roles/school/services';
+import { Loader2 } from 'lucide-react';
 
-const plans = [
-  {
-    id: 'free',
-    name: 'Free',
-    price: 'Miễn phí',
-    priceValue: 0,
-    period: '',
-    students: 20,
-    features: [
-      '20 học sinh',
-      'Báo cáo cơ bản',
-      'Hỗ trợ email',
-    ],
-    icon: Users,
-    color: 'eco-blue',
-    popular: false,
-  },
-  {
-    id: 'basic',
-    name: 'Basic',
-    price: '₫1,200,000',
-    priceValue: 1200000,
-    period: '/tháng',
-    students: 50,
-    features: [
-      '50 học sinh',
-      'Báo cáo chi tiết',
-      'Tạo Quiz riêng',
-      'Hỗ trợ email',
-    ],
-    icon: Zap,
-    color: 'eco-green',
-    popular: true,
-  },
-  {
-    id: 'pro',
-    name: 'Pro',
-    price: '₫3,500,000',
-    priceValue: 3500000,
-    period: '/tháng',
-    students: 200,
-    features: [
-      '200 học sinh',
-      'Báo cáo nâng cao',
-      'Tạo Quiz riêng',
-      'Hỗ trợ ưu tiên',
-      'Tùy chỉnh branding',
-    ],
-    icon: Crown,
-    color: 'eco-orange',
-    popular: false,
-  },
-];
+
+// Helper to map API features object to array
+const parseFeatures = (features) => {
+  if (!features) return [];
+  if (typeof features === 'object') {
+    return Object.values(features);
+  }
+  return [];
+};
+
+// Map duration days to readable text
+const getDurationLabel = (days) => {
+  if (!days) return '';
+  if (days >= 36500) return 'Vĩnh viễn';
+  if (days >= 30) {
+    const months = Math.floor(days / 30);
+    return `/${months} tháng`;
+  }
+  return `/${days} ngày`;
+};
+
+
+// Map subscriber types to display colors
+const getPlanColor = (subscriberType, planCode) => {
+  if (planCode?.includes('PRO')) return 'eco-orange';
+  if (planCode?.includes('BASIC')) return 'eco-green';
+  return 'eco-blue';
+};
+
+// Map subscriber types to icons
+const getPlanIcon = (planCode) => {
+  if (planCode?.includes('PRO')) return Crown;
+  if (planCode?.includes('BASIC')) return Zap;
+  return Users;
+};
+
 
 const purchaseHistory = [
   {
@@ -92,25 +77,54 @@ const purchaseHistory = [
 ];
 
 export default function SchoolSubscription() {
+  const [plans, setPlans] = useState([]);
+  const [loading, setLoading] = useState(true);
   const [selectedPlan, setSelectedPlan] = useState(null);
   const [isProcessing, setIsProcessing] = useState(false);
 
+  useEffect(() => {
+    fetchPlans();
+  }, []);
+
+  const fetchPlans = async () => {
+    setLoading(true);
+    try {
+      const response = await subscriptionService.getSubscriptionPlans({
+        subscriberType: 'SCHOOL'
+      });
+      if (response.data && response.data.data) {
+        setPlans(response.data.data.content || []);
+      }
+    } catch (error) {
+      console.error('Error fetching subscription plans:', error);
+      toast({
+        title: "Lỗi",
+        description: "Không thể tải danh sách gói đăng ký. Vui lòng thử lại sau.",
+        variant: "destructive",
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const currentSubscription = null;
 
-  const handleSelectPlan = async (planId) => {
-    setSelectedPlan(planId);
+  const handleSelectPlan = async (plan) => {
+    setSelectedPlan(plan.id);
     setIsProcessing(true);
 
+    // Simulate purchase for now as requested
     await new Promise(resolve => setTimeout(resolve, 1500));
 
     toast({
       title: "Đăng ký thành công!",
-      description: `Bạn đã đăng ký gói ${plans.find(p => p.id === planId)?.name}. Vui lòng hoàn tất thanh toán.`,
+      description: `Bạn đã đăng ký gói ${plan.planName}. Vui lòng hoàn tất thanh toán.`,
     });
 
     setIsProcessing(false);
     setSelectedPlan(null);
   };
+
 
   return (
     <div className="space-y-8">
@@ -183,81 +197,148 @@ export default function SchoolSubscription() {
       )}
 
       {/* Pricing cards */}
-      <div className="grid md:grid-cols-3 gap-6">
-        {plans.map((plan) => {
-          const Icon = plan.icon;
-          const colorClass = plan.color;
-          
-          return (
-            <Card 
-              key={plan.id}
-              className={cn(
-                "relative overflow-hidden transition-all duration-300 hover:shadow-lg",
-                plan.popular && "border-eco-green shadow-eco-green/10 shadow-lg scale-105 z-10"
-              )}
-            >
-              {plan.popular && (
-                <div className="absolute top-0 right-0">
-                  <Badge className="rounded-none rounded-bl-lg bg-eco-green text-white">
-                    Phổ biến nhất
-                  </Badge>
-                </div>
-              )}
+      {loading ? (
+        <div className="flex flex-col items-center justify-center py-20">
+          <Loader2 className="w-10 h-10 text-eco-green animate-spin mb-4" />
+          <p className="text-muted-foreground">Đang tải danh sách gói...</p>
+        </div>
+      ) : plans.length > 0 ? (
+        <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+          {plans.map((plan) => {
+            const Icon = getPlanIcon(plan.planCode);
+            const colorClass = getPlanColor(plan.subscriberType, plan.planCode);
+            const isPopular = plan.planCode === 'SCHOOL_BASIC'; // Example logic for popular
+            
+            return (
+              <Card 
+                key={plan.id}
+                className={cn(
+                  "relative overflow-hidden transition-all duration-300 hover:shadow-lg flex flex-col",
+                  isPopular && "border-eco-green shadow-eco-green/10 shadow-lg scale-105 z-10"
+                )}
+              >
+                {isPopular && (
+                  <div className="absolute top-0 right-0">
+                    <Badge className="rounded-none rounded-bl-lg bg-eco-green text-white">
+                      Phổ biến nhất
+                    </Badge>
+                  </div>
+                )}
 
-              <CardHeader className="pb-4">
-                <div className={cn(
-                  "w-12 h-12 rounded-xl flex items-center justify-center mb-4",
-                  `bg-${colorClass}/20`
-                )}>
-                  <Icon className={cn("w-6 h-6", `text-${colorClass}`)} />
-                </div>
-                <CardTitle className="text-xl">{plan.name}</CardTitle>
-                <CardDescription>Tối đa {plan.students} học sinh</CardDescription>
-              </CardHeader>
+                <CardHeader className="pb-4">
+                  <div className={cn(
+                    "w-12 h-12 rounded-xl flex items-center justify-center mb-4",
+                    `bg-${colorClass}/20`
+                  )}>
+                    <Icon className={cn("w-6 h-6", `text-${colorClass}`)} />
+                  </div>
+                  <CardTitle className="text-xl">{plan.planName}</CardTitle>
+                  <CardDescription className="line-clamp-2 h-10">
+                    {plan.description || "Gói đăng ký dành cho trường học"}
+                  </CardDescription>
+                </CardHeader>
 
-              <CardContent className="pb-4">
-                <div className="mb-6">
-                  <span className="text-3xl font-bold text-foreground">{plan.price}</span>
-                  <span className="text-muted-foreground">{plan.period}</span>
-                </div>
+                <CardContent className="pb-4 flex-grow">
+                  <div className="mb-6">
+                    <span className="text-3xl font-bold text-foreground">
+                      {plan.price === 0 ? 'Miễn phí' : new Intl.NumberFormat('vi-VN', { style: 'currency', currency: plan.currency || 'VND' }).format(plan.price)}
+                    </span>
+                    <span className="text-muted-foreground text-sm ml-1">
+                      {getDurationLabel(plan.durationDays)}
+                    </span>
+                  </div>
 
-                <ul className="space-y-3">
-                  {plan.features.map((feature, index) => (
-                    <li key={index} className="flex items-center gap-3 text-sm">
-                      <div className={cn(
-                        "w-5 h-5 rounded-full flex items-center justify-center flex-shrink-0",
-                        `bg-${colorClass}/20`
-                      )}>
-                        <Check className={cn("w-3 h-3", `text-${colorClass}`)} />
+                  <ul className="space-y-3">
+                    <li className="flex items-start gap-3 text-sm">
+                      <div className={cn("w-5 h-5 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5", `bg-${colorClass}/20`)}>
+                        <Users className={cn("w-3 h-3", `text-${colorClass}`)} />
                       </div>
-                      <span className="text-muted-foreground">{feature}</span>
+                      <span className="text-muted-foreground">
+                        {plan.maxStudents ? `Tối đa ${plan.maxStudents} học sinh` : 'Không giới hạn học sinh'}
+                      </span>
                     </li>
-                  ))}
-                </ul>
-              </CardContent>
 
-              <CardFooter>
-                <Button 
-                  className={cn(
-                    "w-full",
-                    plan.popular 
-                      ? "bg-eco-green hover:bg-eco-green/90" 
-                      : "bg-muted hover:bg-muted/80 text-foreground"
-                  )}
-                  onClick={() => handleSelectPlan(plan.id)}
-                  disabled={isProcessing && selectedPlan === plan.id}
-                >
-                  {isProcessing && selectedPlan === plan.id ? (
-                    "Đang xử lý..."
-                  ) : (
-                    `Chọn gói ${plan.name}`
-                  )}
-                </Button>
-              </CardFooter>
-            </Card>
-          );
-        })}
-      </div>
+                    {plan.maxCampaignsPerMonth !== null && (
+                      <li className="flex items-start gap-3 text-sm">
+                        <div className={cn("w-5 h-5 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5", `bg-${colorClass}/20`)}>
+                          <Zap className={cn("w-3 h-3", `text-${colorClass}`)} />
+                        </div>
+                        <span className="text-muted-foreground">Tối đa {plan.maxCampaignsPerMonth} chiến dịch/tháng</span>
+                      </li>
+                    )}
+
+                    {plan.maxRoundsPerCampaign !== null && (
+                      <li className="flex items-start gap-3 text-sm">
+                        <div className={cn("w-5 h-5 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5", `bg-${colorClass}/20`)}>
+                          <Sparkles className={cn("w-3 h-3", `text-${colorClass}`)} />
+                        </div>
+                        <span className="text-muted-foreground">{plan.maxRoundsPerCampaign} vòng/chiến dịch</span>
+                      </li>
+                    )}
+
+                    {plan.maxSchoolsPerCampaign !== null && (
+                      <li className="flex items-start gap-3 text-sm">
+                        <div className={cn("w-5 h-5 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5", `bg-${colorClass}/20`)}>
+                          <Check className={cn("w-3 h-3", `text-${colorClass}`)} />
+                        </div>
+                        <span className="text-muted-foreground">{plan.maxSchoolsPerCampaign} trường/chiến dịch</span>
+                      </li>
+                    )}
+
+                    {plan.gracePeriodDays !== null && (
+                      <li className="flex items-start gap-3 text-sm">
+                        <div className={cn("w-5 h-5 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5", `bg-${colorClass}/20`)}>
+                          <Calendar className={cn("w-3 h-3", `text-${colorClass}`)} />
+                        </div>
+                        <span className="text-muted-foreground">{plan.gracePeriodDays} ngày gia hạn</span>
+                      </li>
+                    )}
+
+                    {parseFeatures(plan.features).map((feature, index) => (
+                      <li key={index} className="flex items-start gap-3 text-sm">
+                        <div className={cn(
+                          "w-5 h-5 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5",
+                          `bg-${colorClass}/20`
+                        )}>
+                          <Check className={cn("w-3 h-3", `text-${colorClass}`)} />
+                        </div>
+                        <span className="text-muted-foreground">{feature}</span>
+                      </li>
+                    ))}
+                  </ul>
+                </CardContent>
+
+                <CardFooter>
+                  <Button 
+                    className={cn(
+                      "w-full",
+                      isPopular 
+                        ? "bg-eco-green hover:bg-eco-green/90" 
+                        : "bg-muted hover:bg-muted/80 text-foreground"
+                    )}
+                    onClick={() => handleSelectPlan(plan)}
+                    disabled={isProcessing && selectedPlan === plan.id}
+                  >
+                    {isProcessing && selectedPlan === plan.id ? (
+                      <div className="flex items-center gap-2">
+                        <Loader2 className="w-4 h-4 animate-spin" />
+                        <span>Đang xử lý...</span>
+                      </div>
+                    ) : (
+                      `Chọn gói ${plan.planName}`
+                    )}
+                  </Button>
+                </CardFooter>
+              </Card>
+            );
+          })}
+        </div>
+      ) : (
+        <Card className="p-12 text-center">
+          <p className="text-muted-foreground">Không có gói đăng ký nào khả dụng.</p>
+        </Card>
+      )}
+
 
       {/* Purchase History */}
       <Card>
