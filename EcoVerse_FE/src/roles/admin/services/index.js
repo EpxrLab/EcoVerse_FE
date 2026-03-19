@@ -55,7 +55,7 @@ const getAllSubscriptionPackages = async () => {
 
 const addNewSubscriptionPackage = async (payload) => {
   try {
-    const res = await axios.post("/admin/subscription-plans", payload);
+    const res = await axios.post("/subscription-plans", payload);
     return res.data;
   } catch (error) {
     console.log(error);
@@ -64,9 +64,7 @@ const addNewSubscriptionPackage = async (payload) => {
 
 const toggleSubsciptionActive = async (id) => {
   try {
-    const res = await axios.patch(
-      `admin/subscription-plans/${id}/toggle-active`,
-    );
+    const res = await axios.patch(`/subscription-plans/${id}/toggle-active`);
     return res.data;
   } catch (error) {
     console.log(error);
@@ -75,7 +73,7 @@ const toggleSubsciptionActive = async (id) => {
 
 const updateSubscriptionPackage = async (id, payload) => {
   try {
-    const res = await axios.put(`/admin/subscription-plans/${id}`, payload);
+    const res = await axios.put(`/subscription-plans/${id}`, payload);
     return res.data;
   } catch (error) {
     console.log(error);
@@ -84,7 +82,7 @@ const updateSubscriptionPackage = async (id, payload) => {
 
 const deleteSubsciptionPackage = async (id) => {
   try {
-    const res = await axios.delete(`/admin/subscription-plans/${id}`);
+    const res = await axios.delete(`/subscription-plans/${id}`);
     return res.data;
   } catch (error) {
     console.log(error);

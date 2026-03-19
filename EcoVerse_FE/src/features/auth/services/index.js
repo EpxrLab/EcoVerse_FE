@@ -41,7 +41,7 @@ const verifyOTP = async (payload) => {
 
 const uploadFile = async (formData) => {
   try {
-    const res = await axios.post("/files/upload/cloudinary", formData, {
+    const res = await axios.post("/files/upload/contract", formData, {
       headers: {
         "Content-Type": "multipart/form-data",
       },
