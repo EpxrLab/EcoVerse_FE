@@ -1,4 +1,3 @@
-import { useState } from "react";
 import { Outlet, NavLink, useLocation, useNavigate } from "react-router";
 import {
   Sidebar,
@@ -23,12 +22,15 @@ import {
   Leaf,
   TreePine,
   Sparkles,
-  BarChart3,
   FileQuestion,
   Flag,
   Trophy,
 } from "lucide-react";
-import { Avatar, AvatarFallback } from "@/shared/components/ui/avatar";
+import {
+  Avatar,
+  AvatarFallback,
+  AvatarImage,
+} from "@/shared/components/ui/avatar";
 import { cn } from "@/shared/lib/utils";
 import {
   Tooltip,
@@ -37,17 +39,17 @@ import {
 } from "@/shared/components/ui/tooltip";
 import { logoutFunction } from "../../features/auth/services";
 import toast from "react-hot-toast";
+import { usePartnership } from "./hooks/usePartnership";
 
 const menuItems = [
   { title: "Tổng quan", url: "/partnership", icon: LayoutDashboard },
   { title: "Chiến dịch", url: "/partnership/campaigns", icon: Flag },
   { title: "Bảng xếp hạng", url: "/partnership/leaderboard", icon: Trophy },
   { title: "Quiz", url: "/partnership/quizzes", icon: FileQuestion },
-  { title: "Báo cáo", url: "/partnership/reports", icon: BarChart3 },
   { title: "Phần thưởng", url: "/partnership/rewards", icon: Gift },
 ];
 
-function PartnershipSidebar({ partnershipInfo }) {
+function PartnershipSidebar({ partnershipInfo, getPartnershipTypeLabel }) {
   const navigate = useNavigate();
   const location = useLocation();
   const { state } = useSidebar();
@@ -65,18 +67,6 @@ function PartnershipSidebar({ partnershipInfo }) {
     } catch (error) {
       console.log(error);
     }
-  };
-
-  const getPartnershipTypeLabel = (type) => {
-    const types = {
-      sponsor: "Nhà tài trợ",
-      ngo: "Tổ chức phi chính phủ",
-      media: "Truyền thông",
-      technology: "Công nghệ",
-      education: "Giáo dục",
-      other: "Khác",
-    };
-    return types[type] || type;
   };
 
   return (
@@ -121,7 +111,7 @@ function PartnershipSidebar({ partnershipInfo }) {
             {!isCollapsed && (
               <div className="overflow-hidden flex-1">
                 <h2 className="font-bold text-sidebar-foreground text-sm truncate">
-                  {partnershipInfo?.organization_name || "Partnership"}
+                  {partnershipInfo?.organizationName || "Partnership"}
                 </h2>
                 <p className="text-xs text-muted-foreground flex items-center gap-1">
                   <TreePine className="w-3 h-3" />
@@ -138,7 +128,7 @@ function PartnershipSidebar({ partnershipInfo }) {
                 Lĩnh vực
               </p>
               <p className="text-sm font-bold text-eco-blue">
-                {getPartnershipTypeLabel(partnershipInfo.partnership_type)}
+                {getPartnershipTypeLabel(partnershipInfo.partnershipType)}
               </p>
             </div>
           )}
@@ -293,9 +283,10 @@ function PartnershipSidebar({ partnershipInfo }) {
   );
 }
 
-export default function PartnershipLayout({ partnershipInfo = null }) {
-  const [isLoading] = useState(false);
+export default function PartnershipLayout() {
   const navigate = useNavigate();
+  const { partnershipInfo, isLoading, getPartnershipTypeLabel } =
+    usePartnership();
 
   if (isLoading) {
     return (
@@ -313,7 +304,10 @@ export default function PartnershipLayout({ partnershipInfo = null }) {
   return (
     <SidebarProvider>
       <div className="min-h-screen flex w-full bg-background">
-        <PartnershipSidebar partnershipInfo={partnershipInfo} />
+        <PartnershipSidebar
+          partnershipInfo={partnershipInfo}
+          getPartnershipTypeLabel={getPartnershipTypeLabel}
+        />
         <main className="flex-1 flex flex-col">
           <header className="h-16 border-b-2 border-border bg-card flex items-center justify-between px-6 sticky top-0 z-10">
             <div className="flex items-center gap-4">
@@ -333,21 +327,24 @@ export default function PartnershipLayout({ partnershipInfo = null }) {
               </div>
             </div>
             <div className="flex items-center gap-3">
-              <div className="flex items-center gap-3 pl-3 border-l-2 border-border">
+              <div
+                className="flex items-center gap-3 pl-3 border-l-2 border-border cursor-pointer hover:opacity-80 transition-all group"
+                onClick={() => navigate("/partnership/profile")}
+              >
                 <div className="text-right hidden sm:block">
-                  <p className="text-sm font-semibold text-foreground">
-                    {partnershipInfo?.organization_name || "Partner"}
+                  <p className="text-sm font-semibold text-foreground group-hover:text-eco-blue transition-colors">
+                    {partnershipInfo?.contactPerson || "Partner"}
                   </p>
                   <p className="text-[10px] text-muted-foreground font-medium">
-                    Đối tác
+                    {partnershipInfo?.position || "Đối tác"}
                   </p>
                 </div>
-                <Avatar
-                  className="w-9 h-9 border-2 border-primary/20"
-                  onClick={() => navigate("/partnership/profile")}
-                >
-                  <AvatarFallback className="bg-primary text-primary-foreground font-bold text-sm">
-                    {partnershipInfo?.organization_name?.charAt(0) || "P"}
+                <Avatar className="w-9 h-9 border-2 border-eco-blue/20 transition-transform group-hover:scale-105">
+                  {partnershipInfo?.logoUrl ? (
+                    <AvatarImage src={partnershipInfo.logoUrl} alt="Logo" />
+                  ) : null}
+                  <AvatarFallback className="bg-eco-blue text-primary-foreground font-bold text-sm">
+                    {partnershipInfo?.organizationName?.charAt(0) || "P"}
                   </AvatarFallback>
                 </Avatar>
               </div>

@@ -58,8 +58,9 @@ export function useProfile() {
     formData.append('file', file);
     try {
       const response = await uploadFile(formData);
-      if (response?.status === 200 || response?.status === 0) {
-        return response.data.url;
+      const status = response?.status;
+      if (status == 200 || status == 0 || status === "200" || status === "0") {
+        return response?.data?.url || response?.url;
       }
       toast.error("Upload file thất bại.");
       return null;
