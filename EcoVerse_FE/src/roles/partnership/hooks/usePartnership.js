@@ -1,14 +1,6 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState } from "react";
 import { useNavigate } from "react-router";
-
-// TODO: Replace with real API calls when backend is ready
-// import api from '@/services/api';
-
-// Auth route paths (must match App.jsx)
-// /auth/partnership        → login
-// /auth/partnership/register
-// /auth/partnership/pending
-// /auth/partnership/rejected
+import { getAuthenticatedPartnership } from "../services";
 
 export function usePartnership() {
   const navigate = useNavigate();
@@ -18,26 +10,28 @@ export function usePartnership() {
   useEffect(() => {
     const checkAuth = async () => {
       try {
-        // TODO: Call API to verify token/session, e.g.:
-        // const { data: session } = await api.get('/auth/session');
-        // if (!session?.user) { navigate('/auth/partnership'); return; }
+        const res = await getAuthenticatedPartnership();
+        const data = res?.data || res;
 
-        // TODO: Call API to get partnership registration info, e.g.:
-        // const { data: registration } = await api.get('/partnership/me');
-        // if (!registration) { navigate('/auth/partnership/register'); return; }
-        // if (registration.status === 'pending')  { navigate('/auth/partnership/pending'); return; }
-        // if (registration.status === 'rejected') { navigate('/auth/partnership/rejected'); return; }
-        // setPartnershipInfo(registration);
+        if (!data) {
+          navigate("/auth/partnership");
+          return;
+        }
 
-        // Temporary: skip auth check, use mock data for development
-        setPartnershipInfo({
-          organization_name: 'Đối tác Demo',
-          partnership_type: 'sponsor',
-          status: 'approved',
-        });
+        // Logic check status (example)
+        if (data.status === "pending") {
+          navigate("/auth/partnership/pending");
+          return;
+        }
+        if (data.status === "rejected") {
+          navigate("/auth/partnership/rejected");
+          return;
+        }
+
+        setPartnershipInfo(data);
       } catch (error) {
-        console.error('Auth check error:', error);
-        navigate('/auth/partnership');
+        console.error("Auth check error:", error);
+        navigate("/auth/partnership");
       } finally {
         setIsLoading(false);
       }
@@ -60,14 +54,19 @@ export function usePartnership() {
 
   const getPartnershipTypeLabel = (type) => {
     const types = {
-      'sponsor': 'Nhà tài trợ',
-      'ngo': 'Tổ chức phi chính phủ',
-      'media': 'Truyền thông',
-      'technology': 'Công nghệ',
-      'education': 'Giáo dục',
-      'other': 'Khác',
+      SPONSOR: "Nhà tài trợ",
+      NGO: "Tổ chức phi chính phủ",
+      MEDIA: "Truyền thông",
+      TECHNOLOGY: "Công nghệ",
+      EDUCATION: "Giáo dục",
+      YOUTH_UNION: "Đoàn thanh niên",
+      WARD_GOVERNMENT: "Chính quyền phường/xã",
+      PUBLIC_ORGANIZATION: "Tổ chức công",
+      OTHER: "Khác",
     };
-    return types[type] || type;
+    // Safe check in case backend returns lowercase
+    const upperType = type?.toString().toUpperCase();
+    return types[upperType] || type;
   };
 
   return {

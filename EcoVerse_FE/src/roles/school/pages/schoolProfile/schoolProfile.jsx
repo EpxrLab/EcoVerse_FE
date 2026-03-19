@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Card, CardContent } from "@/shared/components/ui/card";
 import { Button } from "@/shared/components/ui/button";
 import { Badge } from "@/shared/components/ui/badge";
@@ -22,6 +22,7 @@ import { useNavigate } from "react-router";
 import { useProfile } from "../../hooks";
 import { cn } from "@/shared/lib/utils";
 import { Skeleton } from "@/shared/components/ui/skeleton";
+import { toast } from "sonner";
 
 
 
@@ -50,6 +51,15 @@ export default function SchoolProfile() {
   } = useProfile();
   const [isEditing, setIsEditing] = useState(false);
   const [formData, setFormData] = useState(null);
+  const [localPreviews, setLocalPreviews] = useState({ logoUrl: null, licenseUrl: null });
+  
+  // Cleanup object URLs when component unmounts or editing is finished
+  useEffect(() => {
+    return () => {
+      if (localPreviews.logoUrl) URL.revokeObjectURL(localPreviews.logoUrl);
+      if (localPreviews.licenseUrl) URL.revokeObjectURL(localPreviews.licenseUrl);
+    };
+  }, [localPreviews]);
 
   const handleBack = () => {
     navigate("/school");
@@ -63,6 +73,10 @@ export default function SchoolProfile() {
   const cancelEditing = () => {
     setIsEditing(false);
     setFormData(null);
+    // Cleanup local previews
+    if (localPreviews.logoUrl) URL.revokeObjectURL(localPreviews.logoUrl);
+    if (localPreviews.licenseUrl) URL.revokeObjectURL(localPreviews.licenseUrl);
+    setLocalPreviews({ logoUrl: null, licenseUrl: null });
   };
 
   const handleInputChange = (e) => {
@@ -74,10 +88,18 @@ export default function SchoolProfile() {
     const file = e.target.files?.[0];
     if (!file) return;
 
+    // Create immediate local preview
+    const previewUrl = URL.createObjectURL(file);
+    setLocalPreviews(prev => ({ ...prev, [field]: previewUrl }));
+
     const url = await handleFileUpload(file);
     if (url) {
       setFormData((prev) => ({ ...prev, [field]: url }));
       toast.success(`Đã tải lên ${field === 'logoUrl' ? 'Logo' : 'Giấy phép'} thành công!`);
+    } else {
+      // If upload fails, revert local preview
+      setLocalPreviews(prev => ({ ...prev, [field]: null }));
+      URL.revokeObjectURL(previewUrl);
     }
   };
 
@@ -501,8 +523,8 @@ export default function SchoolProfile() {
                               <label className="text-sm font-bold text-muted-foreground uppercase tracking-wider">Logo trường</label>
                               <div className="flex items-center gap-4">
                                 <div className="w-20 h-20 rounded-2xl border-2 border-dashed border-eco-green/20 overflow-hidden flex items-center justify-center bg-muted/20 shrink-0 shadow-inner group transition-all hover:border-eco-green/40">
-                                  {formData.logoUrl ? (
-                                    <img src={formData.logoUrl} alt="Logo Preview" className="w-full h-full object-cover transition-transform group-hover:scale-110" />
+                                  {localPreviews.logoUrl || formData.logoUrl ? (
+                                    <img src={localPreviews.logoUrl || formData.logoUrl} alt="Logo Preview" className="w-full h-full object-cover transition-transform group-hover:scale-110" />
                                   ) : (
                                     <School className="w-8 h-8 text-muted-foreground/40" />
                                   )}
@@ -536,8 +558,8 @@ export default function SchoolProfile() {
                               <label className="text-sm font-bold text-muted-foreground uppercase tracking-wider">Giấy phép thành lập (PNG/JPG)</label>
                               <div className="flex items-center gap-4">
                                 <div className="w-20 h-20 rounded-2xl border-2 border-dashed border-eco-green/20 overflow-hidden flex items-center justify-center bg-muted/20 shrink-0 shadow-inner group transition-all hover:border-eco-green/40">
-                                  {formData.licenseUrl ? (
-                                    <img src={formData.licenseUrl} alt="License Preview" className="w-full h-full object-cover transition-transform group-hover:scale-110" />
+                                  {localPreviews.licenseUrl || formData.licenseUrl ? (
+                                    <img src={localPreviews.licenseUrl || formData.licenseUrl} alt="License Preview" className="w-full h-full object-cover transition-transform group-hover:scale-110" />
                                   ) : (
                                     <FileText className="w-8 h-8 text-muted-foreground/40" />
                                   )}

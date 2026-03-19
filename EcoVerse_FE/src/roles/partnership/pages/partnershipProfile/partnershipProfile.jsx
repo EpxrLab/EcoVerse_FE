@@ -62,6 +62,15 @@ export default function PartnershipProfile() {
   const [wards, setWards] = useState([]);
   const [isEditing, setIsEditing] = useState(false);
   const [formData, setFormData] = useState(null);
+  const [localPreviews, setLocalPreviews] = useState({ logoUrl: null, licenseUrl: null });
+
+  // Cleanup object URLs to prevent memory leaks
+  useEffect(() => {
+    return () => {
+      if (localPreviews.logoUrl) URL.revokeObjectURL(localPreviews.logoUrl);
+      if (localPreviews.licenseUrl) URL.revokeObjectURL(localPreviews.licenseUrl);
+    };
+  }, [localPreviews]);
 
   useEffect(() => {
     fetchProfile();
@@ -151,6 +160,10 @@ export default function PartnershipProfile() {
     setFormData(null);
     setWards([]);
     setPCode(null);
+    // Cleanup local previews
+    if (localPreviews.logoUrl) URL.revokeObjectURL(localPreviews.logoUrl);
+    if (localPreviews.licenseUrl) URL.revokeObjectURL(localPreviews.licenseUrl);
+    setLocalPreviews({ logoUrl: null, licenseUrl: null });
   };
 
   const handleInputChange = (e) => {
@@ -161,17 +174,34 @@ export default function PartnershipProfile() {
   const handleFileChange = async (e, field) => {
     const file = e.target.files?.[0];
     if (!file) return;
+
+    // Create immediate local preview
+    const previewUrl = URL.createObjectURL(file);
+    setLocalPreviews(prev => ({ ...prev, [field]: previewUrl }));
+
     setIsUploadingFile(true);
+    const uploadData = new FormData();
+    uploadData.append('file', file);
+
     try {
-      const url = await uploadFile(file);
-      if (url) {
-        setFormData((prev) => ({ ...prev, [field]: url }));
-        toast.success(
-          `Đã tải lên ${field === "logoUrl" ? "Logo" : "Giấy phép"} thành công!`,
-        );
+      const response = await uploadFile(uploadData);
+      const status = response?.status;
+      if (status == 200 || status == 0 || status === "200" || status === "0") {
+        const url = response?.data?.url || response?.url;
+        if (url) {
+          setFormData((prev) => ({ ...prev, [field]: url }));
+          toast.success(
+            `Đã tải lên ${field === "logoUrl" ? "Logo" : "Giấy phép"} thành công!`,
+          );
+        }
+      } else {
+        throw new Error("Upload failed");
       }
     } catch (err) {
       toast.error("Tải file thất bại!");
+      // If upload fails, revert local preview
+      setLocalPreviews(prev => ({ ...prev, [field]: null }));
+      URL.revokeObjectURL(previewUrl);
     } finally {
       setIsUploadingFile(false);
     }
@@ -293,7 +323,7 @@ export default function PartnershipProfile() {
                   className={cn(
                     "px-4 py-1.5 rounded-full font-bold h-9",
                     profile.approvalStatus === "APPROVED"
-                      ? "bg-eco-green/10 text-eco-green border-eco-green/20"
+                      ? "bg-eco-blue/10 text-eco-blue border-eco-blue/20"
                       : "bg-amber-100 text-amber-600 border-amber-200",
                   )}
                 >
@@ -304,7 +334,7 @@ export default function PartnershipProfile() {
                 </Badge>
                 <Button
                   onClick={startEditing}
-                  className="bg-eco-green hover:bg-eco-green/90 rounded-xl gap-2 shadow-lg shadow-eco-green/20"
+                  className="bg-eco-blue hover:bg-eco-blue/90 rounded-xl gap-2 shadow-lg shadow-eco-blue/20"
                 >
                   Chỉnh sửa
                 </Button>
@@ -321,7 +351,7 @@ export default function PartnershipProfile() {
                 </Button>
                 <Button
                   onClick={handleSubmit}
-                  className="bg-eco-green hover:bg-eco-green/90 rounded-xl gap-2 shadow-lg shadow-eco-green/20"
+                  className="bg-eco-blue hover:bg-eco-blue/90 rounded-xl gap-2 shadow-lg shadow-eco-blue/20"
                   disabled={isUpdating || isUploadingFile}
                 >
                   {isUpdating || isUploadingFile ? (
@@ -342,10 +372,10 @@ export default function PartnershipProfile() {
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.5 }}
         >
-          <Card className="border-2 border-eco-green/15 overflow-hidden rounded-3xl bg-card/50 backdrop-blur-sm shadow-xl hover:shadow-2xl transition-all duration-300">
+          <Card className="border-2 border-eco-blue/15 overflow-hidden rounded-3xl bg-card/50 backdrop-blur-sm shadow-xl hover:shadow-2xl transition-all duration-300">
             <CardContent className="p-0">
               <div className="relative p-6 md:p-10">
-                <div className="absolute top-0 right-0 w-80 h-80 bg-gradient-to-br from-eco-green/15 to-transparent rounded-full blur-3xl -z-10" />
+                <div className="absolute top-0 right-0 w-80 h-80 bg-gradient-to-br from-eco-blue/15 to-transparent rounded-full blur-3xl -z-10" />
                 <div className="absolute bottom-0 left-0 w-64 h-64 bg-gradient-to-tr from-eco-blue/15 to-transparent rounded-full blur-3xl -z-10" />
 
                 {/* ══ VIEW MODE ══ */}
@@ -364,12 +394,12 @@ export default function PartnershipProfile() {
                                   className="w-full h-full object-cover"
                                 />
                               ) : (
-                                <Handshake className="w-16 h-16 text-eco-green" />
+                                <Handshake className="w-16 h-16 text-eco-blue" />
                               )}
                             </div>
                           </div>
-                          <div className="absolute -bottom-2 -right-2 w-12 h-12 rounded-2xl bg-white shadow-xl border-2 border-eco-green/20 flex items-center justify-center">
-                            <ShieldCheck className="w-6 h-6 text-eco-green" />
+                          <div className="absolute -bottom-2 -right-2 w-12 h-12 rounded-2xl bg-white shadow-xl border-2 border-eco-blue/20 flex items-center justify-center">
+                            <ShieldCheck className="w-6 h-6 text-eco-blue" />
                           </div>
                         </div>
 
@@ -380,7 +410,7 @@ export default function PartnershipProfile() {
                               {profile.organizationName}
                             </h2>
                             <div className="flex flex-wrap items-center justify-center md:justify-start gap-3">
-                              <div className="flex items-center gap-2 bg-eco-green/8 text-eco-green px-4 py-1.5 rounded-full border border-eco-green/15 text-sm font-bold">
+                              <div className="flex items-center gap-2 bg-eco-blue/8 text-eco-blue px-4 py-1.5 rounded-full border border-eco-blue/15 text-sm font-bold">
                                 <Network className="w-4 h-4" />
                                 {PARTNERSHIP_TYPE_MAP[
                                   profile.partnershipType
@@ -468,7 +498,7 @@ export default function PartnershipProfile() {
                                     }
                                     target="_blank"
                                     rel="noopener noreferrer"
-                                    className="hover:text-eco-green underline decoration-eco-green/30 decoration-2 underline-offset-4"
+                                    className="hover:text-eco-blue underline decoration-eco-blue/30 decoration-2 underline-offset-4"
                                   >
                                     {profile.linkWeb}
                                   </a>
@@ -498,7 +528,7 @@ export default function PartnershipProfile() {
                             </div>
                             {profile.position && (
                               <div className="flex items-center gap-2 text-sm text-muted-foreground bg-muted/50 p-2 rounded-lg">
-                                <ShieldCheck className="w-4 h-4 text-eco-green" />
+                                <ShieldCheck className="w-4 h-4 text-eco-blue" />
                                 <span>Chức vụ: {profile.position}</span>
                               </div>
                             )}
@@ -541,7 +571,6 @@ export default function PartnershipProfile() {
                         <Card className="lg:col-span-3 border-border/50 bg-background/50 rounded-2xl overflow-hidden shadow-sm">
                           <CardContent className="p-6 space-y-2">
                             <h3 className="font-bold text-foreground flex items-center gap-2 underline decoration-primary/20 decoration-4 underline-offset-4">
-                              <Sparkles className="w-4 h-4 text-primary" />
                               Giới thiệu về tổ chức
                             </h3>
                             <p className="text-sm text-muted-foreground leading-relaxed whitespace-pre-wrap">
@@ -559,7 +588,7 @@ export default function PartnershipProfile() {
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-10">
                       {/* Basic Info */}
                       <div className="space-y-6">
-                        <h3 className="text-lg font-bold text-eco-green flex items-center gap-2 border-b-2 border-eco-green/10 pb-2">
+                        <h3 className="text-lg font-bold text-eco-blue flex items-center gap-2 border-b-2 border-eco-blue/10 pb-2">
                           <Building2 className="w-5 h-5" /> Thông tin cơ bản
                         </h3>
                         <div className="grid gap-5">
@@ -572,7 +601,7 @@ export default function PartnershipProfile() {
                               value={formData.organizationName}
                               onChange={handleInputChange}
                               placeholder="Nhập tên tổ chức..."
-                              className="w-full bg-muted/30 border-2 border-border/50 rounded-2xl px-5 py-3 focus:border-eco-green focus:bg-background outline-none transition-all shadow-inner"
+                              className="w-full bg-muted/30 border-2 border-border/50 rounded-2xl px-5 py-3 focus:border-eco-blue focus:bg-background outline-none transition-all shadow-inner"
                             />
                           </div>
                           <div className="grid grid-cols-2 gap-5">
@@ -584,7 +613,7 @@ export default function PartnershipProfile() {
                                 name="partnershipType"
                                 value={formData.partnershipType}
                                 onChange={handleInputChange}
-                                className="w-full bg-muted/30 border-2 border-border/50 rounded-2xl px-4 py-3 focus:border-eco-green focus:bg-background outline-none transition-all shadow-inner font-medium"
+                                className="w-full bg-muted/30 border-2 border-border/50 rounded-2xl px-4 py-3 focus:border-eco-blue focus:bg-background outline-none transition-all shadow-inner font-medium"
                               >
                                 {Object.entries(PARTNERSHIP_TYPE_MAP).map(
                                   ([val, label]) => (
@@ -604,7 +633,7 @@ export default function PartnershipProfile() {
                                 value={formData.taxCode}
                                 onChange={handleInputChange}
                                 placeholder="Nhập mã số thuế..."
-                                className="w-full bg-muted/30 border-2 border-border/50 rounded-2xl px-5 py-3 focus:border-eco-green focus:bg-background outline-none transition-all shadow-inner"
+                                className="w-full bg-muted/30 border-2 border-border/50 rounded-2xl px-5 py-3 focus:border-eco-blue focus:bg-background outline-none transition-all shadow-inner"
                               />
                             </div>
                           </div>
@@ -772,10 +801,10 @@ export default function PartnershipProfile() {
                               Logo tổ chức
                             </label>
                             <div className="flex items-center gap-4">
-                              <div className="w-20 h-20 rounded-2xl border-2 border-dashed border-eco-green/20 overflow-hidden flex items-center justify-center bg-muted/20 shrink-0 shadow-inner group transition-all hover:border-eco-green/40">
-                                {formData.logoUrl ? (
+                              <div className="w-20 h-20 rounded-2xl border-2 border-dashed border-eco-blue/20 overflow-hidden flex items-center justify-center bg-muted/20 shrink-0 shadow-inner group transition-all hover:border-eco-blue/40">
+                                {localPreviews.logoUrl || formData.logoUrl ? (
                                   <img
-                                    src={formData.logoUrl}
+                                    src={localPreviews.logoUrl || formData.logoUrl}
                                     alt="Logo Preview"
                                     className="w-full h-full object-cover transition-transform group-hover:scale-110"
                                   />
@@ -797,7 +826,7 @@ export default function PartnershipProfile() {
                                 <label
                                   htmlFor="logo-upload"
                                   className={cn(
-                                    "cursor-pointer flex items-center justify-center h-12 px-6 border-2 border-eco-green/20 border-dashed rounded-2xl text-sm font-bold hover:bg-eco-green/5 hover:border-eco-green/40 transition-all",
+                                    "cursor-pointer flex items-center justify-center h-12 px-6 border-2 border-eco-blue/20 border-dashed rounded-2xl text-sm font-bold hover:bg-eco-blue/5 hover:border-eco-blue/40 transition-all",
                                     isUploadingFile &&
                                       "opacity-50 cursor-not-allowed",
                                   )}
@@ -805,7 +834,7 @@ export default function PartnershipProfile() {
                                   {isUploadingFile ? (
                                     <Loader2 className="w-4 h-4 animate-spin mr-2" />
                                   ) : (
-                                    <Sparkles className="w-4 h-4 mr-2 text-eco-green" />
+                                    <Sparkles className="w-4 h-4 mr-2 text-eco-blue" />
                                   )}
                                   Chọn ảnh Logo mới
                                 </label>
@@ -822,10 +851,10 @@ export default function PartnershipProfile() {
                               Giấy phép hoạt động (PNG/JPG)
                             </label>
                             <div className="flex items-center gap-4">
-                              <div className="w-20 h-20 rounded-2xl border-2 border-dashed border-eco-green/20 overflow-hidden flex items-center justify-center bg-muted/20 shrink-0 shadow-inner group transition-all hover:border-eco-green/40">
-                                {formData.licenseUrl ? (
+                              <div className="w-20 h-20 rounded-2xl border-2 border-dashed border-eco-blue/20 overflow-hidden flex items-center justify-center bg-muted/20 shrink-0 shadow-inner group transition-all hover:border-eco-blue/40">
+                                {localPreviews.licenseUrl || formData.licenseUrl ? (
                                   <img
-                                    src={formData.licenseUrl}
+                                    src={localPreviews.licenseUrl || formData.licenseUrl}
                                     alt="License Preview"
                                     className="w-full h-full object-cover transition-transform group-hover:scale-110"
                                   />
@@ -847,7 +876,7 @@ export default function PartnershipProfile() {
                                 <label
                                   htmlFor="license-upload"
                                   className={cn(
-                                    "cursor-pointer flex items-center justify-center h-12 px-6 border-2 border-eco-green/20 border-dashed rounded-2xl text-sm font-bold hover:bg-eco-green/5 hover:border-eco-green/40 transition-all",
+                                    "cursor-pointer flex items-center justify-center h-12 px-6 border-2 border-eco-blue/20 border-dashed rounded-2xl text-sm font-bold hover:bg-eco-blue/5 hover:border-eco-blue/40 transition-all",
                                     isUploadingFile &&
                                       "opacity-50 cursor-not-allowed",
                                   )}
@@ -861,7 +890,7 @@ export default function PartnershipProfile() {
                                 </label>
                                 {formData.licenseUrl && (
                                   <div className="flex items-center gap-2 px-1">
-                                    <div className="w-1.5 h-1.5 rounded-full bg-eco-green" />
+                                    <div className="w-1.5 h-1.5 rounded-full bg-eco-blue" />
                                     <p className="text-[10px] text-muted-foreground truncate max-w-[200px]">
                                       Đã có tài liệu hợp lệ
                                     </p>
@@ -884,7 +913,7 @@ export default function PartnershipProfile() {
                           onChange={handleInputChange}
                           rows={6}
                           placeholder="Mô tả tóm tắt về sứ mệnh, hoạt động và thành tựu của tổ chức..."
-                          className="w-full bg-muted/30 border-2 border-border/50 rounded-[2rem] px-6 py-4 focus:border-eco-green focus:bg-background outline-none transition-all shadow-inner resize-none leading-relaxed"
+                          className="w-full bg-muted/30 border-2 border-border/50 rounded-[2rem] px-6 py-4 focus:border-eco-blue focus:bg-background outline-none transition-all shadow-inner resize-none leading-relaxed"
                         />
                       </div>
                     </div>
