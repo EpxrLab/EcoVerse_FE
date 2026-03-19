@@ -126,7 +126,8 @@ function SchoolAdminSidebar({ schoolInfo, isProfileLoading }) {
             {!isCollapsed && (
               <div className="overflow-hidden flex-1">
                 <h2 className="font-bold text-sidebar-foreground text-sm truncate">
-                  {schoolInfo?.schoolName || (isProfileLoading ? "Loading..." : "School Admin")}
+                  {schoolInfo?.schoolName ||
+                    (isProfileLoading ? "Loading..." : "School Admin")}
                 </h2>
                 <p className="text-xs text-muted-foreground flex items-center gap-1">
                   <TreePine className="w-3 h-3" />
@@ -311,7 +312,10 @@ export default function SchoolAdminLayout() {
   return (
     <SidebarProvider>
       <div className="min-h-screen flex w-full bg-background">
-        <SchoolAdminSidebar schoolInfo={schoolInfo} isProfileLoading={isProfileLoading} />
+        <SchoolAdminSidebar
+          schoolInfo={schoolInfo}
+          isProfileLoading={isProfileLoading}
+        />
         <main className="flex-1 flex flex-col">
           <header className="h-16 border-b-2 border-border bg-card flex items-center justify-between px-6 sticky top-0 z-10">
             <div className="flex items-center gap-4">
@@ -332,16 +336,16 @@ export default function SchoolAdminLayout() {
             </div>
             <div className="flex items-center gap-3">
               <SchoolNotificationDropdown />
-              <div 
+              <div
                 className="flex items-center gap-3 pl-3 border-l-2 border-border cursor-pointer hover:opacity-80 transition-opacity"
                 onClick={() => {
-                  console.log("AVATAR CLICKED: Navigating to /school/profile");
                   navigate("/school/profile");
                 }}
               >
                 <div className="text-right hidden sm:block">
                   <p className="text-sm font-semibold text-foreground">
-                    {schoolInfo?.principalName || (isProfileLoading ? "Loading..." : "Admin")}
+                    {schoolInfo?.principalName ||
+                      (isProfileLoading ? "Loading..." : "Admin")}
                   </p>
                   <p className="text-[10px] text-muted-foreground font-medium">
                     {schoolInfo?.position || "Quản trị viên"}
