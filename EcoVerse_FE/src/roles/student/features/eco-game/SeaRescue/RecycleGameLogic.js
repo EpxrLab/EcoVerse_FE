@@ -86,17 +86,17 @@ export function initScene(container) {
 }
 
 /* ===================== INIT WORLD ===================== */
-export function initWorld(scene) {
+export function initWorld(scene, state) {
   // Set sea background
   scene.background = new THREE.Color(0x7dd3fc);
 
   // Ocean ground
   const gltfLoaderGround = new GLTFLoader();
-  const oceanState = {
-    oceanModel: null,
-    oceanMixer: null,
-    fallbackPlane: null,
-  };
+  // const oceanState = {
+  //   oceanModel: null,
+  //   oceanMixer: null,
+  //   fallbackPlane: null,
+  // };
 
   gltfLoaderGround.load(
     "/assets/ocean__water_perfect_loop.glb",
@@ -108,12 +108,12 @@ export function initWorld(scene) {
         if (child.isMesh) child.receiveShadow = true;
       });
       scene.add(oceanModel);
-      oceanState.oceanModel = oceanModel;
+      state.oceanModel = oceanModel;
 
       if (gltf.animations?.length > 0) {
         const mixer = new THREE.AnimationMixer(oceanModel);
         gltf.animations.forEach((clip) => mixer.clipAction(clip).play());
-        oceanState.oceanMixer = mixer;
+        state.oceanMixer = mixer;
       }
     },
     undefined,
@@ -122,7 +122,7 @@ export function initWorld(scene) {
       const fallback = makeMesh(new THREE.PlaneGeometry(100, 100), 0x0ea5e9);
       fallback.rotation.x = -Math.PI / 2;
       scene.add(fallback);
-      oceanState.fallbackPlane = fallback; // track for disposal
+      state.fallbackPlane = fallback; // track for disposal
     },
   );
 
@@ -138,9 +138,9 @@ export function initWorld(scene) {
   underwaterPlane.rotation.x = -Math.PI / 2;
   underwaterPlane.position.y = -2;
   scene.add(underwaterPlane);
-  oceanState.underwaterPlane = underwaterPlane; // track for disposal
+  state.underwaterPlane = underwaterPlane; // track for disposal
 
-  return oceanState;
+  // return oceanState;
 }
 
 /* ===================== INIT STORAGE (LIGHTHOUSE) ===================== */

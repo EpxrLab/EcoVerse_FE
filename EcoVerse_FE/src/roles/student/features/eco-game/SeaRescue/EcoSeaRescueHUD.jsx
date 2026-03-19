@@ -317,7 +317,6 @@ export function EcoSeaRescueHUD({ onComplete }) {
     setIsMobile(isMobileDevice());
 
     const { scene, camera, renderer } = initScene(containerRef.current);
-    const oceanState = initWorld(scene);
     const storage = initStorage(scene);
     const { player, playerState } = initPlayer(scene);
     const trash = initTrash(scene);
@@ -325,7 +324,10 @@ export function EcoSeaRescueHUD({ onComplete }) {
     const { speedZones, slowZones } = initZones(scene, obstacles);
 
     const state = {
-      ...oceanState,
+      oceanModel: null,
+      oceanMixer: null,
+      underwaterPlane: null,
+      fallbackPlane: null,
       player,
       storage,
       trash,
@@ -350,6 +352,8 @@ export function EcoSeaRescueHUD({ onComplete }) {
       speedMultiplier: 1,
       lastInventoryFullWarning: 0,
     };
+
+    initWorld(scene, state);
 
     gameRef.current = state;
 
