@@ -393,7 +393,7 @@ export function ImportQuizDialog({ isOpen, onClose, onImport, isImporting, impor
               </div>
               <div className="space-y-2">
                 <h3 className="text-2xl font-bold text-foreground">Import thành công!</h3>
-                <p className="text-muted-foreground max-w-sm mx-auto">Tất cả bài quiz và câu hỏi đã được tạo thành công vào hệ thống của trường.</p>
+                <p className="text-muted-foreground max-w-sm mx-auto">Tất cả bài quiz và câu hỏi đã được tạo thành công vào hệ thống.</p>
               </div>
 
               <Button

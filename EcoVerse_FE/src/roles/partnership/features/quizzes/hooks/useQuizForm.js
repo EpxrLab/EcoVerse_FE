@@ -1,107 +1,159 @@
 import { useState } from 'react';
 
 export function useQuizForm() {
-  const [isCreateOpen, setIsCreateOpen] = useState(false);
-  const [isEditOpen, setIsEditOpen] = useState(false);
-  const [isViewOpen, setIsViewOpen] = useState(false);
-  const [selectedQuiz, setSelectedQuiz] = useState(null);
-  
-  const [formData, setFormData] = useState({
+  // Quiz form state
+  const [quizForm, setQuizForm] = useState({
     title: '',
-    difficulty: 'easy',
     description: '',
+    difficulty: 'easy',
     timeLimit: 30,
-    passingScore: 70,
-    questions: [],
+    passingScore: 60,
   });
 
-  const handleOpenCreate = () => {
-    setIsCreateOpen(true);
+  // Questions state
+  const [questions, setQuestions] = useState([]);
+
+  // Question form state
+  const [questionForm, setQuestionForm] = useState({
+    question: '',
+    type: 'multiple_choice',
+    options: ['', '', '', ''],
+    correctAnswer: '',
+  });
+
+  // Dialog states
+  const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
+  const [isAddQuestionOpen, setIsAddQuestionOpen] = useState(false);
+  const [editingQuestionId, setEditingQuestionId] = useState(null);
+
+  // Handlers
+  const updateQuizForm = (data) => {
+    setQuizForm(prev => ({ ...prev, ...data }));
   };
 
-  const handleCloseCreate = () => {
-    setIsCreateOpen(false);
-    resetForm();
+  const updateQuestionForm = (data) => {
+    setQuestionForm(prev => ({ ...prev, ...data }));
   };
 
-  const handleView = (quiz) => {
-    setSelectedQuiz(quiz);
-    setIsViewOpen(true);
+  const addQuestion = (data) => {
+    if (data) {
+        setQuestions(prev => [...prev, data]);
+        return;
+    }
+    const newQuestion = {
+      id: Date.now().toString(),
+      question: questionForm.question,
+      type: questionForm.type,
+      options: questionForm.type === 'multiple_choice' ? questionForm.options : undefined,
+      correctAnswer: questionForm.correctAnswer,
+    };
+    setQuestions(prev => [...prev, newQuestion]);
+    resetQuestionForm();
+    setIsAddQuestionOpen(false);
   };
 
-  const handleCloseView = () => {
-    setIsViewOpen(false);
-    setSelectedQuiz(null);
+  const saveQuestion = (data) => {
+    // If data is passed (from QuizForm local state), use it
+    if (data) {
+        setQuestions(prev => prev.map(q => q.id == data.id ? { ...q, ...data } : q));
+        setEditingQuestionId(null);
+        return;
+    }
+
+    const updatedQuestion = {
+      id: editingQuestionId,
+      question: questionForm.question,
+      type: questionForm.type,
+      options: questionForm.type === 'multiple_choice' ? questionForm.options : undefined,
+      correctAnswer: questionForm.correctAnswer,
+    };
+    
+    setQuestions(prev => prev.map(q => q.id == editingQuestionId ? { ...q, ...updatedQuestion } : q));
+    resetQuestionForm();
+    setEditingQuestionId(null);
+    setIsAddQuestionOpen(false);
   };
 
-  const handleEdit = (quiz) => {
-    setSelectedQuiz(quiz);
-    setFormData({
-      title: quiz.title,
-      difficulty: quiz.difficulty,
-      description: quiz.description || '',
-      timeLimit: quiz.timeLimit || 30,
-      passingScore: quiz.passingScore || 70,
-      questions: [],
-    });
-    setIsEditOpen(true);
-  };
-
-  const handleCloseEdit = () => {
-    setIsEditOpen(false);
-    setSelectedQuiz(null);
-    resetForm();
-  };
-
-  const handleDelete = (quiz) => {
-    if (confirm(`Bạn có chắc muốn xóa quiz "${quiz.title}"?\n\nQuiz này có ${quiz.question_count} câu hỏi.`)) {
-      console.log('Deleting quiz:', quiz.id);
-      alert('Quiz đã được xóa thành công!');
+  const startEditQuestion = (id) => {
+    const q = questions.find(question => question.id === id);
+    if (q) {
+      setQuestionForm({
+        question: q.question,
+        type: q.type || 'multiple_choice',
+        options: q.options || ['', '', '', ''],
+        correctAnswer: q.correctAnswer,
+      });
+      setEditingQuestionId(id);
+      setIsAddQuestionOpen(true);
     }
   };
 
-  const updateFormData = (data) => {
-    setFormData(prev => ({ ...prev, ...data }));
+  const removeQuestion = (id) => {
+    setQuestions(prev => prev.filter(q => q.id !== id));
   };
 
-  const resetForm = () => {
-    setFormData({
+  const resetQuizForm = () => {
+    setQuizForm({
       title: '',
-      difficulty: 'easy',
       description: '',
+      difficulty: 'easy',
       timeLimit: 30,
-      passingScore: 70,
-      questions: [],
+      passingScore: 60,
+    });
+    setQuestions([]);
+  };
+
+  const resetQuestionForm = () => {
+    setQuestionForm({
+      question: '',
+      type: 'multiple_choice',
+      options: ['', '', '', ''],
+      correctAnswer: '',
     });
   };
 
-  const handleSubmit = () => {
-    console.log('Creating quiz:', formData);
-    alert(`Quiz "${formData.title}" đã được tạo với ${formData.questions.length} câu hỏi!`);
-    handleCloseCreate();
-  };
-
-  const handleUpdate = () => {
-    console.log('Updating quiz:', selectedQuiz?.id, formData);
-    alert(`Quiz "${formData.title}" đã được cập nhật!`);
-    handleCloseEdit();
+  const loadQuizForm = (data, questionsData = []) => {
+    setQuizForm({
+      title: data.title || '',
+      description: data.description || '',
+      difficulty: data.difficulty || 'easy',
+      timeLimit: data.timeLimit || 30,
+      passingScore: data.passingScore || 60,
+    });
+    setQuestions(questionsData);
   };
 
   return {
-    isCreateOpen,
-    handleOpenCreate,
-    handleCloseCreate,
-    handleSubmit,
-    isEditOpen,
-    handleEdit,
-    handleCloseEdit,
-    handleUpdate,
-    isViewOpen,
-    handleView,
-    handleCloseView,
-    handleDelete,
-    formData,
-    updateFormData,
-    selectedQuiz,
+    // Quiz form
+    quizForm,
+    updateQuizForm,
+    resetQuizForm,
+    loadQuizForm,
+
+    // Questions
+    questions,
+    addQuestion,
+    removeQuestion,
+
+    // Question form
+    questionForm,
+    updateQuestionForm,
+    resetQuestionForm,
+
+    // Editing
+    editingQuestionId,
+    startEditQuestion,
+    saveQuestion,
+    cancelAddQuestion: () => {
+        setIsAddQuestionOpen(false);
+        resetQuestionForm();
+        setEditingQuestionId(null);
+    },
+
+    // Dialog states
+    isCreateDialogOpen,
+    setIsCreateDialogOpen,
+    isAddQuestionOpen,
+    setIsAddQuestionOpen,
   };
 }
