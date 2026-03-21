@@ -69,12 +69,15 @@ import {
   PartnershipQuizzes,
   PartnershipLeaderboard,
   PartnershipRewards,
+  PartnershipSubscription,
 } from "@/roles/partnership";
 
 import NotFound from "./roles/notFound";
 import toast from "react-hot-toast";
 import PartnershipProfile from "./roles/partnership/pages/partnershipProfile/partnershipProfile";
 
+//========================Payment Routes==============================
+import PaymentResult from "./features/payment/pages/paymentResult/paymentResult";
 const queryClient = new QueryClient();
 
 const ProtectedRoute = ({ children, role }) => {
@@ -223,12 +226,22 @@ const App = () => (
                   element={<PartnershipLeaderboard />}
                 />
                 <Route path="rewards" element={<PartnershipRewards />} />
+                <Route path="subscription" element={<PartnershipSubscription />} />
               </Route>
               <Route
                 path="/partnership/profile"
                 element={
                   <ProtectedRoute role="THIRD_PARTY_PARTNERSHIP">
                     <PartnershipProfile />
+                  </ProtectedRoute>
+                }
+              />
+
+              <Route
+                path="/payment/result"
+                element={
+                  <ProtectedRoute>
+                    <PaymentResult />
                   </ProtectedRoute>
                 }
               />

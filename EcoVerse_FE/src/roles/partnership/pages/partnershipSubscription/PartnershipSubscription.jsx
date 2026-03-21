@@ -50,7 +50,7 @@ const getPlanIcon = (planCode) => {
 
 
 
-export default function SchoolSubscription() {
+export default function PartnershipSubscription() {
   const [plans, setPlans] = useState([]);
   const [loading, setLoading] = useState(true);
   const [selectedPlan, setSelectedPlan] = useState(null);
@@ -103,7 +103,7 @@ export default function SchoolSubscription() {
     setLoading(true);
     try {
       const response = await subscriptionService.getSubscriptionPlans({
-        subscriberType: 'SCHOOL'
+        subscriberType: 'PARTNERSHIP'
       });
       if (response.data && response.data.data) {
         setPlans(response.data.data.content || []);
@@ -173,10 +173,10 @@ export default function SchoolSubscription() {
           <CreditCard className="w-7 h-7 text-eco-green" />
         </div>
         <h1 className="text-3xl font-display font-bold text-foreground mb-3">
-          Chọn gói phù hợp cho trường của bạn
+          Chọn gói phù hợp cho doanh nghiệp của bạn
         </h1>
         <p className="text-muted-foreground">
-          Học sinh kiếm xu thông qua chơi game và hoàn thành quiz để đổi quà
+          Đăng ký gói để sử dụng đầy đủ các tính năng cho đối tác
         </p>
       </div>
 
@@ -191,8 +191,7 @@ export default function SchoolSubscription() {
               <h3 className="font-semibold text-foreground">Lưu ý quan trọng về gói đăng ký</h3>
               <ul className="text-sm text-muted-foreground space-y-1">
                 <li>• <strong>Không thể thay đổi gói giữa chừng:</strong> Sau khi đăng ký, bạn không thể nâng cấp hoặc hạ cấp cho đến khi gói hiện tại hết hạn.</li>
-                <li>• <strong>Thời gian gia hạn:</strong> Sau khi gói hết hạn, nhà trường có <strong>10 ngày</strong> để cân nhắc và gia hạn gói mới.</li>
-                <li>• <strong>Cách học sinh nhận xu:</strong> Học sinh tự kiếm xu thông qua chơi game phân loại rác và hoàn thành quiz, không được cấp xu tự động.</li>
+                <li>• <strong>Thời gian gia hạn:</strong> Sau khi gói hết hạn, doanh nghiệp có <strong>10 ngày</strong> để cân nhắc và gia hạn gói mới.</li>
               </ul>
             </div>
           </div>
@@ -263,7 +262,7 @@ export default function SchoolSubscription() {
           {plans.map((plan) => {
             const Icon = getPlanIcon(plan.planCode);
             const colorClass = getPlanColor(plan.subscriberType, plan.planCode);
-            const isPopular = plan.planCode === 'SCHOOL_BASIC'; // Example logic for popular
+            const isPopular = plan.planCode?.includes('BASIC') || plan.planCode === 'PARTNERSHIP_BASIC'; // Example logic for popular
             
             return (
               <Card 
@@ -290,7 +289,7 @@ export default function SchoolSubscription() {
                   </div>
                   <CardTitle className="text-xl">{plan.planName}</CardTitle>
                   <CardDescription className="line-clamp-2 h-10">
-                    {plan.description || "Gói đăng ký dành cho trường học"}
+                    {plan.description || "Gói đăng ký dành cho doanh nghiệp đối tác"}
                   </CardDescription>
                 </CardHeader>
 
@@ -537,13 +536,6 @@ export default function SchoolSubscription() {
         </CardHeader>
         <CardContent className="space-y-4">
           <div>
-            <h4 className="font-medium text-foreground mb-1">Học sinh nhận xu như thế nào?</h4>
-            <p className="text-sm text-muted-foreground">
-              Học sinh tự kiếm xu bằng cách chơi game phân loại rác và hoàn thành các bài quiz. 
-              Mỗi rác phân loại đúng được +10 xu, hoàn thành quiz với điểm ≥80% được +25 xu.
-            </p>
-          </div>
-          <div>
             <h4 className="font-medium text-foreground mb-1">Tôi có thể đổi gói giữa chừng không?</h4>
             <p className="text-sm text-muted-foreground">
               <strong>Không.</strong> Sau khi đăng ký, bạn không thể thay đổi gói cho đến khi gói hiện tại hết hạn. 
@@ -553,15 +545,15 @@ export default function SchoolSubscription() {
           <div>
             <h4 className="font-medium text-foreground mb-1">Điều gì xảy ra khi gói hết hạn?</h4>
             <p className="text-sm text-muted-foreground">
-              Khi gói hết hạn, nhà trường có <strong>10 ngày</strong> để gia hạn. 
-              Trong thời gian này, học sinh vẫn có thể sử dụng tài khoản nhưng không thể đổi quà mới. 
-              Sau 10 ngày, tài khoản sẽ bị tạm khóa cho đến khi gia hạn.
+              Khi gói hết hạn, doanh nghiệp có <strong>10 ngày</strong> để gia hạn. 
+              Trong thời gian này, các tính năng vẫn có thể được duy trì để xử lý hoàn tất chiến dịch dở dang. 
+              Sau 10 ngày, tài khoản sẽ bị tạm khóa các tính năng tạo chiến dịch mới cho đến khi gia hạn.
             </p>
           </div>
           <div>
             <h4 className="font-medium text-foreground mb-1">Hỗ trợ thanh toán nào?</h4>
             <p className="text-sm text-muted-foreground">
-              Chúng tôi hỗ trợ chuyển khoản ngân hàng, thẻ tín dụng/ghi nợ, và các ví điện tử phổ biến.
+              Chúng tôi hỗ trợ thanh toán trực tiếp qua PayOS bảo mật nhanh chóng.
             </p>
           </div>
         </CardContent>
