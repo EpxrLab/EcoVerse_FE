@@ -22,7 +22,9 @@ export default function PartnershipCampaigns() {
     updateFormData,
     availableSchools,
     availableQuizzes,
+    setAvailableQuizzes,
     availableGameLevels,
+    availableWasteItems,
     handleSubmit,
     handleRevertToDraft,
   } = usePartnershipCampaigns();
@@ -172,7 +174,9 @@ export default function PartnershipCampaigns() {
         onFormChange={updateFormData}
         availableSchools={availableSchools}
         availableQuizzes={availableQuizzes}
+        setAvailableQuizzes={setAvailableQuizzes}
         availableGameLevels={availableGameLevels}
+        availableWasteItems={availableWasteItems}
         onSubmit={handleSubmit}
       />
 

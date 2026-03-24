@@ -13,8 +13,12 @@ export function MarketplaceItems({ items, onEdit, onDelete }) {
             key={item.id} 
             className={`flex items-center gap-4 p-3 rounded-xl bg-muted/40 border border-border/50 ${!item.active ? "opacity-50" : ""}`}
           >
-            <div className="w-11 h-11 rounded-xl bg-eco-leaf/10 flex items-center justify-center text-xl border border-eco-leaf/20">
-              {item.image}
+            <div className="w-11 h-11 rounded-xl bg-eco-leaf/10 flex items-center justify-center text-xl border border-eco-leaf/20 overflow-hidden">
+              {typeof item.image === 'string' && item.image.startsWith('http') ? (
+                <img src={item.image} alt={item.name} className="w-full h-full object-cover" />
+              ) : (
+                item.image
+              )}
             </div>
             <div className="flex-1">
               <div className="flex items-center gap-2">

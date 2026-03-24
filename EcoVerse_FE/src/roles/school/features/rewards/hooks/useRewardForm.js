@@ -3,10 +3,15 @@ import { useState } from 'react';
 export function useRewardForm() {
   // Marketplace item form state
   const [itemForm, setItemForm] = useState({
-    name: '',
-    coins: 0,
-    stock: 0,
-    image: '🎁',
+    id: null,
+    rewardName: '',
+    rewardType: 'PHYSICAL',
+    description: '',
+    coinCost: 0,
+    imageUrl: '',
+    stockQuantity: 0,
+    isUnlimited: false,
+    termsConditions: ''
   });
 
   // Dialog states
@@ -23,19 +28,29 @@ export function useRewardForm() {
 
   const resetItemForm = () => {
     setItemForm({
-      name: '',
-      coins: 0,
-      stock: 0,
-      image: '🎁',
+      id: null,
+      rewardName: '',
+      rewardType: 'PHYSICAL',
+      description: '',
+      coinCost: 0,
+      imageUrl: '',
+      stockQuantity: 0,
+      isUnlimited: false,
+      termsConditions: ''
     });
   };
 
   const loadItemForm = (data) => {
     setItemForm({
-      name: data.name || '',
-      coins: data.coins || 0,
-      stock: data.stock || 0,
-      image: data.image || '🎁',
+      id: data.id,
+      rewardName: data.rewardName || data.name || '',
+      rewardType: data.rewardType || 'PHYSICAL',
+      description: data.description || '',
+      coinCost: data.coinCost !== undefined ? data.coinCost : (data.coins || 0),
+      imageUrl: data.imageUrl || data.image || '',
+      stockQuantity: data.stockQuantity !== undefined ? data.stockQuantity : (data.stock || 0),
+      isUnlimited: data.isUnlimited || false,
+      termsConditions: data.termsConditions || ''
     });
   };
 

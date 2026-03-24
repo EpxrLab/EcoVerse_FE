@@ -12,11 +12,24 @@ import {
 } from "@/shared/components/ui/select";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/shared/components/ui/dialog";
 import { Label } from "@/shared/components/ui/label";
+import { Checkbox } from "@/shared/components/ui/checkbox";
+import { Textarea } from "@/shared/components/ui/textarea";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/shared/components/ui/alert-dialog";
 import { Search, Plus, Gift, Clock, CheckCircle, XCircle, AlertCircle, Package, TrendingUp } from "lucide-react";
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from "recharts";
 import { useRewards } from '../../features/rewards/hooks/useRewards';
 import { useRewardForm } from '../../features/rewards/hooks';
 import { RewardStats, RewardList, MarketplaceItems } from '../../features/rewards/components';
+import { rewardService } from '../../services/reward.service';
 
 export default function SchoolRewards() {
   const {
@@ -52,11 +65,16 @@ export default function SchoolRewards() {
     itemForm,
     updateItemForm,
     resetItemForm,
+    loadItemForm,
     isAddItemOpen,
     setIsAddItemOpen,
+    isEditItemOpen,
+    setIsEditItemOpen,
     searchTerm,
     setSearchTerm,
   } = useRewardForm();
+
+  const [deleteId, setDeleteId] = useState(null);
 
   const physicalItems = marketplaceItems.filter(item => item.type === 'physical');
 
@@ -66,20 +84,63 @@ export default function SchoolRewards() {
   };
 
   const handleEditItem = (item) => {
-    console.log('Edit item:', item);
-    // TODO: Implement edit item logic
+    loadItemForm(item);
+    setIsEditItemOpen(true);
   };
 
   const handleDeleteItem = (id) => {
-    console.log('Delete item:', id);
-    // TODO: Implement delete item logic
+    setDeleteId(id);
   };
 
-  const handleAddItem = () => {
-    console.log('Add item:', itemForm);
-    // TODO: Implement add item logic
-    resetItemForm();
-    setIsAddItemOpen(false);
+  const handleConfirmDelete = async () => {
+    if (!deleteId) return;
+    try {
+      await rewardService.deleteReward(deleteId);
+      setDeleteId(null);
+      fetchRewards();
+    } catch (error) {
+      console.error('Failed to delete reward', error);
+    }
+  };
+
+  const handleAddItem = async () => {
+    try {
+      await rewardService.createReward({
+        rewardName: itemForm.rewardName,
+        rewardType: itemForm.rewardType || 'PHYSICAL',
+        description: itemForm.description,
+        coinCost: itemForm.coinCost,
+        imageUrl: itemForm.imageUrl,
+        stockQuantity: itemForm.stockQuantity,
+        isUnlimited: itemForm.isUnlimited,
+        termsConditions: itemForm.termsConditions
+      });
+      resetItemForm();
+      setIsAddItemOpen(false);
+      fetchRewards();
+    } catch (error) {
+      console.error('Failed to create reward', error);
+    }
+  };
+
+  const handleUpdateItem = async () => {
+    try {
+      await rewardService.updateReward(itemForm.id, {
+        rewardName: itemForm.rewardName,
+        rewardType: itemForm.rewardType || 'PHYSICAL',
+        description: itemForm.description,
+        coinCost: itemForm.coinCost,
+        imageUrl: itemForm.imageUrl,
+        stockQuantity: itemForm.stockQuantity,
+        isUnlimited: itemForm.isUnlimited,
+        termsConditions: itemForm.termsConditions
+      });
+      resetItemForm();
+      setIsEditItemOpen(false);
+      fetchRewards();
+    } catch (error) {
+      console.error('Failed to update reward', error);
+    }
   };
 
   return (
@@ -245,23 +306,64 @@ export default function SchoolRewards() {
                   <DialogHeader>
                     <DialogTitle>Thêm quà thật mới</DialogTitle>
                   </DialogHeader>
-                  <div className="space-y-4 py-4">
+                  <div className="space-y-4 py-4 max-h-[70vh] overflow-y-auto px-1">
                     <div className="space-y-2">
-                      <Label>Tên sản phẩm</Label>
+                      <Label>Tên sản phẩm *</Label>
                       <Input 
                         placeholder="VD: Voucher Rạp phim" 
-                        value={itemForm.name}
-                        onChange={(e) => updateItemForm({ name: e.target.value })}
+                        value={itemForm.rewardName}
+                        onChange={(e) => updateItemForm({ rewardName: e.target.value })}
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label>Hình ảnh</Label>
+                      <div className="flex items-center gap-3">
+                        <Input 
+                          type="file" 
+                          accept="image/*"
+                          onChange={async (e) => {
+                            const file = e.target.files?.[0];
+                            if (!file) return;
+                            try {
+                              const formData = new FormData();
+                              formData.append('file', file);
+                              const res = await rewardService.uploadImage(formData);
+                              const url = res.data?.data || res.data?.url || res.data;
+                              if (typeof url === 'string') {
+                                updateItemForm({ imageUrl: url });
+                              } else if (res.data?.data?.url) {
+                                updateItemForm({ imageUrl: res.data.data.url });
+                              }
+                            } catch (error) {
+                              console.error('Upload failed', error);
+                            }
+                          }}
+                          className="cursor-pointer file:cursor-pointer file:bg-eco-green/10 file:text-eco-green file:border-0 file:rounded-md file:px-2 file:py-1 file:mr-3 file:font-semibold hover:file:bg-eco-green/20 transition-all text-xs"
+                        />
+                        {itemForm.imageUrl && (
+                          <div className="shrink-0 w-10 h-10 border rounded-lg overflow-hidden relative">
+                            <img src={itemForm.imageUrl} alt="Preview" className="w-full h-full object-cover" />
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                    <div className="space-y-2">
+                      <Label>Mô tả</Label>
+                      <Textarea 
+                        placeholder="Mô tả ngắn gọn về phần thưởng..." 
+                        value={itemForm.description}
+                        onChange={(e) => updateItemForm({ description: e.target.value })}
+                        className="resize-none"
                       />
                     </div>
                     <div className="grid grid-cols-2 gap-4">
                       <div className="space-y-2">
-                        <Label>Giá (Xu)</Label>
+                        <Label>Giá (Xu) *</Label>
                         <Input 
                           type="number" 
                           placeholder="200" 
-                          value={itemForm.coins || ''}
-                          onChange={(e) => updateItemForm({ coins: parseInt(e.target.value) || 0 })}
+                          value={itemForm.coinCost || ''}
+                          onChange={(e) => updateItemForm({ coinCost: parseInt(e.target.value) || 0 })}
                         />
                       </div>
                       <div className="space-y-2">
@@ -269,16 +371,149 @@ export default function SchoolRewards() {
                         <Input 
                           type="number" 
                           placeholder="10" 
-                          value={itemForm.stock || ''}
-                          onChange={(e) => updateItemForm({ stock: parseInt(e.target.value) || 0 })}
+                          value={itemForm.stockQuantity || ''}
+                          onChange={(e) => updateItemForm({ stockQuantity: parseInt(e.target.value) || 0 })}
+                          disabled={itemForm.isUnlimited}
                         />
                       </div>
+                    </div>
+                    <div className="flex items-center space-x-2">
+                      <Checkbox 
+                        id="unlimited" 
+                        checked={itemForm.isUnlimited}
+                        onCheckedChange={(checked) => updateItemForm({ isUnlimited: !!checked })}
+                      />
+                      <label 
+                        htmlFor="unlimited" 
+                        className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
+                      >
+                        Không giới hạn số lượng
+                      </label>
+                    </div>
+                    <div className="space-y-2">
+                      <Label>Điều khoản sử dụng</Label>
+                      <Textarea 
+                        placeholder="Nhập điều khoản khi sử dụng hoặc đổi quà..." 
+                        value={itemForm.termsConditions}
+                        onChange={(e) => updateItemForm({ termsConditions: e.target.value })}
+                        className="resize-none"
+                      />
                     </div>
                     <Button 
                       className="w-full bg-eco-green hover:bg-eco-green-dark text-primary-foreground font-semibold"
                       onClick={handleAddItem}
+                      disabled={!itemForm.rewardName || itemForm.coinCost === undefined || itemForm.coinCost === null || itemForm.coinCost < 0}
                     >
                       Thêm sản phẩm
+                    </Button>
+                  </div>
+                </DialogContent>
+              </Dialog>
+
+              <Dialog open={isEditItemOpen} onOpenChange={(open) => { setIsEditItemOpen(open); if (!open) resetItemForm(); }}>
+                <DialogContent>
+                  <DialogHeader>
+                    <DialogTitle>Cập nhật quà tặng</DialogTitle>
+                  </DialogHeader>
+                  <div className="space-y-4 py-4 max-h-[70vh] overflow-y-auto px-1">
+                    <div className="space-y-2">
+                      <Label>Tên sản phẩm *</Label>
+                      <Input 
+                        placeholder="VD: Voucher Rạp phim" 
+                        value={itemForm.rewardName}
+                        onChange={(e) => updateItemForm({ rewardName: e.target.value })}
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label>Hình ảnh</Label>
+                      <div className="flex items-center gap-3">
+                        <Input 
+                          type="file" 
+                          accept="image/*"
+                          onChange={async (e) => {
+                            const file = e.target.files?.[0];
+                            if (!file) return;
+                            try {
+                              const formData = new FormData();
+                              formData.append('file', file);
+                              const res = await rewardService.uploadImage(formData);
+                              const url = res.data?.data || res.data?.url || res.data;
+                              if (typeof url === 'string') {
+                                updateItemForm({ imageUrl: url });
+                              } else if (res.data?.data?.url) {
+                                updateItemForm({ imageUrl: res.data.data.url });
+                              }
+                            } catch (error) {
+                              console.error('Upload failed', error);
+                            }
+                          }}
+                          className="cursor-pointer file:cursor-pointer file:bg-eco-green/10 file:text-eco-green file:border-0 file:rounded-md file:px-2 file:py-1 file:mr-3 file:font-semibold hover:file:bg-eco-green/20 transition-all text-xs"
+                        />
+                        {itemForm.imageUrl && (
+                          <div className="shrink-0 w-10 h-10 border rounded-lg overflow-hidden relative">
+                            <img src={itemForm.imageUrl} alt="Preview" className="w-full h-full object-cover" />
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                    <div className="space-y-2">
+                      <Label>Mô tả</Label>
+                      <Textarea 
+                        placeholder="Mô tả ngắn gọn về phần thưởng..." 
+                        value={itemForm.description}
+                        onChange={(e) => updateItemForm({ description: e.target.value })}
+                        className="resize-none"
+                      />
+                    </div>
+                    <div className="grid grid-cols-2 gap-4">
+                      <div className="space-y-2">
+                        <Label>Giá (Xu) *</Label>
+                        <Input 
+                          type="number" 
+                          placeholder="200" 
+                          value={itemForm.coinCost !== null && itemForm.coinCost !== undefined ? itemForm.coinCost : ''}
+                          onChange={(e) => updateItemForm({ coinCost: e.target.value === '' ? '' : parseInt(e.target.value) || 0 })}
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <Label>Số lượng</Label>
+                        <Input 
+                          type="number" 
+                          placeholder="10" 
+                          value={itemForm.stockQuantity !== null && itemForm.stockQuantity !== undefined ? itemForm.stockQuantity : ''}
+                          onChange={(e) => updateItemForm({ stockQuantity: e.target.value === '' ? '' : parseInt(e.target.value) || 0 })}
+                          disabled={itemForm.isUnlimited}
+                        />
+                      </div>
+                    </div>
+                    <div className="flex items-center space-x-2">
+                      <Checkbox 
+                        id="unlimited-edit" 
+                        checked={itemForm.isUnlimited}
+                        onCheckedChange={(checked) => updateItemForm({ isUnlimited: !!checked })}
+                      />
+                      <label 
+                        htmlFor="unlimited-edit" 
+                        className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
+                      >
+                        Không giới hạn số lượng
+                      </label>
+                    </div>
+                    <div className="space-y-2">
+                      <Label>Điều khoản sử dụng</Label>
+                      <Textarea 
+                        placeholder="Nhập điều khoản khi sử dụng hoặc đổi quà..." 
+                        value={itemForm.termsConditions}
+                        onChange={(e) => updateItemForm({ termsConditions: e.target.value })}
+                        className="resize-none"
+                      />
+                    </div>
+                    <Button 
+                      className="w-full bg-eco-green hover:bg-eco-green-dark text-primary-foreground font-semibold"
+                      onClick={handleUpdateItem}
+                      disabled={!itemForm.rewardName || itemForm.coinCost === undefined || itemForm.coinCost === null || itemForm.coinCost < 0}
+                    >
+                      Lưu thay đổi
                     </Button>
                   </div>
                 </DialogContent>
@@ -314,6 +549,21 @@ export default function SchoolRewards() {
           </CardContent>
         </Card>
       </div>
+
+      <AlertDialog open={!!deleteId} onOpenChange={(open) => !open && setDeleteId(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Xác nhận xóa</AlertDialogTitle>
+            <AlertDialogDescription>
+              Bạn có chắc chắn muốn xóa phần thưởng này? Hành động này không thể hoàn tác.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Hủy</AlertDialogCancel>
+            <AlertDialogAction onClick={handleConfirmDelete} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">Xóa</AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }

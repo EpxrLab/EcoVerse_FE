@@ -6,8 +6,10 @@ import { Label } from '@/shared/components/ui/label';
 import { Textarea } from '@/shared/components/ui/textarea';
 import { Checkbox } from '@/shared/components/ui/checkbox';
 import { Badge } from '@/shared/components/ui/badge';
-import { School, Users, MapPin, Package, Zap, Image as ImageIcon, Upload, X, Calendar } from 'lucide-react';
+import { School, Users, MapPin, Package, Zap, Image as ImageIcon, Upload, X, Calendar, Sparkles, Settings2, Bot, ChevronDown, ChevronUp } from 'lucide-react';
 import { cn } from '@/shared/lib/utils';
+
+const CATEGORY_LABELS = { plastic: "Nhựa", paper: "Giấy", organic: "Hữu cơ", others: "Khác" };
 
 export function CampaignForm({
   isOpen,
@@ -16,9 +18,15 @@ export function CampaignForm({
   onFormChange,
   availableSchools,
   availableQuizzes,
+  setAvailableQuizzes,
   availableGameLevels,
+  availableWasteItems = [],
   onSubmit,
 }) {
+  const [showAIQuiz, setShowAIQuiz] = React.useState(null);
+  const [aiTopic, setAiTopic] = React.useState('');
+  const [isGeneratingAI, setIsGeneratingAI] = React.useState(false);
+  const [expandedConfig, setExpandedConfig] = React.useState(null);
 
   const toggleSchool = (schoolId) => {
     const exists = formData.school_participations.find(sp => sp.school_id === schoolId);
@@ -72,10 +80,63 @@ export function CampaignForm({
 
   const toggleQualifyingRoundGameLevel = (roundIndex, levelId) => {
     const round = formData.qualifying_rounds[roundIndex];
-    const newLevelIds = round.game_level_ids.includes(levelId)
-      ? round.game_level_ids.filter(id => id !== levelId)
-      : [...round.game_level_ids, levelId];
-    updateQualifyingRound(roundIndex, { game_level_ids: newLevelIds });
+    if (!round.level_configs) round.level_configs = {};
+    const isSelected = round.game_level_ids.includes(levelId);
+    
+    let newLevelIds;
+    let newConfigs = { ...round.level_configs };
+    
+    if (isSelected) {
+      newLevelIds = round.game_level_ids.filter(id => id !== levelId);
+      delete newConfigs[levelId];
+      if (expandedConfig === `${roundIndex}-${levelId}`) setExpandedConfig(null);
+    } else {
+      newLevelIds = [...round.game_level_ids, levelId];
+      const level = availableGameLevels.find(l => String(l.id) === String(levelId));
+      const binConfigs = {};
+      if (level && level.binTypes) {
+        level.binTypes.forEach(b => {
+           binConfigs[b] = []; 
+        });
+      }
+      newConfigs[levelId] = binConfigs;
+    }
+    updateQualifyingRound(roundIndex, { game_level_ids: newLevelIds, level_configs: newConfigs });
+  };
+
+  const toggleWasteItem = (roundIndex, levelId, binType, itemId) => {
+    const round = formData.qualifying_rounds[roundIndex];
+    if (!round.level_configs) return;
+    const newConfigs = { ...round.level_configs };
+    if (!newConfigs[levelId]) return;
+    const currentItems = newConfigs[levelId][binType] || [];
+    if (currentItems.includes(itemId)) {
+      newConfigs[levelId][binType] = currentItems.filter(id => id !== itemId);
+    } else {
+      newConfigs[levelId][binType] = [...currentItems, itemId];
+    }
+    updateQualifyingRound(roundIndex, { level_configs: newConfigs });
+  };
+
+  const handleGenerateAIQuiz = (roundIndex) => {
+    if (!aiTopic.trim()) return;
+    setIsGeneratingAI(true);
+    setTimeout(() => {
+      const newQuiz = {
+        id: `ai_${Date.now()}`,
+        title: `Quiz AI: ${aiTopic}`,
+        difficulty: 'medium',
+        question_count: 10
+      };
+      if (typeof setAvailableQuizzes === 'function') {
+        setAvailableQuizzes(prev => [...prev, newQuiz]);
+      }
+      const round = formData.qualifying_rounds[roundIndex];
+      updateQualifyingRound(roundIndex, { quiz_ids: [...round.quiz_ids, newQuiz.id] });
+      setIsGeneratingAI(false);
+      setAiTopic('');
+      setShowAIQuiz(null);
+    }, 1500);
   };
 
   const removeQualifyingRound = (index) => {
@@ -516,16 +577,165 @@ export function CampaignForm({
                       </p>
                     </div>
 
-                    <div className="border-t pt-4 space-y-4">
+                    <div className="border-t pt-4 space-y-6">
                       <h4 className="font-semibold text-sm">Nội dung vòng loại</h4>
                       
-                      <div className="space-y-2">
-                        <div className="flex items-center justify-between">
-                          <Label className="text-sm font-medium">Chọn Quiz</Label>
-                          <Badge variant="outline" className="text-xs">
-                            {round.quiz_ids.length} quiz
-                          </Badge>
+                      {/* 1. Game Selection */}
+                      <div className="space-y-4">
+                        <div className="space-y-2">
+                          <Label className="text-sm font-medium">1. Chọn Loại Game & Cấp độ</Label>
+                          <div className="grid grid-cols-2 gap-2 mt-1">
+                            <div
+                              className={cn(
+                                "p-2 rounded border cursor-pointer transition-all text-xs",
+                                round.selected_game_type === 'collection-sorting'
+                                  ? "bg-eco-blue/5 border-eco-blue/30"
+                                  : "border-border hover:bg-muted/50"
+                              )}
+                              onClick={() => updateQualifyingRound(index, { selected_game_type: 'collection-sorting', game_level_ids: [] })}
+                            >
+                              <div className="flex items-center gap-2">
+                                <Package className="w-4 h-4" />
+                                <span className="font-medium">Thu thập & Phân loại</span>
+                              </div>
+                            </div>
+                            <div
+                              className={cn(
+                                "p-2 rounded border cursor-pointer transition-all text-xs",
+                                round.selected_game_type === 'run-sorting'
+                                  ? "bg-eco-green/5 border-eco-green/30"
+                                  : "border-border hover:bg-muted/50"
+                              )}
+                              onClick={() => updateQualifyingRound(index, { selected_game_type: 'run-sorting', game_level_ids: [] })}
+                            >
+                              <div className="flex items-center gap-2">
+                                <Zap className="w-4 h-4" />
+                                <span className="font-medium">Chạy & Phân loại</span>
+                              </div>
+                            </div>
+                          </div>
                         </div>
+
+                        {round.selected_game_type && (
+                          <div className="space-y-2 mt-3">
+                            <div className="flex items-center justify-between">
+                              <Label className="text-sm font-medium">Danh sách Cấp độ</Label>
+                              <Badge variant="outline" className="text-xs">
+                                {round.game_level_ids.length} cấp độ
+                              </Badge>
+                            </div>
+                            <div className="space-y-2 max-h-[250px] overflow-y-auto pr-1">
+                              {availableGameLevels
+                                .filter(level => level.gameType === round.selected_game_type)
+                                .map((level) => {
+                                  const isSelected = round.game_level_ids.includes(level.id);
+                                  const configKey = `${index}-${level.id}`;
+                                  const isExpanded = expandedConfig === configKey;
+                                  return (
+                                    <div key={level.id} className={cn("rounded-lg border-2 transition-all overflow-hidden", isSelected ? "border-green-500 shadow-sm" : "border-muted bg-background hover:border-green-200")}>
+                                      <div
+                                        className={cn("flex items-center justify-between p-3 cursor-pointer", isSelected ? "bg-green-50" : "bg-transparent hover:bg-green-50/30")}
+                                        onClick={() => toggleQualifyingRoundGameLevel(index, level.id)}
+                                      >
+                                        <div className="flex items-center gap-2">
+                                          <p className={cn("font-medium text-sm", isSelected ? "text-green-900" : "text-foreground")}>{level.name}</p>
+                                          <Badge variant="outline" className={cn("text-[10px] h-5 px-1.5 shrink-0 transition-colors", isSelected ? "bg-green-500 text-white border-green-500" : "text-muted-foreground")}>
+                                            {level.difficulty}
+                                          </Badge>
+                                        </div>
+                                        {isSelected && (
+                                           <Button 
+                                             size="sm" 
+                                             variant="ghost" 
+                                             className="h-6 px-2 text-xs text-green-700 hover:text-green-800 hover:bg-green-100 z-10 gap-1"
+                                             onClick={(e) => { e.stopPropagation(); setExpandedConfig(isExpanded ? null : configKey); }}
+                                           >
+                                             <Settings2 className="w-3 h-3" /> Cấu hình rác
+                                             {isExpanded ? <ChevronUp className="w-3 h-3" /> : <ChevronDown className="w-3 h-3"/>}
+                                           </Button>
+                                        )}
+                                      </div>
+                                      
+                                      {/* Expanded Config Content */}
+                                      {isSelected && isExpanded && round.level_configs && round.level_configs[level.id] && (
+                                        <div className="p-3 bg-white border-t border-green-100 space-y-3">
+                                          <p className="text-xs text-muted-foreground mb-2">Chọn rác phù hợp cho từng loại thùng trong cấp độ này:</p>
+                                          {level.binTypes && level.binTypes.map(binType => {
+                                            const availableForBin = availableWasteItems.filter(item => item.category === binType);
+                                            const selectedItems = round.level_configs[level.id][binType] || [];
+                                            return (
+                                              <div key={binType} className="space-y-1.5">
+                                                <Label className="text-xs font-semibold text-gray-700">Thùng: {CATEGORY_LABELS[binType] || binType}</Label>
+                                                {availableForBin.length > 0 ? (
+                                                  <div className="flex flex-wrap gap-1.5">
+                                                    {availableForBin.map(wItem => (
+                                                      <Badge 
+                                                        key={wItem.id}
+                                                        variant="outline" 
+                                                        className={cn("cursor-pointer px-2 py-0.5 text-xs select-none", selectedItems.includes(wItem.id) ? "bg-blue-100 border-blue-300 text-blue-800" : "bg-gray-50 border-gray-200 text-gray-500 hover:bg-gray-100")}
+                                                        onClick={() => toggleWasteItem(index, level.id, binType, wItem.id)}
+                                                      >
+                                                        {wItem.image} {wItem.name}
+                                                      </Badge>
+                                                    ))}
+                                                  </div>
+                                                ) : <div className="text-xs text-gray-400 italic">Không có rác phù hợp</div>}
+                                              </div>
+                                            )
+                                          })}
+                                        </div>
+                                      )}
+                                    </div>
+                                  );
+                                })}
+                            </div>
+                          </div>
+                        )}
+                      </div>
+
+                      {/* 2. Quiz Selection Component */}
+                      <div className="space-y-3 pt-2 border-t mt-4">
+                        <div className="flex items-center justify-between">
+                          <Label className="text-sm font-medium">2. Chọn Quiz</Label>
+                          <div className="flex items-center gap-2">
+                            <Badge variant="outline" className="text-xs mr-2">
+                              {round.quiz_ids.length} quiz
+                            </Badge>
+                            <Button 
+                              size="sm" 
+                              className="h-7 text-xs bg-purple-100 text-purple-700 hover:bg-purple-200 hover:text-purple-800 border-0"
+                              onClick={() => setShowAIQuiz(showAIQuiz === index ? null : index)}
+                            >
+                              <Sparkles className="w-3 h-3 mr-1" /> Tạo Quiz bằng AI
+                            </Button>
+                          </div>
+                        </div>
+
+                        {showAIQuiz === index && (
+                          <div className="bg-purple-50 p-3 rounded-lg border border-purple-100 flex flex-col gap-2 mb-3 animate-in fade-in zoom-in-95 duration-200">
+                            <div className="flex items-center gap-2">
+                              <Bot className="w-4 h-4 text-purple-600" />
+                              <span className="text-sm font-semibold text-purple-800">Tạo Quiz với AI</span>
+                            </div>
+                            <Textarea 
+                              value={aiTopic}
+                              onChange={e => setAiTopic(e.target.value)}
+                              placeholder="Nhập chủ đề muốn tạo (VD: Tái chế nhựa dùng một lần...)"
+                              className="text-sm min-h-[60px] resize-none"
+                            />
+                            <div className="flex justify-end mt-1">
+                              <Button 
+                                size="sm" 
+                                onClick={() => handleGenerateAIQuiz(index)}
+                                disabled={isGeneratingAI || !aiTopic.trim()}
+                                className="bg-purple-600 hover:bg-purple-700 text-white h-7.5"
+                              >
+                                {isGeneratingAI ? "Đang tạo..." : "Sinh bộ câu hỏi"}
+                              </Button>
+                            </div>
+                          </div>
+                        )}
+
                         <div className="grid grid-cols-2 gap-2 border rounded-lg p-3 max-h-[150px] overflow-y-auto bg-background">
                           {availableQuizzes.map((quiz) => {
                             const isSelected = round.quiz_ids.includes(quiz.id);
@@ -557,83 +767,6 @@ export function CampaignForm({
                           })}
                         </div>
                       </div>
-
-                      <div className="space-y-2">
-                        <Label className="text-sm font-medium">Loại Game</Label>
-                        <div className="grid grid-cols-2 gap-2">
-                          <div
-                            className={cn(
-                              "p-2 rounded border cursor-pointer transition-all text-xs",
-                              round.selected_game_type === 'collection-sorting'
-                                ? "bg-eco-blue/5 border-eco-blue/30"
-                                : "border-border hover:bg-muted/50"
-                            )}
-                            onClick={() => updateQualifyingRound(index, { selected_game_type: 'collection-sorting', game_level_ids: [] })}
-                          >
-                            <div className="flex items-center gap-2">
-                              <Package className="w-4 h-4" />
-                              <span className="font-medium">Thu thập & Phân loại</span>
-                            </div>
-                          </div>
-                          <div
-                            className={cn(
-                              "p-2 rounded border cursor-pointer transition-all text-xs",
-                              round.selected_game_type === 'run-sorting'
-                                ? "bg-eco-green/5 border-eco-green/30"
-                                : "border-border hover:bg-muted/50"
-                            )}
-                            onClick={() => updateQualifyingRound(index, { selected_game_type: 'run-sorting', game_level_ids: [] })}
-                          >
-                            <div className="flex items-center gap-2">
-                              <Zap className="w-4 h-4" />
-                              <span className="font-medium">Chạy & Phân loại</span>
-                            </div>
-                          </div>
-                        </div>
-                      </div>
-
-                      {round.selected_game_type && (
-                        <div className="space-y-2">
-                          <div className="flex items-center justify-between">
-                            <Label className="text-sm font-medium">Cấp độ Game</Label>
-                            <Badge variant="outline" className="text-xs">
-                              {round.game_level_ids.length} cấp độ
-                            </Badge>
-                          </div>
-                          <div className="grid grid-cols-2 gap-2 border rounded-lg p-3 max-h-[150px] overflow-y-auto bg-background">
-                            {availableGameLevels
-                              .filter(level => level.gameType === round.selected_game_type)
-                              .map((level) => {
-                                const isSelected = round.game_level_ids.includes(level.id);
-                                return (
-                                  <div
-                                    key={level.id}
-                                    className={cn(
-                                      "flex flex-col gap-1 p-3 rounded-lg border-2 cursor-pointer transition-all",
-                                      isSelected
-                                        ? "bg-green-50 border-green-500 shadow-md"
-                                        : "border-muted bg-background hover:border-green-200 hover:bg-green-50/30"
-                                    )}
-                                    onClick={() => toggleQualifyingRoundGameLevel(index, level.id)}
-                                  >
-                                    <div className="flex items-center justify-between gap-2">
-                                      <p className={cn("font-medium text-sm", isSelected ? "text-green-900" : "text-foreground")}>{level.name}</p>
-                                      <Badge 
-                                        variant="outline" 
-                                        className={cn(
-                                          "text-[10px] h-5 px-1.5 shrink-0 transition-colors", 
-                                          isSelected ? "bg-green-500 text-white border-green-500" : "text-muted-foreground"
-                                        )}
-                                      >
-                                        {level.difficulty}
-                                      </Badge>
-                                    </div>
-                                  </div>
-                                );
-                              })}
-                          </div>
-                        </div>
-                      )}
                     </div>
                   </div>
                 ))}
