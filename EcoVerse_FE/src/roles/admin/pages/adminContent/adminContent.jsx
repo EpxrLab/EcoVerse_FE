@@ -1,4 +1,4 @@
-import { useState, useRef, useMemo, lazy, Suspense } from "react";
+import { useState, useMemo, useEffect } from "react";
 import {
   Table,
   Button,
@@ -7,9 +7,11 @@ import {
   Card,
   Modal,
   Form,
-  Upload,
   Tag,
-  Statistic,
+  Tabs,
+  Switch,
+  InputNumber,
+  Spin,
 } from "antd";
 import {
   SearchOutlined,
@@ -18,216 +20,53 @@ import {
   DeleteOutlined,
   InboxOutlined,
   CloseCircleOutlined,
-  ReloadOutlined,
   AppstoreOutlined,
+  TagsOutlined,
 } from "@ant-design/icons";
 import { motion, AnimatePresence } from "framer-motion";
+import {
+  addNewSubWasteCategory,
+  addWasteItem,
+  deleteSubWasteCategory,
+  deleteWasteItem,
+  getAllSubWasteCategories,
+  getAllWasteItems,
+  updateSubWasteCategory,
+  updateWasteItem,
+  uploadIconImage,
+  uploadModel3D,
+} from "../../services";
+import toast from "react-hot-toast";
 
 const { TextArea } = Input;
 
-// ─── Demo Data ────────────────────────────────────────────────────────────────
+// ─── Constants ────────────────────────────────────────────────────────────────
 
-const DEMO_WASTE_ITEMS = [
-  {
-    id: 1,
-    image: "🥤",
-    name: "Chai nhựa",
-    category: "plastic",
-    description: "Chai nhựa nước uống",
-    funFact: "Có thể tái chế 100%",
-  },
-  {
-    id: 2,
-    image: "📄",
-    name: "Giấy A4",
-    category: "paper",
-    description: "Giấy in văn phòng",
-    funFact: "1 tấn giấy cứu được 17 cây",
-  },
-  {
-    id: 3,
-    image: "🍎",
-    name: "Vỏ táo",
-    category: "organic",
-    description: "Vỏ hoa quả hữu cơ",
-    funFact: "Phân hủy trong 2 tuần",
-  },
-  {
-    id: 4,
-    image: "🥡",
-    name: "Hộp xốp",
-    category: "others",
-    description: "Hộp đựng thức ăn",
-    funFact: "Mất 500 năm phân hủy",
-  },
-  {
-    id: 5,
-    image: "🧃",
-    name: "Hộp sữa",
-    category: "plastic",
-    description: "Hộp sữa nhựa",
-    funFact: "Tái chế thành ghế nhựa",
-  },
-  {
-    id: 6,
-    image: "📰",
-    name: "Báo cũ",
-    category: "paper",
-    description: "Tờ báo đã đọc",
-    funFact: "Tái chế tiết kiệm 70% năng lượng",
-  },
-  {
-    id: 7,
-    image: "🍌",
-    name: "Vỏ chuối",
-    category: "organic",
-    description: "Vỏ trái cây",
-    funFact: "Làm phân bón tốt",
-  },
-  {
-    id: 8,
-    image: "🔋",
-    name: "Pin",
-    category: "others",
-    description: "Pin điện tử",
-    funFact: "Chứa chất độc hại",
-  },
+const MAIN_CATEGORIES = [
+  { value: "RECYCLABLE", label: "Tái chế được", color: "blue" },
+  { value: "ORGANIC", label: "Hữu cơ", color: "green" },
+  { value: "HAZARDOUS", label: "Nguy hại", color: "red" },
+  { value: "GENERAL", label: "Rác thông thường", color: "default" },
 ];
-
-const CATEGORY_CONFIG = {
-  plastic: {
-    label: "Nhựa",
-    color: "blue",
-    tw: "bg-blue-50 text-blue-600 border-blue-200",
-  },
-  paper: {
-    label: "Giấy",
-    color: "green",
-    tw: "bg-green-50 text-green-600 border-green-200",
-  },
-  organic: {
-    label: "Hữu cơ",
-    color: "orange",
-    tw: "bg-amber-50 text-amber-600 border-amber-200",
-  },
-  others: {
-    label: "Khác",
-    color: "default",
-    tw: "bg-gray-50 text-gray-600 border-gray-200",
-  },
+const CATEGORY_STYLE = {
+  RECYCLABLE: "bg-blue-50 text-blue-600 border-blue-200",
+  ORGANIC: "bg-green-50 text-green-600 border-green-200",
+  HAZARDOUS: "bg-red-50 text-red-600 border-red-200",
+  GENERAL: "bg-gray-50 text-gray-600 border-gray-200",
+};
+const CATEGORY_LABEL = {
+  RECYCLABLE: "Tái chế được",
+  ORGANIC: "Hữu cơ",
+  HAZARDOUS: "Nguy hại",
+  GENERAL: "Rác thông thường",
 };
 
-// ─── Lazy-loaded form body ────────────────────────────────────────────────────
-
-const WasteItemForm = lazy(() =>
-  Promise.resolve({
-    default: ({ form, imageUrl, setImageUrl, isEdit, item }) => {
-      const handleUploadChange = (info) => {
-        if (info.file.status === "done" || info.file.originFileObj) {
-          const url = URL.createObjectURL(info.file.originFileObj);
-          setImageUrl(url);
-        }
-      };
-
-      const handleRemove = () => {
-        setImageUrl(null);
-        return true;
-      };
-
-      return (
-        <div className="space-y-4">
-          {/* Image Upload */}
-          <div>
-            <p className="text-sm font-medium text-gray-700 mb-2">
-              Hình ảnh vật phẩm
-            </p>
-            {imageUrl ? (
-              <div className="relative inline-block">
-                <div className="w-24 h-24 rounded-xl border-2 border-gray-200 overflow-hidden">
-                  <img
-                    src={imageUrl}
-                    alt="Preview"
-                    className="w-full h-full object-cover"
-                  />
-                </div>
-                <button
-                  type="button"
-                  onClick={() => setImageUrl(null)}
-                  className="absolute -top-2 -right-2 p-1 bg-red-500 text-white rounded-full hover:bg-red-600 transition-colors shadow-sm"
-                >
-                  <CloseCircleOutlined style={{ fontSize: 14 }} />
-                </button>
-              </div>
-            ) : (
-              <Upload
-                accept="image/*"
-                showUploadList={false}
-                beforeUpload={() => false}
-                onChange={handleUploadChange}
-                onRemove={handleRemove}
-              >
-                <div className="w-24 h-24 rounded-xl border-2 border-dashed border-gray-300 flex flex-col items-center justify-center cursor-pointer hover:border-blue-400 hover:bg-blue-50 transition-all">
-                  <InboxOutlined className="text-2xl text-gray-400" />
-                  <span className="text-xs text-gray-400 mt-1">Tải ảnh</span>
-                </div>
-              </Upload>
-            )}
-          </div>
-
-          {/* Form fields */}
-          <Form.Item
-            label="Tên vật phẩm"
-            name="name"
-            rules={[{ required: true, message: "Nhập tên vật phẩm" }]}
-          >
-            <Input placeholder="VD: Chai nhựa" className="rounded-lg" />
-          </Form.Item>
-
-          <Form.Item
-            label="Loại rác"
-            name="category"
-            rules={[{ required: true, message: "Chọn loại rác" }]}
-          >
-            <Select
-              placeholder="Chọn loại"
-              className="rounded-lg"
-              options={[
-                { value: "plastic", label: "Nhựa" },
-                { value: "paper", label: "Giấy" },
-                { value: "organic", label: "Hữu cơ" },
-                { value: "others", label: "Khác" },
-              ]}
-            />
-          </Form.Item>
-
-          <Form.Item label="Mô tả" name="description">
-            <TextArea
-              rows={2}
-              placeholder="Mô tả ngắn về vật phẩm"
-              className="rounded-lg"
-            />
-          </Form.Item>
-
-          <Form.Item label="Fun Fact" name="funFact">
-            <TextArea
-              rows={2}
-              placeholder="Thông tin thú vị về vật phẩm"
-              className="rounded-lg"
-            />
-          </Form.Item>
-        </div>
-      );
-    },
-  }),
-);
-
-// ─── Animation Variants ───────────────────────────────────────────────────────
+// ─── Animations ───────────────────────────────────────────────────────────────
 
 const containerVariants = {
   hidden: { opacity: 0 },
   visible: { opacity: 1, transition: { staggerChildren: 0.08 } },
 };
-
 const itemVariants = {
   hidden: { opacity: 0, y: 18 },
   visible: {
@@ -237,133 +76,452 @@ const itemVariants = {
   },
 };
 
-// ─── Main Component ────────────────────────────────────────────────────────────
+function ImageUploadInput({
+  previewUrl,
+  setPreviewUrl,
+  onUploadedUrl,
+  isUploading,
+  setIsUploading,
+  uploadFn,
+  isModel = false,
+  label = "Tải ảnh",
+}) {
+  const inputId = `img-upload-${Math.random().toString(36).slice(2, 7)}`;
 
-const AdminContent = () => {
-  const [items, setItems] = useState(DEMO_WASTE_ITEMS);
-  const [searchTerm, setSearchTerm] = useState("");
-  const [categoryFilter, setCategoryFilter] = useState("all");
+  const handleChange = async (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    setPreviewUrl(URL.createObjectURL(file));
+    setIsUploading(true);
+
+    try {
+      const data = new FormData();
+      data.append("file", file);
+
+      const uploadedUrl = await uploadFn(data);
+
+      if (uploadedUrl) {
+        onUploadedUrl(uploadedUrl);
+        toast.success("Tải lên thành công!");
+      } else {
+        toast.error("Tải lên thất bại!");
+        setPreviewUrl(null);
+      }
+    } catch (err) {
+      console.error(err);
+      toast.error("Lỗi khi tải ảnh lên!");
+      setPreviewUrl(null);
+    } finally {
+      setIsUploading(false);
+      e.target.value = "";
+    }
+  };
+
+  return (
+    <div className="relative inline-block">
+      {previewUrl ? (
+        <div className="relative inline-block">
+          <div className="w-24 h-24 rounded-xl border-2 border-gray-200 overflow-hidden">
+            {isUploading ? (
+              <div className="w-full h-full flex items-center justify-center bg-gray-50">
+                <Spin size="small" />
+              </div>
+            ) : (
+              <img
+                src={previewUrl}
+                alt="Preview"
+                className="w-full h-full object-cover"
+              />
+            )}
+          </div>
+          <button
+            type="button"
+            onClick={() => {
+              setPreviewUrl(null);
+              onUploadedUrl(null);
+            }}
+            className="absolute -top-2 -right-2 p-1 bg-red-500 text-white rounded-full hover:bg-red-600 shadow-sm transition-colors"
+          >
+            <CloseCircleOutlined style={{ fontSize: 14 }} />
+          </button>
+        </div>
+      ) : (
+        // Drop zone — click mở file picker
+        <label
+          htmlFor={inputId}
+          className="w-24 h-24 rounded-xl border-2 border-dashed border-gray-300 flex flex-col items-center justify-center cursor-pointer hover:border-blue-400 hover:bg-blue-50 transition-all"
+        >
+          {isUploading ? (
+            <Spin size="small" />
+          ) : (
+            <>
+              <InboxOutlined className="text-2xl text-gray-400" />
+              <span className="text-xs text-gray-400 mt-1">{label}</span>
+            </>
+          )}
+        </label>
+      )}
+      {/* Input ẩn — chỉ nhận image */}
+      <input
+        id={inputId}
+        type="file"
+        accept={isModel ? ".glb,.gltf" : "image/*"}
+        className="hidden"
+        onChange={handleChange}
+        disabled={isUploading}
+      />
+    </div>
+  );
+}
+
+function WasteItemModalForm({
+  imageUrl,
+  setImageUrl,
+  onUploadedUrl,
+  isUploading,
+  setIsUploading,
+  subCategories,
+}) {
+  return (
+    <div className="space-y-1">
+      <p className="text-sm font-medium text-gray-700 mb-2">
+        Hình ảnh vật phẩm
+      </p>
+      <ImageUploadInput
+        previewUrl={imageUrl}
+        setPreviewUrl={setImageUrl}
+        onUploadedUrl={onUploadedUrl}
+        isUploading={isUploading}
+        setIsUploading={setIsUploading}
+        uploadFn={uploadModel3D}
+        isModel={true}
+        label="Tải model 3D"
+      />
+
+      <Form.Item
+        label="Tên vật phẩm"
+        name="itemName"
+        rules={[{ required: true, message: "Nhập tên vật phẩm" }]}
+        className="mt-3"
+      >
+        <Input placeholder="VD: Chai nhựa PET" className="rounded-lg" />
+      </Form.Item>
+
+      <Form.Item label="Phân loại phụ (Sub-category)" name="subCategoryId">
+        <Select
+          placeholder="Chọn phân loại phụ"
+          className="rounded-lg"
+          allowClear
+          options={subCategories.map((s) => ({
+            value: s.id,
+            label: `${s.displayName} (${CATEGORY_LABEL[s.category] ?? s.category})`,
+          }))}
+        />
+      </Form.Item>
+
+      <Form.Item label="Mô tả" name="description">
+        <TextArea
+          rows={2}
+          placeholder="Mô tả ngắn về vật phẩm"
+          className="rounded-lg"
+        />
+      </Form.Item>
+
+      <Form.Item label="Fun Fact" name="funFact">
+        <TextArea
+          rows={2}
+          placeholder="Thông tin thú vị"
+          className="rounded-lg"
+        />
+      </Form.Item>
+
+      <div className="grid grid-cols-2 gap-3">
+        <Form.Item label="Thời gian phân hủy" name="decompositionTime">
+          <Input placeholder="VD: 450 năm" className="rounded-lg" />
+        </Form.Item>
+        <Form.Item label="Trạng thái" name="isActive" valuePropName="checked">
+          <Switch checkedChildren="Hiện" unCheckedChildren="Ẩn" />
+        </Form.Item>
+      </div>
+
+      <Form.Item label="Mẹo tái chế" name="recyclingTips">
+        <TextArea
+          rows={2}
+          placeholder="Hướng dẫn tái chế"
+          className="rounded-lg"
+        />
+      </Form.Item>
+    </div>
+  );
+}
+
+function SubCategoryModalForm({
+  imageUrl,
+  setImageUrl,
+  onUploadedUrl,
+  isUploading,
+  setIsUploading,
+}) {
+  return (
+    <div className="space-y-1">
+      <p className="text-sm font-medium text-gray-700 mb-2">Icon danh mục</p>
+      <ImageUploadInput
+        previewUrl={imageUrl}
+        setPreviewUrl={setImageUrl}
+        onUploadedUrl={onUploadedUrl} // ← URL thật từ BE, sẽ gắn vào payload
+        isUploading={isUploading}
+        setIsUploading={setIsUploading}
+        uploadFn={uploadIconImage}
+        isModel={false}
+        label="Tải icon"
+      />
+
+      <Form.Item
+        label="Danh mục chính"
+        name="category"
+        rules={[{ required: true, message: "Chọn danh mục" }]}
+        className="mt-3"
+      >
+        <Select
+          placeholder="Chọn danh mục chính"
+          className="rounded-lg"
+          options={MAIN_CATEGORIES.map((c) => ({
+            value: c.value,
+            label: c.label,
+          }))}
+        />
+      </Form.Item>
+
+      <div className="grid grid-cols-2 gap-3">
+        <Form.Item
+          label="Mã phân loại"
+          name="subCategoryCode"
+          rules={[{ required: true, message: "Nhập mã" }]}
+        >
+          <Input
+            placeholder="VD: PLASTIC"
+            className="rounded-lg"
+            onChange={(e) => (e.target.value = e.target.value.toUpperCase())}
+          />
+        </Form.Item>
+        <Form.Item
+          label="Tên hiển thị"
+          name="displayName"
+          rules={[{ required: true, message: "Nhập tên" }]}
+        >
+          <Input placeholder="VD: Nhựa" className="rounded-lg" />
+        </Form.Item>
+      </div>
+
+      <Form.Item label="Mô tả" name="description">
+        <TextArea
+          rows={2}
+          placeholder="Mô tả phân loại"
+          className="rounded-lg"
+        />
+      </Form.Item>
+
+      <div className="grid grid-cols-2 gap-3">
+        <Form.Item label="Thứ tự hiển thị" name="displayOrder">
+          <InputNumber className="w-full rounded-lg" min={0} placeholder="1" />
+        </Form.Item>
+        <Form.Item label="Trạng thái" name="isActive" valuePropName="checked">
+          <Switch checkedChildren="Hiện" unCheckedChildren="Ẩn" />
+        </Form.Item>
+      </div>
+    </div>
+  );
+}
+
+function WasteItemsTab({ wasteItems, subCategories, onRefresh }) {
+  const [search, setSearch] = useState("");
+  const [catFilter, setCatFilter] = useState("all");
   const [isAddOpen, setIsAddOpen] = useState(false);
   const [isEditOpen, setIsEditOpen] = useState(false);
   const [editingItem, setEditingItem] = useState(null);
-  const [addImageUrl, setAddImageUrl] = useState(null);
-  const [editImageUrl, setEditImageUrl] = useState(null);
+  const [addModelUrl, setAddModelUrl] = useState(null);
+  const [addUploadedUrl, setAddUploadedUrl] = useState(null);
+  const [addUploading, setAddUploading] = useState(false);
+  const [editModelUrl, setEditModelUrl] = useState(null);
+  const [editUploadedUrl, setEditUploadedUrl] = useState(null);
+  const [editUploading, setEditUploading] = useState(false);
   const [addForm] = Form.useForm();
   const [editForm] = Form.useForm();
 
-  // ── Filtered items ──
   const filtered = useMemo(() => {
-    const q = searchTerm.toLowerCase();
-    return items.filter((item) => {
+    const q = search.toLowerCase();
+    return (wasteItems ?? []).filter((i) => {
       const matchSearch =
-        item.name.toLowerCase().includes(q) ||
-        item.description.toLowerCase().includes(q);
-      const matchCategory =
-        categoryFilter === "all" || item.category === categoryFilter;
-      return matchSearch && matchCategory;
+        i.itemName?.toLowerCase().includes(q) ||
+        (i.description ?? "").toLowerCase().includes(q);
+      const matchCat = catFilter === "all" || i.category === catFilter;
+      return matchSearch && matchCat;
     });
-  }, [items, searchTerm, categoryFilter]);
+  }, [wasteItems, search, catFilter]);
 
-  // ── Handlers ──
-  const handleAdd = async () => {
-    try {
-      const values = await addForm.validateFields();
-      const newItem = {
-        id: Date.now(),
-        image: "📦", // placeholder
-        ...values,
-      };
-      setItems((prev) => [...prev, newItem]);
-      setIsAddOpen(false);
-      addForm.resetFields();
-      setAddImageUrl(null);
-    } catch (_) {}
+  const openAdd = () => {
+    addForm.resetFields();
+    setAddModelUrl(null);
+    setAddUploadedUrl(null);
+    setIsAddOpen(true);
   };
 
-  const handleEdit = (item) => {
+  const handleAdd = async () => {
+    try {
+      const vals = await addForm.validateFields();
+      const payload = {
+        ...vals,
+        imageUrl: addUploadedUrl?.data?.publicId,
+      };
+
+      const res = await addWasteItem(payload);
+      if (res) {
+        toast.success("Thêm vật phẩm thành công!");
+      } else {
+        toast.error("Thêm vật phẩm thất bại!");
+      }
+
+      onRefresh();
+      setIsAddOpen(false);
+    } catch (error) {
+      console.log(error);
+    }
+  };
+
+  const openEdit = (item) => {
     setEditingItem(item);
     editForm.setFieldsValue({
-      name: item.name,
+      itemName: item.itemName,
       category: item.category,
+      subCategoryId: item.subCategoryId,
       description: item.description,
       funFact: item.funFact,
+      decompositionTime: item.decompositionTime,
+      recyclingTips: item.recyclingTips,
+      isActive: item.isActive,
     });
-    setEditImageUrl(null);
+    setEditModelUrl(item.imageUrl ?? null);
+    setEditUploadedUrl(item.imageUrl ?? null);
     setIsEditOpen(true);
   };
 
   const handleSaveEdit = async () => {
     try {
-      const values = await editForm.validateFields();
-      setItems((prev) =>
-        prev.map((i) => (i.id === editingItem.id ? { ...i, ...values } : i)),
-      );
+      const vals = await editForm.validateFields();
+      const payload = {
+        ...vals,
+        imageUrl: editUploadedUrl,
+      };
+
+      const res = await updateWasteItem(editingItem.id, payload);
+      if (res) {
+        toast.success("Cập nhật rác thành công!");
+      } else {
+        toast.error("Cập nhật rác thất bại!");
+      }
+      onRefresh();
       setIsEditOpen(false);
-      setEditImageUrl(null);
-    } catch (_) {}
+    } catch (error) {
+      console.log(error);
+    }
   };
 
-  const handleDelete = (id) => {
-    setItems((prev) => prev.filter((i) => i.id !== id));
+  const handleDelete = async (id) => {
+    try {
+      const res = await deleteWasteItem(id);
+      if (res) {
+        toast.success("Xóa rác thành công!");
+      } else {
+        toast.error("Xóa rác thất bại!");
+      }
+      onRefresh();
+    } catch (error) {
+      console.log(error);
+    }
   };
 
-  // ── Table columns ──
   const columns = [
     {
-      title: "Hình",
+      title: "Hình ảnh",
       key: "image",
-      width: 70,
-      render: (_, item) => <span className="text-3xl">{item.image}</span>,
+      width: 80,
+      render: (_, row) =>
+        row.imageUrl ? (
+          <img
+            src={row.imageUrl}
+            alt={row.itemName}
+            className="w-10 h-10 rounded-lg object-cover"
+          />
+        ) : (
+          <div className="w-10 h-10 rounded-lg bg-gray-100 flex items-center justify-center text-gray-300">
+            <InboxOutlined />
+          </div>
+        ),
     },
     {
       title: "Tên vật phẩm",
-      key: "name",
-      render: (_, item) => (
-        <span className="font-semibold text-gray-800">{item.name}</span>
+      key: "itemName",
+      render: (_, row) => (
+        <div>
+          <p className="font-semibold text-gray-800">{row.itemName}</p>
+          <p className="text-xs text-gray-400 truncate max-w-[200px]">
+            {row.description}
+          </p>
+        </div>
       ),
     },
     {
-      title: "Loại",
+      title: "Danh mục",
       key: "category",
-      render: (_, item) => {
-        const cfg = CATEGORY_CONFIG[item.category] || CATEGORY_CONFIG.others;
-        return (
-          <span
-            className={`inline-flex px-2.5 py-0.5 rounded-full text-xs font-semibold border ${cfg.tw}`}
-          >
-            {cfg.label}
-          </span>
-        );
-      },
+      render: (_, row) => (
+        <span
+          className={`inline-flex px-2.5 py-0.5 rounded-full text-xs font-semibold border ${CATEGORY_STYLE[row.category] ?? CATEGORY_STYLE.GENERAL}`}
+        >
+          {CATEGORY_LABEL[row.category] ?? row.category}
+        </span>
+      ),
     },
     {
-      title: "Mô tả",
-      dataIndex: "description",
-      key: "description",
-      render: (text) => (
-        <span className="text-gray-500 text-sm max-w-xs truncate block">
-          {text}
+      title: "Phân loại phụ",
+      key: "subCategory",
+      render: (_, row) =>
+        row.subCategoryDisplayName ? (
+          <Tag className="rounded-full">{row.subCategoryDisplayName}</Tag>
+        ) : (
+          <span className="text-gray-300 text-xs">—</span>
+        ),
+    },
+    {
+      title: "Trạng thái",
+      key: "isActive",
+      width: 100,
+      render: (_, row) => (
+        <span
+          className={`inline-flex px-2 py-0.5 rounded-full text-xs font-semibold ${row.isActive ? "bg-green-50 text-green-600" : "bg-gray-100 text-gray-400"}`}
+        >
+          {row.isActive ? "Hiện" : "Ẩn"}
         </span>
       ),
     },
     {
       title: "Thao tác",
       key: "actions",
-      width: 110,
-      render: (_, item) => (
+      width: 90,
+      render: (_, row) => (
         <div className="flex gap-1">
           <Button
             type="text"
             icon={<EditOutlined />}
             size="small"
-            onClick={() => handleEdit(item)}
+            onClick={() => openEdit(row)}
             className="text-blue-500 hover:text-blue-600 hover:bg-blue-50"
           />
           <Button
             type="text"
             icon={<DeleteOutlined />}
             size="small"
-            onClick={() => handleDelete(item.id)}
+            onClick={() => handleDelete(row.id)}
             className="text-red-500 hover:text-red-600 hover:bg-red-50"
           />
         </div>
@@ -371,168 +529,118 @@ const AdminContent = () => {
     },
   ];
 
-  // ─── Render ────────────────────────────────────────────────────────────────
-
   return (
-    <div className="min-h-screen bg-gray-50 p-6">
-      <motion.div
-        className="max-w-7xl mx-auto space-y-6"
-        variants={containerVariants}
-        initial="hidden"
-        animate="visible"
+    <>
+      <Card
+        className="rounded-2xl border-0 shadow-sm"
+        bodyStyle={{ padding: 0 }}
       >
-        {/* ── Header ── */}
-        <motion.div variants={itemVariants}>
-          <div>
-            <h1 className="text-3xl font-bold text-gray-800 tracking-tight">
-              Quản lý nội dung game
-            </h1>
-            <p className="text-gray-400 text-sm mt-1">
-              Quản lý vật phẩm rác trong game
-            </p>
+        <div className="p-4 border-b border-gray-100 flex flex-col md:flex-row gap-3 justify-between">
+          <div className="flex gap-2 flex-1 max-w-2xl">
+            <Input
+              prefix={<SearchOutlined className="text-gray-300" />}
+              placeholder="Tìm vật phẩm..."
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              allowClear
+              className="flex-1 rounded-xl"
+            />
+            <Select
+              value={catFilter}
+              onChange={setCatFilter}
+              className="w-44"
+              options={[
+                { value: "all", label: "Tất cả danh mục" },
+                ...MAIN_CATEGORIES.map((c) => ({
+                  value: c.value,
+                  label: c.label,
+                })),
+              ]}
+            />
           </div>
-        </motion.div>
-
-        {/* ── Stats ── */}
-        <motion.div variants={itemVariants}>
-          <Card
-            className="rounded-2xl border-0 shadow-sm hover:shadow-md transition-shadow duration-300"
-            bodyStyle={{ padding: "16px 20px" }}
+          <Button
+            type="primary"
+            icon={<PlusOutlined />}
+            onClick={openAdd}
+            className="rounded-xl bg-blue-500 border-blue-500 hover:bg-blue-600"
           >
-            <div className="flex items-center gap-4">
-              <div className="w-12 h-12 rounded-xl bg-blue-50 flex items-center justify-center">
-                <AppstoreOutlined className="text-2xl text-blue-500" />
-              </div>
-              <Statistic
-                value={items.length}
-                title={
-                  <span className="text-sm text-gray-400">Vật phẩm rác</span>
-                }
-                valueStyle={{ fontSize: 26, fontWeight: 700, color: "#1e293b" }}
-              />
-            </div>
-          </Card>
-        </motion.div>
+            Thêm vật phẩm
+          </Button>
+        </div>
 
-        {/* ── Waste Items Table ── */}
-        <motion.div variants={itemVariants}>
-          <Card
-            className="rounded-2xl border-0 shadow-sm"
-            bodyStyle={{ padding: 0 }}
+        <AnimatePresence mode="wait">
+          <motion.div
+            key={`${catFilter}-${search}`}
+            initial={{ opacity: 0, y: 6 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -6 }}
+            transition={{ duration: 0.22 }}
           >
-            {/* Filters + Add button */}
-            <div className="p-4 border-b border-gray-100 flex flex-col md:flex-row gap-3 justify-between">
-              <div className="flex gap-2 flex-1 max-w-2xl">
-                <Input
-                  prefix={<SearchOutlined className="text-gray-300" />}
-                  placeholder="Tìm vật phẩm..."
-                  value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
-                  allowClear
-                  className="flex-1 rounded-xl"
-                />
-                <Select
-                  value={categoryFilter}
-                  onChange={setCategoryFilter}
-                  className="w-36"
-                  options={[
-                    { value: "all", label: "Tất cả" },
-                    { value: "plastic", label: "Nhựa" },
-                    { value: "paper", label: "Giấy" },
-                    { value: "organic", label: "Hữu cơ" },
-                    { value: "others", label: "Khác" },
-                  ]}
-                />
-              </div>
-              <motion.div
-                whileHover={{ scale: 1.02 }}
-                whileTap={{ scale: 0.97 }}
-              >
-                <Button
-                  type="primary"
-                  icon={<PlusOutlined />}
-                  onClick={() => setIsAddOpen(true)}
-                  className="rounded-xl bg-blue-500 border-blue-500 hover:bg-blue-600"
-                >
-                  Thêm vật phẩm
-                </Button>
-              </motion.div>
-            </div>
+            <Table
+              dataSource={filtered}
+              columns={columns}
+              rowKey="id"
+              pagination={{
+                pageSize: 10,
+                showSizeChanger: false,
+                showTotal: (t) => `${t} vật phẩm`,
+                className: "px-6 pb-4",
+              }}
+              locale={{
+                emptyText: (
+                  <div className="flex flex-col items-center gap-3 py-16">
+                    <div className="w-16 h-16 rounded-2xl bg-gray-100 flex items-center justify-center">
+                      <AppstoreOutlined className="text-3xl text-gray-300" />
+                    </div>
+                    <div className="text-center">
+                      <p className="font-medium text-gray-500">
+                        Chưa có vật phẩm rác nào
+                      </p>
+                      <p className="text-sm text-gray-400 mt-1">
+                        Hãy thêm vật phẩm đầu tiên bằng nút phía trên
+                      </p>
+                    </div>
+                  </div>
+                ),
+              }}
+              className="[&_.ant-table-thead_th]:bg-gray-50 [&_.ant-table-thead_th]:text-gray-500 [&_.ant-table-thead_th]:font-medium"
+              components={{
+                body: {
+                  row: ({ children, ...props }) => (
+                    <motion.tr
+                      {...props}
+                      initial={{ opacity: 0, x: -6 }}
+                      animate={{ opacity: 1, x: 0 }}
+                      transition={{ duration: 0.18 }}
+                      className="hover:bg-gray-50/80 transition-colors"
+                    >
+                      {children}
+                    </motion.tr>
+                  ),
+                },
+              }}
+            />
+          </motion.div>
+        </AnimatePresence>
+      </Card>
 
-            {/* Animated table */}
-            <AnimatePresence mode="wait">
-              <motion.div
-                key={`${categoryFilter}-${searchTerm}`}
-                initial={{ opacity: 0, y: 6 }}
-                animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0, y: -6 }}
-                transition={{ duration: 0.22 }}
-              >
-                <Table
-                  dataSource={filtered}
-                  columns={columns}
-                  rowKey="id"
-                  pagination={{
-                    pageSize: 10,
-                    showSizeChanger: false,
-                    showTotal: (t) => `${t} vật phẩm`,
-                    className: "px-6 pb-4",
-                  }}
-                  locale={{
-                    emptyText: (
-                      <div className="flex flex-col items-center gap-2 py-12">
-                        <AppstoreOutlined className="text-4xl text-gray-200" />
-                        <p className="text-gray-400 font-medium">
-                          Không tìm thấy vật phẩm
-                        </p>
-                      </div>
-                    ),
-                  }}
-                  className="[&_.ant-table-thead_th]:bg-gray-50 [&_.ant-table-thead_th]:text-gray-500 [&_.ant-table-thead_th]:font-medium"
-                  components={{
-                    body: {
-                      row: ({ children, ...props }) => (
-                        <motion.tr
-                          {...props}
-                          initial={{ opacity: 0, x: -6 }}
-                          animate={{ opacity: 1, x: 0 }}
-                          transition={{ duration: 0.18 }}
-                          className="hover:bg-gray-50/80 transition-colors"
-                        >
-                          {children}
-                        </motion.tr>
-                      ),
-                    },
-                  }}
-                />
-              </motion.div>
-            </AnimatePresence>
-          </Card>
-        </motion.div>
-      </motion.div>
-
-      {/* ── Add Item Modal ── */}
+      {/* Add Modal */}
       <Modal
         open={isAddOpen}
-        onCancel={() => {
-          setIsAddOpen(false);
-          addForm.resetFields();
-          setAddImageUrl(null);
-        }}
+        onCancel={() => setIsAddOpen(false)}
+        centered
+        width={520}
+        className="[&_.ant-modal-content]:rounded-2xl"
         title={
           <span className="font-bold text-gray-800">Thêm vật phẩm rác mới</span>
         }
-        centered
-        width={480}
-        className="[&_.ant-modal-content]:rounded-2xl"
+        styles={{
+          body: { maxHeight: "72vh", overflowY: "auto", paddingTop: 8 },
+        }}
         footer={
           <div className="flex gap-3 pt-1">
             <Button
-              onClick={() => {
-                setIsAddOpen(false);
-                addForm.resetFields();
-                setAddImageUrl(null);
-              }}
+              onClick={() => setIsAddOpen(false)}
               className="flex-1 rounded-xl"
             >
               Hủy
@@ -540,6 +648,7 @@ const AdminContent = () => {
             <Button
               type="primary"
               onClick={handleAdd}
+              disabled={addUploading}
               className="flex-1 rounded-xl bg-blue-500 border-blue-500 hover:bg-blue-600 font-semibold"
             >
               Thêm vật phẩm
@@ -547,46 +656,41 @@ const AdminContent = () => {
           </div>
         }
       >
-        <Form form={addForm} layout="vertical">
-          <Suspense
-            fallback={
-              <div className="flex items-center justify-center h-48 text-gray-400 gap-2">
-                <ReloadOutlined spin />
-                Đang tải...
-              </div>
-            }
-          >
-            <WasteItemForm
-              form={addForm}
-              imageUrl={addImageUrl}
-              setImageUrl={setAddImageUrl}
-              isEdit={false}
-              item={null}
-            />
-          </Suspense>
+        <Form
+          form={addForm}
+          layout="vertical"
+          initialValues={{ isActive: false }}
+        >
+          <WasteItemModalForm
+            imageUrl={addModelUrl}
+            setImageUrl={setAddModelUrl}
+            onUploadedUrl={setAddUploadedUrl}
+            isUploading={addUploading}
+            setIsUploading={setAddUploading}
+            subCategories={subCategories}
+          />
         </Form>
       </Modal>
 
-      {/* ── Edit Item Modal ── */}
+      {/* Edit Modal */}
       <Modal
         open={isEditOpen}
-        onCancel={() => {
-          setIsEditOpen(false);
-          setEditImageUrl(null);
-        }}
-        title={
-          <span className="font-bold text-gray-800">Chỉnh sửa vật phẩm</span>
-        }
+        onCancel={() => setIsEditOpen(false)}
         centered
-        width={480}
+        width={520}
         className="[&_.ant-modal-content]:rounded-2xl"
+        title={
+          <span className="font-bold text-gray-800">
+            Chỉnh sửa: {editingItem?.itemName}
+          </span>
+        }
+        styles={{
+          body: { maxHeight: "72vh", overflowY: "auto", paddingTop: 8 },
+        }}
         footer={
           <div className="flex gap-3 pt-1">
             <Button
-              onClick={() => {
-                setIsEditOpen(false);
-                setEditImageUrl(null);
-              }}
+              onClick={() => setIsEditOpen(false)}
               className="flex-1 rounded-xl"
             >
               Hủy
@@ -594,6 +698,416 @@ const AdminContent = () => {
             <Button
               type="primary"
               onClick={handleSaveEdit}
+              disabled={editUploading}
+              className="flex-1 rounded-xl bg-green-500 border-green-500 hover:bg-green-600 font-semibold"
+            >
+              Lưu thay đổi
+            </Button>
+          </div>
+        }
+      >
+        {editingItem && (
+          <Form
+            form={editForm}
+            layout="vertical"
+            initialValues={{ imageUrl: editingItem?.imageUrl }}
+          >
+            <WasteItemModalForm
+              imageUrl={editModelUrl}
+              setImageUrl={setEditModelUrl}
+              onUploadedUrl={setEditUploadedUrl}
+              isUploading={editUploading}
+              setIsUploading={setEditUploading}
+              subCategories={subCategories}
+            />
+          </Form>
+        )}
+      </Modal>
+    </>
+  );
+}
+
+function SubCategoriesTab({ subCategories, onRefresh }) {
+  const [search, setSearch] = useState("");
+  const [catFilter, setCatFilter] = useState("all");
+  const [isAddOpen, setIsAddOpen] = useState(false);
+  const [isEditOpen, setIsEditOpen] = useState(false);
+  const [editingItem, setEditingItem] = useState(null);
+  // Preview (blob URL) — chỉ dùng để hiển thị
+  const [addImageUrl, setAddImageUrl] = useState(null);
+  // URL thật trả về từ uploadIconImage — dùng trong payload
+  const [addUploadedUrl, setAddUploadedUrl] = useState(null);
+  const [addUploading, setAddUploading] = useState(false);
+  const [editImageUrl, setEditImageUrl] = useState(null);
+  const [editUploadedUrl, setEditUploadedUrl] = useState(null);
+  const [editUploading, setEditUploading] = useState(false);
+  const [addForm] = Form.useForm();
+  const [editForm] = Form.useForm();
+
+  const filtered = useMemo(() => {
+    const q = search.toLowerCase();
+    return (subCategories ?? []).filter((s) => {
+      const matchSearch =
+        s.displayName.toLowerCase().includes(q) ||
+        s.subCategoryCode.toLowerCase().includes(q);
+      const matchCat = catFilter === "all" || s.category === catFilter;
+      return matchSearch && matchCat;
+    });
+  }, [subCategories, search, catFilter]);
+
+  const openAdd = () => {
+    addForm.resetFields();
+    addForm.setFieldsValue({ isActive: true, displayOrder: 1 });
+    setAddImageUrl(null);
+    setAddUploadedUrl(null);
+    setIsAddOpen(true);
+  };
+
+  const handleAdd = async () => {
+    try {
+      const vals = await addForm.validateFields();
+
+      const payload = {
+        category: vals.category,
+        subCategoryCode: (vals.subCategoryCode ?? "").toUpperCase(),
+        displayName: vals.displayName,
+        description: vals.description ?? "",
+        iconUrl: addUploadedUrl?.data?.publicId ?? null,
+        displayOrder: vals.displayOrder ?? 1,
+        isActive: vals.isActive ?? true,
+      };
+
+      const res = await addNewSubWasteCategory(payload);
+      console.log(res);
+      if (res) {
+        toast.success("Thêm phân loại phụ thành công!");
+      } else {
+        toast.error("Thêm phân loại phụ thất bại!");
+      }
+      onRefresh?.();
+      setIsAddOpen(false);
+    } catch (error) {
+      console.log(error);
+    }
+  };
+
+  const openEdit = (item) => {
+    setEditingItem(item);
+    editForm.setFieldsValue({
+      category: item.category,
+      subCategoryCode: item.subCategoryCode,
+      displayName: item.displayName,
+      description: item.description,
+      displayOrder: item.displayOrder,
+      isActive: item.isActive,
+    });
+    setEditImageUrl(item.iconUrl ?? null);
+    setEditUploadedUrl(item.iconUrl ?? null); // khởi tạo với URL hiện tại
+    setIsEditOpen(true);
+  };
+
+  const handleSaveEdit = async () => {
+    try {
+      const vals = await editForm.validateFields();
+      const payload = {
+        category: vals.category,
+        subCategoryCode: (vals.subCategoryCode ?? "").toUpperCase(),
+        displayName: vals.displayName,
+        description: vals.description ?? "",
+        iconUrl: editUploadedUrl ?? editingItem.iconUrl ?? null,
+        displayOrder: vals.displayOrder ?? 1,
+        isActive: vals.isActive ?? true,
+      };
+      const res = await updateSubWasteCategory(editingItem.id, payload);
+      if (res) {
+        toast.success("Cập nhật phân loại phụ thành công!");
+      } else {
+        toast.error("Cập nhật phân loại phụ thất bại!");
+      }
+
+      onRefresh?.();
+      setIsEditOpen(false);
+    } catch (error) {
+      console.log(error);
+    }
+  };
+
+  const handleDelete = async (id) => {
+    try {
+      const res = await deleteSubWasteCategory(id);
+      if (res) {
+        toast.success("Xóa phân loại phụ thành công!");
+      } else {
+        toast.error("Xóa phân loại phụ thất bại!");
+      }
+      onRefresh();
+    } catch (error) {
+      console.log(error);
+    }
+  };
+
+  const columns = [
+    {
+      title: "Icon",
+      key: "icon",
+      width: 70,
+      render: (_, row) =>
+        row.iconUrl ? (
+          <img
+            src={row.iconUrl}
+            alt={row.displayName}
+            className="w-10 h-10 rounded-lg object-cover"
+          />
+        ) : (
+          <div className="w-10 h-10 rounded-lg bg-gray-100 flex items-center justify-center text-gray-300">
+            <TagsOutlined />
+          </div>
+        ),
+    },
+    {
+      title: "Tên phân loại",
+      key: "displayName",
+      render: (_, row) => (
+        <div>
+          <p className="font-semibold text-gray-800">{row.displayName}</p>
+          <p className="text-xs text-gray-400 font-mono">
+            {row.subCategoryCode}
+          </p>
+        </div>
+      ),
+    },
+    {
+      title: "Danh mục chính",
+      key: "category",
+      render: (_, row) => (
+        <span
+          className={`inline-flex px-2.5 py-0.5 rounded-full text-xs font-semibold border ${CATEGORY_STYLE[row.category] ?? CATEGORY_STYLE.GENERAL}`}
+        >
+          {CATEGORY_LABEL[row.category] ?? row.category}
+        </span>
+      ),
+    },
+    {
+      title: "Mô tả",
+      dataIndex: "description",
+      key: "description",
+      render: (text) => (
+        <span className="text-gray-500 text-sm truncate block max-w-[200px]">
+          {text || "—"}
+        </span>
+      ),
+    },
+    {
+      title: "Thứ tự",
+      dataIndex: "displayOrder",
+      key: "displayOrder",
+      width: 80,
+      render: (v) => <span className="text-gray-500 text-sm">{v}</span>,
+    },
+    {
+      title: "Trạng thái",
+      key: "isActive",
+      width: 100,
+      render: (_, row) => (
+        <span
+          className={`inline-flex px-2 py-0.5 rounded-full text-xs font-semibold ${row.isActive ? "bg-green-50 text-green-600" : "bg-gray-100 text-gray-400"}`}
+        >
+          {row.isActive ? "Hiện" : "Ẩn"}
+        </span>
+      ),
+    },
+    {
+      title: "Thao tác",
+      key: "actions",
+      width: 90,
+      render: (_, row) => (
+        <div className="flex gap-1">
+          <Button
+            type="text"
+            icon={<EditOutlined />}
+            size="small"
+            onClick={() => openEdit(row)}
+            className="text-blue-500 hover:text-blue-600 hover:bg-blue-50"
+          />
+          <Button
+            type="text"
+            icon={<DeleteOutlined />}
+            size="small"
+            onClick={() => handleDelete(row.id)}
+            className="text-red-500 hover:text-red-600 hover:bg-red-50"
+          />
+        </div>
+      ),
+    },
+  ];
+
+  return (
+    <>
+      <Card
+        className="rounded-2xl border-0 shadow-sm"
+        bodyStyle={{ padding: 0 }}
+      >
+        <div className="p-4 border-b border-gray-100 flex flex-col md:flex-row gap-3 justify-between">
+          <div className="flex gap-2 flex-1 max-w-2xl">
+            <Input
+              prefix={<SearchOutlined className="text-gray-300" />}
+              placeholder="Tìm phân loại phụ..."
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              allowClear
+              className="flex-1 rounded-xl"
+            />
+            <Select
+              value={catFilter}
+              onChange={setCatFilter}
+              className="w-44"
+              options={[
+                { value: "all", label: "Tất cả danh mục" },
+                ...MAIN_CATEGORIES.map((c) => ({
+                  value: c.value,
+                  label: c.label,
+                })),
+              ]}
+            />
+          </div>
+          <Button
+            type="primary"
+            icon={<PlusOutlined />}
+            onClick={openAdd}
+            className="rounded-xl bg-purple-500 border-purple-500 hover:bg-purple-600"
+          >
+            Thêm phân loại
+          </Button>
+        </div>
+
+        <AnimatePresence mode="wait">
+          <motion.div
+            key={`sc-${catFilter}-${search}`}
+            initial={{ opacity: 0, y: 6 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -6 }}
+            transition={{ duration: 0.22 }}
+          >
+            <Table
+              dataSource={filtered}
+              columns={columns}
+              rowKey="id"
+              pagination={{
+                pageSize: 10,
+                showSizeChanger: false,
+                showTotal: (t) => `${t} phân loại`,
+                className: "px-6 pb-4",
+              }}
+              locale={{
+                emptyText: (
+                  <div className="flex flex-col items-center gap-3 py-16">
+                    <div className="w-16 h-16 rounded-2xl bg-gray-100 flex items-center justify-center">
+                      <TagsOutlined className="text-3xl text-gray-300" />
+                    </div>
+                    <div className="text-center">
+                      <p className="font-medium text-gray-500">
+                        Chưa có phân loại phụ nào
+                      </p>
+                      <p className="text-sm text-gray-400 mt-1">
+                        Hãy thêm phân loại đầu tiên bằng nút phía trên
+                      </p>
+                    </div>
+                  </div>
+                ),
+              }}
+              className="[&_.ant-table-thead_th]:bg-gray-50 [&_.ant-table-thead_th]:text-gray-500 [&_.ant-table-thead_th]:font-medium"
+              components={{
+                body: {
+                  row: ({ children, ...props }) => (
+                    <motion.tr
+                      {...props}
+                      initial={{ opacity: 0, x: -6 }}
+                      animate={{ opacity: 1, x: 0 }}
+                      transition={{ duration: 0.18 }}
+                      className="hover:bg-gray-50/80 transition-colors"
+                    >
+                      {children}
+                    </motion.tr>
+                  ),
+                },
+              }}
+            />
+          </motion.div>
+        </AnimatePresence>
+      </Card>
+
+      {/* Add Modal */}
+      <Modal
+        open={isAddOpen}
+        onCancel={() => setIsAddOpen(false)}
+        centered
+        width={480}
+        className="[&_.ant-modal-content]:rounded-2xl"
+        title={
+          <span className="font-bold text-gray-800">
+            Thêm phân loại phụ mới
+          </span>
+        }
+        styles={{
+          body: { maxHeight: "70vh", overflowY: "auto", paddingTop: 8 },
+        }}
+        footer={
+          <div className="flex gap-3 pt-1">
+            <Button
+              onClick={() => setIsAddOpen(false)}
+              className="flex-1 rounded-xl"
+            >
+              Hủy
+            </Button>
+            <Button
+              type="primary"
+              onClick={handleAdd}
+              disabled={addUploading}
+              className="flex-1 rounded-xl bg-purple-500 border-purple-500 hover:bg-purple-600 font-semibold"
+            >
+              Thêm phân loại
+            </Button>
+          </div>
+        }
+      >
+        <Form form={addForm} layout="vertical">
+          <SubCategoryModalForm
+            imageUrl={addImageUrl}
+            setImageUrl={setAddImageUrl}
+            onUploadedUrl={setAddUploadedUrl} // ← nhận URL thật từ upload
+            isUploading={addUploading}
+            setIsUploading={setAddUploading}
+          />
+        </Form>
+      </Modal>
+
+      {/* Edit Modal */}
+      <Modal
+        open={isEditOpen}
+        onCancel={() => setIsEditOpen(false)}
+        centered
+        width={480}
+        className="[&_.ant-modal-content]:rounded-2xl"
+        title={
+          <span className="font-bold text-gray-800">
+            Chỉnh sửa: {editingItem?.displayName}
+          </span>
+        }
+        styles={{
+          body: { maxHeight: "70vh", overflowY: "auto", paddingTop: 8 },
+        }}
+        footer={
+          <div className="flex gap-3 pt-1">
+            <Button
+              onClick={() => setIsEditOpen(false)}
+              className="flex-1 rounded-xl"
+            >
+              Hủy
+            </Button>
+            <Button
+              type="primary"
+              onClick={handleSaveEdit}
+              disabled={editUploading}
               className="flex-1 rounded-xl bg-green-500 border-green-500 hover:bg-green-600 font-semibold"
             >
               Lưu thay đổi
@@ -603,25 +1117,137 @@ const AdminContent = () => {
       >
         {editingItem && (
           <Form form={editForm} layout="vertical">
-            <Suspense
-              fallback={
-                <div className="flex items-center justify-center h-48 text-gray-400 gap-2">
-                  <ReloadOutlined spin />
-                  Đang tải...
-                </div>
-              }
-            >
-              <WasteItemForm
-                form={editForm}
-                imageUrl={editImageUrl}
-                setImageUrl={setEditImageUrl}
-                isEdit={true}
-                item={editingItem}
-              />
-            </Suspense>
+            <SubCategoryModalForm
+              imageUrl={editImageUrl}
+              setImageUrl={setEditImageUrl}
+              onUploadedUrl={setEditUploadedUrl}
+              isUploading={editUploading}
+              setIsUploading={setEditUploading}
+            />
           </Form>
         )}
       </Modal>
+    </>
+  );
+}
+
+// ─── Main Component ───────────────────────────────────────────────────────────
+
+const AdminContent = () => {
+  const [wasteItems, setWasteItems] = useState([]);
+  const [subCategories, setSubCategories] = useState([]);
+  const [activeTab, setActiveTab] = useState("waste-items");
+
+  const fetchData = async () => {
+    try {
+      const [res1, res2] = await Promise.all([
+        getAllWasteItems(),
+        getAllSubWasteCategories(),
+      ]);
+      setWasteItems(res1?.data ?? res1 ?? []);
+      setSubCategories(res2?.data ?? res2 ?? []);
+    } catch (error) {
+      console.error(error);
+      toast.error("Không tải được dữ liệu!");
+    }
+  };
+
+  useEffect(() => {
+    fetchData();
+  }, []);
+
+  const tabItems = [
+    {
+      key: "waste-items",
+      label: (
+        <span className="flex items-center gap-2">
+          <AppstoreOutlined />
+          Vật phẩm rác
+          <span className="ml-1 px-1.5 py-0.5 rounded-full text-xs bg-blue-100 text-blue-600 font-semibold">
+            {wasteItems.length || ""}
+          </span>
+        </span>
+      ),
+      children: (
+        <WasteItemsTab
+          wasteItems={wasteItems}
+          subCategories={subCategories}
+          onRefresh={fetchData}
+        />
+      ),
+    },
+    {
+      key: "sub-categories",
+      label: (
+        <span className="flex items-center gap-2">
+          <TagsOutlined />
+          Phân loại phụ
+          <span className="ml-1 px-1.5 py-0.5 rounded-full text-xs bg-purple-100 text-purple-600 font-semibold">
+            {subCategories.length || ""}
+          </span>
+        </span>
+      ),
+      children: (
+        <SubCategoriesTab subCategories={subCategories} onRefresh={fetchData} />
+      ),
+    },
+  ];
+
+  return (
+    <div className="min-h-screen bg-gray-50 p-6">
+      <motion.div
+        className="max-w-7xl mx-auto space-y-6"
+        variants={containerVariants}
+        initial="hidden"
+        animate="visible"
+      >
+        <motion.div variants={itemVariants}>
+          <h1 className="text-3xl font-bold text-gray-800 tracking-tight">
+            Quản lý nội dung game
+          </h1>
+          <p className="text-gray-400 text-sm mt-1">
+            Quản lý vật phẩm rác và phân loại trong game phân loại rác
+          </p>
+        </motion.div>
+
+        <motion.div
+          variants={itemVariants}
+          className="grid grid-cols-2 md:grid-cols-4 gap-4"
+        >
+          {MAIN_CATEGORIES.map((cat) => {
+            const count = wasteItems.filter(
+              (i) => i.category === cat.value,
+            ).length;
+            return (
+              <Card
+                key={cat.value}
+                className="rounded-2xl border-0 shadow-sm hover:shadow-md transition-shadow"
+                bodyStyle={{ padding: "14px 18px" }}
+              >
+                <div className="flex items-center gap-3">
+                  <span
+                    className={`inline-flex px-2 py-0.5 rounded-full text-xs font-bold border ${CATEGORY_STYLE[cat.value]}`}
+                  >
+                    {cat.label}
+                  </span>
+                  <span className="text-2xl font-bold text-gray-800">
+                    {count}
+                  </span>
+                </div>
+              </Card>
+            );
+          })}
+        </motion.div>
+
+        <motion.div variants={itemVariants}>
+          <Tabs
+            activeKey={activeTab}
+            onChange={setActiveTab}
+            items={tabItems}
+            className="[&_.ant-tabs-nav]:mb-4 [&_.ant-tabs-tab]:font-medium [&_.ant-tabs-tab-active]:font-bold"
+          />
+        </motion.div>
+      </motion.div>
     </div>
   );
 };
