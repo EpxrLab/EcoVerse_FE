@@ -1,6 +1,6 @@
-import { useState, lazy, Suspense } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { useNavigate } from "react-router";
-import { Card, Button, Badge, Tabs, Skeleton } from "antd";
+import { Card, Button, Tabs, Tag, Empty, Spin, Popconfirm } from "antd";
 import {
   GiftOutlined,
   HomeOutlined,
@@ -10,109 +10,87 @@ import {
   CloseCircleOutlined,
   WarningOutlined,
   BgColorsOutlined,
-  LoadingOutlined,
+  TagOutlined,
+  InboxOutlined,
+  QuestionCircleOutlined,
 } from "@ant-design/icons";
-import { motion } from "framer-motion";
+import { motion, AnimatePresence } from "framer-motion";
 import toast from "react-hot-toast";
+import {
+  getAllRewards,
+  getAuthenticatedStudentProfile,
+  createRewardRequest,
+  getAllMyRequests,
+  cancelMyRequest,
+} from "../../services";
 
-// ─── Demo Data ────────────────────────────────────────────────────────────────
+// ─── Constants ────────────────────────────────────────────────────────────────
 
-const mockStudent = { name: "Minh Anh", coins: 2450 };
+const TYPE_CONFIG = {
+  PHYSICAL: {
+    label: "Quà thật",
+    icon: <GiftOutlined />,
+    emoji: "🎁",
+    color: "bg-orange-50 border-orange-200 text-orange-600",
+    badge: "bg-orange-500",
+    btnClass: "bg-orange-500 border-orange-500 hover:bg-orange-600",
+  },
+  DIGITAL: {
+    label: "Quà số",
+    icon: <BgColorsOutlined />,
+    emoji: "🎨",
+    color: "bg-blue-50 border-blue-200 text-blue-600",
+    badge: "bg-blue-500",
+    btnClass: "bg-blue-500 border-blue-500 hover:bg-blue-600",
+  },
+  VOUCHER: {
+    label: "Voucher",
+    icon: <TagOutlined />,
+    emoji: "🏷️",
+    color: "bg-purple-50 border-purple-200 text-purple-600",
+    badge: "bg-purple-500",
+    btnClass: "bg-purple-500 border-purple-500 hover:bg-purple-600",
+  },
+};
 
-const virtualRewards = [
-  { id: 1, name: "Avatar Gấu Xanh", price: 500, emoji: "🐻" },
-  { id: 2, name: "Avatar Thỏ Trắng", price: 400, emoji: "🐰" },
-  { id: 5, name: "Avatar Cáo Cam", price: 600, emoji: "🦊" },
-  { id: 6, name: "Avatar Sư Tử", price: 800, emoji: "🦁" },
-  { id: 9, name: "Avatar Gấu Trúc", price: 700, emoji: "🐼" },
-  { id: 10, name: "Avatar Chim Cánh Cụt", price: 550, emoji: "🐧" },
-];
+const STATUS_CONFIG = {
+  PENDING: {
+    icon: <ClockCircleOutlined />,
+    text: "Đang chờ",
+    tw: "bg-amber-50 text-amber-600 border-amber-200",
+    stripe: "bg-amber-500",
+  },
+  COMPLETED: {
+    icon: <CheckCircleOutlined />,
+    text: "Hoàn thành",
+    tw: "bg-green-50 text-green-600 border-green-200",
+    stripe: "bg-green-500",
+  },
+  CANCELLED: {
+    icon: <CloseCircleOutlined />,
+    text: "Đã huỷ",
+    tw: "bg-red-50 text-red-600 border-red-200",
+    stripe: "bg-red-500",
+  },
+};
 
-const physicalRewards = [
-  { id: 3, name: "Voucher Sách 50K", price: 2000, emoji: "📚" },
-  { id: 4, name: "Bút Eco Friendly", price: 1500, emoji: "✏️" },
-  { id: 7, name: "Túi vải Eco", price: 1800, emoji: "👜" },
-  { id: 8, name: "Sticker Pack", price: 800, emoji: "⭐" },
-  { id: 11, name: "Bình nước Eco", price: 2500, emoji: "💧" },
-  { id: 12, name: "Sổ tay tái chế", price: 1200, emoji: "📓" },
-];
-
-const mockRequests = [
-  {
-    id: 1,
-    name: "Avatar Gấu Xanh",
-    type: "virtual",
-    coins: 500,
-    status: "completed",
-    requestedAt: "2024-01-15",
-    completedAt: "2024-01-15",
+const containerVariants = {
+  hidden: { opacity: 0 },
+  visible: { opacity: 1, transition: { staggerChildren: 0.06 } },
+};
+const cardVariants = {
+  hidden: { opacity: 0, y: 16, scale: 0.97 },
+  visible: {
+    opacity: 1,
+    y: 0,
+    scale: 1,
+    transition: { duration: 0.35, ease: "easeOut" },
   },
-  {
-    id: 2,
-    name: "Voucher Sách 50K",
-    type: "physical",
-    coins: 2000,
-    status: "pending",
-    requestedAt: "2024-01-18",
-    expiresAt: "2024-01-25",
-  },
-  {
-    id: 3,
-    name: "Avatar Thỏ Trắng",
-    type: "virtual",
-    coins: 400,
-    status: "completed",
-    requestedAt: "2024-01-10",
-    completedAt: "2024-01-10",
-  },
-  {
-    id: 4,
-    name: "Bút Eco Friendly",
-    type: "physical",
-    coins: 1500,
-    status: "cancelled",
-    requestedAt: "2024-01-05",
-    cancelledAt: "2024-01-08",
-    reason: "Hết hàng",
-  },
-  {
-    id: 5,
-    name: "Túi vải Eco",
-    type: "physical",
-    coins: 1800,
-    status: "pending",
-    requestedAt: "2024-01-20",
-    expiresAt: "2024-01-27",
-  },
-];
-
-const mockPartnershipRewards = [
-  {
-    id: 1,
-    campaign: "Không khói bụi cho tương lai",
-    name: "Voucher Grab 100K",
-    date: "20/01/2024",
-    status: "at_school",
-  },
-  {
-    id: 2,
-    campaign: "Không khói bụi cho tương lai",
-    name: "Túi canvas cao cấp",
-    date: "15/01/2024",
-    status: "collected",
-  },
-  {
-    id: 3,
-    campaign: "Tháng hành động vì môi trường",
-    name: "Bình nước thủy tinh",
-    date: "25/01/2024",
-    status: "shipping",
-  },
-];
+};
 
 // ─── CoinIcon ─────────────────────────────────────────────────────────────────
 
-const CoinIcon = ({ className = "w-8 h-8 text-white" }) => (
+const CoinIcon = ({ className = "w-5 h-5" }) => (
   <svg viewBox="0 0 24 24" fill="currentColor" className={className}>
     <circle cx="12" cy="12" r="10" opacity="0.2" />
     <circle cx="12" cy="12" r="8" />
@@ -129,206 +107,246 @@ const CoinIcon = ({ className = "w-8 h-8 text-white" }) => (
   </svg>
 );
 
-// ─── Lazy-loaded Reward Card ──────────────────────────────────────────────────
+// ─── RewardCard ───────────────────────────────────────────────────────────────
 
-const RewardCard = lazy(() =>
-  Promise.resolve({
-    default: ({ reward, type, canAfford, onRedeem }) => (
-      <motion.div
-        whileHover={{ scale: 1.03, y: -4 }}
-        transition={{ duration: 0.2 }}
+function RewardCard({ reward, coins, onRedeem }) {
+  const cfg = TYPE_CONFIG[reward.rewardType] ?? TYPE_CONFIG.PHYSICAL;
+  const inStock = reward.isUnlimited || reward.stockQuantity > 0;
+  const canAfford = coins >= reward.coinCost;
+  const canRedeem = inStock && canAfford && reward.isActive;
+
+  return (
+    <motion.div
+      variants={cardVariants}
+      whileHover={canRedeem ? { y: -4 } : {}}
+      transition={{ duration: 0.2 }}
+    >
+      <Card
+        className="rounded-2xl border-2 hover:shadow-xl transition-all h-full flex flex-col"
+        bodyStyle={{
+          padding: "20px",
+          display: "flex",
+          flexDirection: "column",
+          height: "100%",
+        }}
       >
-        <Card
-          className={`rounded-2xl border-2 hover:shadow-xl transition-all ${
-            type === "virtual"
-              ? "hover:border-green-300"
-              : "hover:border-orange-300"
-          }`}
-          bodyStyle={{ padding: "24px", textAlign: "center" }}
+        {/* Image / Emoji */}
+        <div
+          className={`w-full h-32 rounded-xl mb-4 flex items-center justify-center text-5xl border ${cfg.color}`}
         >
-          <div className="text-6xl mb-4">{reward.emoji}</div>
-          <h3 className="font-bold text-lg text-gray-800 mb-3">
-            {reward.name}
+          {reward.imageUrl ? (
+            <img
+              src={reward.imageUrl}
+              alt={reward.rewardName}
+              className="w-full h-full object-cover rounded-xl"
+            />
+          ) : (
+            cfg.emoji
+          )}
+        </div>
+
+        {/* Header */}
+        <div className="flex items-start justify-between gap-2 mb-2">
+          <h3 className="font-bold text-gray-800 text-base leading-tight flex-1">
+            {reward.rewardName}
           </h3>
-          <div className="flex items-center justify-center gap-2 text-amber-500 mb-4 p-2 rounded-lg bg-amber-50">
-            <CoinIcon className="w-5 h-5" />
-            <span className="text-xl font-bold">{reward.price}</span>
+          <span
+            className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold text-white flex-shrink-0 ${cfg.badge}`}
+          >
+            {cfg.icon}
+            {cfg.label}
+          </span>
+        </div>
+
+        {/* Description */}
+        {reward.description && (
+          <p className="text-xs text-gray-400 mb-3 line-clamp-2 flex-1">
+            {reward.description}
+          </p>
+        )}
+
+        {/* Stock */}
+        <div className="flex items-center justify-between mb-3 text-xs">
+          <span
+            className={`font-medium ${!inStock ? "text-red-500" : "text-gray-400"}`}
+          >
+            {reward.isUnlimited
+              ? "Không giới hạn"
+              : inStock
+                ? `Còn lại: ${reward.stockQuantity}`
+                : "Hết hàng"}
+          </span>
+          {reward.termsConditions && (
+            <span
+              className="text-gray-300 truncate max-w-[120px]"
+              title={reward.termsConditions}
+            >
+              *Có điều kiện
+            </span>
+          )}
+        </div>
+
+        {/* Price + CTA */}
+        <div className="flex items-center justify-between pt-3 border-t border-gray-100">
+          <div
+            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg font-bold text-sm ${canAfford ? "bg-amber-50 text-amber-600" : "bg-gray-100 text-gray-400"}`}
+          >
+            <CoinIcon
+              className={`w-4 h-4 ${canAfford ? "text-amber-500" : "text-gray-400"}`}
+            />
+            {reward.coinCost.toLocaleString()}
           </div>
           <Button
-            block
-            type={canAfford ? "primary" : "default"}
-            size="large"
-            disabled={!canAfford}
-            onClick={onRedeem}
-            icon={type === "virtual" ? <BgColorsOutlined /> : <GiftOutlined />}
-            className={`rounded-xl font-semibold ${
-              canAfford
-                ? type === "virtual"
-                  ? "bg-green-500 border-green-500 hover:bg-green-600"
-                  : "bg-orange-500 border-orange-500 hover:bg-orange-600"
-                : ""
-            }`}
+            type="primary"
+            size="small"
+            disabled={!canRedeem}
+            onClick={() => onRedeem(reward)}
+            className={`rounded-xl font-semibold text-xs px-4 ${canRedeem ? cfg.btnClass : ""}`}
           >
-            {canAfford
-              ? type === "virtual"
-                ? "Đổi ngay"
-                : "Yêu cầu đổi"
-              : "Không đủ xu"}
+            {!reward.isActive
+              ? "Ngừng hoạt động"
+              : !inStock
+                ? "Hết hàng"
+                : !canAfford
+                  ? "Không đủ xu"
+                  : "Đổi ngay"}
           </Button>
-        </Card>
-      </motion.div>
-    ),
-  }),
-);
+        </div>
+      </Card>
+    </motion.div>
+  );
+}
 
-// ─── Main Component ────────────────────────────────────────────────────────────
+// ─── RequestCard ──────────────────────────────────────────────────────────────
 
-export default function StudentRewards() {
-  const navigate = useNavigate();
-  const [student] = useState(mockStudent);
-  const [requests, setRequests] = useState(mockRequests);
+function RequestCard({ request, onCancel }) {
+  const sc = STATUS_CONFIG[request.status] ?? STATUS_CONFIG.PENDING;
+  const tc = TYPE_CONFIG[request.rewardType] ?? TYPE_CONFIG.PHYSICAL;
 
-  const handleRedeem = (reward, type) => {
-    if (student.coins < reward.price) {
-      toast.error("Không đủ xu!");
-      return;
-    }
-    if (type === "virtual") {
-      toast.success(`Đã đổi ${reward.name}! Avatar của bạn đã được cập nhật.`);
-    } else {
-      toast.success(
-        `Đã tạo yêu cầu đổi ${reward.name}! Vui lòng chờ xác nhận từ giáo viên.`,
-      );
-    }
-  };
-
-  const handleCancelRequest = (requestId) => {
-    setRequests((prev) =>
-      prev.map((req) =>
-        req.id === requestId
-          ? {
-              ...req,
-              status: "cancelled",
-              cancelledAt: new Date().toISOString().split("T")[0],
-              reason: "Tự huỷ bởi học sinh",
-            }
-          : req,
-      ),
-    );
-  };
-
-  const pending = requests.filter((r) => r.status === "pending");
-  const completed = requests.filter((r) => r.status === "completed");
-  const cancelled = requests.filter((r) => r.status === "cancelled");
-
-  const getStatusBadge = (status) => {
-    const config = {
-      pending: {
-        icon: <ClockCircleOutlined />,
-        text: "Đang chờ",
-        tw: "bg-amber-50 text-amber-600 border-amber-200",
-      },
-      completed: {
-        icon: <CheckCircleOutlined />,
-        text: "Hoàn thành",
-        tw: "bg-green-50 text-green-600 border-green-200",
-      },
-      cancelled: {
-        icon: <CloseCircleOutlined />,
-        text: "Đã huỷ",
-        tw: "bg-red-50 text-red-600 border-red-200",
-      },
-    };
-    const cfg = config[status];
-    return (
-      <span
-        className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold border ${cfg.tw}`}
-      >
-        {cfg.icon}
-        {cfg.text}
-      </span>
-    );
-  };
-
-  const renderRequestCard = (request) => (
+  return (
     <Card
-      key={request.id}
-      className="rounded-2xl border-2 hover:shadow-lg transition-all"
+      className="rounded-2xl border-2 hover:shadow-lg transition-all overflow-hidden"
       bodyStyle={{ padding: 0 }}
     >
       <div className="flex">
-        {/* Left stripe */}
-        <div
-          className={`w-2 ${
-            request.status === "pending"
-              ? "bg-amber-500"
-              : request.status === "completed"
-                ? "bg-green-500"
-                : "bg-red-500"
-          }`}
-        />
+        <div className={`w-1.5 flex-shrink-0 ${sc.stripe}`} />
+
         <div className="flex-1 p-4">
-          <div className="flex items-start justify-between gap-4 mb-3">
-            <div className="flex items-center gap-4">
-              <div
-                className={`w-14 h-14 rounded-2xl flex items-center justify-center text-3xl shadow-sm border ${
-                  request.type === "virtual"
-                    ? "bg-blue-50 border-blue-100"
-                    : "bg-orange-50 border-orange-100"
-                }`}
-              >
-                {request.type === "virtual" ? "🎨" : "🎁"}
-              </div>
-              <div>
-                <h3 className="font-bold text-lg text-gray-800">
-                  {request.name}
+          {/* Header: Ảnh, Tên phần thưởng và Mã yêu cầu */}
+          <div className="flex items-start gap-3 mb-3">
+            <img
+              src={request.rewardImageUrl}
+              alt={request.rewardName}
+              className="w-14 h-14 rounded-xl object-cover border border-gray-100 bg-gray-50"
+              onError={(e) => {
+                e.target.src = "https://placehold.co/100x100?text=Gift";
+              }}
+            />
+            <div className="flex-1 min-w-0">
+              <div className="flex justify-between items-start">
+                <h3 className="font-bold text-gray-800 truncate pr-2">
+                  {request.rewardName}
                 </h3>
-                <div className="flex items-center gap-3 text-sm text-gray-500 mt-1">
-                  <span className="flex items-center gap-1.5 font-medium text-amber-600 bg-amber-50 px-2 py-0.5 rounded-md border border-amber-100">
-                    <CoinIcon className="w-3.5 h-3.5" />
-                    {request.coins} xu
+                <span
+                  className={`inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold text-white whitespace-nowrap ${tc.badge}`}
+                >
+                  {tc.label}
+                </span>
+              </div>
+              <p className="text-[10px] text-gray-400 font-mono">
+                #{request.requestCode}
+              </p>
+
+              <div className="flex items-center gap-3 mt-1">
+                <span className="flex items-center gap-1 font-bold text-amber-600 text-sm">
+                  <CoinIcon className="w-3.5 h-3.5" />
+                  {request.totalCoins}
+                </span>
+                {request.quantity > 1 && (
+                  <span className="text-xs text-gray-500">
+                    x{request.quantity}
                   </span>
-                  <span className="flex items-center gap-1">
-                    <ClockCircleOutlined className="text-xs" />
-                    {request.requestedAt}
-                  </span>
-                </div>
+                )}
               </div>
             </div>
-            {getStatusBadge(request.status)}
           </div>
 
-          {/* Footer */}
-          <div className="mt-2 pt-3 border-t border-dashed border-gray-200">
-            {request.status === "pending" && request.expiresAt && (
+          {/* Body: Trạng thái và Thời gian */}
+          <div className="flex items-center justify-between py-2 border-t border-gray-50">
+            <div className="flex flex-col">
+              <span className="text-[10px] text-gray-400 uppercase tracking-wider font-medium">
+                Ngày yêu cầu
+              </span>
+              <span className="text-xs text-gray-600 font-medium">
+                {new Date(request.createdAt).toLocaleDateString("vi-VN")}
+              </span>
+            </div>
+            <span
+              className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-xs font-bold border ${sc.tw}`}
+            >
+              {sc.icon} {sc.text}
+            </span>
+          </div>
+
+          {/* Footer: Hành động hoặc Thông tin chi tiết trạng thái */}
+          <div className="mt-2 pt-2 border-t border-dashed border-gray-100">
+            {request.status === "PENDING" && (
               <div className="flex items-center justify-between">
-                <div className="flex items-center gap-2 text-sm text-amber-600">
-                  <WarningOutlined />
-                  <span className="font-medium">
-                    Hết hạn: {request.expiresAt}
-                  </span>
-                </div>
-                <Button
-                  type="text"
-                  size="small"
-                  danger
-                  onClick={() => handleCancelRequest(request.id)}
-                  className="text-red-500 hover:bg-red-50"
+                <span className="text-[10px] text-amber-500 italic flex items-center gap-1">
+                  <ClockCircleOutlined /> Đang chờ duyệt...
+                </span>
+                <Popconfirm
+                  title="Hủy yêu cầu đổi quà"
+                  description="Bạn có chắc chắn muốn hủy yêu cầu này không?"
+                  onConfirm={() => onCancel(request.id)}
+                  okText="Xác nhận hủy"
+                  cancelText="Quay lại"
+                  okButtonProps={{ danger: true }}
+                  icon={<QuestionCircleOutlined style={{ color: "red" }} />}
+                  placement="topRight"
                 >
-                  Huỷ yêu cầu
-                </Button>
+                  <Button
+                    type="primary"
+                    danger
+                    ghost
+                    size="small"
+                    className="text-[11px] h-7 rounded-md font-medium"
+                  >
+                    Huỷ yêu cầu
+                  </Button>
+                </Popconfirm>
               </div>
             )}
-            {request.status === "completed" && request.completedAt && (
-              <div className="flex items-center gap-2 text-sm text-green-600 font-medium">
-                <CheckCircleOutlined />
-                <span>Đã giao thành công vào {request.completedAt}</span>
+
+            {request.status === "CANCELLED" && (
+              <div className="text-[11px] text-red-500 bg-red-50 p-2 rounded-lg flex items-start gap-1.5">
+                <CloseCircleOutlined className="mt-0.5" />
+                <span>
+                  <strong>Đã huỷ:</strong>{" "}
+                  {request.cancelledReason || "Người dùng tự hủy hoặc hết hạn"}
+                </span>
               </div>
             )}
-            {request.status === "cancelled" && request.reason && (
-              <div className="flex items-center gap-2 text-sm text-red-500 font-medium">
-                <CloseCircleOutlined />
-                <span>Đã huỷ: {request.reason}</span>
+
+            {request.status === "REJECTED" && (
+              <div className="text-[11px] text-red-600 bg-red-50 p-2 rounded-lg flex items-start gap-1.5">
+                <WarningOutlined className="mt-0.5" />
+                <span>
+                  <strong>Từ chối:</strong> {request.rejectedReason}
+                </span>
+              </div>
+            )}
+
+            {request.status === "COMPLETED" && (
+              <div className="flex items-center justify-between text-[11px] text-green-600 font-medium">
+                <span className="flex items-center gap-1">
+                  <CheckCircleOutlined /> Đã nhận quà
+                </span>
+                <span className="text-gray-400 font-normal">
+                  {request.deliveredAt
+                    ? new Date(request.deliveredAt).toLocaleDateString("vi-VN")
+                    : ""}
+                </span>
               </div>
             )}
           </div>
@@ -336,8 +354,151 @@ export default function StudentRewards() {
       </div>
     </Card>
   );
+}
 
-  // ─── Render ────────────────────────────────────────────────────────────────
+// ─── RewardGrid ───────────────────────────────────────────────────────────────
+
+function RewardGrid({ rewards, coins, type, onRedeem }) {
+  const items = rewards.filter((r) => r.rewardType === type && r.isActive);
+
+  if (items.length === 0) {
+    return (
+      <div className="flex flex-col items-center gap-3 py-16 text-gray-400">
+        <div className="w-16 h-16 rounded-2xl bg-gray-100 flex items-center justify-center text-3xl">
+          {TYPE_CONFIG[type]?.emoji ?? "🎁"}
+        </div>
+        <p className="font-medium">Chưa có phần thưởng nào</p>
+      </div>
+    );
+  }
+
+  return (
+    <motion.div
+      className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4"
+      variants={containerVariants}
+      initial="hidden"
+      animate="visible"
+    >
+      {items.map((r) => (
+        <RewardCard key={r.id} reward={r} coins={coins} onRedeem={onRedeem} />
+      ))}
+    </motion.div>
+  );
+}
+
+// ─── Main Component ───────────────────────────────────────────────────────────
+
+export default function StudentRewards() {
+  const navigate = useNavigate();
+  const [student, setStudent] = useState(null);
+  const [rewards, setRewards] = useState([]);
+  const [requests, setRequests] = useState([]);
+  const [shopTab, setShopTab] = useState("PHYSICAL");
+  const [reqTab, setReqTab] = useState("PENDING");
+
+  const fetchData = async () => {
+    try {
+      const res1 = await getAllRewards();
+      setRewards(res1.data);
+      const res2 = await getAuthenticatedStudentProfile();
+      setStudent(res2.data);
+      const res3 = await getAllMyRequests();
+      setRequests(res3.data);
+    } catch (error) {
+      console.log(error);
+    }
+  };
+
+  useEffect(() => {
+    fetchData();
+  }, []);
+
+  const handleRedeem = async (reward) => {
+    if (student?.totalCoins < reward.coinCost) {
+      toast.error("Không đủ xu!");
+      return;
+    }
+    if (!reward.isUnlimited && reward.stockQuantity <= 0) {
+      toast.error("Phần thưởng đã hết hàng!");
+      return;
+    }
+
+    const payload = {
+      rewardId: reward.id,
+      quantity: 1,
+      notes: "",
+      studentId: student.id,
+    };
+    const res = await createRewardRequest(payload);
+    if (res) {
+      const label =
+        reward.rewardType === "DIGITAL" ? "Đã mở khóa" : "Đã tạo yêu cầu đổi";
+      toast.success(`${label} "${reward.rewardName}"!`);
+    } else {
+      const label =
+        reward.rewardType === "DIGITAL" ? "Mở khóa" : "Tạo yêu cầu đổi";
+      toast.error(`${label} "${reward.rewardName}" thất bại!`);
+    }
+
+    fetchData();
+  };
+
+  const handleCancel = async (id) => {
+    try {
+      const res = await cancelMyRequest(id);
+      if (res) {
+        toast.success("Huỷ yêu cầu thành công!");
+      } else {
+        toast.error("Huỷ yêu cầu thất bại!");
+      }
+      fetchData();
+    } catch (error) {
+      console.log(error);
+    }
+  };
+
+  const byStatus = (s) => requests.filter((r) => r.status === s);
+  const counts = {
+    PENDING: byStatus("PENDING").length,
+    COMPLETED: byStatus("COMPLETED").length,
+    CANCELLED: byStatus("CANCELLED").length,
+  };
+
+  const shopTabs = [
+    {
+      key: "PHYSICAL",
+      label: (
+        <span className="flex items-center gap-1.5">
+          <GiftOutlined />
+          Quà thật
+        </span>
+      ),
+    },
+    {
+      key: "DIGITAL",
+      label: (
+        <span className="flex items-center gap-1.5">
+          <BgColorsOutlined />
+          Quà số
+        </span>
+      ),
+    },
+    {
+      key: "VOUCHER",
+      label: (
+        <span className="flex items-center gap-1.5">
+          <TagOutlined />
+          Voucher
+        </span>
+      ),
+    },
+  ];
+
+  const reqTabs = [
+    { key: "PENDING", label: `Đang chờ (${counts.PENDING})` },
+    { key: "COMPLETED", label: `Hoàn thành (${counts.COMPLETED})` },
+    { key: "CANCELLED", label: `Đã huỷ (${counts.CANCELLED})` },
+  ];
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-white via-gray-50 to-gray-100">
@@ -361,7 +522,7 @@ export default function StudentRewards() {
           <span className="text-gray-700 font-medium">Đổi quà</span>
         </motion.div>
 
-        {/* Header */}
+        {/* Hero header */}
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
@@ -374,180 +535,141 @@ export default function StudentRewards() {
             <div className="relative bg-gradient-to-br from-green-50 via-blue-50 to-purple-50 p-6">
               <div className="absolute top-0 right-0 w-64 h-64 bg-gradient-to-br from-green-200/30 to-transparent rounded-full blur-3xl" />
               <div className="absolute bottom-0 left-0 w-48 h-48 bg-gradient-to-tr from-purple-200/30 to-transparent rounded-full blur-3xl" />
-              <div className="relative flex items-center justify-between">
-                <div className="space-y-2">
-                  <h1 className="text-4xl font-bold text-gray-800 flex items-center gap-3">
+              <div className="relative flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+                <div className="space-y-1">
+                  <h1 className="text-3xl font-bold text-gray-800 flex items-center gap-3">
                     <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-green-400 to-blue-500 flex items-center justify-center shadow-lg">
                       <GiftOutlined className="text-2xl text-white" />
                     </div>
-                    Cửa hàng quà tặng
+                    Cửa hàng phần thưởng
                   </h1>
-                  <p className="text-gray-500 text-lg">
-                    Sử dụng xu để đổi phần thưởng hấp dẫn
+                  <p className="text-gray-500 ml-15 pl-0.5">
+                    Dùng xu để đổi quà thật, quà số và voucher hấp dẫn
                   </p>
                 </div>
+
+                {/* Coin display */}
                 <Card
-                  className="border-2 border-amber-300 shadow-xl rounded-2xl bg-gradient-to-br from-amber-50 to-orange-50"
-                  bodyStyle={{ padding: "24px" }}
+                  className="border-2 border-amber-300 shadow-xl rounded-2xl bg-gradient-to-br from-amber-50 to-orange-50 flex-shrink-0"
+                  bodyStyle={{ padding: "18px 24px" }}
                 >
-                  <div className="flex items-center gap-4">
-                    <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-amber-400 to-orange-500 flex items-center justify-center shadow-lg">
-                      <CoinIcon />
+                  <div className="flex items-center gap-3">
+                    <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-amber-400 to-orange-500 flex items-center justify-center shadow-md">
+                      <CoinIcon className="w-7 h-7 text-white" />
                     </div>
                     <div>
-                      <p className="text-sm text-gray-500 font-medium">
-                        Số xu hiện có
+                      <p className="text-xs text-gray-400 font-medium">
+                        Xu hiện có
                       </p>
-                      <p className="text-3xl font-bold bg-gradient-to-r from-amber-600 to-orange-600 bg-clip-text text-transparent">
-                        {student.coins}
+                      <p className="text-2xl font-bold bg-gradient-to-r from-amber-600 to-orange-600 bg-clip-text text-transparent">
+                        {student?.totalCoins?.toLocaleString()}
                       </p>
                     </div>
                   </div>
                 </Card>
               </div>
+
+              {/* Quick stats */}
+              <div className="relative flex gap-3 mt-5 flex-wrap">
+                {Object.entries(TYPE_CONFIG).map(([type, cfg]) => {
+                  const cnt = rewards.filter(
+                    (r) => r.rewardType === type && r.isActive,
+                  ).length;
+                  return (
+                    <button
+                      key={type}
+                      onClick={() => setShopTab(type)}
+                      className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold border transition-all cursor-pointer ${shopTab === type ? `${cfg.color} shadow-sm` : "bg-white/60 text-gray-500 border-gray-200 hover:bg-white"}`}
+                    >
+                      {cfg.icon}
+                      {cfg.label}
+                      <span className="ml-0.5 px-1.5 py-0.5 rounded-full bg-white/70 font-bold">
+                        {cnt}
+                      </span>
+                    </button>
+                  );
+                })}
+              </div>
             </div>
           </Card>
         </motion.div>
 
-        {/* Shop */}
+        {/* ── Shop ── */}
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.2 }}
+          transition={{ delay: 0.15 }}
         >
           <Card
             className="rounded-3xl border-2 shadow-sm"
             title={
               <div className="flex items-center gap-2 text-lg font-bold text-gray-800">
                 <ShoppingOutlined className="text-blue-500" />
-                Cửa hàng quà tặng
+                Danh sách phần thưởng
               </div>
             }
             bodyStyle={{ paddingTop: 8 }}
           >
             <Tabs
-              defaultActiveKey="virtual"
-              centered
-              size="large"
-              items={[
-                {
-                  key: "virtual",
-                  label: (
-                    <span className="flex items-center gap-2">
-                      <BgColorsOutlined />
-                      Quà ảo (Avatar)
-                    </span>
-                  ),
-                  children: (
-                    <div className="space-y-4">
-                      <div className="p-4 rounded-xl bg-blue-50 border border-blue-200">
-                        <p className="text-sm text-blue-600 flex items-center gap-2">
-                          <BgColorsOutlined />
-                          Đổi avatar mới và thay đổi hình đại diện của bạn ngay
-                          lập tức!
-                        </p>
+              activeKey={shopTab}
+              onChange={setShopTab}
+              items={shopTabs.map((t) => ({
+                key: t.key,
+                label: t.label,
+                children: (
+                  <AnimatePresence mode="wait">
+                    <motion.div
+                      key={t.key}
+                      initial={{ opacity: 0, y: 8 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      exit={{ opacity: 0, y: -8 }}
+                      transition={{ duration: 0.2 }}
+                    >
+                      {/* Hint banner */}
+                      <div
+                        className={`mb-4 p-3 rounded-xl border text-sm flex items-center gap-2 ${TYPE_CONFIG[t.key]?.color}`}
+                      >
+                        {TYPE_CONFIG[t.key]?.icon}
+                        {t.key === "PHYSICAL" &&
+                          "Quà thật sẽ được xác nhận bởi giáo viên trước khi nhận."}
+                        {t.key === "DIGITAL" &&
+                          "Quà số được kích hoạt ngay lập tức vào tài khoản của bạn."}
+                        {t.key === "VOUCHER" &&
+                          "Mã voucher sẽ được gửi qua hệ thống sau khi xác nhận."}
                       </div>
-                      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-                        {virtualRewards.map((reward) => (
-                          <Suspense
-                            key={reward.id}
-                            fallback={
-                              <Card
-                                className="rounded-2xl border-2"
-                                bodyStyle={{ padding: 80 }}
-                              >
-                                <Skeleton.Avatar
-                                  active
-                                  size={60}
-                                  className="mx-auto mb-2"
-                                />
-                                <Skeleton active paragraph={{ rows: 2 }} />
-                              </Card>
-                            }
-                          >
-                            <RewardCard
-                              reward={reward}
-                              type="virtual"
-                              canAfford={student.coins >= reward.price}
-                              onRedeem={() => handleRedeem(reward, "virtual")}
-                            />
-                          </Suspense>
-                        ))}
-                      </div>
-                    </div>
-                  ),
-                },
-                {
-                  key: "physical",
-                  label: (
-                    <span className="flex items-center gap-2">
-                      <GiftOutlined />
-                      Quà thật
-                    </span>
-                  ),
-                  children: (
-                    <div className="space-y-4">
-                      <div className="p-4 rounded-xl bg-orange-50 border border-orange-200">
-                        <p className="text-sm text-orange-600 flex items-center gap-2">
-                          <GiftOutlined />
-                          Quà thật sẽ được gửi yêu cầu đến giáo viên và cần được
-                          xác nhận trước khi nhận!
-                        </p>
-                      </div>
-                      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-                        {physicalRewards.map((reward) => (
-                          <Suspense
-                            key={reward.id}
-                            fallback={
-                              <Card
-                                className="rounded-2xl border-2"
-                                bodyStyle={{ padding: 80 }}
-                              >
-                                <Skeleton.Avatar
-                                  active
-                                  size={60}
-                                  className="mx-auto mb-2"
-                                />
-                                <Skeleton active paragraph={{ rows: 2 }} />
-                              </Card>
-                            }
-                          >
-                            <RewardCard
-                              reward={reward}
-                              type="physical"
-                              canAfford={student.coins >= reward.price}
-                              onRedeem={() => handleRedeem(reward, "physical")}
-                            />
-                          </Suspense>
-                        ))}
-                      </div>
-                    </div>
-                  ),
-                },
-              ]}
+                      <RewardGrid
+                        rewards={rewards}
+                        coins={student?.totalCoins}
+                        type={t.key}
+                        onRedeem={handleRedeem}
+                      />
+                    </motion.div>
+                  </AnimatePresence>
+                ),
+              }))}
             />
           </Card>
         </motion.div>
 
-        {/* Requests */}
+        {/* ── Requests ── */}
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.3 }}
+          transition={{ delay: 0.25 }}
         >
           <Card
             className="rounded-3xl border-2 shadow-sm"
             title={
-              <div className="flex items-center justify-between">
+              <div className="flex items-center justify-between flex-wrap gap-2">
                 <span className="text-lg font-bold text-gray-800">
-                  Yêu cầu đổi quà của bạn
+                  Lịch sử yêu cầu đổi quà
                 </span>
                 <div className="flex gap-2">
                   <span className="px-2.5 py-0.5 rounded-full text-xs font-semibold bg-amber-50 text-amber-600 border border-amber-200">
-                    {pending.length} đang chờ
+                    {counts.PENDING} đang chờ
                   </span>
                   <span className="px-2.5 py-0.5 rounded-full text-xs font-semibold bg-green-50 text-green-600 border border-green-200">
-                    {completed.length} hoàn thành
+                    {counts.COMPLETED} hoàn thành
                   </span>
                 </div>
               </div>
@@ -555,151 +677,50 @@ export default function StudentRewards() {
             bodyStyle={{ paddingTop: 8 }}
           >
             <Tabs
-              defaultActiveKey="pending"
-              items={[
-                {
-                  key: "pending",
-                  label: `Đang chờ (${pending.length})`,
-                  children:
-                    pending.length === 0 ? (
-                      <div className="text-center py-12 text-gray-400">
-                        <ClockCircleOutlined className="text-5xl mb-3 opacity-50" />
-                        <p>Chưa có yêu cầu nào đang chờ</p>
-                      </div>
-                    ) : (
-                      <div className="space-y-4">
-                        {pending.map(renderRequestCard)}
-                      </div>
-                    ),
-                },
-                {
-                  key: "completed",
-                  label: `Hoàn thành (${completed.length})`,
-                  children:
-                    completed.length === 0 ? (
-                      <div className="text-center py-12 text-gray-400">
-                        <CheckCircleOutlined className="text-5xl mb-3 opacity-50" />
-                        <p>Chưa có yêu cầu nào hoàn thành</p>
-                      </div>
-                    ) : (
-                      <div className="space-y-4">
-                        {completed.map(renderRequestCard)}
-                      </div>
-                    ),
-                },
-                {
-                  key: "cancelled",
-                  label: `Đã huỷ (${cancelled.length})`,
-                  children:
-                    cancelled.length === 0 ? (
-                      <div className="text-center py-12 text-gray-400">
-                        <CloseCircleOutlined className="text-5xl mb-3 opacity-50" />
-                        <p>Chưa có yêu cầu nào bị huỷ</p>
-                      </div>
-                    ) : (
-                      <div className="space-y-4">
-                        {cancelled.map(renderRequestCard)}
-                      </div>
-                    ),
-                },
-                {
-                  key: "partnership",
-                  label: <span className="text-blue-500">Quà từ Đối tác</span>,
-                  children:
-                    mockPartnershipRewards.length === 0 ? (
-                      <div className="text-center py-12 text-gray-400">
-                        <GiftOutlined className="text-5xl mb-3 opacity-50" />
-                        <p>Chưa có quà từ chiến dịch đối tác</p>
-                      </div>
-                    ) : (
-                      <div className="space-y-4">
-                        {mockPartnershipRewards.map((reward) => (
-                          <Card
-                            key={reward.id}
-                            className="rounded-2xl border-2 hover:shadow-lg transition-all"
-                            bodyStyle={{ padding: 0 }}
-                          >
-                            <div className="flex">
-                              <div
-                                className={`w-2 ${
-                                  reward.status === "collected"
-                                    ? "bg-green-500"
-                                    : reward.status === "at_school"
-                                      ? "bg-blue-500"
-                                      : "bg-orange-500"
-                                }`}
-                              />
-                              <div className="flex-1 p-4">
-                                <div className="flex justify-between items-start mb-3">
-                                  <div className="flex items-start gap-4">
-                                    <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-blue-50 to-indigo-100 flex items-center justify-center border border-blue-200">
-                                      <GiftOutlined className="text-2xl text-blue-500" />
-                                    </div>
-                                    <div>
-                                      <div className="flex items-center gap-2 mb-1">
-                                        <span className="px-2 py-0.5 rounded-full text-xs font-semibold bg-blue-50 text-blue-600 border border-blue-200">
-                                          {reward.campaign}
-                                        </span>
-                                        <span className="text-xs text-gray-400 flex items-center gap-1">
-                                          <ClockCircleOutlined /> {reward.date}
-                                        </span>
-                                      </div>
-                                      <h3 className="font-bold text-lg text-gray-800">
-                                        {reward.name}
-                                      </h3>
-                                    </div>
-                                  </div>
-                                  <span
-                                    className={`px-3 py-1 rounded-full text-xs font-bold text-white shadow-sm ${
-                                      reward.status === "collected"
-                                        ? "bg-green-500"
-                                        : reward.status === "at_school"
-                                          ? "bg-blue-500 animate-pulse"
-                                          : "bg-orange-500"
-                                    }`}
-                                  >
-                                    {reward.status === "shipping"
-                                      ? "Đang vận chuyển"
-                                      : reward.status === "at_school"
-                                        ? "Đã về trường"
-                                        : "Đã nhận"}
-                                  </span>
-                                </div>
-                                <div className="p-3 bg-gray-50 rounded-lg border-2 border-dashed border-gray-200">
-                                  <p className="text-sm font-medium flex items-center gap-2">
-                                    {reward.status === "shipping" ? (
-                                      <>
-                                        <GiftOutlined className="text-orange-500" />
-                                        <span className="text-gray-500">
-                                          Phần thưởng đang trên đường về trường.
-                                        </span>
-                                      </>
-                                    ) : reward.status === "at_school" ? (
-                                      <>
-                                        <GiftOutlined className="text-blue-500" />
-                                        <span className="text-blue-600">
-                                          Đã về trường! Hãy đến phòng Admin để
-                                          nhận nhé.
-                                        </span>
-                                      </>
-                                    ) : (
-                                      <>
-                                        <CheckCircleOutlined className="text-green-500" />
-                                        <span className="text-green-600">
-                                          Bạn đã nhận phần quà này. Chúc mừng!
-                                        </span>
-                                      </>
-                                    )}
-                                  </p>
-                                </div>
-                              </div>
-                            </div>
-                          </Card>
-                        ))}
-                      </div>
-                    ),
-                },
-              ]}
+              activeKey={reqTab}
+              onChange={setReqTab}
+              items={reqTabs.map((t) => ({
+                key: t.key,
+                label: t.label,
+                children: (
+                  <AnimatePresence mode="wait">
+                    <motion.div
+                      key={t.key}
+                      initial={{ opacity: 0, y: 6 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      exit={{ opacity: 0, y: -6 }}
+                      transition={{ duration: 0.18 }}
+                    >
+                      {byStatus(t.key).length === 0 ? (
+                        <div className="flex flex-col items-center gap-3 py-14 text-gray-400">
+                          {t.key === "PENDING" && (
+                            <ClockCircleOutlined className="text-5xl opacity-30" />
+                          )}
+                          {t.key === "COMPLETED" && (
+                            <CheckCircleOutlined className="text-5xl opacity-30" />
+                          )}
+                          {t.key === "CANCELLED" && (
+                            <CloseCircleOutlined className="text-5xl opacity-30" />
+                          )}
+                          <p className="font-medium text-gray-400">
+                            Chưa có yêu cầu nào
+                          </p>
+                        </div>
+                      ) : (
+                        <div className="space-y-3">
+                          {byStatus(t.key).map((req) => (
+                            <RequestCard
+                              key={req.id}
+                              request={req}
+                              onCancel={handleCancel}
+                            />
+                          ))}
+                        </div>
+                      )}
+                    </motion.div>
+                  </AnimatePresence>
+                ),
+              }))}
             />
           </Card>
         </motion.div>

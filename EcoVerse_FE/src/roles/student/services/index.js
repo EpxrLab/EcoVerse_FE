@@ -9,7 +9,46 @@ const getAuthenticatedStudentProfile = async () => {
   }
 };
 
-export { getAuthenticatedStudentProfile };
+const getAllRewards = async () => {
+  try {
+    const res = await axios.get("/school/rewards/student");
+    return res.data;
+  } catch (error) {
+    console.log(error);
+  }
+};
 
-// Re-export student-specific services as needed
-// export * from '../features/dashboard/services/dashboard.service';
+const createRewardRequest = async (payload) => {
+  try {
+    const res = await axios.post("/rewards/requests", payload);
+    return res.data;
+  } catch (error) {
+    console.log(error);
+  }
+};
+
+const getAllMyRequests = async () => {
+  try {
+    const res = await axios.get("/rewards/requests/my");
+    return res.data;
+  } catch (error) {
+    console.log(error);
+  }
+};
+
+const cancelMyRequest = async (id) => {
+  try {
+    const res = await axios.put(`/rewards/requests/${id}/cancel`);
+    return res.data;
+  } catch (error) {
+    console.log(error);
+  }
+};
+
+export {
+  getAuthenticatedStudentProfile,
+  getAllRewards,
+  createRewardRequest,
+  getAllMyRequests,
+  cancelMyRequest,
+};
