@@ -1,6 +1,32 @@
 // Admin - Services
 import axios from "../../../utils/axios.customize";
 
+const uploadIconImage = async (formData) => {
+  try {
+    const res = await axios.post("/files/upload/image", formData, {
+      headers: {
+        "Content-Type": "multipart/form-data",
+      },
+    });
+    return res.data;
+  } catch (error) {
+    console.log(error);
+  }
+};
+
+const uploadModel3D = async (formData) => {
+  try {
+    const res = await axios.post("/files/upload/model", formData, {
+      headers: {
+        "Content-Type": "multipart/form-data",
+      },
+    });
+    return res.data;
+  } catch (error) {
+    console.log(error);
+  }
+};
+
 //========================Account Management==============================
 
 const getAllSchoolAccounts = async () => {
@@ -89,7 +115,82 @@ const deleteSubsciptionPackage = async (id) => {
   }
 };
 
+//========================WASTE-ITEM & SUB-CATEGORIES=======================
+const getAllWasteItems = async () => {
+  try {
+    const res = await axios.get("/admin/waste-items");
+    return res.data;
+  } catch (error) {
+    console.log(error);
+  }
+};
+
+const addWasteItem = async (payload) => {
+  try {
+    const res = await axios.post("/admin/waste-items", payload);
+    return res.data;
+  } catch (error) {
+    console.log(error);
+  }
+};
+
+const updateWasteItem = async (id, payload) => {
+  try {
+    const res = await axios.put(`/admin/waste-items/${id}`, payload);
+    return res.data;
+  } catch (error) {
+    console.log(error);
+  }
+};
+
+const deleteWasteItem = async (id) => {
+  try {
+    const res = await axios.delete(`/admin/waste-items/${id}`);
+    return res.data;
+  } catch (error) {
+    console.log(error);
+  }
+};
+
+const getAllSubWasteCategories = async () => {
+  try {
+    const res = await axios.get("/admin/waste-sub-categories");
+    return res.data;
+  } catch (error) {
+    console.log(error);
+  }
+};
+
+const addNewSubWasteCategory = async (payload) => {
+  try {
+    const res = await axios.post("/admin/waste-sub-categories", payload);
+    return res.data;
+  } catch (error) {
+    console.log(error);
+  }
+};
+
+const updateSubWasteCategory = async (id, payload) => {
+  try {
+    const res = await axios.put(`/admin/waste-sub-categories/${id}`, payload);
+    return res.data;
+  } catch (error) {
+    console.log(error);
+  }
+};
+
+const deleteSubWasteCategory = async (id) => {
+  try {
+    const res = await axios.delete(`/admin/waste-sub-categories/${id}`);
+    return res.data;
+  } catch (error) {
+    console.log(error);
+  }
+};
+
 export {
+  uploadModel3D,
+  uploadIconImage,
   getAllSchoolAccounts,
   getAllPartnershipAccounts,
   updateSchoolAccountStatus,
@@ -99,7 +200,12 @@ export {
   toggleSubsciptionActive,
   updateSubscriptionPackage,
   deleteSubsciptionPackage,
+  getAllWasteItems,
+  addWasteItem,
+  updateWasteItem,
+  deleteWasteItem,
+  getAllSubWasteCategories,
+  addNewSubWasteCategory,
+  updateSubWasteCategory,
+  deleteSubWasteCategory,
 };
-
-// Re-export admin-specific services as needed
-// export * from '../features/users-management/services/usersManagement.service';
