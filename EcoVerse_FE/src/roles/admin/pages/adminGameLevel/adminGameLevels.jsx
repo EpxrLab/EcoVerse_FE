@@ -9,7 +9,6 @@ import {
   Input,
   Form,
   Select,
-  Checkbox,
   Statistic,
   Tag,
   Dropdown,
@@ -23,14 +22,10 @@ import {
   StarOutlined,
   AppstoreOutlined,
   TrophyOutlined,
-  TeamOutlined,
-  ReloadOutlined,
 } from "@ant-design/icons";
 import { motion, AnimatePresence } from "framer-motion";
 
 const { TabPane } = Tabs;
-
-// ─── Icons (inline SVG shortcuts via emoji + antd) ──────────────────────────
 
 const GamepadIcon = () => (
   <svg
@@ -96,6 +91,12 @@ const SchoolIcon = ({ className = "w-4 h-4" }) => (
   </svg>
 );
 
+const XIcon = () => (
+  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} className="w-4 h-4">
+    <path d="M18 6L6 18M6 6l12 12" />
+  </svg>
+);
+
 // ─── Constants ────────────────────────────────────────────────────────────────
 
 const BIN_TYPES = [
@@ -127,54 +128,25 @@ const BIN_TAG_COLOR = {
   others: "default",
 };
 
-const DEMO_LEVELS = [
+const DEMO_PRESETS = [
   {
     id: 1,
-    name: "Phân loại cơ bản 1",
+    name: "Preset Cơ bản",
     gameType: "sorting",
     difficulty: "Dễ",
-    binTypes: ["plastic", "paper"],
-    items: 10,
-    passRate: "70%",
-    coinsReward: 50,
-    description: "Mức nhập môn",
-    target: "school",
+    levels: [
+      { levelNumber: 1, itemCount: 15, timeLimitSeconds: 60, lives: null, binTypes: ["plastic", "paper", "organic"] }
+    ]
   },
   {
     id: 2,
-    name: "Chạy nhanh 1",
+    name: "Preset Khởi động",
     gameType: "runner",
     difficulty: "Trung bình",
-    binTypes: ["organic", "others"],
-    items: 15,
-    passRate: "65%",
-    coinsReward: 80,
-    description: "Phân loại trong khi chạy",
-    target: "school",
-  },
-  {
-    id: 3,
-    name: "Thử thách khó",
-    gameType: "sorting",
-    difficulty: "Khó",
-    binTypes: ["plastic", "paper", "organic", "others"],
-    items: 25,
-    passRate: "80%",
-    coinsReward: 150,
-    description: "Dành cho người chơi giỏi",
-    target: "school",
-  },
-  {
-    id: 4,
-    name: "Đối tác - Cấp 1",
-    gameType: "sorting",
-    difficulty: "Dễ",
-    binTypes: ["plastic"],
-    items: 8,
-    passRate: "60%",
-    coinsReward: 40,
-    description: "",
-    target: "partnership",
+    levels: [
+      { levelNumber: 1, itemCount: 20, timeLimitSeconds: 45, lives: 3, binTypes: ["plastic", "paper"] },
+      { levelNumber: 2, itemCount: 25, timeLimitSeconds: 40, lives: 3, binTypes: ["plastic", "paper", "organic"] }
+    ]
   },
 ];
 
@@ -182,11 +154,9 @@ const defaultForm = {
   name: "",
   gameType: "sorting",
   difficulty: "Dễ",
-  binTypes: [],
-  items: 10,
-  passRate: "70%",
-  coinsReward: 50,
-  description: "",
+  levels: [
+    { levelNumber: 1, itemCount: 10, timeLimitSeconds: 0, lives: null, binTypes: ["plastic", "paper", "organic", "others"] }
+  ]
 };
 
 // ─── Animation Variants ───────────────────────────────────────────────────────
@@ -211,17 +181,11 @@ const cardVariants = {
 
 function LevelFormBody({
   form,
-  selectedBins,
-  setSelectedBins,
   gameType,
   setGameType,
   difficulty,
   setDifficulty,
 }) {
-  const toggleBin = (id) =>
-    setSelectedBins((prev) =>
-      prev.includes(id) ? prev.filter((b) => b !== id) : [...prev, id],
-    );
 
   const handleGameTypeChange = (value) => {
     setGameType(value);
@@ -235,187 +199,196 @@ function LevelFormBody({
 
   return (
     <div className="space-y-6">
-      {/* Game Type */}
-      <div>
-        <p className="font-semibold text-gray-700 mb-3">
-          Loại game <span className="text-red-500">*</span>
-        </p>
-        <div className="grid grid-cols-2 gap-3">
-          {[
-            {
-              value: "sorting",
-              label: "Thu thập & Phân loại",
-              icon: <RecycleIcon className="w-4 h-4" />,
-              color: "green",
-            },
-            {
-              value: "runner",
-              label: "Chạy & Phân loại",
-              icon: <ZapIcon className="w-4 h-4" />,
-              color: "blue",
-            },
-          ].map(({ value, label, icon, color }) => {
-            const active = gameType === value;
-            return (
-              <motion.div
-                key={value}
-                whileTap={{ scale: 0.97 }}
-                onClick={() => handleGameTypeChange(value)}
-                className={`flex items-center gap-3 p-3 rounded-xl border-2 cursor-pointer transition-all
-                  ${
-                    active
-                      ? color === "green"
-                        ? "border-green-400 bg-green-50"
-                        : "border-blue-400 bg-blue-50"
-                      : "border-gray-200 hover:border-gray-300 bg-white"
-                  }`}
-              >
-                <span
-                  className={
-                    active
-                      ? color === "green"
-                        ? "text-green-600"
-                        : "text-blue-600"
-                      : "text-gray-400"
-                  }
-                >
-                  {icon}
-                </span>
-                <span
-                  className={`font-medium text-sm ${active ? (color === "green" ? "text-green-700" : "text-blue-700") : "text-gray-600"}`}
-                >
-                  {label}
-                </span>
-              </motion.div>
-            );
-          })}
-        </div>
-      </div>
-
-      {/* Name */}
+      {/* Preset Name */}
       <Form.Item
-        label="Tên cấp độ"
+        label={<span className="font-semibold text-gray-700">Tên Preset <span className="text-red-500">*</span></span>}
         name="name"
-        rules={[{ required: true, message: "Nhập tên cấp độ" }]}
+        rules={[{ required: true, message: "Vui lòng nhập tên Preset" }]}
+        className="mb-0"
       >
-        <Input
-          placeholder="VD: Thu thập cơ bản - Cấp 1"
-          className="rounded-lg"
-        />
+        <Input placeholder="VD: Chiến dịch Mùa Hè - Dễ" size="large" className="rounded-xl" />
       </Form.Item>
 
-      {/* Difficulty */}
-      <div>
-        <p className="font-semibold text-gray-700 mb-3">
-          Độ khó <span className="text-red-500">*</span>
-        </p>
-        <div className="grid grid-cols-3 gap-2">
-          {["Dễ", "Trung bình", "Khó"].map((d) => {
-            const active = difficulty === d;
-            const cls = {
-              Dễ: active
-                ? "border-green-400 bg-green-500 text-white"
-                : "border-green-200 text-green-600 hover:bg-green-50",
-              "Trung bình": active
-                ? "border-amber-400 bg-amber-500 text-white"
-                : "border-amber-200 text-amber-600 hover:bg-amber-50",
-              Khó: active
-                ? "border-red-400 bg-red-500 text-white"
-                : "border-red-200 text-red-600 hover:bg-red-50",
-            }[d];
-            return (
-              <motion.button
-                key={d}
-                type="button"
-                whileTap={{ scale: 0.95 }}
-                onClick={() => handleDifficultyChange(d)}
-                className={`border-2 rounded-lg py-2 text-sm font-semibold transition-all ${cls}`}
-              >
-                {d}
-              </motion.button>
-            );
-          })}
-        </div>
-      </div>
-
-      {/* Description */}
-      <Form.Item label="Mô tả cấp độ" name="description">
-        <Input.TextArea
-          rows={2}
-          placeholder="Mô tả về cấp độ này..."
-          className="rounded-lg"
-        />
-      </Form.Item>
-
-      {/* Numeric fields */}
-      <div className="grid grid-cols-3 gap-4">
-        <Form.Item
-          label="Số vật phẩm"
-          name="items"
-          rules={[{ required: true }]}
-        >
-          <Input type="number" min={1} max={50} className="rounded-lg" />
-        </Form.Item>
-        <Form.Item label="Tỷ lệ đạt" name="passRate">
-          <Input placeholder="70%" className="rounded-lg" />
-        </Form.Item>
-        <Form.Item label="Xu thưởng" name="coinsReward">
-          <Input type="number" placeholder="100" className="rounded-lg" />
-        </Form.Item>
-      </div>
-
-      {/* Bin Types */}
-      <div>
-        <div className="flex items-center justify-between mb-3">
-          <span className="font-semibold text-gray-700">
-            Loại thùng rác <span className="text-red-500">*</span>
-          </span>
-          <span className="text-xs text-gray-400 bg-gray-100 px-2 py-0.5 rounded-full">
-            {selectedBins.length}/4 thùng
-          </span>
-        </div>
-        <div className="grid grid-cols-2 gap-3">
-          {BIN_TYPES.map((bin) => {
-            const isSelected = selectedBins.includes(bin.id);
-            return (
-              <motion.div
-                key={bin.id}
-                whileTap={{ scale: 0.97 }}
-                onClick={() => toggleBin(bin.id)}
-                className={`flex items-center gap-3 p-3.5 rounded-xl border-2 cursor-pointer transition-all
-                  ${isSelected ? "border-green-400 bg-green-50 shadow-sm ring-1 ring-green-300" : "border-gray-200 hover:border-gray-300 bg-white"}`}
-              >
-                <div
-                  className={`w-10 h-10 rounded-lg flex items-center justify-center text-white shadow-sm ${bin.color}`}
-                >
-                  <span className="text-xl">{bin.icon}</span>
-                </div>
-                <div>
-                  <p
-                    className={`font-semibold text-sm ${isSelected ? "text-green-700" : "text-gray-700"}`}
-                  >
-                    {bin.label}
-                  </p>
-                  <p className="text-xs text-gray-400 capitalize">{bin.id}</p>
-                </div>
-                {isSelected && (
-                  <motion.span
-                    initial={{ scale: 0 }}
-                    animate={{ scale: 1 }}
-                    className="ml-auto text-green-500 text-lg leading-none"
-                  >
-                    ✓
-                  </motion.span>
-                )}
-              </motion.div>
-            );
-          })}
-        </div>
-        {selectedBins.length === 0 && (
-          <p className="text-xs text-red-500 mt-2">
-            ⚠️ Cần chọn ít nhất 1 loại thùng rác
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        {/* Game Type */}
+        <div>
+          <p className="font-semibold text-gray-700 mb-3">
+            Loại game <span className="text-red-500">*</span>
           </p>
-        )}
+          <div className="grid grid-cols-2 gap-3">
+            {[
+              {
+                value: "sorting",
+                label: "Thu thập",
+                icon: <RecycleIcon className="w-4 h-4" />,
+                color: "green",
+              },
+              {
+                value: "runner",
+                label: "Chạy",
+                icon: <ZapIcon className="w-4 h-4" />,
+                color: "blue",
+              },
+            ].map(({ value, label, icon, color }) => {
+              const active = gameType === value;
+              return (
+                <motion.div
+                  key={value}
+                  whileTap={{ scale: 0.97 }}
+                  onClick={() => handleGameTypeChange(value)}
+                  className={`flex items-center justify-center gap-2 p-3 rounded-xl border-2 cursor-pointer transition-all
+                    ${
+                      active
+                        ? color === "green"
+                          ? "border-green-400 bg-green-50 text-green-700"
+                          : "border-blue-400 bg-blue-50 text-blue-700"
+                        : "border-gray-200 hover:border-gray-300 bg-white text-gray-500"
+                    }`}
+                >
+                  <span>{icon}</span>
+                  <span className="font-medium text-sm whitespace-nowrap">{label}</span>
+                </motion.div>
+              );
+            })}
+          </div>
+        </div>
+
+        {/* Difficulty */}
+        <div>
+          <p className="font-semibold text-gray-700 mb-3">
+            Độ khó <span className="text-red-500">*</span>
+          </p>
+          <div className="grid grid-cols-3 gap-2">
+            {[
+              { value: "Dễ", color: "green", label: "Dễ" },
+              { value: "Trung bình", color: "amber", label: "Trung bình" },
+              { value: "Khó", color: "red", label: "Khó" },
+            ].map(({ value, color, label }) => {
+              const active = difficulty === value;
+              return (
+                <motion.div
+                  key={value}
+                  whileTap={{ scale: 0.97 }}
+                  onClick={() => handleDifficultyChange(value)}
+                  className={`flex items-center justify-center p-3 rounded-xl border-2 cursor-pointer transition-all text-center
+                    ${
+                      active
+                        ? color === "green" ? "border-green-400 bg-green-50 text-green-700 shadow-sm" 
+                        : color === "amber" ? "border-amber-400 bg-amber-50 text-amber-700 shadow-sm"
+                        : "border-red-400 bg-red-50 text-red-700 shadow-sm"
+                        : "border-gray-200 hover:border-gray-300 bg-white text-gray-600"
+                    }`}
+                >
+                  <span className="font-semibold text-sm">{label}</span>
+                </motion.div>
+              );
+            })}
+          </div>
+        </div>
+      </div>
+
+      {/* Dynamic Levels */}
+      <div className="border-t border-gray-100 pt-5">
+        <p className="font-semibold text-gray-700 mb-3">Danh sách Cấp độ (Levels)</p>
+        <Form.List name="levels">
+          {(fields, { add, remove }) => (
+            <div className="space-y-4">
+              {fields.map(({ key, name, ...restField }, index) => (
+                  <div className="relative bg-white border-2 border-dashed border-gray-200 rounded-2xl p-5 hover:border-blue-300 transition-colors">
+                    <div className="absolute top-3 right-3">
+                      <Tooltip title="Xóa cấp độ này">
+                        <Button 
+                          type="text" 
+                          danger 
+                          icon={<DeleteOutlined />} 
+                          onClick={() => remove(name)} 
+                          className="hover:bg-red-50 rounded-xl w-8 h-8 flex items-center justify-center p-0"
+                        />
+                      </Tooltip>
+                    </div>
+                    
+                    <div className="flex items-center gap-3 mb-5">
+                      <div className="w-8 h-8 rounded-full bg-blue-100 text-blue-600 flex items-center justify-center font-bold text-sm shadow-inner">
+                        {index + 1}
+                      </div>
+                      <span className="text-gray-800 font-bold text-base tracking-tight">Cấu hình Cấp độ</span>
+                    </div>
+
+                    <div className="grid grid-cols-2 md:grid-cols-4 gap-x-4 gap-y-1">
+                      <Form.Item
+                        {...restField}
+                        name={[name, 'levelNumber']}
+                        label={<span className="text-gray-600 text-xs font-semibold min-h-[32px] flex items-end">Cấp độ</span>}
+                        rules={[{ required: true, message: 'Bắt buộc' }]}
+                      >
+                        <Input type="number" min={1} className="rounded-xl bg-gray-50 border-gray-200 hover:bg-white focus:bg-white transition-colors" />
+                      </Form.Item>
+                      <Form.Item
+                        {...restField}
+                        name={[name, 'itemCount']}
+                        label={<span className="text-gray-600 text-xs font-semibold min-h-[32px] flex items-end">Số lượng rác</span>}
+                        rules={[{ required: true, message: 'Bắt buộc' }]}
+                      >
+                        <Input type="number" min={1} className="rounded-xl bg-gray-50 border-gray-200 hover:bg-white focus:bg-white transition-colors" />
+                      </Form.Item>
+                      <Form.Item
+                        {...restField}
+                        name={[name, 'timeLimitSeconds']}
+                        label={<span className="text-gray-600 text-xs font-semibold min-h-[32px] flex items-end">Thời gian (giây)</span>}
+                      >
+                        <Input type="number" min={0} placeholder="0 = Vô hạn" className="rounded-xl bg-gray-50 border-gray-200 hover:bg-white focus:bg-white transition-colors" />
+                      </Form.Item>
+                      <Form.Item
+                        {...restField}
+                        name={[name, 'lives']}
+                        label={<span className="text-gray-600 text-xs font-semibold min-h-[32px] flex items-end">Số mạng</span>}
+                      >
+                        <Input type="number" min={1} placeholder="Vô hạn" className="rounded-xl bg-gray-50 border-gray-200 hover:bg-white focus:bg-white transition-colors" />
+                      </Form.Item>
+                    </div>
+
+                    <div className="mt-2">
+                      <Form.Item
+                        {...restField}
+                        name={[name, 'binTypes']}
+                        label={<span className="text-gray-600 text-xs font-semibold">Loại thùng rác xuất hiện</span>}
+                        rules={[{ required: true, message: 'Chọn ít nhất 1 loại thùng rác' }]}
+                        className="mb-0"
+                      >
+                        <Select
+                          mode="multiple"
+                          placeholder="Chọn các loại thùng rác (Nhựa, Giấy...)"
+                          className="rounded-xl [&_.ant-select-selector]:rounded-xl [&_.ant-select-selector]:border-gray-200 hover:[&_.ant-select-selector]:border-blue-400"
+                          options={BIN_TYPES.map(bin => ({ value: bin.id, label: bin.label }))}
+                          tagRender={(props) => {
+                            const { label, value, closable, onClose } = props;
+                            const bin = BIN_TYPES.find(b => b.id === value);
+                            const color = BIN_TAG_COLOR[value] || 'default';
+                            return (
+                              <Tag color={color} closable={closable} onClose={onClose} style={{ marginRight: 4, borderRadius: 6, padding: '2px 8px', fontSize: 13, border: 'none' }}>
+                                <span className="mr-1">{bin?.icon}</span> {label}
+                              </Tag>
+                            );
+                          }}
+                        />
+                      </Form.Item>
+                    </div>
+                  </div>
+              ))}
+              <motion.div whileHover={{ scale: 1.01 }} whileTap={{ scale: 0.99 }}>
+                <Button 
+                  type="dashed" 
+                  onClick={() => add({ levelNumber: fields.length + 1, itemCount: 10, timeLimitSeconds: 0, lives: null, binTypes: ["plastic", "paper", "organic", "others"] })} 
+                  block 
+                  icon={<PlusOutlined />} 
+                  className="rounded-2xl h-12 border-2 border-green-200 text-green-600 hover:border-green-400 hover:text-green-700 bg-green-50/50 hover:bg-green-50"
+                >
+                  <span className="font-semibold">Thêm Cấp độ mới</span>
+                </Button>
+              </motion.div>
+            </div>
+          )}
+        </Form.List>
       </div>
     </div>
   );
@@ -448,12 +421,11 @@ const StatCard = ({ icon, value, label, iconBg, iconColor, borderColor }) => (
 // ─── Main Component ────────────────────────────────────────────────────────────
 
 export default function AdminGameLevels() {
-  const [levels, setLevels] = useState(DEMO_LEVELS);
-  const [activeTarget, setActiveTarget] = useState("school");
+  const [levels, setLevels] = useState(DEMO_PRESETS);
   const [activeGameType, setActiveGameType] = useState("all");
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [editingLevel, setEditingLevel] = useState(null);
-  const [selectedBins, setSelectedBins] = useState([]);
+  
   // Controlled state cho active-highlight trong form
   const [formGameType, setFormGameType] = useState("sorting");
   const [formDifficulty, setFormDifficulty] = useState("Dễ");
@@ -461,21 +433,20 @@ export default function AdminGameLevels() {
 
   // ── Filters ──
   const filteredLevels = useMemo(() => {
-    let result = levels.filter((l) => l.target === activeTarget);
+    let result = [...levels];
     if (activeGameType !== "all")
       result = result.filter((l) => l.gameType === activeGameType);
     return result;
-  }, [levels, activeTarget, activeGameType]);
+  }, [levels, activeGameType]);
 
   // ── Stats ──
-  const targetLevels = levels.filter((l) => l.target === activeTarget);
   const stats = {
-    total: targetLevels.length,
-    sorting: targetLevels.filter((l) => l.gameType === "sorting").length,
-    runner: targetLevels.filter((l) => l.gameType === "runner").length,
-    easy: targetLevels.filter((l) => l.difficulty === "Dễ").length,
-    medium: targetLevels.filter((l) => l.difficulty === "Trung bình").length,
-    hard: targetLevels.filter((l) => l.difficulty === "Khó").length,
+    total: levels.length,
+    sorting: levels.filter((l) => l.gameType === "sorting").length,
+    runner: levels.filter((l) => l.gameType === "runner").length,
+    easy: levels.filter((l) => l.difficulty === "Dễ").length,
+    medium: levels.filter((l) => l.difficulty === "Trung bình").length,
+    hard: levels.filter((l) => l.difficulty === "Khó").length,
   };
 
   // ── Open / Close ──
@@ -484,7 +455,6 @@ export default function AdminGameLevels() {
     setFormGameType(defaultForm.gameType);
     setFormDifficulty(defaultForm.difficulty);
     form.setFieldsValue({ ...defaultForm });
-    setSelectedBins([]);
     setIsFormOpen(true);
   };
 
@@ -496,12 +466,8 @@ export default function AdminGameLevels() {
       name: level.name,
       gameType: level.gameType,
       difficulty: level.difficulty,
-      items: level.items,
-      passRate: level.passRate,
-      coinsReward: level.coinsReward,
-      description: level.description,
+      levels: level.levels || [],
     });
-    setSelectedBins(level.binTypes);
     setIsFormOpen(true);
   };
 
@@ -512,19 +478,22 @@ export default function AdminGameLevels() {
   const handleSubmit = async () => {
     try {
       const values = await form.validateFields();
-      if (selectedBins.length === 0) return;
-      // Merge controlled states (not tracked by antd form) into values
       const finalValues = {
-        ...values,
+        name: values.name,
         gameType: formGameType,
         difficulty: formDifficulty,
+        levels: values.levels ? values.levels.map(l => ({
+          levelNumber: Number(l.levelNumber),
+          itemCount: Number(l.itemCount),
+          timeLimitSeconds: l.timeLimitSeconds ? Number(l.timeLimitSeconds) : 0,
+          lives: l.lives ? Number(l.lives) : null,
+          binTypes: l.binTypes || [],
+        })) : [],
       };
       if (editingLevel) {
         setLevels((prev) =>
           prev.map((l) =>
-            l.id === editingLevel.id
-              ? { ...l, ...finalValues, binTypes: selectedBins }
-              : l,
+            l.id === editingLevel.id ? { ...l, ...finalValues } : l,
           ),
         );
       } else {
@@ -533,8 +502,6 @@ export default function AdminGameLevels() {
           {
             id: Date.now(),
             ...finalValues,
-            binTypes: selectedBins,
-            target: activeTarget,
           },
         ]);
       }
@@ -542,36 +509,12 @@ export default function AdminGameLevels() {
     } catch (_) {}
   };
 
-  // ── Table Columns ──
   const columns = [
     {
-      title: "Tên cấp độ",
+      title: "Tên Preset",
+      dataIndex: "name",
       key: "name",
-      render: (_, level) => (
-        <div className="flex items-center gap-2">
-          <div className="w-8 h-8 rounded-lg bg-blue-50 flex items-center justify-center flex-shrink-0">
-            {level.difficulty === "Dễ" && (
-              <StarOutlined className="text-green-500" />
-            )}
-            {level.difficulty === "Trung bình" && (
-              <AppstoreOutlined className="text-amber-500" />
-            )}
-            {level.difficulty === "Khó" && (
-              <TrophyOutlined className="text-red-500" />
-            )}
-          </div>
-          <div>
-            <p className="font-semibold text-gray-800 leading-tight">
-              {level.name}
-            </p>
-            {level.description && (
-              <p className="text-xs text-gray-400 truncate max-w-[180px]">
-                {level.description}
-              </p>
-            )}
-          </div>
-        </div>
-      ),
+      render: (v) => <span className="font-bold text-gray-800 text-base">{v}</span>,
     },
     {
       title: "Loại game",
@@ -593,46 +536,17 @@ export default function AdminGameLevels() {
       render: (_, level) => {
         const cfg = DIFFICULTY_CONFIG[level.difficulty] || {};
         return (
-          <span
-            className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold border ${cfg.tw}`}
-          >
+          <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold border ${cfg.tw}`}>
             {level.difficulty}
           </span>
         );
       },
     },
     {
-      title: "Loại thùng",
-      key: "binTypes",
-      render: (_, level) => (
-        <div className="flex flex-wrap gap-1">
-          {level.binTypes.map((t) => (
-            <Tag
-              key={t}
-              color={BIN_TAG_COLOR[t]}
-              className="rounded-full text-xs m-0"
-            >
-              {BIN_LABEL[t]}
-            </Tag>
-          ))}
-        </div>
-      ),
-    },
-    {
-      title: "Vật phẩm",
-      dataIndex: "items",
-      key: "items",
+      title: "Số cấp độ",
+      key: "levelCount",
       align: "center",
-      render: (v) => <span className="font-semibold text-gray-700">{v}</span>,
-    },
-    {
-      title: "Xu thưởng",
-      dataIndex: "coinsReward",
-      key: "coins",
-      align: "center",
-      render: (v) => (
-        <span className="font-semibold text-amber-500">{v} xu</span>
-      ),
+      render: (_, level) => <Badge count={level.levels?.length || 0} showZero color="blue" />
     },
     {
       title: "",
@@ -660,11 +574,7 @@ export default function AdminGameLevels() {
           trigger={["click"]}
           placement="bottomRight"
         >
-          <Button
-            type="text"
-            icon={<MoreOutlined />}
-            className="text-gray-400 hover:text-gray-700"
-          />
+          <Button type="text" icon={<MoreOutlined />} className="text-gray-400 hover:text-gray-700" />
         </Dropdown>
       ),
     },
@@ -691,10 +601,10 @@ export default function AdminGameLevels() {
             </div>
             <div>
               <h1 className="text-2xl font-bold text-gray-800 tracking-tight">
-                Quản lý Cấp độ Game
+                Quản lý Cấu hình (Presets)
               </h1>
               <p className="text-gray-400 text-sm mt-0.5">
-                Tạo và quản lý cấp độ game cho Trường học & Đối tác
+                Tạo và quản lý Presets tham số Game dùng chung hệ thống
               </p>
             </div>
           </div>
@@ -705,46 +615,9 @@ export default function AdminGameLevels() {
               onClick={openCreate}
               className="rounded-xl bg-green-500 border-green-500 hover:bg-green-600 font-semibold"
             >
-              Tạo Cấp độ
+              Tạo Preset
             </Button>
           </motion.div>
-        </motion.div>
-
-        {/* Target Tabs (Trường học / Đối tác) */}
-        <motion.div variants={cardVariants}>
-          <Card
-            className="rounded-2xl border-0 shadow-sm"
-            bodyStyle={{ padding: "6px 8px" }}
-          >
-            <Tabs
-              activeKey={activeTarget}
-              onChange={(v) => {
-                setActiveTarget(v);
-                setActiveGameType("all");
-              }}
-              centered
-              items={[
-                {
-                  key: "school",
-                  label: (
-                    <span className="flex items-center gap-2 px-2">
-                      <SchoolIcon className="w-4 h-4" />
-                      Trường học
-                    </span>
-                  ),
-                },
-                {
-                  key: "partnership",
-                  label: (
-                    <span className="flex items-center gap-2 px-2">
-                      <HandshakeIcon className="w-4 h-4" />
-                      Đối tác
-                    </span>
-                  ),
-                },
-              ]}
-            />
-          </Card>
         </motion.div>
 
         {/* Stat Cards */}
@@ -752,7 +625,7 @@ export default function AdminGameLevels() {
           <StatCard
             icon={<AppstoreOutlined />}
             value={stats.total}
-            label="Tổng cấp độ"
+            label="Tổng Presets"
             iconBg="bg-blue-50"
             iconColor="text-blue-500"
             borderColor="border-blue-100"
@@ -822,7 +695,7 @@ export default function AdminGameLevels() {
             {/* Animated table */}
             <AnimatePresence mode="wait">
               <motion.div
-                key={`${activeTarget}-${activeGameType}`}
+                key={activeGameType}
                 initial={{ opacity: 0, y: 8 }}
                 animate={{ opacity: 1, y: 0 }}
                 exit={{ opacity: 0, y: -8 }}
@@ -843,11 +716,10 @@ export default function AdminGameLevels() {
                       <div className="flex flex-col items-center gap-2 py-14">
                         <AppstoreOutlined className="text-4xl text-gray-200" />
                         <p className="font-semibold text-gray-400">
-                          Chưa có cấp độ nào
+                          Chưa có Presets nào
                         </p>
                         <p className="text-sm text-gray-300">
-                          Tạo cấp độ đầu tiên cho{" "}
-                          {activeTarget === "school" ? "Trường học" : "Đối tác"}
+                          Tạo Preset đầu tiên cho hệ thống
                         </p>
                       </div>
                     ),
@@ -880,33 +752,45 @@ export default function AdminGameLevels() {
         open={isFormOpen}
         onCancel={() => setIsFormOpen(false)}
         title={
-          <span className="text-lg font-bold text-gray-800">
-            {editingLevel
-              ? "Cập nhật cấp độ game"
-              : `Tạo cấp độ game mới — ${activeTarget === "school" ? "Trường học" : "Đối tác"}`}
-          </span>
+          <div className="flex items-center gap-3 pb-2 border-b">
+            <div className="w-10 h-10 rounded-xl bg-blue-100 flex items-center justify-center">
+              {editingLevel ? <EditOutlined className="text-blue-600 text-lg" /> : <PlusOutlined className="text-blue-600 text-lg" />}
+            </div>
+            <div>
+              <h2 className="text-xl font-bold text-gray-800 tracking-tight m-0">
+                {editingLevel ? "Cập nhật Preset" : "Tạo Preset mới"}
+              </h2>
+              <p className="text-xs text-gray-500 font-medium mt-0.5">
+                Định nghĩa các tham số, độ khó và loại rác cho game
+              </p>
+            </div>
+          </div>
         }
-        width={680}
+        width={720}
         centered
-        className="[&_.ant-modal-content]:rounded-2xl"
+        className="[&_.ant-modal-content]:rounded-3xl [&_.ant-modal-content]:overflow-hidden [&_.ant-modal-header]:pt-6 [&_.ant-modal-header]:px-8 [&_.ant-modal-body]:px-8 [&_.ant-modal-footer]:px-8 [&_.ant-modal-footer]:pb-6 [&_.ant-modal-footer]:pt-4 [&_.ant-modal-footer]:border-t [&_.ant-modal-footer]:border-gray-100"
         styles={{
-          body: { maxHeight: "72vh", overflowY: "auto", paddingTop: 8 },
+          body: { maxHeight: "68vh", overflowY: "auto", paddingTop: 16 },
         }}
+        closeIcon={
+          <div className="w-8 h-8 rounded-full bg-gray-100 hover:bg-red-100 hover:text-red-500 flex items-center justify-center transition-colors">
+            <XIcon />
+          </div>
+        }
         footer={
-          <div className="flex gap-3 pt-2">
+          <div className="flex gap-4">
             <Button
               onClick={() => setIsFormOpen(false)}
-              className="flex-1 rounded-xl"
+              className="flex-1 rounded-2xl h-12 text-base font-semibold border-2 hover:bg-gray-50 text-gray-600"
             >
               Hủy
             </Button>
             <Button
               type="primary"
               onClick={handleSubmit}
-              disabled={selectedBins.length === 0}
-              className="flex-1 rounded-xl bg-green-500 border-green-500 hover:bg-green-600 font-semibold"
+              className="flex-1 rounded-2xl h-12 text-base font-semibold bg-blue-600 border-blue-600 hover:bg-blue-700 shadow-lg shadow-blue-200"
             >
-              {editingLevel ? "Cập nhật" : "Tạo cấp độ"}
+              {editingLevel ? "Lưu thay đổi" : "Lưu Preset mới"}
             </Button>
           </div>
         }
@@ -914,8 +798,6 @@ export default function AdminGameLevels() {
         <Form form={form} layout="vertical" initialValues={defaultForm}>
           <LevelFormBody
             form={form}
-            selectedBins={selectedBins}
-            setSelectedBins={setSelectedBins}
             gameType={formGameType}
             setGameType={setFormGameType}
             difficulty={formDifficulty}

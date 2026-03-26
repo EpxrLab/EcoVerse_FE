@@ -32,6 +32,8 @@ import {
   Trash2,
   Clock,
   RotateCcw,
+  Gamepad2,
+  AlertCircle,
 } from 'lucide-react';
 import { format } from 'date-fns';
 import { vi } from 'date-fns/locale';
@@ -57,6 +59,8 @@ export function CampaignList({
   onDelete,
   onRevertToDraft,
   onActivate,
+  onAddGame,
+  onAddQuiz,
 }) {
   if (campaigns.length === 0) {
     return (
@@ -94,7 +98,7 @@ export function CampaignList({
               <TableRow key={campaign.id} className={rowHoverBg}>
                 <TableCell>
                   <div className="space-y-1">
-                    <div className="flex items-center gap-2">
+                    <div className="flex items-center gap-2 flex-wrap">
                       <p className="font-semibold">{campaign.name}</p>
                       <Badge className={statusConfig[campaign.status].color} variant="secondary">
                         <StatusIcon className="w-3 h-3 mr-1" />
@@ -108,6 +112,23 @@ export function CampaignList({
                         <Badge variant="outline" className="bg-eco-green/10 text-eco-green border-eco-green/20">
                           Trường
                         </Badge>
+                      )}
+                      {/* Draft diagnostic badges for school campaigns */}
+                      {campaign.status === 'draft' && campaign.origin !== 'partnership' && (
+                        <>
+                          {(!campaign.selected_games || campaign.selected_games.length === 0) && (
+                            <Badge variant="outline" className="text-amber-600 border-amber-300 bg-amber-50 text-[10px] gap-1">
+                              <AlertCircle className="w-3 h-3" />
+                              Chưa có Game
+                            </Badge>
+                          )}
+                          {(!campaign.selected_quizzes || campaign.selected_quizzes.length === 0) && (
+                            <Badge variant="outline" className="text-orange-600 border-orange-300 bg-orange-50 text-[10px] gap-1">
+                              <AlertCircle className="w-3 h-3" />
+                              Chưa có Quiz
+                            </Badge>
+                          )}
+                        </>
                       )}
                     </div>
                     {campaign.origin === 'partnership' && campaign.partnership_name ? (
@@ -199,6 +220,18 @@ export function CampaignList({
                               <Edit className="w-4 h-4 mr-2" />
                               Chỉnh sửa
                             </DropdownMenuItem>
+                            {campaign.origin !== 'partnership' && onAddGame && (
+                              <DropdownMenuItem onClick={() => onAddGame(campaign)}>
+                                <Gamepad2 className="w-4 h-4 mr-2" />
+                                Thêm Game
+                              </DropdownMenuItem>
+                            )}
+                            {campaign.origin !== 'partnership' && onAddQuiz && (
+                              <DropdownMenuItem onClick={() => onAddQuiz(campaign)}>
+                                <Brain className="w-4 h-4 mr-2" />
+                                Thêm Quiz
+                              </DropdownMenuItem>
+                            )}
                             <DropdownMenuItem onClick={() => onActivate ? onActivate(campaign.id) : onChangeStatus(campaign.id, 'active')}>
                               <Play className="w-4 h-4 mr-2" />
                               Kích hoạt

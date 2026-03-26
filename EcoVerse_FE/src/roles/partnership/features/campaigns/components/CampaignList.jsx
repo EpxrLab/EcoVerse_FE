@@ -1,11 +1,11 @@
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/shared/components/ui/table';
 import { Badge } from '@/shared/components/ui/badge';
 import { Button } from '@/shared/components/ui/button';
-import { Eye, Calendar, School, Users, Send, MoreVertical, Edit, Trash2, RotateCcw } from 'lucide-react';
+import { Eye, Calendar, School, Users, Send, MoreVertical, Edit, Trash2, RotateCcw, Gamepad2, FileQuestion } from 'lucide-react';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, DropdownMenuSeparator } from '@/shared/components/ui/dropdown-menu';
 import { cn } from '@/shared/lib/utils';
 
-export function CampaignList({ campaigns, onViewDetail, onEdit, onDelete, onActivate, onRevertToDraft }) {
+export function CampaignList({ campaigns, onViewDetail, onEdit, onDelete, onActivate, onRevertToDraft, onAddGame, onAddQuiz }) {
   const getStatusColor = (status) => {
     switch (status) {
       case 'draft': return 'bg-muted text-muted-foreground';
@@ -74,10 +74,24 @@ export function CampaignList({ campaigns, onViewDetail, onEdit, onDelete, onActi
           </TableRow>
         </TableHeader>
         <TableBody>
-          {campaigns.map((campaign) => (
+          {campaigns.map((campaign) => {
+            const rounds = campaign.qualifying_rounds || [];
+            const hasRounds = rounds.length > 0;
+            const hasGame = hasRounds && rounds.every(r => r.selected_game_type);
+            const hasQuiz = hasRounds && rounds.every(r => r.quiz_ids && r.quiz_ids.length > 0);
+            
+            return (
             <TableRow key={campaign.id} className="hover:bg-muted/30">
               <TableCell>
-                <p className="font-semibold text-foreground">{campaign.name}</p>
+                <div className="space-y-1">
+                  <p className="font-semibold text-foreground">{campaign.name}</p>
+                  {campaign.status === 'draft' && (!hasGame || !hasQuiz) && (
+                    <div className="flex gap-1">
+                       {!hasGame && <span className="text-[10px] px-1.5 py-0.5 rounded bg-red-100 text-red-600 font-medium">Chưa có Game</span>}
+                       {!hasQuiz && <span className="text-[10px] px-1.5 py-0.5 rounded bg-orange-100 text-orange-600 font-medium">Chưa có Quiz</span>}
+                    </div>
+                  )}
+                </div>
               </TableCell>
               <TableCell>
                 <Badge variant="outline" className={cn(getStatusColor(campaign.status))}>
@@ -146,6 +160,20 @@ export function CampaignList({ campaigns, onViewDetail, onEdit, onDelete, onActi
                       </DropdownMenuItem>
                     )}
 
+                    {campaign.status === 'draft' && onAddGame && (
+                      <DropdownMenuItem onClick={() => onAddGame(campaign)}>
+                        <Gamepad2 className="w-4 h-4 mr-2" />
+                        Thêm Game
+                      </DropdownMenuItem>
+                    )}
+                    
+                    {campaign.status === 'draft' && onAddQuiz && (
+                      <DropdownMenuItem onClick={() => onAddQuiz(campaign)}>
+                        <FileQuestion className="w-4 h-4 mr-2" />
+                        Thêm Quiz
+                      </DropdownMenuItem>
+                    )}
+
                     {campaign.status === 'scheduled' && onRevertToDraft && (
                       <DropdownMenuItem onClick={() => onRevertToDraft(campaign)} className="text-eco-orange focus:text-eco-orange">
                         <RotateCcw className="w-4 h-4 mr-2" />
@@ -172,7 +200,8 @@ export function CampaignList({ campaigns, onViewDetail, onEdit, onDelete, onActi
                 </DropdownMenu>
               </TableCell>
             </TableRow>
-          ))}
+            );
+          })}
         </TableBody>
       </Table>
     </div>

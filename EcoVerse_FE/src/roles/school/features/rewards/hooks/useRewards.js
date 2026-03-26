@@ -1,9 +1,9 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
+import { rewardService } from '../../../services/reward.service';
 import { 
   pendingRewardsData, 
   completedRewardsData, 
   cancelledRewardsData,
-  marketplaceItemsData,
   rewardStats,
   topRewardsData,
   statusDistributionData,
@@ -15,6 +15,31 @@ export function useRewards() {
   const [isAddItemOpen, setIsAddItemOpen] = useState(false);
 
   const [partnershipRewards, setPartnershipRewards] = useState(partnershipRewardsData);
+  const [marketplaceItems, setMarketplaceItems] = useState([]);
+
+  const fetchRewards = async () => {
+    try {
+      const res = await rewardService.getRewards();
+      const rewardsList = res.data?.data || [];
+      const mapped = rewardsList.map(r => ({
+        id: r.id,
+        name: r.rewardName,
+        coins: r.coinCost,
+        stock: r.isUnlimited ? '∞' : r.stockQuantity,
+        image: r.imageUrl || '🎁',
+        active: r.isActive,
+        type: 'physical',
+        ...r
+      }));
+      setMarketplaceItems(mapped);
+    } catch (e) {
+      console.error('Failed to fetch rewards', e);
+    }
+  };
+
+  useEffect(() => {
+    fetchRewards();
+  }, []);
 
   const confirmPartnershipReward = (id) => {
     setPartnershipRewards(prev => prev.map(reward => {
@@ -51,7 +76,8 @@ export function useRewards() {
     pendingRewards: pendingRewardsData,
     completedRewards: completedRewardsData,
     cancelledRewards: cancelledRewardsData,
-    marketplaceItems: marketplaceItemsData,
+    marketplaceItems,
+    fetchRewards,
     stats: rewardStats,
     topRewards: topRewardsData,
     statusDistribution: statusDistributionData,

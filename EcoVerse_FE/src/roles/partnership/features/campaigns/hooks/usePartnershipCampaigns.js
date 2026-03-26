@@ -1,6 +1,17 @@
 import { useState, useMemo } from 'react';
 import { getGameLevelsForPartnership } from '@/shared/data/admin-game-levels.data';
 
+const mockWasteItems = [
+  { id: 1, image: "🥤", name: "Chai nhựa", category: "plastic", description: "Chai nhựa nước uống" },
+  { id: 2, image: "📄", name: "Giấy A4", category: "paper", description: "Giấy in văn phòng" },
+  { id: 3, image: "🍎", name: "Vỏ táo", category: "organic", description: "Vỏ hoa quả hữu cơ" },
+  { id: 4, image: "🥡", name: "Hộp xốp", category: "others", description: "Hộp đựng thức ăn" },
+  { id: 5, image: "🧃", name: "Hộp sữa", category: "plastic", description: "Hộp sữa nhựa" },
+  { id: 6, image: "📰", name: "Báo cũ", category: "paper", description: "Tờ báo đã đọc" },
+  { id: 7, image: "🍌", name: "Vỏ chuối", category: "organic", description: "Vỏ trái cây" },
+  { id: 8, image: "🔋", name: "Pin", category: "others", description: "Pin điện tử" },
+];
+
 const mockCampaigns = [
   {
     id: '1',
@@ -182,16 +193,22 @@ const adminPartnershipLevels = getGameLevelsForPartnership().map(level => ({
   name: level.name,
   gameType: level.gameType === 'sorting' ? 'collection-sorting' : 'run-sorting',
   difficulty: level.difficulty,
+  binTypes: level.binTypes || [],
 }));
 
 export function usePartnershipCampaigns() {
   const [campaigns, setCampaigns] = useState(mockCampaigns);
   const [availableSchools] = useState(mockSchools);
-  const [availableQuizzes] = useState(mockQuizzes);
+  const [availableQuizzes, setAvailableQuizzes] = useState(mockQuizzes);
   const [availableGameLevels] = useState(adminPartnershipLevels);
+  const [availableWasteItems] = useState(mockWasteItems);
   const [selectedCampaign, setSelectedCampaign] = useState(null);
   const [isDetailOpen, setIsDetailOpen] = useState(false);
   const [isCreateOpen, setIsCreateOpen] = useState(false);
+  
+  const [isAddGameOpen, setIsAddGameOpen] = useState(false);
+  const [isAddQuizOpen, setIsAddQuizOpen] = useState(false);
+  const [selectedCampaignForConfig, setSelectedCampaignForConfig] = useState(null);
 
   const [formData, setFormData] = useState({
     name: '',
@@ -208,12 +225,12 @@ export function usePartnershipCampaigns() {
     qualifying_rounds: [
       {
         round_number: 1,
-        round_name: 'Vòng loại 1',
+        round_name: 'Vòng sơ loại',
         start_date: '',
         end_date: '',
         quiz_ids: [],
         selected_game_type: '',
-        game_level_ids: [],
+        preset_id: null,
         advancement_limit: 10,
       },
     ],
@@ -285,12 +302,12 @@ export function usePartnershipCampaigns() {
       qualifying_rounds: [
         {
           round_number: 1,
-          round_name: 'Vòng loại 1',
+          round_name: 'Vòng sơ loại',
           start_date: '',
           end_date: '',
           quiz_ids: [],
           selected_game_type: '',
-          game_level_ids: [],
+          preset_id: null,
           advancement_limit: 10,
         },
       ],
@@ -346,18 +363,7 @@ export function usePartnershipCampaigns() {
       game_level_ids: campaign.game_level_ids,
       reward_images: [],
       status: 'draft',
-      qualifying_rounds: campaign.qualifying_rounds && campaign.qualifying_rounds.length > 0 ? campaign.qualifying_rounds : [
-        {
-          round_number: 1,
-          round_name: 'Vòng loại 1',
-          start_date: '',
-          end_date: '',
-          quiz_ids: [],
-          selected_game_type: '',
-          game_level_ids: [],
-          advancement_limit: 10,
-        },
-      ],
+      qualifying_rounds: campaign.qualifying_rounds || [],
     });
     setIsCreateOpen(true);
     
@@ -400,6 +406,40 @@ export function usePartnershipCampaigns() {
     }
   };
 
+  const handleOpenAddGame = (campaign) => {
+    setSelectedCampaignForConfig(campaign);
+    setIsAddGameOpen(true);
+  };
+  
+  const handleCloseAddGame = () => {
+    setIsAddGameOpen(false);
+    setSelectedCampaignForConfig(null);
+  };
+
+  const handleOpenAddQuiz = (campaign) => {
+    setSelectedCampaignForConfig(campaign);
+    setIsAddQuizOpen(true);
+  };
+  
+  const handleCloseAddQuiz = () => {
+    setIsAddQuizOpen(false);
+    setSelectedCampaignForConfig(null);
+  };
+
+  const handleAddGameSubmit = (campaignId, updatedRounds) => {
+    setCampaigns(prev => prev.map(c => 
+      c.id === campaignId ? { ...c, qualifying_rounds: updatedRounds } : c
+    ));
+    handleCloseAddGame();
+  };
+
+  const handleAddQuizSubmit = (campaignId, updatedRounds) => {
+    setCampaigns(prev => prev.map(c => 
+      c.id === campaignId ? { ...c, qualifying_rounds: updatedRounds } : c
+    ));
+    handleCloseAddQuiz();
+  };
+
   return {
     campaigns,
     stats,
@@ -420,7 +460,19 @@ export function usePartnershipCampaigns() {
     updateFormData,
     availableSchools,
     availableQuizzes,
+    setAvailableQuizzes,
     availableGameLevels,
+    availableWasteItems,
     handleSubmit,
+
+    isAddGameOpen,
+    isAddQuizOpen,
+    selectedCampaignForConfig,
+    handleOpenAddGame,
+    handleCloseAddGame,
+    handleOpenAddQuiz,
+    handleCloseAddQuiz,
+    handleAddGameSubmit,
+    handleAddQuizSubmit,
   };
 }

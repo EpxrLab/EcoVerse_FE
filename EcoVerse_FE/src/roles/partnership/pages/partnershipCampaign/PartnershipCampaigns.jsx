@@ -2,7 +2,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/shared/components/ui
 import { Button } from '@/shared/components/ui/button';
 import { FileText, Clock, CheckCircle, XCircle, Flag, Plus } from 'lucide-react';
 import { usePartnershipCampaigns } from '../../features/campaigns/hooks';
-import { CampaignStats, CampaignList, CampaignForm, CampaignDetail } from '../../features/campaigns/components';
+import { CampaignStats, CampaignList, CampaignForm, CampaignDetail, AddGameModal, AddQuizModal } from '../../features/campaigns/components';
 
 export default function PartnershipCampaigns() {
   const {
@@ -22,9 +22,21 @@ export default function PartnershipCampaigns() {
     updateFormData,
     availableSchools,
     availableQuizzes,
+    setAvailableQuizzes,
     availableGameLevels,
+    availableWasteItems,
     handleSubmit,
     handleRevertToDraft,
+
+    isAddGameOpen,
+    isAddQuizOpen,
+    selectedCampaignForConfig,
+    handleOpenAddGame,
+    handleCloseAddGame,
+    handleOpenAddQuiz,
+    handleCloseAddQuiz,
+    handleAddGameSubmit,
+    handleAddQuizSubmit,
   } = usePartnershipCampaigns();
 
   return (
@@ -113,6 +125,8 @@ export default function PartnershipCampaigns() {
             onEdit={handleEdit}
             onDelete={handleDelete}
             onActivate={handleActivate}
+            onAddGame={handleOpenAddGame}
+            onAddQuiz={handleOpenAddQuiz}
           />
         </TabsContent>
 
@@ -172,8 +186,26 @@ export default function PartnershipCampaigns() {
         onFormChange={updateFormData}
         availableSchools={availableSchools}
         availableQuizzes={availableQuizzes}
+        setAvailableQuizzes={setAvailableQuizzes}
         availableGameLevels={availableGameLevels}
+        availableWasteItems={availableWasteItems}
         onSubmit={handleSubmit}
+      />
+
+      <AddGameModal
+        isOpen={isAddGameOpen}
+        onClose={handleCloseAddGame}
+        campaign={selectedCampaignForConfig}
+        onSubmit={handleAddGameSubmit}
+      />
+
+      <AddQuizModal
+        isOpen={isAddQuizOpen}
+        onClose={handleCloseAddQuiz}
+        campaign={selectedCampaignForConfig}
+        availableQuizzes={availableQuizzes}
+        setAvailableQuizzes={setAvailableQuizzes}
+        onSubmit={handleAddQuizSubmit}
       />
 
       {/* Campaign Detail Dialog */}
