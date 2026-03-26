@@ -9,7 +9,6 @@ import {
   Input,
   Form,
   Select,
-  Checkbox,
   Statistic,
   Tag,
   Dropdown,
@@ -23,14 +22,10 @@ import {
   StarOutlined,
   AppstoreOutlined,
   TrophyOutlined,
-  TeamOutlined,
-  ReloadOutlined,
 } from "@ant-design/icons";
 import { motion, AnimatePresence } from "framer-motion";
 
 const { TabPane } = Tabs;
-
-// ─── Icons (inline SVG shortcuts via emoji + antd) ──────────────────────────
 
 const GamepadIcon = () => (
   <svg

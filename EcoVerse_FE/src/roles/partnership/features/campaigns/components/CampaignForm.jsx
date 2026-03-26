@@ -9,15 +9,6 @@ import { Badge } from '@/shared/components/ui/badge';
 import { School, Users, MapPin, Package, Zap, Image as ImageIcon, Upload, X, Calendar, Sparkles, Settings2, Bot, ChevronDown, ChevronUp, Plus } from 'lucide-react';
 import { cn } from '@/shared/lib/utils';
 
-const CATEGORY_LABELS = { plastic: "Nhựa", paper: "Giấy", organic: "Hữu cơ", others: "Khác" };
-
-const DEMO_PRESETS = [
-  { id: 1, name: "Preset Cơ bản", gameType: "sorting", difficulty: "Dễ", levels: [{ levelNumber: 1, itemCount: 15, timeLimitSeconds: 60, lives: null }] },
-  { id: 2, name: "Preset Thử thách", gameType: "sorting", difficulty: "Trung bình", levels: [{ levelNumber: 1, itemCount: 20, timeLimitSeconds: 45, lives: 3 }] },
-  { id: 3, name: "Preset Khởi động", gameType: "run-sorting", difficulty: "Dễ", levels: [{ levelNumber: 1, itemCount: 10, timeLimitSeconds: 0, lives: null }] },
-  { id: 4, name: "Preset Tăng tốc", gameType: "run-sorting", difficulty: "Trung bình", levels: [{ levelNumber: 1, itemCount: 20, timeLimitSeconds: 45, lives: 3 }, { levelNumber: 2, itemCount: 25, timeLimitSeconds: 40, lives: 3 }] },
-];
-
 export function CampaignForm({
   isOpen,
   onClose,
