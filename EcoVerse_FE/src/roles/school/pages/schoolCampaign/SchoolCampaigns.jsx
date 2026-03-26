@@ -9,6 +9,8 @@ import { toast } from 'sonner';
 import { useCampaigns } from '../../features/campaigns/hooks/useCampaigns';
 import { useCampaignForm } from '../../features/campaigns/hooks';
 import { CampaignStats, CampaignList, CampaignForm, CampaignDetail, StudentSelectionDialog, InvitationList } from '../../features/campaigns/components';
+import { AddGameModal } from '../../features/campaigns/components/AddGameModal';
+import { AddQuizModal } from '../../features/campaigns/components/AddQuizModal';
 import { GAME_TYPES } from '../../features/campaigns/types/campaign';
 import { useStudents } from '../../hooks/useStudents';
 
@@ -64,6 +66,11 @@ export default function SchoolCampaigns() {
   const [acceptInviteCampaign, setAcceptInviteCampaign] = useState(null);
   const [isAddStudentOpen, setIsAddStudentOpen] = useState(false);
   const [addStudentCampaign, setAddStudentCampaign] = useState(null);
+  // New: Add Game / Add Quiz modals
+  const [isAddGameOpen, setIsAddGameOpen] = useState(false);
+  const [isAddQuizOpen, setIsAddQuizOpen] = useState(false);
+  const [gameConfigCampaign, setGameConfigCampaign] = useState(null);
+  const [quizConfigCampaign, setQuizConfigCampaign] = useState(null);
 
   // Partnership Invitation logic
   const invitations = allCampaigns.filter(c => c.origin === 'partnership' && c.invitation_status === 'pending');
@@ -113,7 +120,31 @@ export default function SchoolCampaigns() {
     addCampaign(formData);
     resetForm();
     setIsCreateOpen(false);
-    toast.success('Đã tạo chiến dịch thành công');
+    toast.success('Đã tạo bản nháp chiến dịch. Hãy thêm Game và Quiz từ menu hành động!');
+  };
+
+  const handleOpenAddGame = (campaign) => {
+    setGameConfigCampaign(campaign);
+    setIsAddGameOpen(true);
+  };
+
+  const handleSubmitGame = (campaignId, gameData) => {
+    updateCampaign(campaignId, gameData);
+    setIsAddGameOpen(false);
+    setGameConfigCampaign(null);
+    toast.success('Đã cập nhật cấu hình Game');
+  };
+
+  const handleOpenAddQuiz = (campaign) => {
+    setQuizConfigCampaign(campaign);
+    setIsAddQuizOpen(true);
+  };
+
+  const handleSubmitQuiz = (campaignId, quizIds) => {
+    updateCampaign(campaignId, { quiz_ids: quizIds });
+    setIsAddQuizOpen(false);
+    setQuizConfigCampaign(null);
+    toast.success('Đã cập nhật Quiz');
   };
 
   const handleEditCampaign = (campaign) => {
@@ -265,6 +296,8 @@ export default function SchoolCampaigns() {
             onChangeStatus={changeStatus}
             onDelete={deleteCampaign}
             onActivate={activateCampaign}
+            onAddGame={handleOpenAddGame}
+            onAddQuiz={handleOpenAddQuiz}
           />
         </TabsContent>
 
@@ -427,24 +460,19 @@ export default function SchoolCampaigns() {
 
       {/* Create Dialog */}
       <Dialog open={isCreateOpen} onOpenChange={setIsCreateOpen}>
-        <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
+        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>Tạo chiến dịch mới</DialogTitle>
             <DialogDescription>
-              Tạo chiến dịch thu gom rác tái chế cho trường
+              Nhập thông tin cơ bản. Game và Quiz sẽ thêm sau khi tạo bản nháp.
             </DialogDescription>
           </DialogHeader>
           <CampaignForm
             mode="create"
             formData={formData}
             availableClasses={availableClasses}
-            availableQuizzes={availableQuizzes}
-            gameTypes={GAME_TYPES}
             onFormChange={handleFormChange}
             onClassToggle={handleClassToggle}
-            onQuizToggle={handleQuizToggle}
-            onGameToggle={handleGameToggle}
-            onLevelToggle={handleLevelToggle}
             onStudentSelection={handleStudentSelection}
             onSubmit={handleCreateCampaign}
             onCancel={() => {
@@ -457,24 +485,19 @@ export default function SchoolCampaigns() {
 
       {/* Edit Dialog */}
       <Dialog open={isEditOpen} onOpenChange={setIsEditOpen}>
-        <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
+        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>Chỉnh sửa chiến dịch</DialogTitle>
             <DialogDescription>
-              Cập nhật thông tin chiến dịch, quiz và game
+              Cập nhật thông tin cơ bản của chiến dịch
             </DialogDescription>
           </DialogHeader>
           <CampaignForm
             mode="edit"
             formData={formData}
             availableClasses={availableClasses}
-            availableQuizzes={availableQuizzes}
-            gameTypes={GAME_TYPES}
             onFormChange={handleFormChange}
             onClassToggle={handleClassToggle}
-            onQuizToggle={handleQuizToggle}
-            onGameToggle={handleGameToggle}
-            onLevelToggle={handleLevelToggle}
             onStudentSelection={handleStudentSelection}
             onSubmit={handleUpdateCampaign}
             onCancel={() => {
@@ -485,6 +508,27 @@ export default function SchoolCampaigns() {
           />
         </DialogContent>
       </Dialog>
+
+      {/* Add Game Modal */}
+      {gameConfigCampaign && (
+        <AddGameModal
+          isOpen={isAddGameOpen}
+          onClose={() => { setIsAddGameOpen(false); setGameConfigCampaign(null); }}
+          campaign={gameConfigCampaign}
+          onSubmit={handleSubmitGame}
+        />
+      )}
+
+      {/* Add Quiz Modal */}
+      {quizConfigCampaign && (
+        <AddQuizModal
+          isOpen={isAddQuizOpen}
+          onClose={() => { setIsAddQuizOpen(false); setQuizConfigCampaign(null); }}
+          campaign={quizConfigCampaign}
+          availableQuizzes={availableQuizzes}
+          onSubmit={handleSubmitQuiz}
+        />
+      )}
 
       {/* Detail Dialog */}
       <Dialog open={isDetailOpen} onOpenChange={setIsDetailOpen}>

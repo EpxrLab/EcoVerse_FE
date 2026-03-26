@@ -166,6 +166,11 @@ export function useCampaigns() {
               };
             })
           : c.selected_levels;
+
+        // Handle game config from AddGameModal
+        const updatedGames = data.selected_games !== undefined ? data.selected_games : (data.game_types || c.selected_games);
+        const updatedGameConfigs = data.game_configs !== undefined ? data.game_configs : c.game_configs;
+        const updatedWasteItemIds = data.waste_item_ids !== undefined ? data.waste_item_ids : c.waste_item_ids;
         
         return {
           ...c,
@@ -173,7 +178,9 @@ export function useCampaigns() {
           participating_classes: updatedClasses,
           selected_quizzes: updatedQuizzes,
           selected_levels: updatedLevels,
-          selected_games: data.game_types || c.selected_games,
+          selected_games: updatedGames,
+          game_configs: updatedGameConfigs,
+          waste_item_ids: updatedWasteItemIds,
           total_students: updatedClasses?.reduce((sum, pc) => sum + pc.students_count, 0) || 0,
           updated_at: new Date().toISOString(),
         };

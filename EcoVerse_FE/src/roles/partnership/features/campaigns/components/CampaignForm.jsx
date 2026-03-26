@@ -6,10 +6,17 @@ import { Label } from '@/shared/components/ui/label';
 import { Textarea } from '@/shared/components/ui/textarea';
 import { Checkbox } from '@/shared/components/ui/checkbox';
 import { Badge } from '@/shared/components/ui/badge';
-import { School, Users, MapPin, Package, Zap, Image as ImageIcon, Upload, X, Calendar, Sparkles, Settings2, Bot, ChevronDown, ChevronUp } from 'lucide-react';
+import { School, Users, MapPin, Package, Zap, Image as ImageIcon, Upload, X, Calendar, Sparkles, Settings2, Bot, ChevronDown, ChevronUp, Plus } from 'lucide-react';
 import { cn } from '@/shared/lib/utils';
 
 const CATEGORY_LABELS = { plastic: "Nhựa", paper: "Giấy", organic: "Hữu cơ", others: "Khác" };
+
+const DEMO_PRESETS = [
+  { id: 1, name: "Preset Cơ bản", gameType: "sorting", difficulty: "Dễ", levels: [{ levelNumber: 1, itemCount: 15, timeLimitSeconds: 60, lives: null }] },
+  { id: 2, name: "Preset Thử thách", gameType: "sorting", difficulty: "Trung bình", levels: [{ levelNumber: 1, itemCount: 20, timeLimitSeconds: 45, lives: 3 }] },
+  { id: 3, name: "Preset Khởi động", gameType: "run-sorting", difficulty: "Dễ", levels: [{ levelNumber: 1, itemCount: 10, timeLimitSeconds: 0, lives: null }] },
+  { id: 4, name: "Preset Tăng tốc", gameType: "run-sorting", difficulty: "Trung bình", levels: [{ levelNumber: 1, itemCount: 20, timeLimitSeconds: 45, lives: 3 }, { levelNumber: 2, itemCount: 25, timeLimitSeconds: 40, lives: 3 }] },
+];
 
 export function CampaignForm({
   isOpen,
@@ -17,17 +24,8 @@ export function CampaignForm({
   formData,
   onFormChange,
   availableSchools,
-  availableQuizzes,
-  setAvailableQuizzes,
-  availableGameLevels,
-  availableWasteItems = [],
   onSubmit,
 }) {
-  const [showAIQuiz, setShowAIQuiz] = React.useState(null);
-  const [aiTopic, setAiTopic] = React.useState('');
-  const [isGeneratingAI, setIsGeneratingAI] = React.useState(false);
-  const [expandedConfig, setExpandedConfig] = React.useState(null);
-
   const toggleSchool = (schoolId) => {
     const exists = formData.school_participations.find(sp => sp.school_id === schoolId);
     if (exists) {
@@ -52,125 +50,45 @@ export function CampaignForm({
   const selectedSchoolIds = formData.school_participations.map(sp => sp.school_id);
   const selectedSchools = availableSchools.filter(s => selectedSchoolIds.includes(s.id));
 
-  const addQualifyingRound = () => {
-    const newRoundNumber = formData.qualifying_rounds.length + 1;
-    const lastRound = formData.qualifying_rounds[formData.qualifying_rounds.length - 1];
-    const startDate = lastRound && lastRound.end_date ? lastRound.end_date : '';
-    
-    const newRound = {
-      round_number: newRoundNumber,
-      round_name: `Vòng loại ${newRoundNumber}`,
-      start_date: startDate,
-      end_date: formData.end_date,
-      quiz_ids: [],
-      selected_game_type: '',
-      game_level_ids: [],
-      advancement_limit: 10,
-    };
-    onFormChange({ qualifying_rounds: [...formData.qualifying_rounds, newRound] });
-  };
-
-  const toggleQualifyingRoundQuiz = (roundIndex, quizId) => {
-    const round = formData.qualifying_rounds[roundIndex];
-    const newQuizIds = round.quiz_ids.includes(quizId)
-      ? round.quiz_ids.filter(id => id !== quizId)
-      : [...round.quiz_ids, quizId];
-    updateQualifyingRound(roundIndex, { quiz_ids: newQuizIds });
-  };
-
-  const toggleQualifyingRoundGameLevel = (roundIndex, levelId) => {
-    const round = formData.qualifying_rounds[roundIndex];
-    if (!round.level_configs) round.level_configs = {};
-    const isSelected = round.game_level_ids.includes(levelId);
-    
-    let newLevelIds;
-    let newConfigs = { ...round.level_configs };
-    
-    if (isSelected) {
-      newLevelIds = round.game_level_ids.filter(id => id !== levelId);
-      delete newConfigs[levelId];
-      if (expandedConfig === `${roundIndex}-${levelId}`) setExpandedConfig(null);
-    } else {
-      newLevelIds = [...round.game_level_ids, levelId];
-      const level = availableGameLevels.find(l => String(l.id) === String(levelId));
-      const binConfigs = {};
-      if (level && level.binTypes) {
-        level.binTypes.forEach(b => {
-           binConfigs[b] = []; 
-        });
-      }
-      newConfigs[levelId] = binConfigs;
-    }
-    updateQualifyingRound(roundIndex, { game_level_ids: newLevelIds, level_configs: newConfigs });
-  };
-
-  const toggleWasteItem = (roundIndex, levelId, binType, itemId) => {
-    const round = formData.qualifying_rounds[roundIndex];
-    if (!round.level_configs) return;
-    const newConfigs = { ...round.level_configs };
-    if (!newConfigs[levelId]) return;
-    const currentItems = newConfigs[levelId][binType] || [];
-    if (currentItems.includes(itemId)) {
-      newConfigs[levelId][binType] = currentItems.filter(id => id !== itemId);
-    } else {
-      newConfigs[levelId][binType] = [...currentItems, itemId];
-    }
-    updateQualifyingRound(roundIndex, { level_configs: newConfigs });
-  };
-
-  const handleGenerateAIQuiz = (roundIndex) => {
-    if (!aiTopic.trim()) return;
-    setIsGeneratingAI(true);
-    setTimeout(() => {
-      const newQuiz = {
-        id: `ai_${Date.now()}`,
-        title: `Quiz AI: ${aiTopic}`,
-        difficulty: 'medium',
-        question_count: 10
-      };
-      if (typeof setAvailableQuizzes === 'function') {
-        setAvailableQuizzes(prev => [...prev, newQuiz]);
-      }
-      const round = formData.qualifying_rounds[roundIndex];
-      updateQualifyingRound(roundIndex, { quiz_ids: [...round.quiz_ids, newQuiz.id] });
-      setIsGeneratingAI(false);
-      setAiTopic('');
-      setShowAIQuiz(null);
-    }, 1500);
-  };
-
-  const removeQualifyingRound = (index) => {
-    if (formData.qualifying_rounds.length <= 1) {
-      return;
-    }
-    const updatedRounds = formData.qualifying_rounds.filter((_, i) => i !== index);
-    const renumberedRounds = updatedRounds.map((round, i) => {
-      const isLast = i === updatedRounds.length - 1;
-      return {
-        ...round,
-        round_number: i + 1,
-        round_name: `Vòng loại ${i + 1}`,
-        end_date: isLast ? formData.end_date : round.end_date,
-      };
-    });
-    onFormChange({ qualifying_rounds: renumberedRounds });
-  };
-
-  const updateQualifyingRound = (index, updates) => {
-    const updatedRounds = formData.qualifying_rounds.map((round, i) =>
-      i === index ? { ...round, ...updates } : round
-    );
-    onFormChange({ qualifying_rounds: updatedRounds });
-  };
-
   const [currentStep, setCurrentStep] = React.useState(0);
 
   const steps = [
     { id: 'basic', label: 'Thông tin cơ bản' },
     { id: 'schools', label: 'Trường tham gia' },
-    { id: 'qualifying', label: 'Vòng loại' },
+    { id: 'rounds', label: 'Vòng loại' },
     { id: 'rewards', label: 'Phần thưởng' },
   ];
+
+  const addQualifyingRound = () => {
+    const nextRoundNumber = formData.qualifying_rounds.length + 1;
+    onFormChange({
+      qualifying_rounds: [
+        ...formData.qualifying_rounds,
+        {
+          round_number: nextRoundNumber,
+          round_name: `Vòng ${nextRoundNumber}`,
+          start_date: formData.start_date || '',
+          end_date: formData.end_date || '',
+          quiz_ids: [],
+          selected_game_type: '',
+          preset_id: null,
+          advancement_limit: 10,
+        }
+      ]
+    });
+  };
+
+  const removeQualifyingRound = (index) => {
+    if (formData.qualifying_rounds.length === 1) return;
+    const newRounds = formData.qualifying_rounds.filter((_, i) => i !== index);
+    onFormChange({ qualifying_rounds: newRounds });
+  };
+
+  const updateQualifyingRound = (index, field, value) => {
+    const newRounds = [...formData.qualifying_rounds];
+    newRounds[index] = { ...newRounds[index], [field]: value };
+    onFormChange({ qualifying_rounds: newRounds });
+  };
 
   const [rewardImagePreviews, setRewardImagePreviews] = React.useState([]);
 
@@ -221,35 +139,7 @@ export function CampaignForm({
       case 1:
         return formData.school_participations.length > 0;
       case 2:
-        const hasBasicFields = formData.qualifying_rounds.length > 0 && 
-               formData.qualifying_rounds.every(round => 
-                 round.round_name && round.start_date && round.end_date && round.advancement_limit > 0
-               );
-        
-        if (!hasBasicFields) return false;
-        
-        for (let i = 0; i < formData.qualifying_rounds.length; i++) {
-          const round = formData.qualifying_rounds[i];
-          
-          if (round.end_date <= round.start_date) return false;
-          
-          if (i === 0 && formData.start_date) {
-            if (round.start_date < formData.start_date) return false;
-          }
-
-          if (formData.start_date && formData.end_date) {
-            if (round.start_date < formData.start_date || round.end_date > formData.end_date) {
-              return false;
-            }
-          }
-          
-          if (i < formData.qualifying_rounds.length - 1) {
-            const nextRound = formData.qualifying_rounds[i + 1];
-            if (nextRound.start_date && nextRound.start_date <= round.end_date) return false;
-          }
-        }
-        
-        return true;
+        return formData.qualifying_rounds.length > 0 && formData.qualifying_rounds.every(r => r.round_name && r.advancement_limit && r.start_date && r.end_date);
       case 3:
         return true;
       default:
@@ -478,305 +368,86 @@ export function CampaignForm({
             <div className="space-y-6 animate-fade-in">
               <div className="flex items-center justify-between">
                 <div>
-                  <h3 className="text-lg font-semibold">Cấu hình vòng loại</h3>
-                  <p className="text-sm text-muted-foreground">
-                    Tạo các vòng loại để lọc học sinh xuất sắc. Học sinh sẽ tham gia tuần tự từ vòng 1 đến vòng chính thức.
+                  <Label className="text-base font-bold flex items-center gap-2">
+                    <Zap className="w-5 h-5 text-eco-green" />
+                    Cấu trúc các vòng loại
+                  </Label>
+                  <p className="text-sm text-muted-foreground mt-1">
+                    Khai báo trước số lượng vòng chơi. Nội dung game/quiz sẽ cấu hình chi tiết sau.
                   </p>
-                  {formData.start_date && formData.end_date && (
-                    <p className="text-xs text-muted-foreground mt-1 flex items-center gap-1">
-                      <Calendar className="w-3 h-3" />
-                      Vòng loại phải nằm trong khoảng: {new Date(formData.start_date).toLocaleDateString('vi-VN')} - {new Date(formData.end_date).toLocaleDateString('vi-VN')}
-                    </p>
-                  )}
                 </div>
-                <Button
-                  type="button"
-                  variant="outline"
-                  size="sm"
-                  onClick={addQualifyingRound}
-                  className="gap-2"
+                <Button 
+                  onClick={addQualifyingRound} 
+                  variant="outline" 
+                  className="gap-2 border-eco-green text-eco-green hover:bg-eco-green hover:text-white"
                 >
-                  <Package className="w-4 h-4" />
-                  Thêm vòng
+                  <Plus className="w-4 h-4" />
+                  Thêm vòng loại
                 </Button>
               </div>
 
               <div className="space-y-4">
+                {formData.qualifying_rounds.length === 0 && (
+                  <div className="text-center py-6 text-muted-foreground border-2 border-dashed rounded-xl">
+                    Chưa có vòng loại nào được thiết lập.
+                  </div>
+                )}
+                
                 {formData.qualifying_rounds.map((round, index) => (
-                  <div
-                    key={index}
-                    className="border-2 rounded-xl p-4 space-y-4 bg-muted/30"
-                  >
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center gap-2">
-                        <Badge variant="secondary" className="text-sm">
-                          Vòng {round.round_number}
-                        </Badge>
+                  <div key={index} className="p-4 border-2 rounded-xl space-y-4 bg-muted/10 relative group">
+                    {formData.qualifying_rounds.length > 1 && (
+                      <button
+                        onClick={() => removeQualifyingRound(index)}
+                        className="absolute top-2 right-2 p-1.5 text-muted-foreground hover:text-destructive hover:bg-destructive/10 rounded-lg transition-colors"
+                        title="Xóa vòng"
+                      >
+                        <X className="w-4 h-4" />
+                      </button>
+                    )}
+
+                    <div className="grid grid-cols-2 md:grid-cols-4 gap-4 pr-8">
+                      <div className="space-y-2 md:col-span-1">
+                        <Label>Tên vòng *</Label>
                         <Input
-                          value={round.round_name}
-                          onChange={(e) => updateQualifyingRound(index, { round_name: e.target.value })}
-                          className="w-48 h-8"
-                          placeholder="Tên vòng loại"
+                          placeholder="VD: Vòng sơ loại"
+                          value={round.round_name || ''}
+                          onChange={(e) => updateQualifyingRound(index, 'round_name', e.target.value)}
                         />
                       </div>
-                      {formData.qualifying_rounds.length > 1 && (
-                        <Button
-                          type="button"
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => removeQualifyingRound(index)}
-                          className="text-destructive hover:text-destructive"
-                        >
-                          <X className="w-4 h-4" />
-                        </Button>
-                      )}
-                    </div>
-
-                    <div className="grid grid-cols-2 gap-4">
-                      <div className="space-y-2">
-                        <Label htmlFor={`round-${index}-start`}>Ngày bắt đầu *</Label>
+                      <div className="space-y-2 md:col-span-1">
+                        <Label>Giới hạn học sinh *</Label>
                         <Input
-                          id={`round-${index}-start`}
+                          type="number"
+                          placeholder="VD: 50"
+                          value={round.advancement_limit || ''}
+                          onChange={(e) => updateQualifyingRound(index, 'advancement_limit', parseInt(e.target.value) || 0)}
+                          min={1}
+                        />
+                      </div>
+                      <div className="space-y-2 md:col-span-1">
+                        <Label>Ngày bắt đầu *</Label>
+                        <Input
                           type="date"
-                          value={round.start_date}
-                          onChange={(e) => updateQualifyingRound(index, { start_date: e.target.value })}
-                          disabled={index === 0}
-                          min={
-                            index === 0 
-                              ? formData.start_date
-                              : formData.qualifying_rounds[index - 1]?.end_date
-                          }
+                          value={round.start_date || ''}
+                          onChange={(e) => updateQualifyingRound(index, 'start_date', e.target.value)}
+                          min={formData.start_date}
                           max={formData.end_date}
                         />
                       </div>
-                      <div className="space-y-2">
-                        <Label htmlFor={`round-${index}-end`}>Ngày kết thúc *</Label>
+                      <div className="space-y-2 md:col-span-1">
+                        <Label>Ngày kết thúc *</Label>
                         <Input
-                          id={`round-${index}-end`}
                           type="date"
-                          value={round.end_date}
-                          onChange={(e) => updateQualifyingRound(index, { end_date: e.target.value })}
-                          disabled={index === formData.qualifying_rounds.length - 1}
-                          min={round.start_date}
+                          value={round.end_date || ''}
+                          onChange={(e) => updateQualifyingRound(index, 'end_date', e.target.value)}
+                          min={round.start_date || formData.start_date}
                           max={formData.end_date}
                         />
-                      </div>
-                    </div>
-
-                    <div className="space-y-2">
-                      <Label htmlFor={`round-${index}-limit`}>Số học sinh được chọn vào vòng tiếp theo *</Label>
-                      <Input
-                        id={`round-${index}-limit`}
-                        type="number"
-                        min="1"
-                        value={round.advancement_limit}
-                        onChange={(e) => updateQualifyingRound(index, { advancement_limit: parseInt(e.target.value) || 10 })}
-                      />
-                      <p className="text-xs text-muted-foreground">
-                        Top {round.advancement_limit} học sinh có điểm cao nhất sẽ được chọn vào {index === formData.qualifying_rounds.length - 1 ? 'vòng chính thức' : `vòng ${round.round_number + 1}`}
-                      </p>
-                    </div>
-
-                    <div className="border-t pt-4 space-y-6">
-                      <h4 className="font-semibold text-sm">Nội dung vòng loại</h4>
-                      
-                      {/* 1. Game Selection */}
-                      <div className="space-y-4">
-                        <div className="space-y-2">
-                          <Label className="text-sm font-medium">1. Chọn Loại Game & Cấp độ</Label>
-                          <div className="grid grid-cols-2 gap-2 mt-1">
-                            <div
-                              className={cn(
-                                "p-2 rounded border cursor-pointer transition-all text-xs",
-                                round.selected_game_type === 'collection-sorting'
-                                  ? "bg-eco-blue/5 border-eco-blue/30"
-                                  : "border-border hover:bg-muted/50"
-                              )}
-                              onClick={() => updateQualifyingRound(index, { selected_game_type: 'collection-sorting', game_level_ids: [] })}
-                            >
-                              <div className="flex items-center gap-2">
-                                <Package className="w-4 h-4" />
-                                <span className="font-medium">Thu thập & Phân loại</span>
-                              </div>
-                            </div>
-                            <div
-                              className={cn(
-                                "p-2 rounded border cursor-pointer transition-all text-xs",
-                                round.selected_game_type === 'run-sorting'
-                                  ? "bg-eco-green/5 border-eco-green/30"
-                                  : "border-border hover:bg-muted/50"
-                              )}
-                              onClick={() => updateQualifyingRound(index, { selected_game_type: 'run-sorting', game_level_ids: [] })}
-                            >
-                              <div className="flex items-center gap-2">
-                                <Zap className="w-4 h-4" />
-                                <span className="font-medium">Chạy & Phân loại</span>
-                              </div>
-                            </div>
-                          </div>
-                        </div>
-
-                        {round.selected_game_type && (
-                          <div className="space-y-2 mt-3">
-                            <div className="flex items-center justify-between">
-                              <Label className="text-sm font-medium">Danh sách Cấp độ</Label>
-                              <Badge variant="outline" className="text-xs">
-                                {round.game_level_ids.length} cấp độ
-                              </Badge>
-                            </div>
-                            <div className="space-y-2 max-h-[250px] overflow-y-auto pr-1">
-                              {availableGameLevels
-                                .filter(level => level.gameType === round.selected_game_type)
-                                .map((level) => {
-                                  const isSelected = round.game_level_ids.includes(level.id);
-                                  const configKey = `${index}-${level.id}`;
-                                  const isExpanded = expandedConfig === configKey;
-                                  return (
-                                    <div key={level.id} className={cn("rounded-lg border-2 transition-all overflow-hidden", isSelected ? "border-green-500 shadow-sm" : "border-muted bg-background hover:border-green-200")}>
-                                      <div
-                                        className={cn("flex items-center justify-between p-3 cursor-pointer", isSelected ? "bg-green-50" : "bg-transparent hover:bg-green-50/30")}
-                                        onClick={() => toggleQualifyingRoundGameLevel(index, level.id)}
-                                      >
-                                        <div className="flex items-center gap-2">
-                                          <p className={cn("font-medium text-sm", isSelected ? "text-green-900" : "text-foreground")}>{level.name}</p>
-                                          <Badge variant="outline" className={cn("text-[10px] h-5 px-1.5 shrink-0 transition-colors", isSelected ? "bg-green-500 text-white border-green-500" : "text-muted-foreground")}>
-                                            {level.difficulty}
-                                          </Badge>
-                                        </div>
-                                        {isSelected && (
-                                           <Button 
-                                             size="sm" 
-                                             variant="ghost" 
-                                             className="h-6 px-2 text-xs text-green-700 hover:text-green-800 hover:bg-green-100 z-10 gap-1"
-                                             onClick={(e) => { e.stopPropagation(); setExpandedConfig(isExpanded ? null : configKey); }}
-                                           >
-                                             <Settings2 className="w-3 h-3" /> Cấu hình rác
-                                             {isExpanded ? <ChevronUp className="w-3 h-3" /> : <ChevronDown className="w-3 h-3"/>}
-                                           </Button>
-                                        )}
-                                      </div>
-                                      
-                                      {/* Expanded Config Content */}
-                                      {isSelected && isExpanded && round.level_configs && round.level_configs[level.id] && (
-                                        <div className="p-3 bg-white border-t border-green-100 space-y-3">
-                                          <p className="text-xs text-muted-foreground mb-2">Chọn rác phù hợp cho từng loại thùng trong cấp độ này:</p>
-                                          {level.binTypes && level.binTypes.map(binType => {
-                                            const availableForBin = availableWasteItems.filter(item => item.category === binType);
-                                            const selectedItems = round.level_configs[level.id][binType] || [];
-                                            return (
-                                              <div key={binType} className="space-y-1.5">
-                                                <Label className="text-xs font-semibold text-gray-700">Thùng: {CATEGORY_LABELS[binType] || binType}</Label>
-                                                {availableForBin.length > 0 ? (
-                                                  <div className="flex flex-wrap gap-1.5">
-                                                    {availableForBin.map(wItem => (
-                                                      <Badge 
-                                                        key={wItem.id}
-                                                        variant="outline" 
-                                                        className={cn("cursor-pointer px-2 py-0.5 text-xs select-none", selectedItems.includes(wItem.id) ? "bg-blue-100 border-blue-300 text-blue-800" : "bg-gray-50 border-gray-200 text-gray-500 hover:bg-gray-100")}
-                                                        onClick={() => toggleWasteItem(index, level.id, binType, wItem.id)}
-                                                      >
-                                                        {wItem.image} {wItem.name}
-                                                      </Badge>
-                                                    ))}
-                                                  </div>
-                                                ) : <div className="text-xs text-gray-400 italic">Không có rác phù hợp</div>}
-                                              </div>
-                                            )
-                                          })}
-                                        </div>
-                                      )}
-                                    </div>
-                                  );
-                                })}
-                            </div>
-                          </div>
-                        )}
-                      </div>
-
-                      {/* 2. Quiz Selection Component */}
-                      <div className="space-y-3 pt-2 border-t mt-4">
-                        <div className="flex items-center justify-between">
-                          <Label className="text-sm font-medium">2. Chọn Quiz</Label>
-                          <div className="flex items-center gap-2">
-                            <Badge variant="outline" className="text-xs mr-2">
-                              {round.quiz_ids.length} quiz
-                            </Badge>
-                            <Button 
-                              size="sm" 
-                              className="h-7 text-xs bg-purple-100 text-purple-700 hover:bg-purple-200 hover:text-purple-800 border-0"
-                              onClick={() => setShowAIQuiz(showAIQuiz === index ? null : index)}
-                            >
-                              <Sparkles className="w-3 h-3 mr-1" /> Tạo Quiz bằng AI
-                            </Button>
-                          </div>
-                        </div>
-
-                        {showAIQuiz === index && (
-                          <div className="bg-purple-50 p-3 rounded-lg border border-purple-100 flex flex-col gap-2 mb-3 animate-in fade-in zoom-in-95 duration-200">
-                            <div className="flex items-center gap-2">
-                              <Bot className="w-4 h-4 text-purple-600" />
-                              <span className="text-sm font-semibold text-purple-800">Tạo Quiz với AI</span>
-                            </div>
-                            <Textarea 
-                              value={aiTopic}
-                              onChange={e => setAiTopic(e.target.value)}
-                              placeholder="Nhập chủ đề muốn tạo (VD: Tái chế nhựa dùng một lần...)"
-                              className="text-sm min-h-[60px] resize-none"
-                            />
-                            <div className="flex justify-end mt-1">
-                              <Button 
-                                size="sm" 
-                                onClick={() => handleGenerateAIQuiz(index)}
-                                disabled={isGeneratingAI || !aiTopic.trim()}
-                                className="bg-purple-600 hover:bg-purple-700 text-white h-7.5"
-                              >
-                                {isGeneratingAI ? "Đang tạo..." : "Sinh bộ câu hỏi"}
-                              </Button>
-                            </div>
-                          </div>
-                        )}
-
-                        <div className="grid grid-cols-2 gap-2 border rounded-lg p-3 max-h-[150px] overflow-y-auto bg-background">
-                          {availableQuizzes.map((quiz) => {
-                            const isSelected = round.quiz_ids.includes(quiz.id);
-                            return (
-                              <div
-                                key={quiz.id}
-                                className={cn(
-                                  "flex flex-col gap-1 p-3 rounded-lg border-2 cursor-pointer transition-all",
-                                  isSelected
-                                    ? "bg-orange-50 border-orange-500 shadow-md"
-                                    : "border-muted bg-background hover:border-orange-200 hover:bg-orange-50/30"
-                                )}
-                                onClick={() => toggleQualifyingRoundQuiz(index, quiz.id)}
-                              >
-                                <div className="flex items-center justify-between gap-2">
-                                  <p className={cn("font-medium text-sm line-clamp-1", isSelected ? "text-orange-900" : "text-foreground")}>{quiz.title}</p>
-                                  <Badge 
-                                    variant="outline" 
-                                    className={cn(
-                                      "text-[10px] h-5 px-1.5 shrink-0 transition-colors", 
-                                      isSelected ? "bg-orange-500 text-white border-orange-500" : "text-muted-foreground"
-                                    )}
-                                  >
-                                    {quiz.difficulty === 'easy' ? 'Dễ' : quiz.difficulty === 'medium' ? 'TB' : 'Khó'}
-                                  </Badge>
-                                </div>
-                              </div>
-                            );
-                          })}
-                        </div>
                       </div>
                     </div>
                   </div>
                 ))}
               </div>
-
-              {formData.qualifying_rounds.length === 0 && (
-                <div className="text-center py-8 text-muted-foreground">
-                  <p>Chưa có vòng loại nào. Nhấn "Thêm vòng" để tạo vòng loại đầu tiên.</p>
-                </div>
-              )}
             </div>
           )}
 
