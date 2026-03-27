@@ -181,6 +181,35 @@ export function QuizForm({
                 />
               </div>
             </div>
+
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="targetGrade">Hạng mục lớp *</Label>
+                <Select 
+                  value={String(formData.targetGrade)} 
+                  onValueChange={(val) => onFormChange({ targetGrade: parseInt(val) })}
+                >
+                  <SelectTrigger id="targetGrade">
+                    <SelectValue placeholder="Chọn lớp" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {[1, 2, 3, 4, 5].map((grade) => (
+                      <SelectItem key={grade} value={String(grade)}>Lớp {grade}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="coinsOnPass">Điểm thưởng *</Label>
+                <Input
+                  id="coinsOnPass"
+                  type="number"
+                  min={1}
+                  value={formData.coinsOnPass}
+                  onChange={(e) => onFormChange({ coinsOnPass: parseInt(e.target.value) || 0 })}
+                />
+              </div>
+            </div>
           </TabsContent>
 
           {/* Tab 2: Questions */}

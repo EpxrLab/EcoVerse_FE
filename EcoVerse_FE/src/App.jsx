@@ -142,9 +142,9 @@ const App = () => (
               <Route
                 path="/student"
                 element={
-                  <ProtectedRoute role="STUDENT">
+                  // <ProtectedRoute role="STUDENT">
                     <StudentLayout />
-                  </ProtectedRoute>
+                  // </ProtectedRoute>
                 }
               >
                 <Route index element={<CampaignSelection />} />

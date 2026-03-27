@@ -6,6 +6,7 @@
  */
 import * as THREE from 'three';
 import gsap from 'gsap';
+import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader';
 import { SPAWNABLE_TRASH } from '../EcoGameStateManager';
 import { DEFAULT_LEVEL_CONFIG } from '../gameConfig';
 
@@ -63,6 +64,7 @@ export default class EcoGameRunner {
   // ─── Initialization ─────────────────────────────────────────────────────────
 
   init() {
+    console.log('--- RUNNER START WITH CONFIG ---', this.config);
     this._createGround();
     this._createPlayer();
     this._createEnvironment();
@@ -78,47 +80,88 @@ export default class EcoGameRunner {
   }
 
   _createGround() {
-    // Create scrolling ground segments
-    const groundMat = new THREE.MeshStandardMaterial({ color: 0x607d8b, roughness: 0.8 });
+    // Load the Runner_map_1 3D model as the environment
+    const loader = new GLTFLoader();
+    loader.load('/assets/Runner_map_1.glb', (gltf) => {
+      this.mapModel = gltf.scene;
+      
+      // Rotate map 180 degrees on Y to face the correct direction
+      this.mapModel.rotation.y = Math.PI;
 
+      // Find the specific road mesh
+      let roadMesh = null;
+      this.mapModel.traverse((child) => {
+        if (child.isMesh && child.name.includes('daolu')) {
+          roadMesh = child;
+        }
+      });
+
+      this.mapSegments = [];
+      
+      if (roadMesh) {
+        // First measure UN-SCALED road to get the scaling factor
+        this.mapModel.updateMatrixWorld(true);
+        const roadBoxInitial = new THREE.Box3().setFromObject(roadMesh);
+        const roadSizeInitial = roadBoxInitial.getSize(new THREE.Vector3());
+
+        // Scale map so the ROAD is 10 units wide
+        const scale = 10 / roadSizeInitial.x;
+        this.mapModel.scale.setScalar(scale);
+        
+        // Update world matrix after scaling to get the final road position
+        this.mapModel.updateMatrixWorld(true);
+        const roadBoxFinal = new THREE.Box3().setFromObject(roadMesh);
+        const roadSizeFinal = roadBoxFinal.getSize(new THREE.Vector3());
+        const roadCenterFinal = roadBoxFinal.getCenter(new THREE.Vector3());
+
+        this.modelLength = roadSizeFinal.z;
+
+        // Force maxDistance to match the model's road length for this level
+        // (So we end the game when the map ends)
+        this.config.maxDistance = this.modelLength + 380; // 30 unit buffer
+        console.log('--- SINGLE MAP CONFIG ---', { length: this.modelLength, maxDistance: this.config.maxDistance });
+
+        // Alignment: Center the road center at X=0
+        this.centeringX = roadCenterFinal.x;
+
+        // Position the single map segment
+        this.mapModel.position.set(
+          -this.centeringX,
+            -((roadCenterFinal.y - roadSizeFinal.y/2)) - 0.7,
+            -(roadCenterFinal.z) - 460
+        );
+
+        this.mapModel.traverse((child) => {
+          if (child.isMesh) {
+            child.castShadow = true;
+            child.receiveShadow = true;
+          }
+        });
+
+        this.scene.add(this.mapModel);
+        this.mapSegments = [this.mapModel];
+      } else {
+        // Fallback
+        const scale = 0.005;
+        this.mapModel.scale.setScalar(scale);
+        this.mapModel.position.set(0, -0.7, -15);
+        this.scene.add(this.mapModel);
+        this.mapSegments.push(this.mapModel);
+        this.modelLength = 200;
+      }
+    }, undefined, (error) => {
+      console.error('Failed to load Runner_map_1.glb:', error);
+    });
+
+    // Invisible ground segments for gameplay collision
     for (let i = 0; i < 6; i++) {
       const groundGeo = new THREE.BoxGeometry(LANE_WIDTH * 3 + 2, 0.2, GROUND_SEGMENT_LENGTH);
+      const groundMat = new THREE.MeshStandardMaterial({ color: 0x607d8b });
       const ground = new THREE.Mesh(groundGeo, groundMat);
       ground.position.set(0, -0.8, -i * GROUND_SEGMENT_LENGTH + 10);
-      ground.receiveShadow = true;
+      ground.visible = false;
       this.scene.add(ground);
       this.groundSegments.push(ground);
-
-      // Lane markings
-      const lineMat = new THREE.MeshBasicMaterial({ color: 0xffffff, transparent: true, opacity: 0.3 });
-      for (let lane = 0; lane < 2; lane++) {
-        const lineGeo = new THREE.BoxGeometry(0.08, 0.01, GROUND_SEGMENT_LENGTH);
-        const line = new THREE.Mesh(lineGeo, lineMat);
-        line.position.set(
-          LANES[lane] + LANE_WIDTH / 2,
-          -0.69,
-          -i * GROUND_SEGMENT_LENGTH + 10
-        );
-        this.scene.add(line);
-        this.decorations.push(line);
-      }
-    }
-
-    // Side barriers (decorative)
-    const barrierMat = new THREE.MeshStandardMaterial({ color: 0x455a64 });
-    for (let side of [-1, 1]) {
-      for (let i = 0; i < 6; i++) {
-        const barrierGeo = new THREE.BoxGeometry(0.3, 0.6, GROUND_SEGMENT_LENGTH);
-        const barrier = new THREE.Mesh(barrierGeo, barrierMat);
-        barrier.position.set(
-          side * (LANE_WIDTH * 1.5 + 1.3),
-          -0.5,
-          -i * GROUND_SEGMENT_LENGTH + 10
-        );
-        barrier.castShadow = true;
-        this.scene.add(barrier);
-        this.decorations.push(barrier);
-      }
     }
   }
 
@@ -206,7 +249,7 @@ export default class EcoGameRunner {
 
   _setupCamera() {
     this.camera.position.set(0, 5, 8);
-    this.camera.lookAt(0, 1, -5);
+    this.camera.lookAt(0, 1, -20);
   }
 
   // ─── Event Handling ─────────────────────────────────────────────────────────
@@ -511,11 +554,19 @@ export default class EcoGameRunner {
       }
     }
 
-    // Move decorations
+    // Move the map segments synchronously with the ground
+    if (this.mapSegments && this.mapSegments.length > 0) {
+      for (const segment of this.mapSegments) {
+        segment.position.z += moveAmount;
+        // No wrap - single segment only
+      }
+    }
+
+    // Move decorations (buildings, windows, lane markings)
     for (const dec of this.decorations) {
       dec.position.z += moveAmount;
       if (dec.position.z > GROUND_SEGMENT_LENGTH + 10) {
-        dec.position.z -= GROUND_SEGMENT_LENGTH * 6;
+        dec.position.z -= 100; // wrap back to match building row span
       }
     }
 
@@ -618,5 +669,21 @@ export default class EcoGameRunner {
     this.groundSegments = [];
     this.decorations = [];
     this.player = null;
+
+    // Dispose the loaded GLB map model
+    if (this.mapModel) {
+      this.scene.remove(this.mapModel);
+      this.mapModel.traverse((child) => {
+        if (child.isMesh) {
+          child.geometry?.dispose();
+          if (Array.isArray(child.material)) {
+            child.material.forEach((m) => m.dispose());
+          } else {
+            child.material?.dispose();
+          }
+        }
+      });
+      this.mapModel = null;
+    }
   }
 }
