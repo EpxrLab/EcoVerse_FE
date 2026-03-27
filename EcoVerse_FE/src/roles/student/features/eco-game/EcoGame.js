@@ -46,7 +46,6 @@ export default class EcoGame {
     this.levelConfig = levelConfig
       ? mergeLevelConfig(levelConfig)
       : mergeLevelConfig({});
-
     // Renderer
     this.renderer = new THREE.WebGLRenderer({
       antialias: true,

@@ -76,7 +76,7 @@ export const DIFFICULTY_PRESETS = {
       baseSpeed: 12,
       maxSpeed: 28,
       speedIncrement: 0.004,
-      maxDistance: 300,
+      maxDistance: 2000,
       spawnIntervalMin: 0.6,
       spawnIntervalMax: 1.4,
       obstacleRatio: 0.4,
