@@ -33,23 +33,10 @@ import {
 import { motion, AnimatePresence } from "framer-motion";
 import {
   getAllPartnershipAccounts,
+  toggleActiveAccount,
   updatePartnershipAccountStatus,
 } from "../../services";
 import toast from "react-hot-toast";
-
-// ─── BE Schema (tham khảo) ────────────────────────────────────────────────────
-// {
-//   id, userId,
-//   organizationName, partnershipType,
-//   taxCode, contactEmail, phoneNumber,
-//   registeredAddress, geographicScopeWard, geographicScopeProvince,
-//   contactPerson, position,
-//   linkWeb, description,
-//   logoUrl, licenseUrl,
-//   approvalStatus ("PENDING"|"APPROVED"|"REJECTED"),
-//   accountStatus, isActive,
-//   createdAt, updatedAt
-// }
 
 // ─── Lazy Detail ──────────────────────────────────────────────────────────────
 const PartnerDetailContent = lazy(() =>
@@ -85,7 +72,7 @@ const PartnerDetailContent = lazy(() =>
                 {PARTNERSHIP_TYPE_LABELS[reg.partnershipType] ||
                   reg.partnershipType}
               </Tag>
-              {reg.accountStatus === "BANNED" && (
+              {reg.accountStatus === "SUSPENDED" && (
                 <Tag color="red" icon={<StopOutlined />}>
                   Đã cấm
                 </Tag>
@@ -296,27 +283,28 @@ const AdminPartnerships = () => {
       reg.organizationName?.toLowerCase().includes(q) ||
       reg.contactEmail?.toLowerCase().includes(q) ||
       reg.contactPerson?.toLowerCase().includes(q);
-    if (activeTab === "BANNED")
-      return matchesSearch && reg.accountStatus === "BANNED";
+    if (activeTab === "SUSPENDED")
+      return matchesSearch && reg.accountStatus === "SUSPENDED";
     return (
       matchesSearch &&
       reg.approvalStatus === activeTab &&
-      reg.accountStatus !== "BANNED"
+      reg.accountStatus !== "SUSPENDED"
     );
   });
 
   // ── Stats ──
   const stats = {
     PENDING: registrations.filter(
-      (r) => r.approvalStatus === "PENDING" && r.accountStatus !== "BANNED",
+      (r) => r.approvalStatus === "PENDING" && r.accountStatus !== "SUSPENDED",
     ).length,
     APPROVED: registrations.filter(
-      (r) => r.approvalStatus === "APPROVED" && r.accountStatus !== "BANNED",
+      (r) => r.approvalStatus === "APPROVED" && r.accountStatus !== "SUSPENDED",
     ).length,
     REJECTED: registrations.filter(
-      (r) => r.approvalStatus === "REJECTED" && r.accountStatus !== "BANNED",
+      (r) => r.approvalStatus === "REJECTED" && r.accountStatus !== "SUSPENDED",
     ).length,
-    BANNED: registrations.filter((r) => r.accountStatus === "BANNED").length,
+    SUSPENDED: registrations.filter((r) => r.accountStatus === "SUSPENDED")
+      .length,
   };
 
   // ── Actions ──
@@ -377,14 +365,15 @@ const AdminPartnerships = () => {
   const handleToggleBan = async (registration) => {
     try {
       setActionLoading(true);
-      const isBanned = registration.accountStatus === "BANNED";
-      const newStatus = isBanned ? "ACTIVE" : "BANNED";
-      // await api.patch(`/admin/partnership-registrations/${registration.id}`, { accountStatus: newStatus });
-      setRegistrations((prev) =>
-        prev.map((r) =>
-          r.id === registration.id ? { ...r, accountStatus: newStatus } : r,
-        ),
-      );
+      const isBanned = registration.accountStatus === "SUSPENDED";
+      console.log(registration.userId);
+      const res = await toggleActiveAccount(registration.userId, isBanned);
+      if (res) {
+        toast.success(isBanned ? "Đã gỡ cấm tài khoản!" : "Đã cấm tài khoản!");
+        fetchRegistrations();
+      } else {
+        toast.error("Cập nhật trạng thái thất bại!");
+      }
     } catch (error) {
       console.error("Lỗi cập nhật trạng thái:", error.message);
     } finally {
@@ -408,11 +397,12 @@ const AdminPartnerships = () => {
           ) : (
             <div
               className={`w-10 h-10 rounded-xl flex items-center justify-center
-              ${reg.accountStatus === "BANNED" ? "bg-red-50" : "bg-blue-50"}`}
+              ${reg.accountStatus === "SUSPENDED" ? "bg-red-50" : "bg-blue-50"}`}
             >
               <TeamOutlined
                 style={{
-                  color: reg.accountStatus === "BANNED" ? "#ef4444" : "#3b82f6",
+                  color:
+                    reg.accountStatus === "SUSPENDED" ? "#ef4444" : "#3b82f6",
                 }}
               />
             </div>
@@ -474,7 +464,7 @@ const AdminPartnerships = () => {
                 {cfg.label}
               </Tag>
             )}
-            {reg.accountStatus === "BANNED" && (
+            {reg.accountStatus === "SUSPENDED" && (
               <Tag color="red" icon={<StopOutlined />}>
                 Đã cấm
               </Tag>
@@ -488,7 +478,7 @@ const AdminPartnerships = () => {
       key: "actions",
       align: "right",
       render: (_, reg) => {
-        const isBanned = reg.accountStatus === "BANNED";
+        const isBanned = reg.accountStatus === "SUSPENDED";
         const menuItems = [
           {
             key: "view",
@@ -590,12 +580,12 @@ const AdminPartnerships = () => {
       ),
     },
     {
-      key: "BANNED",
+      key: "SUSPENDED",
       label: (
         <span className="flex items-center gap-1.5">
           <StopOutlined />
           Đã cấm
-          <Badge count={stats.BANNED} color="#6b7280" />
+          <Badge count={stats.SUSPENDED} color="#6b7280" />
         </span>
       ),
     },
@@ -661,7 +651,7 @@ const AdminPartnerships = () => {
           />
           <StatCard
             icon={<StopOutlined />}
-            value={stats.BANNED}
+            value={stats.SUSPENDED}
             label="Đã cấm"
             bgClass="bg-gray-100"
             iconClass="text-gray-500"
@@ -724,7 +714,7 @@ const AdminPartnerships = () => {
                             initial="hidden"
                             animate="visible"
                             transition={{ duration: 0.2 }}
-                            className={`transition-colors ${activeTab === "BANNED" ? "hover:bg-red-50/30" : "hover:bg-blue-50/30"}`}
+                            className={`transition-colors ${activeTab === "SUSPENDED" ? "hover:bg-red-50/30" : "hover:bg-blue-50/30"}`}
                           >
                             {children}
                           </motion.tr>
@@ -751,7 +741,7 @@ const AdminPartnerships = () => {
         }
         footer={
           selectedRegistration?.approvalStatus === "PENDING" &&
-          selectedRegistration?.accountStatus !== "BANNED" ? (
+          selectedRegistration?.accountStatus !== "SUSPENDED" ? (
             <div className="flex justify-end gap-3 pt-2">
               <Button
                 danger
@@ -774,7 +764,7 @@ const AdminPartnerships = () => {
                 Duyệt đối tác
               </Button>
             </div>
-          ) : selectedRegistration?.accountStatus === "BANNED" ? (
+          ) : selectedRegistration?.accountStatus === "SUSPENDED" ? (
             <div className="flex justify-end gap-3 pt-2">
               <Button
                 icon={<UnlockOutlined />}
