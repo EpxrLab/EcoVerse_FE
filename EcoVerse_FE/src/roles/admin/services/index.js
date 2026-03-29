@@ -68,6 +68,15 @@ const updatePartnershipAccountStatus = async (partnershipId, payload) => {
   }
 };
 
+const toggleActiveAccount = async (id, payload) => {
+  try {
+    const res = await axios.put(`/admin/de-active/user/${id}`, payload);
+    return res.data;
+  } catch (error) {
+    console.log(error.response.data.message);
+  }
+};
+
 //=======================Subscription Management==========================
 
 const getAllSubscriptionPackages = async () => {
@@ -195,6 +204,7 @@ export {
   getAllPartnershipAccounts,
   updateSchoolAccountStatus,
   updatePartnershipAccountStatus,
+  toggleActiveAccount,
   getAllSubscriptionPackages,
   addNewSubscriptionPackage,
   toggleSubsciptionActive,

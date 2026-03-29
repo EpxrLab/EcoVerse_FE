@@ -17,7 +17,7 @@ export const SLOW_ZONE_COUNT = 3;
 export const ZONE_RADIUS = 3;
 
 export const TOTAL_TRASH = 12;
-export const OBSTACLE_COUNT = 6;
+export const OBSTACLE_COUNT = 5;
 export const OBSTACLE_DAMAGE_COOLDOWN = 1000;
 
 export const AUTO_PICKUP_DISTANCE = 1.2;
@@ -25,6 +25,8 @@ export const STORAGE_ZONE_RADIUS = 4;
 
 export const GAME_TIME = 60;
 export const REQUIRED_PERCENTAGE = 80;
+
+export const WORLD_SAFE_RADIUS = 70;
 
 /* ===================== UTILS ===================== */
 export const isMobileDevice = () =>
@@ -214,7 +216,7 @@ export function initTrash(scene) {
 
   for (let i = 0; i < TOTAL_TRASH; i++) {
     const t = createTrashMesh();
-    t.position.set((Math.random() - 0.5) * 30, 0.3, (Math.random() - 0.5) * 30);
+    t.position.set((Math.random() - 0.5) * 45, 0.3, (Math.random() - 0.5) * 45);
     scene.add(t);
     trash.push(t);
   }
@@ -225,15 +227,15 @@ export function initTrash(scene) {
 /* ===================== INIT OBSTACLES (ROCKS) ===================== */
 export function initObstacles(scene) {
   const obstacles = [];
-  const minDistFromPlayer = 5;
-  const minDistBetweenObstacles = 4;
+  const minDistFromPlayer = 8;
+  const minDistBetweenObstacles = 8;
 
   const spawnObstacle = (mesh) => {
     let placed = false;
     let attempts = 0;
-    while (!placed && attempts < 50) {
-      const x = (Math.random() - 0.5) * 25;
-      const z = (Math.random() - 0.5) * 25;
+    while (!placed && attempts < 100) {
+      const x = (Math.random() - 0.5) * 45;
+      const z = (Math.random() - 0.5) * 45;
       const distFromPlayer = Math.sqrt(x * x + z * z);
       const distFromStorage = Math.sqrt(x * x + (z + 15) * (z + 15));
       if (distFromPlayer > minDistFromPlayer && distFromStorage > 6) {
@@ -255,9 +257,9 @@ export function initObstacles(scene) {
     }
     if (!placed)
       mesh.position.set(
-        (Math.random() - 0.5) * 25,
+        (Math.random() - 0.5) * 45,
         0,
-        (Math.random() - 0.5) * 25,
+        (Math.random() - 0.5) * 45,
       );
     obstacles.push(mesh);
     scene.add(mesh);
@@ -267,7 +269,7 @@ export function initObstacles(scene) {
     .then((rockModel) => {
       for (let i = 0; i < OBSTACLE_COUNT; i++) {
         const rock = rockModel.clone(true);
-        const scale = 0.08 + Math.random() * 0.4;
+        const scale = 0.1 + Math.random() * 0.4;
         rock.scale.setScalar(scale);
         rock.rotation.y = Math.random() * Math.PI * 2;
         rock.traverse((child) => {
@@ -530,6 +532,19 @@ export function gameTick({
   }
 
   const nextPosition = player.position.clone().add(state.velocity);
+
+  const distFromCenter = Math.sqrt(nextPosition.x ** 2 + nextPosition.z ** 2);
+  if (distFromCenter > WORLD_SAFE_RADIUS) {
+    const boundaryDir = nextPosition.clone().normalize();
+    boundaryDir.y = 0;
+
+    nextPosition.copy(boundaryDir.multiplyScalar(WORLD_SAFE_RADIUS));
+
+    const velocityDot = state.velocity.dot(boundaryDir);
+    if (velocityDot > 0) {
+      state.velocity.sub(boundaryDir.multiplyScalar(velocityDot));
+    }
+  }
 
   // Collision
   const combinedRadius = PLAYER_COLLISION_RADIUS + OBSTACLE_COLLISION_RADIUS;
