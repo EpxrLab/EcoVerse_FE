@@ -115,7 +115,7 @@ export function QuizDetailDialog({ isOpen, onClose, quizId, getDifficultyStars, 
                     </div>
                     <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Phần thưởng</span>
                   </div>
-                  <p className="text-xl font-bold">+{quiz.pointsReward}</p>
+                  <p className="text-xl font-bold">+{quiz.coinsOnPass}</p>
                   <p className="text-[11px] text-muted-foreground">Eco Points</p>
                 </div>
 

@@ -8,6 +8,8 @@ export function useQuizForm() {
     difficulty: 'easy',
     timeLimit: 30,
     passingScore: 60,
+    targetGrade: 1,
+    coinsOnPass: 1,
   });
 
   // Questions state
@@ -99,6 +101,8 @@ export function useQuizForm() {
       difficulty: 'easy',
       timeLimit: 30,
       passingScore: 60,
+      targetGrade: 1,
+      coinsOnPass: 1,
     });
     setQuestions([]);
   };
@@ -119,6 +123,8 @@ export function useQuizForm() {
       difficulty: data.difficulty || 'easy',
       timeLimit: data.timeLimit || 30,
       passingScore: data.passingScore || 60,
+      targetGrade: data.targetGrade || 1,
+      coinsOnPass: data.coinsOnPass || 1,
     });
     setQuestions(questionsData);
   };

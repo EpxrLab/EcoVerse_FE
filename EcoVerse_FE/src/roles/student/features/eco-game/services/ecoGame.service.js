@@ -125,7 +125,7 @@ const MOCK_GAME_LEVELS = [
       baseSpeed: 16,
       maxSpeed: 35,
       speedIncrement: 0.008,
-      maxDistance: 400,
+      maxDistance: 2000,
       spawnIntervalMin: 0.35,
       spawnIntervalMax: 0.9,
       obstacleRatio: 0.55,

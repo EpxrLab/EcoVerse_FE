@@ -103,6 +103,8 @@ export default function SchoolQuizzes() {
           difficulty: detailedQuiz.difficulty.toLowerCase(),
           timeLimit: detailedQuiz.timePerQuestion,
           passingScore: detailedQuiz.passScorePercentage,
+          targetGrade: detailedQuiz.targetGrade,
+          coinsOnPass: detailedQuiz.coinsOnPass,
         }, qData);
         
         setOriginalQuestions(JSON.parse(JSON.stringify(qData)));
@@ -124,7 +126,8 @@ export default function SchoolQuizzes() {
         description: quizForm.description,
         difficulty: quizForm.difficulty.toUpperCase(),
         quizType: 'MULTIPLE_CHOICE',
-        pointsReward: 10,
+        targetGrade: quizForm.targetGrade,
+        coinsOnPass: quizForm.coinsOnPass,
         timePerQuestion: quizForm.timeLimit,
         passScorePercentage: quizForm.passingScore,
       };
@@ -211,7 +214,8 @@ export default function SchoolQuizzes() {
         description: quizForm.description,
         difficulty: quizForm.difficulty.toUpperCase(),
         quizType: 'MULTIPLE_CHOICE',
-        pointsReward: 10,
+        targetGrade: quizForm.targetGrade,
+        coinsOnPass: quizForm.coinsOnPass,
         timePerQuestion: quizForm.timeLimit,
         passScorePercentage: quizForm.passingScore,
         questions: questions.map((q, index) => ({

@@ -42,7 +42,8 @@ const HEADER_ALIASES = {
   'answer_c': 'answer_C', 'đáp án c': 'answer_C', 'dap_an_c': 'answer_C', 'answer_C': 'answer_C',
   'answer_d': 'answer_D', 'đáp án d': 'answer_D', 'dap_an_d': 'answer_D', 'answer_D': 'answer_D',
   'correct_answer': 'correct_answer', 'đáp án đúng': 'correct_answer', 'dap_an_dung': 'correct_answer',
-  'points_reward': 'points_reward', 'điểm thưởng': 'points_reward', 'diem_thuong': 'points_reward',
+  'target_grade': 'target_grade', 'hạng mục lớp': 'target_grade', 'hang_muc_lop': 'target_grade',
+  'coins_on_pass': 'coins_on_pass', 'điểm thưởng': 'coins_on_pass', 'diem_thuong': 'coins_on_pass',
   'time_per_question': 'time_per_question', 'thời gian mỗi câu': 'time_per_question', 'thoi_gian_moi_cau': 'time_per_question',
   'pass_score_percentage': 'pass_score_percentage', 'điểm đạt (%)': 'pass_score_percentage', 'diem_dat_phan_tram': 'pass_score_percentage',
 };
@@ -85,10 +86,10 @@ function parseExcelData(jsonRows) {
 
 function downloadSampleQuizXLSX() {
   const ws = utils.aoa_to_sheet([
-    ['quiz_title', 'description', 'difficulty', 'quiz_type', 'question_order', 'question_text', 'answer_A', 'answer_B', 'answer_C', 'answer_D', 'correct_answer', 'points_reward', 'time_per_question', 'pass_score_percentage'],
-    ['Phân loại rác', 'Quiz về môi trường', 'EASY', 'MULTIPLE_CHOICE', '1', 'Chai nhựa thuộc loại rác nào?', 'Rác hữu cơ', 'Rác tái chế', 'Rác nguy hại', 'Rác vô cơ', 'B', '10', '30', '80'],
-    ['Phân loại rác', 'Quiz về môi trường', 'EASY', 'MULTIPLE_CHOICE', '2', 'Vỏ chuối thuộc loại rác nào?', 'Rác tái chế', 'Rác hữu cơ', 'Rác nguy hại', 'Rác vô cơ', 'B', '10', '30', '80'],
-    ['Phân loại rác', 'Quiz về môi trường', 'EASY', 'TRUE_FALSE', '3', 'Kim loại là rác tái chế?', 'Đúng', 'Sai', '', '', 'A', '10', '30', '80']
+    ['quiz_title', 'description', 'difficulty', 'target_grade', 'quiz_type', 'question_order', 'question_text', 'answer_A', 'answer_B', 'answer_C', 'answer_D', 'correct_answer', 'coins_on_pass', 'time_per_question', 'pass_score_percentage'],
+    ['Phân loại rác', 'Quiz về môi trường', 'EASY', '5', 'MULTIPLE_CHOICE', '1', 'Chai nhựa thuộc loại rác nào?', 'Rác hữu cơ', 'Rác tái chế', 'Rác nguy hại', 'Rác vô cơ', 'B', '10', '30', '80'],
+    ['Phân loại rác', 'Quiz về môi trường', 'EASY', '5', 'MULTIPLE_CHOICE', '2', 'Vỏ chuối thuộc loại rác nào?', 'Rác tái chế', 'Rác hữu cơ', 'Rác nguy hại', 'Rác vô cơ', 'B', '10', '30', '80'],
+    ['Phân loại rác', 'Quiz về môi trường', 'EASY', '5', 'MULTIPLE_CHOICE', '3', 'Pin đã qua sử dụng thuộc loại nào?', 'Rác hữu cơ', 'Rác tái chế', 'Rác nguy hại', 'Rác vô cơ', 'C', '10', '30', '80']
   ]);
   const wb = utils.book_new();
   utils.book_append_sheet(wb, ws, "Quiz_Template");
@@ -269,6 +270,7 @@ export function ImportQuizDialog({ isOpen, onClose, onImport, isImporting, impor
                     <ul className="list-disc pl-4 space-y-0.5">
                       <li>quiz_title: Tiêu đề quiz</li>
                       <li>difficulty: EASY, MEDIUM, HARD</li>
+                      <li>target_grade: Lớp (1-5)</li>
                       <li>quiz_type: MULTIPLE_CHOICE, TRUE_FALSE</li>
                     </ul>
                   </div>
@@ -325,7 +327,7 @@ export function ImportQuizDialog({ isOpen, onClose, onImport, isImporting, impor
                 </div>
                 <div className="p-3 rounded-xl border-2 border-eco-orange/20 bg-eco-orange/5">
                   <Trophy className="w-4 h-4 text-eco-orange mb-1" />
-                  <p className="text-lg font-bold">{parsedRows.reduce((acc, curr) => acc + (parseInt(curr.points_reward) || 0), 0)}</p>
+                  <p className="text-lg font-bold">{parsedRows.reduce((acc, curr) => acc + (parseInt(curr.coins_on_pass) || 0), 0)}</p>
                   <p className="text-[10px] text-muted-foreground uppercase tracking-wider font-semibold">Tổng điểm</p>
                 </div>
               </div>
@@ -353,7 +355,7 @@ export function ImportQuizDialog({ isOpen, onClose, onImport, isImporting, impor
                               {row.correct_answer}
                             </span>
                           </TableCell>
-                          <TableCell className="font-mono text-eco-orange font-bold">+{row.points_reward}</TableCell>
+                          <TableCell className="font-mono text-eco-orange font-bold">+{row.coins_on_pass}</TableCell>
                         </TableRow>
                       ))}
                     </TableBody>
