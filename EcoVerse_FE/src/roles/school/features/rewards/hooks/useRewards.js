@@ -34,7 +34,7 @@ export function useRewards() {
         stock: r.isUnlimited ? '∞' : r.stockQuantity,
         image: r.imageUrl,
         active: r.isActive,
-        type: 'physical',
+        type: r.rewardType || 'PHYSICAL',
         ...r
       }));
       setMarketplaceItems(mapped);

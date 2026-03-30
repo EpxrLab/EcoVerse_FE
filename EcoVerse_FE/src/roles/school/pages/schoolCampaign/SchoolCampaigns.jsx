@@ -22,7 +22,6 @@ export default function SchoolCampaigns() {
     setSearchQuery,
     selectedCampaign,
     setSelectedCampaign,
-    availableClasses,
     availableQuizzes,
     addCampaign,
     updateCampaign,
@@ -52,6 +51,7 @@ export default function SchoolCampaigns() {
     handleStudentSelection,
     resetForm,
     loadFormData,
+    dateValidation,
   } = useCampaignForm();
 
   // Dialog states
@@ -92,7 +92,7 @@ export default function SchoolCampaigns() {
     useCampaignsResult.declineInvitation(campaign.id);
   };
 
-  const { allStudents } = useStudents();
+  const { allStudents, availableClasses, isLoading: isStudentsLoading } = useStudents();
 
 
 
@@ -117,10 +117,10 @@ export default function SchoolCampaigns() {
 
   // Handlers
   const handleCreateCampaign = () => {
-    addCampaign(formData);
+    addCampaign(formData, availableClasses);
     resetForm();
     setIsCreateOpen(false);
-    toast.success('Đã tạo bản nháp chiến dịch. Hãy thêm Game và Quiz từ menu hành động!');
+    toast.success('Đã tạo bản nháp chiến dịch thành công!');
   };
 
   const handleOpenAddGame = (campaign) => {
@@ -155,7 +155,9 @@ export default function SchoolCampaigns() {
       start_date: campaign.start_date,
       end_date: campaign.end_date,
       invitation_send_date: campaign.invitation_send_date || '',
-      class_ids: campaign.participating_classes?.map(c => c.class_id) || [],
+      invitation_deadline: campaign.invitation_deadline || '',
+      class_ids: campaign.participating_classes?.map(c => c.class_id) || campaign.class_ids || [],
+      student_ids: campaign.student_ids || [],
       quiz_ids: campaign.selected_quizzes?.map(q => q.quiz_id) || [],
       game_types: campaign.selected_games || [],
       level_ids: campaign.selected_levels?.map(l => l.level_id) || [],
@@ -460,7 +462,7 @@ export default function SchoolCampaigns() {
 
       {/* Create Dialog */}
       <Dialog open={isCreateOpen} onOpenChange={setIsCreateOpen}>
-        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+        <DialogContent className="max-w-4xl h-[80vh] overflow-hidden flex flex-col">
           <DialogHeader>
             <DialogTitle>Tạo chiến dịch mới</DialogTitle>
             <DialogDescription>
@@ -479,13 +481,14 @@ export default function SchoolCampaigns() {
               resetForm();
               setIsCreateOpen(false);
             }}
+            dateValidation={dateValidation}
           />
         </DialogContent>
       </Dialog>
 
       {/* Edit Dialog */}
       <Dialog open={isEditOpen} onOpenChange={setIsEditOpen}>
-        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+        <DialogContent className="max-w-4xl h-[80vh] overflow-hidden flex flex-col">
           <DialogHeader>
             <DialogTitle>Chỉnh sửa chiến dịch</DialogTitle>
             <DialogDescription>
@@ -505,6 +508,7 @@ export default function SchoolCampaigns() {
               setEditingCampaign(null);
               setIsEditOpen(false);
             }}
+            dateValidation={dateValidation}
           />
         </DialogContent>
       </Dialog>
@@ -532,7 +536,10 @@ export default function SchoolCampaigns() {
 
       {/* Detail Dialog */}
       <Dialog open={isDetailOpen} onOpenChange={setIsDetailOpen}>
-        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+        <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>Chi tiết chiến dịch</DialogTitle>
+          </DialogHeader>
           {selectedCampaign && (
             <CampaignDetail campaign={selectedCampaign} gameTypes={GAME_TYPES} />
           )}

@@ -27,7 +27,6 @@ import {
 import {
   Pagination,
   PaginationContent,
-  PaginationEllipsis,
   PaginationItem,
   PaginationLink,
   PaginationNext,
@@ -86,7 +85,7 @@ export default function SchoolRewards() {
 
   const [deleteId, setDeleteId] = useState(null);
 
-  const physicalItems = rewards.marketplaceItems.filter(item => item.type === 'physical');
+  const marketplaceItems = rewards.marketplaceItems;
 
   const handleApprove = async (id) => {
     try {
@@ -605,26 +604,44 @@ export default function SchoolRewards() {
             <div className="flex items-center justify-between">
               <CardTitle className="flex items-center gap-2 text-base font-bold">
                 <Package className="w-5 h-5 text-eco-green" />
-                Cửa hàng quà thật
+                Cửa hàng quà tặng
               </CardTitle>
-              <Dialog open={isAddItemOpen} onOpenChange={setIsAddItemOpen}>
+              <Dialog open={isAddItemOpen} onOpenChange={(open) => { setIsAddItemOpen(open); if (!open) resetItemForm(); }}>
                 <DialogTrigger asChild>
-                  <Button size="sm" className="bg-eco-green hover:bg-eco-green-dark text-primary-foreground font-semibold">
-                    <Plus className="w-4 h-4 mr-2" />Thêm
+                  <Button className="bg-eco-green hover:bg-eco-green-dark text-primary-foreground font-semibold">
+                    <Plus className="w-4 h-4 mr-2" />
+                    Thêm quà mới
                   </Button>
                 </DialogTrigger>
                 <DialogContent>
                   <DialogHeader>
-                    <DialogTitle>Thêm quà thật mới</DialogTitle>
+                    <DialogTitle>Thêm quà tặng mới</DialogTitle>
                   </DialogHeader>
                   <div className="space-y-4 py-4 max-h-[70vh] overflow-y-auto px-1">
-                    <div className="space-y-2">
-                      <Label>Tên sản phẩm *</Label>
-                      <Input 
-                        placeholder="VD: Voucher Rạp phim" 
-                        value={itemForm.rewardName}
-                        onChange={(e) => updateItemForm({ rewardName: e.target.value })}
-                      />
+                    <div className="grid grid-cols-2 gap-4">
+                      <div className="space-y-2">
+                        <Label>Tên sản phẩm *</Label>
+                        <Input 
+                          placeholder="VD: Gấu bông Eco" 
+                          value={itemForm.rewardName}
+                          onChange={(e) => updateItemForm({ rewardName: e.target.value })}
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <Label>Loại quà *</Label>
+                        <Select 
+                          value={itemForm.rewardType} 
+                          onValueChange={(value) => updateItemForm({ rewardType: value })}
+                        >
+                          <SelectTrigger>
+                            <SelectValue placeholder="Chọn loại" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="PHYSICAL">Vật lý</SelectItem>
+                            <SelectItem value="VOUCHER">Voucher</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
                     </div>
                     <div className="space-y-2">
                       <Label>Hình ảnh</Label>
@@ -727,13 +744,30 @@ export default function SchoolRewards() {
                     <DialogTitle>Cập nhật quà tặng</DialogTitle>
                   </DialogHeader>
                   <div className="space-y-4 py-4 max-h-[70vh] overflow-y-auto px-1">
-                    <div className="space-y-2">
-                      <Label>Tên sản phẩm *</Label>
-                      <Input 
-                        placeholder="VD: Voucher Rạp phim" 
-                        value={itemForm.rewardName}
-                        onChange={(e) => updateItemForm({ rewardName: e.target.value })}
-                      />
+                    <div className="grid grid-cols-2 gap-4">
+                      <div className="space-y-2">
+                        <Label>Tên sản phẩm *</Label>
+                        <Input 
+                          placeholder="VD: Voucher Rạp phim" 
+                          value={itemForm.rewardName}
+                          onChange={(e) => updateItemForm({ rewardName: e.target.value })}
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <Label>Loại quà *</Label>
+                        <Select 
+                          value={itemForm.rewardType} 
+                          onValueChange={(value) => updateItemForm({ rewardType: value })}
+                        >
+                          <SelectTrigger>
+                            <SelectValue placeholder="Chọn loại" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="PHYSICAL">Vật lý</SelectItem>
+                            <SelectItem value="VOUCHER">Voucher</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
                     </div>
                     <div className="space-y-2">
                       <Label>Hình ảnh</Label>
@@ -833,7 +867,7 @@ export default function SchoolRewards() {
           </CardHeader>
           <CardContent>
             <MarketplaceItems 
-              items={physicalItems}
+              items={marketplaceItems}
               onEdit={handleEditItem}
               onDelete={handleDeleteItem}
             />

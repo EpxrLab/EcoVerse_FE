@@ -1,52 +1,106 @@
-import { useState, useMemo } from 'react';
-import { mockCampaigns, mockAvailableClasses, mockStudentInvitations, mockSchoolInvitations } from '../../../data/campaign.data';
+import { useState, useMemo, useEffect, useCallback } from 'react';
+import { mockAvailableClasses, mockStudentInvitations, mockSchoolInvitations } from '../../../data/campaign.data';
 import { defaultQuizzesData, customQuizzesData } from '../../../data/quiz.data';
 import { getGameLevelsForSchool } from '@/shared/data/admin-game-levels.data';
 import { toast } from '@/shared/hooks/use-toast';
+import { campaignService } from '@/roles/school/services';
 
 
 export function useCampaigns() {
-  // Link student invitations to campaigns
+  const [campaigns, setCampaigns] = useState([]);
+  const [isLoading, setIsLoading] = useState(true);
 
-  const campaignsWithInvitations = useMemo(() => {
+  const fetchCampaigns = useCallback(async () => {
+    try {
+      setIsLoading(true);
+      const res = await campaignService.getCampaigns();
+      setCampaigns(res.data?.data || []);
+    } catch (error) {
+      console.error('Failed to fetch campaigns:', error);
+    } finally {
+      setIsLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    fetchCampaigns();
+  }, [fetchCampaigns]);
+
+  // Format and link invitations
+  const allFormattedCampaigns = useMemo(() => {
     // Helper to attach invitations
     const attachInvitations = (list) => list.map(campaign => ({
       ...campaign,
-      student_invitations: mockStudentInvitations.filter(inv => inv.campaign_id === campaign.id),
+      student_invitations: Array.isArray(mockStudentInvitations) ? 
+        mockStudentInvitations.filter(inv => inv.campaign_id === campaign?.id) : [],
     }));
 
-    const campaignsList = attachInvitations(mockCampaigns);
+    if (!Array.isArray(campaigns)) return attachInvitations(mockSchoolInvitations);
+
+    // Map raw campaigns to UI format
+    const mappedCampaigns = campaigns.map(c => {
+      if (!c) return null;
+      // If it's already in UI format (from local optimistic update), ensure it has fallbacks
+      if (c.origin === 'school') {
+        return {
+          ...c,
+          name: c.name || 'Chưa đặt tên',
+          description: c.description || '',
+          status: (c.status || 'draft').toLowerCase(),
+        };
+      }
+
+      return {
+        id: c.id,
+        name: c.campaignName || 'Chưa đặt tên',
+        code: c.campaignCode || '',
+        description: c.description || '',
+        start_date: c.startDate?.split('T')[0] || c.start_date || '',
+        end_date: c.endDate?.split('T')[0] || c.end_date || '',
+        invitation_send_date: c.invitationDate?.split('T')[0] || c.invitation_send_date || '',
+        invitation_deadline: c.invitationDeadline?.split('T')[0] || c.invitation_deadline || '',
+        student_ids: c.studentIds || c.student_ids || [],
+        status: (c.status || 'draft').toLowerCase(),
+        origin: 'school',
+      };
+    }).filter(Boolean);
+
+    const campaignsList = attachInvitations(mappedCampaigns);
     const partnershipList = attachInvitations(mockSchoolInvitations);
     
     return [...campaignsList, ...partnershipList];
-  }, []);
+  }, [campaigns]);
 
-  const [campaigns, setCampaigns] = useState(campaignsWithInvitations);
   const [searchQuery, setSearchQuery] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
   const [selectedCampaign, setSelectedCampaign] = useState(null);
 
   const filteredCampaigns = useMemo(() => {
-    return campaigns.filter(campaign => {
-      const matchesSearch = campaign.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        campaign.description?.toLowerCase().includes(searchQuery.toLowerCase());
-      const matchesStatus = statusFilter === 'all' || campaign.status === statusFilter;
+    const safeSearchQuery = (searchQuery || '').toLowerCase();
+    return allFormattedCampaigns.filter(campaign => {
+      if (!campaign) return false;
+      const name = (campaign.name || '').toLowerCase();
+      const description = (campaign.description || '').toLowerCase();
+      const matchesSearch = name.includes(safeSearchQuery) || 
+                           description.includes(safeSearchQuery);
+      const matchesStatus = statusFilter === 'all' || (campaign.status || '').toLowerCase() === statusFilter.toLowerCase();
       return matchesSearch && matchesStatus;
     });
-  }, [campaigns, searchQuery, statusFilter]);
+  }, [allFormattedCampaigns, searchQuery, statusFilter]);
 
   const stats = useMemo(() => {
+    const list = allFormattedCampaigns || [];
     return {
-      totalCampaigns: campaigns.length,
-      activeCampaigns: campaigns.filter(c => c.status === 'active').length,
-      scheduledCampaigns: campaigns.filter(c => c.status === 'scheduled').length,
-      invitingCampaigns: campaigns.filter(c => c.status === 'inviting_students').length,
-      completedCampaigns: campaigns.filter(c => c.status === 'completed').length,
-      cancelledCampaigns: campaigns.filter(c => c.status === 'cancelled').length,
-      pendingInvitations: campaigns.filter(c => c.origin === 'partnership' && c.invitation_status === 'pending').length,
-      totalItemsCollected: campaigns.reduce((sum, c) => sum + (c.total_items_collected || 0), 0),
+      totalCampaigns: list.length,
+      activeCampaigns: list.filter(c => c.status === 'active').length,
+      scheduledCampaigns: list.filter(c => c.status === 'scheduled').length,
+      invitingCampaigns: list.filter(c => c.status === 'inviting_students').length,
+      completedCampaigns: list.filter(c => c.status === 'completed').length,
+      cancelledCampaigns: list.filter(c => c.status === 'cancelled').length,
+      pendingInvitations: list.filter(c => c.origin === 'partnership' && c.invitation_status === 'pending').length,
+      totalItemsCollected: list.reduce((sum, c) => sum + (c.total_items_collected || 0), 0),
     };
-  }, [campaigns]);
+  }, [allFormattedCampaigns]);
 
 
   const availableClasses = mockAvailableClasses;
@@ -56,141 +110,101 @@ export function useCampaigns() {
     return [...defaultQuizzesData, ...customQuizzesData.filter(q => q.status === 'published')];
   }, []);
 
-  const addCampaign = (data) => {
-    const selectedClasses = availableClasses.filter(c => data.class_ids.includes(c.id));
-    
-    // Build selected quizzes from quiz_ids
-    const selectedQuizzes = data.quiz_ids.map(quizId => {
-      const quiz = availableQuizzes.find(q => q.id === quizId);
-      return {
-        quiz_id: quizId,
-        quiz_title: quiz?.title || '',
-        difficulty: quiz?.difficulty || 'easy',
-        questions_count: quiz?.questions || 0,
-      };
-    });
-
-    // Build selected levels from level_ids
-    const schoolLevels = getGameLevelsForSchool();
-    const selectedLevels = data.level_ids.map(levelId => {
-      const level = schoolLevels.find(l => l.id === levelId);
-      return {
-        level_id: levelId,
-        level_name: level?.name || '',
-        game_type: level?.gameType || 'sorting',
-        difficulty: level?.difficulty || 'Dễ',
-      };
-    });
-
-    // Calculate invitation deadline (1 day before start_date)
-    const invitationDeadline = data.start_date 
-      ? new Date(new Date(data.start_date).getTime() - 24 * 60 * 60 * 1000).toISOString().split('T')[0]
+  const addCampaign = (data, dynamicClasses) => {
+    const calculatedDeadline = data.start_date 
+      ? new Date(new Date(data.start_date).getTime() - 24 * 60 * 60 * 1000).toISOString()
       : undefined;
+    
+    const finalDeadline = (data.invitation_deadline ? new Date(data.invitation_deadline).toISOString() : null) || calculatedDeadline || null;
 
-    const newCampaign = {
-      id: Date.now().toString(),
-      school_id: 'school-1',
-      name: data.name,
-      description: data.description || null,
-      start_date: data.start_date,
-      end_date: data.end_date,
-      invitation_send_date: data.invitation_send_date,
-      invitation_deadline: invitationDeadline,
-      status: 'draft',
-      created_at: new Date().toISOString(),
-      updated_at: new Date().toISOString(),
-      selected_quizzes: selectedQuizzes,
-      selected_games: data.game_types,
-      selected_levels: selectedLevels,
-      participating_classes: selectedClasses.map(c => ({
-        id: `pc-${Date.now()}-${c.id}`,
-        campaign_id: Date.now().toString(),
-        class_id: c.id,
-        class_name: c.name,
-        grade: c.grade,
-        students_count: c.students_count,
-        items_collected: 0,
-        joined_at: new Date().toISOString(),
-      })),
-      total_students: selectedClasses.reduce((sum, c) => sum + c.students_count, 0),
-      total_items_collected: 0,
-      progress_percentage: 0,
+    const payload = {
+      campaignName: data.name,
+      description: data.description || "",
+      startDate: data.start_date ? new Date(data.start_date).toISOString() : null,
+      endDate: data.end_date ? new Date(data.end_date).toISOString() : null,
+      invitationDate: data.invitation_send_date ? new Date(data.invitation_send_date).toISOString() : null,
+      invitationDeadline: finalDeadline,
+      topRankingCount: 0,
+      bannerImageUrl: "",
+      studentIds: data.student_ids || []
     };
 
-    setCampaigns([newCampaign, ...campaigns]);
-    toast({
-      title: "Thành công",
-      description: `Đã tạo chiến dịch "${data.name}"`,
-    });
+    campaignService.createCampaign(payload)
+      .then((res) => {
+        // Build new campaign for local UI (keep as draft like before)
+        const newCampaign = {
+          id: res.data?.data?.id || Date.now().toString(),
+          name: data.name,
+          description: data.description || '',
+          start_date: data.start_date || '',
+          end_date: data.end_date || '',
+          invitation_deadline: finalDeadline?.split('T')[0] || '',
+          status: 'draft',
+          origin: 'school',
+        };
+
+        setCampaigns([newCampaign, ...campaigns]);
+        // Also refresh the overall list from the server to get full backend data
+        fetchCampaigns();
+        
+        toast({
+          title: "Thành công",
+          description: `Đã tạo chiến dịch "${data.name}"`,
+          variant: "default",
+        });
+      })
+      .catch((error) => {
+        console.error('Failed to create campaign:', error);
+        toast({
+          title: "Lỗi",
+          description: "Không thể tạo chiến dịch. Vui lòng thử lại sau.",
+          variant: "destructive",
+        });
+      });
   };
 
-  const updateCampaign = (id, data) => {
-    setCampaigns(campaigns.map(c => {
-      if (c.id === id) {
-        const updatedClasses = data.class_ids 
-          ? availableClasses.filter(ac => data.class_ids?.includes(ac.id)).map(ac => ({
-              id: `pc-${Date.now()}-${ac.id}`,
-              campaign_id: id,
-              class_id: ac.id,
-              class_name: ac.name,
-              grade: ac.grade,
-              students_count: ac.students_count,
-              items_collected: c.participating_classes?.find(pc => pc.class_id === ac.id)?.items_collected || 0,
-              joined_at: new Date().toISOString(),
-            }))
-          : c.participating_classes;
-        
-        // Update selected quizzes if quiz_ids provided
-        const updatedQuizzes = data.quiz_ids
-          ? data.quiz_ids.map(quizId => {
-              const quiz = availableQuizzes.find(q => q.id === quizId);
-              return {
-                quiz_id: quizId,
-                quiz_title: quiz?.title || '',
-                difficulty: quiz?.difficulty || 'easy',
-                questions_count: quiz?.questions || 0,
-              };
-            })
-          : c.selected_quizzes;
-        
-        // Update selected levels if level_ids provided
-        const schoolLevels = getGameLevelsForSchool();
-        const updatedLevels = data.level_ids
-          ? data.level_ids.map(levelId => {
-              const level = schoolLevels.find(l => l.id === levelId);
-              return {
-                level_id: levelId,
-                level_name: level?.name || '',
-                game_type: level?.gameType || 'sorting',
-                difficulty: level?.difficulty || 'Dễ',
-              };
-            })
-          : c.selected_levels;
+  const updateCampaign = async (id, data) => {
+    try {
+      // Find the existing campaign to merge data
+      const existing = campaigns.find(c => c.id === id);
+      if (!existing) return;
 
-        // Handle game config from AddGameModal
-        const updatedGames = data.selected_games !== undefined ? data.selected_games : (data.game_types || c.selected_games);
-        const updatedGameConfigs = data.game_configs !== undefined ? data.game_configs : c.game_configs;
-        const updatedWasteItemIds = data.waste_item_ids !== undefined ? data.waste_item_ids : c.waste_item_ids;
-        
-        return {
-          ...c,
-          ...data,
-          participating_classes: updatedClasses,
-          selected_quizzes: updatedQuizzes,
-          selected_levels: updatedLevels,
-          selected_games: updatedGames,
-          game_configs: updatedGameConfigs,
-          waste_item_ids: updatedWasteItemIds,
-          total_students: updatedClasses?.reduce((sum, pc) => sum + pc.students_count, 0) || 0,
-          updated_at: new Date().toISOString(),
-        };
-      }
-      return c;
-    }));
-    toast({
-      title: "Thành công",
-      description: "Đã cập nhật chiến dịch",
-    });
+      // Prepare payload to match API expectation
+      // Note: mapping UI fields back to API fields
+      const payload = {
+        campaignName: data.name || existing.name,
+        description: data.description !== undefined ? data.description : existing.description,
+        startDate: data.start_date ? new Date(data.start_date).toISOString() : (existing.start_date ? new Date(existing.start_date).toISOString() : null),
+        endDate: data.end_date ? new Date(data.end_date).toISOString() : (existing.end_date ? new Date(existing.end_date).toISOString() : null),
+        invitationDate: data.invitation_send_date ? new Date(data.invitation_send_date).toISOString() : (existing.invitation_send_date ? new Date(existing.invitation_send_date).toISOString() : null),
+        invitationDeadline: data.invitation_deadline ? new Date(data.invitation_deadline).toISOString() : (existing.invitation_deadline ? new Date(existing.invitation_deadline).toISOString() : null),
+        topRankingCount: data.top_ranking_count || 0,
+        bannerImageUrl: data.banner_image_url || "",
+        studentIds: data.student_ids || []
+      };
+
+      await campaignService.updateCampaign(id, payload);
+      
+      // Update local state
+      setCampaigns(prev => prev.map(c => 
+        c.id === id ? { ...c, ...data, updated_at: new Date().toISOString() } : c
+      ));
+
+      toast({
+        title: "Thành công",
+        description: "Đã cập nhật chiến dịch",
+      });
+      
+      // Refresh to ensure everything is in sync
+      fetchCampaigns();
+    } catch (error) {
+      console.error('Failed to update campaign:', error);
+      toast({
+        title: "Lỗi",
+        description: "Không thể cập nhật chiến dịch. Vui lòng thử lại sau.",
+        variant: "destructive",
+      });
+    }
   };
 
   const deleteCampaign = (id) => {
@@ -318,7 +332,7 @@ export function useCampaigns() {
 
   return {
     campaigns: filteredCampaigns,
-    allCampaigns: campaigns,
+    allCampaigns: allFormattedCampaigns,
     stats,
     searchQuery,
     setSearchQuery,
@@ -336,6 +350,8 @@ export function useCampaigns() {
     declineInvitation,
     addStudentsToCampaign,
     revertToDraft,
-    activateCampaign
+    activateCampaign,
+    refreshCampaigns: fetchCampaigns,
+    isLoading
   };
 }

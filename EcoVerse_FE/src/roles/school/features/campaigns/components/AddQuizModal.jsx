@@ -298,8 +298,8 @@ export function AddQuizModal({ isOpen, onClose, campaign, availableQuizzes, onSu
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="max-w-xl max-h-[90vh] flex flex-col">
-        <DialogHeader className="shrink-0">
+      <DialogContent className="max-w-xl h-[85vh] flex flex-col overflow-hidden">
+        <DialogHeader className="shrink-0 pb-2">
           <div className="flex items-center gap-3">
             <div className="w-9 h-9 rounded-xl bg-eco-blue/10 flex items-center justify-center">
               <Brain className="w-5 h-5 text-eco-blue" />
@@ -310,7 +310,7 @@ export function AddQuizModal({ isOpen, onClose, campaign, availableQuizzes, onSu
             </div>
           </div>
 
-          {/* Tabs */}
+          {/* Tabs - Fixed */}
           <div className="flex gap-1 mt-4 bg-muted/40 rounded-xl p-1">
             <button
               onClick={() => setActiveTab('library')}
@@ -341,9 +341,10 @@ export function AddQuizModal({ isOpen, onClose, campaign, availableQuizzes, onSu
           </div>
         </DialogHeader>
 
-        <div className="flex-1 overflow-y-auto py-4">
+        {/* Scrollable Content Area */}
+        <div className="flex-1 min-h-0 overflow-y-auto py-4 pr-1 scrollbar-thin">
           {activeTab === 'library' ? (
-            <div className="space-y-5">
+            <div className="space-y-5 px-1">
               <QuizGroup quizzes={easyQuizzes} diffKey="easy" />
               <div className="border-t" />
               <QuizGroup quizzes={mediumQuizzes} diffKey="medium" />
@@ -351,14 +352,16 @@ export function AddQuizModal({ isOpen, onClose, campaign, availableQuizzes, onSu
               <QuizGroup quizzes={hardQuizzes} diffKey="hard" />
             </div>
           ) : (
-            <AIGeneratePanel
-              onGenerated={handleAIGenerated}
-              existingCount={aiGeneratedQuizzes.length}
-            />
+            <div className="px-1">
+              <AIGeneratePanel
+                onGenerated={handleAIGenerated}
+                existingCount={aiGeneratedQuizzes.length}
+              />
+            </div>
           )}
         </div>
 
-        <DialogFooter className="border-t pt-4 shrink-0">
+        <DialogFooter className="border-t pt-4 shrink-0 mt-auto bg-background">
           <p className="text-xs text-muted-foreground mr-auto">
             Đã chọn <strong>{selectedQuizIds.length}</strong> quiz
             {!isValid && <span className="text-destructive ml-1">(Cần đủ 3 độ khó)</span>}

@@ -8,6 +8,7 @@ export function useCampaignForm(initialData) {
     start_date: initialData?.start_date || '',
     end_date: initialData?.end_date || '',
     invitation_send_date: initialData?.invitation_send_date || '',
+    invitation_deadline: initialData?.invitation_deadline || '',
     class_ids: initialData?.class_ids || [],
     student_ids: initialData?.student_ids || [],
     quiz_ids: initialData?.quiz_ids || [],
@@ -49,9 +50,47 @@ export function useCampaignForm(initialData) {
       };
     });
     
-    const allValid = formData.game_types.length === 0 || formData.game_types.every(gt => validation[gt]?.isValid);
+  const allValid = formData.game_types.length === 0 || formData.game_types.every(gt => validation[gt]?.isValid);
     return { byGameType: validation, allValid };
   }, [formData.game_types, formData.level_ids]);
+
+  // Date Validation
+  const dateValidation = useMemo(() => {
+    const errors = {};
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+
+    const start = formData.start_date ? new Date(formData.start_date) : null;
+    const end = formData.end_date ? new Date(formData.end_date) : null;
+    const invite = formData.invitation_send_date ? new Date(formData.invitation_send_date) : null;
+    const deadline = formData.invitation_deadline ? new Date(formData.invitation_deadline) : null;
+
+    if (start && start < today) {
+      errors.start_date = 'Ngày bắt đầu phải trong tương lai';
+    }
+
+    if (start && end && end <= start) {
+      errors.end_date = 'Ngày kết thúc phải sau ngày bắt đầu';
+    }
+
+    if (start && deadline && deadline >= start) {
+      errors.invitation_deadline = 'Hạn mời phải trước ngày bắt đầu';
+    }
+
+    if (start && invite && invite >= start) {
+      errors.invitation_send_date = 'Ngày gửi mời phải trước ngày bắt đầu';
+    }
+
+    if (invite && deadline && deadline <= invite) {
+      errors.invitation_deadline = 'Hạn mời phải sau ngày gửi mời';
+    }
+
+    const isValid = Object.keys(errors).length === 0 && 
+                   formData.start_date && 
+                   formData.end_date;
+
+    return { errors, isValid };
+  }, [formData.start_date, formData.end_date, formData.invitation_send_date, formData.invitation_deadline]);
 
   // Handlers
   const handleFormChange = (data) => {
@@ -67,10 +106,10 @@ export function useCampaignForm(initialData) {
     }));
   };
 
-  const handleStudentSelection = (newStudentIds, classId) => {
+  const handleStudentSelection = (newStudentIds, classId, classStudentIds = []) => {
     setFormData(prev => {
-        const currentStudentIds = prev.student_ids || [];
-        const uniqueIds = Array.from(new Set([...currentStudentIds, ...newStudentIds]));
+        const otherStudents = (prev.student_ids || []).filter(id => !classStudentIds.includes(id));
+        const updatedStudentIds = Array.from(new Set([...otherStudents, ...newStudentIds]));
         
         const currentClassIds = prev.class_ids.includes(classId) 
             ? prev.class_ids 
@@ -78,7 +117,7 @@ export function useCampaignForm(initialData) {
 
         return {
             ...prev,
-            student_ids: uniqueIds,
+            student_ids: updatedStudentIds,
             class_ids: currentClassIds
         };
     });
@@ -118,6 +157,7 @@ export function useCampaignForm(initialData) {
       start_date: '',
       end_date: '',
       invitation_send_date: '',
+      invitation_deadline: '',
       class_ids: [],
       quiz_ids: [],
       game_types: [],
@@ -132,6 +172,7 @@ export function useCampaignForm(initialData) {
       start_date: data.start_date || '',
       end_date: data.end_date || '',
       invitation_send_date: data.invitation_send_date || '',
+      invitation_deadline: data.invitation_deadline || '',
       class_ids: data.class_ids || [],
       student_ids: data.student_ids || [],
       quiz_ids: data.quiz_ids || [],
@@ -144,6 +185,7 @@ export function useCampaignForm(initialData) {
     formData,
     quizValidation,
     levelValidation,
+    dateValidation,
     handleFormChange,
     handleClassToggle,
     handleStudentSelection,
