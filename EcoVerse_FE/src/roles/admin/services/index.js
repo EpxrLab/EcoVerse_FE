@@ -266,7 +266,7 @@ const updateGameLevel = async (gameId, id, payload) => {
   }
 };
 
-const deletGameLevel = async (gameId, id) => {
+const deleteGameLevel = async (gameId, id) => {
   try {
     const res = await axios.delete(`/admin/game-types/${gameId}/presets/${id}`);
     return res.data;
@@ -303,5 +303,5 @@ export {
   getAllGameLevels,
   addNewGameLevel,
   updateGameLevel,
-  deletGameLevel,
+  deleteGameLevel,
 };

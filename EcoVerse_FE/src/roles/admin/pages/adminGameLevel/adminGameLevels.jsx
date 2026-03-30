@@ -27,11 +27,15 @@ import {
   TrophyOutlined,
 } from "@ant-design/icons";
 import {
+  addNewGameLevel,
   addNewGameType,
   deleteGameType,
+  getAllGameLevels,
   getAllGameTypes,
+  updateGameLevel,
   updateGameType,
   uploadIconImage,
+  deleteGameLevel,
 } from "../../services";
 import toast from "react-hot-toast";
 
@@ -426,10 +430,26 @@ function PresetTab({ gameTypes }) {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingItem, setEditingItem] = useState(null);
   const [selectedGameId, setSelectedGameId] = useState(null);
+  const [levelAllow, setlevelAllow] = useState(1);
   const [form] = Form.useForm();
   const filteredPresets = presets.filter(
     (p) => p.gameTypeId === selectedGameId,
   );
+
+  const fetchData = async () => {
+    try {
+      const res = await getAllGameLevels(selectedGameId);
+      const type = gameTypes.find((item) => item.id === selectedGameId);
+      setlevelAllow(type.maxLevels);
+      setPresets(res.data);
+    } catch (error) {
+      console.log(error);
+    }
+  };
+
+  useEffect(() => {
+    fetchData();
+  }, [selectedGameId]);
 
   const openCreate = () => {
     setEditingItem(null);
@@ -456,22 +476,43 @@ function PresetTab({ gameTypes }) {
     setIsModalOpen(true);
   };
 
-  const handleDelete = (id) => {
-    setPresets((prev) => prev.filter((p) => p.id !== id));
-    message.success("Đã xóa preset");
+  const handleDelete = async (id) => {
+    try {
+      const res = await deleteGameLevel(selectedGameId, id);
+      if (res) {
+        toast.success("Xóa preset thành công!");
+        fetchData();
+      } else {
+        toast.error("Xóa preset thất bại!");
+      }
+    } catch (error) {
+      console.log(error);
+    }
   };
 
   const handleSubmit = async () => {
     try {
       const values = await form.validateFields();
       if (editingItem) {
-        setPresets((prev) =>
-          prev.map((p) => (p.id === editingItem.id ? { ...p, ...values } : p)),
+        const res = await updateGameLevel(
+          selectedGameId,
+          editingItem.id,
+          values,
         );
-        message.success("Đã cập nhật preset");
+        if (res) {
+          toast.success("Cập nhật preset mới thành công!");
+          fetchData();
+        } else {
+          toast.error("Cập nhật preset mới thất bại!");
+        }
       } else {
-        setPresets((prev) => [...prev, { id: String(Date.now()), ...values }]);
-        message.success("Đã tạo preset mới");
+        const res = await addNewGameLevel(selectedGameId, values);
+        if (res) {
+          toast.success("Tạo preset mới thành công!");
+          fetchData();
+        } else {
+          toast.error("Tạo preset mới thất bại!");
+        }
       }
       setIsModalOpen(false);
     } catch (error) {
@@ -685,7 +726,13 @@ function PresetTab({ gameTypes }) {
                           type="text"
                           danger
                           icon={<MinusCircleOutlined />}
-                          onClick={() => remove(name)}
+                          onClick={() => {
+                            if (fields.length <= 1) {
+                              toast.error("Phải có ít nhất 1 level");
+                              return;
+                            }
+                            remove(name);
+                          }}
                           size="small"
                         />
                       </div>
@@ -778,7 +825,12 @@ function PresetTab({ gameTypes }) {
                   ))}
                   <Button
                     type="dashed"
-                    onClick={() =>
+                    onClick={() => {
+                      if (fields.length >= levelAllow) {
+                        toast.error(`Chỉ được tạo tối đa ${levelAllow} level`);
+                        return;
+                      }
+
                       add({
                         levelNumber: fields.length + 1,
                         itemCount: 10,
@@ -786,8 +838,8 @@ function PresetTab({ gameTypes }) {
                         scorePerCorrect: 1,
                         lives: 3,
                         wasteCategories: ["RECYCLABLE"],
-                      })
-                    }
+                      });
+                    }}
                     block
                     icon={<PlusOutlined />}
                     className="rounded-2xl h-12 border-2 border-green-200 text-green-600 hover:border-green-400 hover:text-green-700 bg-green-50/50"
