@@ -71,7 +71,7 @@ export function initScene(container) {
   const scene = new THREE.Scene();
   scene.background = new THREE.Color(0x7dd3fc);
 
-  const camera = new THREE.PerspectiveCamera(75, width / height, 0.1, 1000);
+  const camera = new THREE.PerspectiveCamera(75, width / height, 0.1, 5000);
 
   const renderer = new THREE.WebGLRenderer({ antialias: true });
   renderer.setSize(width, height);
@@ -94,11 +94,6 @@ export function initWorld(scene, state) {
 
   // Ocean ground
   const gltfLoaderGround = new GLTFLoader();
-  // const oceanState = {
-  //   oceanModel: null,
-  //   oceanMixer: null,
-  //   fallbackPlane: null,
-  // };
 
   gltfLoaderGround.load(
     "/assets/ocean__water_perfect_loop.glb",
@@ -441,6 +436,10 @@ export function gameTick({
   clock,
 }) {
   if (state.stopped) return;
+
+  if (state.skybox) {
+    state.skybox.position.copy(player.position);
+  }
 
   const delta = clock.getDelta();
 

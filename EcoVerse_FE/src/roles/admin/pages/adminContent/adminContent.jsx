@@ -372,7 +372,7 @@ function WasteItemsTab({ wasteItems, subCategories, onRefresh }) {
       const vals = await addForm.validateFields();
       const payload = {
         ...vals,
-        imageUrl: addUploadedUrl?.data?.publicId,
+        imageUrl: addUploadedUrl?.data?.url,
       };
 
       const res = await addWasteItem(payload);
@@ -772,7 +772,7 @@ function SubCategoriesTab({ subCategories, onRefresh }) {
         subCategoryCode: (vals.subCategoryCode ?? "").toUpperCase(),
         displayName: vals.displayName,
         description: vals.description ?? "",
-        iconUrl: addUploadedUrl?.data?.publicId ?? null,
+        iconUrl: addUploadedUrl?.data?.url ?? null,
         displayOrder: vals.displayOrder ?? 1,
         isActive: vals.isActive ?? true,
       };

@@ -33,7 +33,7 @@ const menuItems = [
   },
   {
     key: "/admin/game-levels",
-    label: "Cấp độ game",
+    label: "Loại & Cấp độ game",
     icon: <ControlOutlined />,
   },
   {

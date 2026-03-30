@@ -88,10 +88,6 @@ export default class EcoSeaRescue {
     this.camera.fov = 75;
     this.camera.updateProjectionMatrix();
 
-    // Build world
-    // ✅ Tạo _gameState TRƯỚC, sau đó truyền vào initWorld(scene, state).
-    // initWorld load ocean GLB async — callback gán thẳng state.oceanMixer vào object này.
-    // gameTick đọc state.oceanMixer mỗi frame và sẽ thấy giá trị được gán bởi callback.
     const storage = initStorage(this.scene);
     const { player, playerState } = initPlayer(this.scene);
     const trash = initTrash(this.scene);
@@ -102,7 +98,7 @@ export default class EcoSeaRescue {
     this._playerState = playerState;
 
     this._gameState = {
-      // ocean fields — sẽ được gán async bởi initWorld callback
+      skybox: null,
       oceanModel: null,
       oceanMixer: null,
       underwaterPlane: null,
@@ -271,6 +267,7 @@ export default class EcoSeaRescue {
     const toRemove = [
       this._player,
       this._gameState?.storage,
+      this._gameState?.skybox,
       this._gameState?.underwaterPlane, // from initWorld
       this._gameState?.oceanModel, // from initWorld (async, may be null if not loaded yet)
       this._gameState?.fallbackPlane, // from initWorld fallback
