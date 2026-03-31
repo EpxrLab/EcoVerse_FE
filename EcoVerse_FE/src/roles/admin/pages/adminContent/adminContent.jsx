@@ -413,13 +413,13 @@ function WasteItemsTab({ wasteItems, subCategories, onRefresh }) {
         ...vals,
         imageUrl: editUploadedUrl,
       };
-
       const res = await updateWasteItem(editingItem.id, payload);
       if (res) {
         toast.success("Cập nhật rác thành công!");
       } else {
         toast.error("Cập nhật rác thất bại!");
       }
+
       onRefresh();
       setIsEditOpen(false);
     } catch (error) {
@@ -443,21 +443,13 @@ function WasteItemsTab({ wasteItems, subCategories, onRefresh }) {
 
   const columns = [
     {
-      title: "Hình ảnh",
-      key: "image",
-      width: 80,
-      render: (_, row) =>
-        row.imageUrl ? (
-          <img
-            src={row.imageUrl}
-            alt={row.itemName}
-            className="w-10 h-10 rounded-lg object-cover"
-          />
-        ) : (
-          <div className="w-10 h-10 rounded-lg bg-gray-100 flex items-center justify-center text-gray-300">
-            <InboxOutlined />
-          </div>
-        ),
+      title: "STT",
+      key: "stt",
+      width: 60,
+      align: "center",
+      render: (_, __, index) => {
+        return <span className="font-medium text-gray-500">{index + 1}</span>;
+      },
     },
     {
       title: "Tên vật phẩm",
@@ -733,9 +725,7 @@ function SubCategoriesTab({ subCategories, onRefresh }) {
   const [isAddOpen, setIsAddOpen] = useState(false);
   const [isEditOpen, setIsEditOpen] = useState(false);
   const [editingItem, setEditingItem] = useState(null);
-  // Preview (blob URL) — chỉ dùng để hiển thị
   const [addImageUrl, setAddImageUrl] = useState(null);
-  // URL thật trả về từ uploadIconImage — dùng trong payload
   const [addUploadedUrl, setAddUploadedUrl] = useState(null);
   const [addUploading, setAddUploading] = useState(false);
   const [editImageUrl, setEditImageUrl] = useState(null);
@@ -801,8 +791,8 @@ function SubCategoriesTab({ subCategories, onRefresh }) {
       displayOrder: item.displayOrder,
       isActive: item.isActive,
     });
-    setEditImageUrl(item.iconUrl ?? null);
-    setEditUploadedUrl(item.iconUrl ?? null); // khởi tạo với URL hiện tại
+    setEditImageUrl(item.iconPresignedUrl ?? null);
+    setEditUploadedUrl(item.iconUrl ?? null);
     setIsEditOpen(true);
   };
 
@@ -814,10 +804,12 @@ function SubCategoriesTab({ subCategories, onRefresh }) {
         subCategoryCode: (vals.subCategoryCode ?? "").toUpperCase(),
         displayName: vals.displayName,
         description: vals.description ?? "",
-        iconUrl: editUploadedUrl ?? editingItem.iconUrl ?? null,
+        iconUrl:
+          editUploadedUrl?.split("%")[0] ?? editingItem.iconUrl?.split("%")[0],
         displayOrder: vals.displayOrder ?? 1,
         isActive: vals.isActive ?? true,
       };
+      console.log(editingItem);
       const res = await updateSubWasteCategory(editingItem.id, payload);
       if (res) {
         toast.success("Cập nhật phân loại phụ thành công!");
@@ -852,9 +844,9 @@ function SubCategoriesTab({ subCategories, onRefresh }) {
       key: "icon",
       width: 70,
       render: (_, row) =>
-        row.iconUrl ? (
+        row.iconPresignedUrl ? (
           <img
-            src={row.iconUrl}
+            src={row.iconPresignedUrl}
             alt={row.displayName}
             className="w-10 h-10 rounded-lg object-cover"
           />
@@ -1074,14 +1066,13 @@ function SubCategoriesTab({ subCategories, onRefresh }) {
           <SubCategoryModalForm
             imageUrl={addImageUrl}
             setImageUrl={setAddImageUrl}
-            onUploadedUrl={setAddUploadedUrl} // ← nhận URL thật từ upload
+            onUploadedUrl={setAddUploadedUrl}
             isUploading={addUploading}
             setIsUploading={setAddUploading}
           />
         </Form>
       </Modal>
 
-      {/* Edit Modal */}
       <Modal
         open={isEditOpen}
         onCancel={() => setIsEditOpen(false)}
