@@ -1,6 +1,15 @@
 import { useState, useMemo, useEffect } from "react";
 import { useNavigate } from "react-router";
-import { Card, Button, Tabs, Tag, Empty, Spin, Popconfirm } from "antd";
+import {
+  Card,
+  Button,
+  Tabs,
+  Tag,
+  Empty,
+  Spin,
+  Popconfirm,
+  Pagination,
+} from "antd";
 import {
   GiftOutlined,
   HomeOutlined,
@@ -35,14 +44,6 @@ const TYPE_CONFIG = {
     badge: "bg-orange-500",
     btnClass: "bg-orange-500 border-orange-500 hover:bg-orange-600",
   },
-  DIGITAL: {
-    label: "Quà số",
-    icon: <BgColorsOutlined />,
-    emoji: "🎨",
-    color: "bg-blue-50 border-blue-200 text-blue-600",
-    badge: "bg-blue-500",
-    btnClass: "bg-blue-500 border-blue-500 hover:bg-blue-600",
-  },
   VOUCHER: {
     label: "Voucher",
     icon: <TagOutlined />,
@@ -59,6 +60,12 @@ const STATUS_CONFIG = {
     text: "Đang chờ",
     tw: "bg-amber-50 text-amber-600 border-amber-200",
     stripe: "bg-amber-500",
+  },
+  APPROVED: {
+    icon: <CheckCircleOutlined />,
+    text: "Đã duyệt",
+    tw: "bg-blue-50 text-blue-600 border-blue-200",
+    stripe: "bg-blue-500",
   },
   COMPLETED: {
     icon: <CheckCircleOutlined />,
@@ -88,8 +95,6 @@ const cardVariants = {
   },
 };
 
-// ─── CoinIcon ─────────────────────────────────────────────────────────────────
-
 const CoinIcon = ({ className = "w-5 h-5" }) => (
   <svg viewBox="0 0 24 24" fill="currentColor" className={className}>
     <circle cx="12" cy="12" r="10" opacity="0.2" />
@@ -106,8 +111,6 @@ const CoinIcon = ({ className = "w-5 h-5" }) => (
     </text>
   </svg>
 );
-
-// ─── RewardCard ───────────────────────────────────────────────────────────────
 
 function RewardCard({ reward, coins, onRedeem }) {
   const cfg = TYPE_CONFIG[reward.rewardType] ?? TYPE_CONFIG.PHYSICAL;
@@ -217,8 +220,6 @@ function RewardCard({ reward, coins, onRedeem }) {
   );
 }
 
-// ─── RequestCard ──────────────────────────────────────────────────────────────
-
 function RequestCard({ request, onCancel }) {
   const sc = STATUS_CONFIG[request.status] ?? STATUS_CONFIG.PENDING;
   const tc = TYPE_CONFIG[request.rewardType] ?? TYPE_CONFIG.PHYSICAL;
@@ -318,6 +319,26 @@ function RequestCard({ request, onCancel }) {
               </div>
             )}
 
+            {request.status === "APPROVED" && (
+              <div className="flex flex-col gap-2">
+                <div className="text-[11px] text-blue-600 bg-blue-50 p-2 rounded-lg flex items-start gap-1.5">
+                  <CheckCircleOutlined className="mt-0.5" />
+                  <div className="flex flex-col">
+                    <span>
+                      <strong>Nhà trường đã duyệt:</strong> Đang chuẩn bị quà để
+                      trao cho bạn.
+                    </span>
+                    {request.approvedAt && (
+                      <span className="text-[10px] opacity-70">
+                        Thời gian duyệt:{" "}
+                        {new Date(request.approvedAt).toLocaleString("vi-VN")}
+                      </span>
+                    )}
+                  </div>
+                </div>
+              </div>
+            )}
+
             {request.status === "CANCELLED" && (
               <div className="text-[11px] text-red-500 bg-red-50 p-2 rounded-lg flex items-start gap-1.5">
                 <CloseCircleOutlined className="mt-0.5" />
@@ -356,8 +377,6 @@ function RequestCard({ request, onCancel }) {
   );
 }
 
-// ─── RewardGrid ───────────────────────────────────────────────────────────────
-
 function RewardGrid({ rewards, coins, type, onRedeem }) {
   const items = rewards.filter((r) => r.rewardType === type && r.isActive);
 
@@ -386,8 +405,6 @@ function RewardGrid({ rewards, coins, type, onRedeem }) {
   );
 }
 
-// ─── Main Component ───────────────────────────────────────────────────────────
-
 export default function StudentRewards() {
   const navigate = useNavigate();
   const [student, setStudent] = useState(null);
@@ -395,6 +412,23 @@ export default function StudentRewards() {
   const [requests, setRequests] = useState([]);
   const [shopTab, setShopTab] = useState("PHYSICAL");
   const [reqTab, setReqTab] = useState("PENDING");
+  const [currentPage, setCurrentPage] = useState(1);
+  const pageSize = 5;
+
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [reqTab]);
+
+  const paginatedRequests = useMemo(() => {
+    const filtered = requests.filter((r) => r.status === reqTab);
+
+    const sorted = [...filtered].sort(
+      (a, b) =>
+        new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime(),
+    );
+    const startIndex = (currentPage - 1) * pageSize;
+    return sorted.slice(startIndex, startIndex + pageSize);
+  }, [requests, reqTab, currentPage]);
 
   const fetchData = async () => {
     try {
@@ -431,13 +465,9 @@ export default function StudentRewards() {
     };
     const res = await createRewardRequest(payload);
     if (res) {
-      const label =
-        reward.rewardType === "DIGITAL" ? "Đã mở khóa" : "Đã tạo yêu cầu đổi";
-      toast.success(`${label} "${reward.rewardName}"!`);
+      toast.success(`Tạo yêu cầu đổi "${reward.rewardName} thành công"!`);
     } else {
-      const label =
-        reward.rewardType === "DIGITAL" ? "Mở khóa" : "Tạo yêu cầu đổi";
-      toast.error(`${label} "${reward.rewardName}" thất bại!`);
+      toast.error(`Tạo yêu cầu đổi "${reward.rewardName}" thất bại!`);
     }
 
     fetchData();
@@ -460,6 +490,7 @@ export default function StudentRewards() {
   const byStatus = (s) => requests.filter((r) => r.status === s);
   const counts = {
     PENDING: byStatus("PENDING").length,
+    APPROVED: byStatus("APPROVED").length,
     COMPLETED: byStatus("COMPLETED").length,
     CANCELLED: byStatus("CANCELLED").length,
   };
@@ -471,15 +502,6 @@ export default function StudentRewards() {
         <span className="flex items-center gap-1.5">
           <GiftOutlined />
           Quà thật
-        </span>
-      ),
-    },
-    {
-      key: "DIGITAL",
-      label: (
-        <span className="flex items-center gap-1.5">
-          <BgColorsOutlined />
-          Quà số
         </span>
       ),
     },
@@ -496,6 +518,7 @@ export default function StudentRewards() {
 
   const reqTabs = [
     { key: "PENDING", label: `Đang chờ (${counts.PENDING})` },
+    { key: "APPROVED", label: `Đã xác nhận (${counts.APPROVED})` },
     { key: "COMPLETED", label: `Hoàn thành (${counts.COMPLETED})` },
     { key: "CANCELLED", label: `Đã huỷ (${counts.CANCELLED})` },
   ];
@@ -632,8 +655,6 @@ export default function StudentRewards() {
                         {TYPE_CONFIG[t.key]?.icon}
                         {t.key === "PHYSICAL" &&
                           "Quà thật sẽ được xác nhận bởi giáo viên trước khi nhận."}
-                        {t.key === "DIGITAL" &&
-                          "Quà số được kích hoạt ngay lập tức vào tài khoản của bạn."}
                         {t.key === "VOUCHER" &&
                           "Mã voucher sẽ được gửi qua hệ thống sau khi xác nhận."}
                       </div>
@@ -668,6 +689,9 @@ export default function StudentRewards() {
                   <span className="px-2.5 py-0.5 rounded-full text-xs font-semibold bg-amber-50 text-amber-600 border border-amber-200">
                     {counts.PENDING} đang chờ
                   </span>
+                  <span className="px-2.5 py-0.5 rounded-full text-xs font-semibold bg-blue-50 text-blue-600 border border-blue-200">
+                    {counts.APPROVED} đã duyệt
+                  </span>
                   <span className="px-2.5 py-0.5 rounded-full text-xs font-semibold bg-green-50 text-green-600 border border-green-200">
                     {counts.COMPLETED} hoàn thành
                   </span>
@@ -676,6 +700,8 @@ export default function StudentRewards() {
             }
             bodyStyle={{ paddingTop: 8 }}
           >
+            {/* Tìm đến phần render Tabs của Requests và sửa lại như sau: */}
+
             <Tabs
               activeKey={reqTab}
               onChange={setReqTab}
@@ -691,30 +717,39 @@ export default function StudentRewards() {
                       exit={{ opacity: 0, y: -6 }}
                       transition={{ duration: 0.18 }}
                     >
-                      {byStatus(t.key).length === 0 ? (
+                      {paginatedRequests.length === 0 ? (
                         <div className="flex flex-col items-center gap-3 py-14 text-gray-400">
-                          {t.key === "PENDING" && (
-                            <ClockCircleOutlined className="text-5xl opacity-30" />
-                          )}
-                          {t.key === "COMPLETED" && (
-                            <CheckCircleOutlined className="text-5xl opacity-30" />
-                          )}
-                          {t.key === "CANCELLED" && (
-                            <CloseCircleOutlined className="text-5xl opacity-30" />
-                          )}
-                          <p className="font-medium text-gray-400">
-                            Chưa có yêu cầu nào
+                          <InboxOutlined className="text-5xl opacity-30" />
+                          <p className="font-medium">
+                            Chưa có yêu cầu nào ở trạng thái này
                           </p>
                         </div>
                       ) : (
-                        <div className="space-y-3">
-                          {byStatus(t.key).map((req) => (
-                            <RequestCard
-                              key={req.id}
-                              request={req}
-                              onCancel={handleCancel}
+                        <div className="space-y-4">
+                          <div className="space-y-3">
+                            {paginatedRequests.map((req) => (
+                              <RequestCard
+                                key={req.id}
+                                request={req}
+                                onCancel={handleCancel}
+                              />
+                            ))}
+                          </div>
+
+                          {/* Thêm phần phân trang ở đây */}
+                          <div className="flex justify-center pt-4">
+                            <Pagination
+                              current={currentPage}
+                              pageSize={pageSize}
+                              total={
+                                requests.filter((r) => r.status === reqTab)
+                                  .length
+                              }
+                              onChange={(page) => setCurrentPage(page)}
+                              showSizeChanger={false}
+                              size="small"
                             />
-                          ))}
+                          </div>
                         </div>
                       )}
                     </motion.div>
