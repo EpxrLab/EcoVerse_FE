@@ -196,6 +196,84 @@ const deleteSubWasteCategory = async (id) => {
     console.log(error);
   }
 };
+//===========================GAME TYPES AND GAME LEVELS===============
+const getAllGameTypes = async () => {
+  try {
+    const res = await axios.get("/admin/game-types");
+    return res.data;
+  } catch (error) {
+    console.log(error);
+  }
+};
+
+const addNewGameType = async (payload) => {
+  try {
+    const res = await axios.post("/admin/game-types", payload);
+    return res.data;
+  } catch (error) {
+    console.log(error);
+  }
+};
+
+const updateGameType = async (id, payload) => {
+  try {
+    const res = await axios.put(`/admin/game-types/${id}`, payload);
+    return res.data;
+  } catch (error) {
+    console.log(error);
+  }
+};
+
+const deleteGameType = async (id) => {
+  try {
+    const res = await axios.delete(`/admin/game-types/${id}`);
+    return res.data;
+  } catch (error) {
+    console.log(error);
+  }
+};
+
+const getAllGameLevels = async (gameId) => {
+  try {
+    const res = await axios.get(`/admin/game-types/${gameId}/presets`);
+    return res.data;
+  } catch (error) {
+    console.log(error);
+  }
+};
+
+const addNewGameLevel = async (gameId, payload) => {
+  try {
+    const res = await axios.post(
+      `/admin/game-types/${gameId}/presets`,
+      payload,
+    );
+    return res.data;
+  } catch (error) {
+    console.log(error);
+  }
+};
+
+const updateGameLevel = async (gameId, id, payload) => {
+  try {
+    const res = await axios.put(
+      `/admin/game-types/${gameId}/presets/${id}`,
+      payload,
+    );
+    return res.data;
+  } catch (error) {
+    console.log(error);
+  }
+};
+
+const deleteGameLevel = async (gameId, id) => {
+  try {
+    const res = await axios.delete(`/admin/game-types/${gameId}/presets/${id}`);
+    return res.data;
+  } catch (error) {
+    console.log(error);
+  }
+};
 
 export {
   uploadModel3D,
@@ -218,4 +296,12 @@ export {
   addNewSubWasteCategory,
   updateSubWasteCategory,
   deleteSubWasteCategory,
+  getAllGameTypes,
+  addNewGameType,
+  updateGameType,
+  deleteGameType,
+  getAllGameLevels,
+  addNewGameLevel,
+  updateGameLevel,
+  deleteGameLevel,
 };
