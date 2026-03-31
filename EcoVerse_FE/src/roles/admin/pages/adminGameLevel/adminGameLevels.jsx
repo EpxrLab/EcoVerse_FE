@@ -70,6 +70,8 @@ function GameTypeTab({ gameTypes, setGameTypes, onRefresh }) {
   const [editingItem, setEditingItem] = useState(null);
   const [form] = Form.useForm();
 
+  console.log(gameTypes);
+
   const openCreate = () => {
     setEditingItem(null);
     form.resetFields();
@@ -160,6 +162,23 @@ function GameTypeTab({ gameTypes, setGameTypes, onRefresh }) {
   };
 
   const columns = [
+    {
+      title: "Icon",
+      dataIndex: "iconPresignedUrl",
+      key: "iconPresignedUrl",
+      render: (_, row) =>
+        row.iconPresignedUrl ? (
+          <img
+            src={row.iconPresignedUrl}
+            alt={row.displayName}
+            className="w-10 h-10 rounded-lg object-cover"
+          />
+        ) : (
+          <div className="w-10 h-10 rounded-lg bg-gray-100 flex items-center justify-center text-gray-300">
+            <TagsOutlined />
+          </div>
+        ),
+    },
     {
       title: "Mã",
       dataIndex: "typeCode",
