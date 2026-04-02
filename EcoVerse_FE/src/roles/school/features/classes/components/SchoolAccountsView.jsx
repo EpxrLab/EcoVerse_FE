@@ -52,14 +52,20 @@ export function SchoolAccountsView({ allStudents, onRefresh }) {
   const allClasses = useMemo(() => {
     const seen = new Set();
     return allStudents
-      .map(s => ({ grade: s.grade, className: s.className }))
+      .map(s => ({ grade: String(s.grade), className: s.className }))
       .filter(c => {
         const key = `${c.grade}_${c.className}`;
         if (seen.has(key)) return false;
         seen.add(key);
         return true;
       })
-      .sort((a, b) => a.grade - b.grade || a.className.localeCompare(b.className));
+      .map(c => ({
+        grade: c.grade,
+        className: c.className,
+        value: `${c.grade}_${c.className}`,
+        label: `${c.grade}${c.className}`
+      }))
+      .sort((a, b) => parseInt(a.grade) - parseInt(b.grade) || a.className.localeCompare(b.className));
   }, [allStudents]);
 
   // Filtered
@@ -73,7 +79,7 @@ export function SchoolAccountsView({ allStudents, onRefresh }) {
         s.parent_name?.toLowerCase().includes(q) ||
         s.parent_email?.toLowerCase().includes(q);
       const matchGrade = filterGrade === 'all' || String(s.grade) === filterGrade;
-      const matchClass = filterClass === 'all' || s.className === filterClass;
+      const matchClass = filterClass === 'all' || `${s.grade}_${s.className}` === filterClass;
       return matchSearch && matchGrade && matchClass;
     });
   }, [allStudents, searchQuery, filterGrade, filterClass]);
@@ -230,9 +236,9 @@ export function SchoolAccountsView({ allStudents, onRefresh }) {
           <SelectContent>
             <SelectItem value="all">Tất cả lớp</SelectItem>
             {allClasses
-              .filter(c => filterGrade === 'all' || String(c.grade) === filterGrade)
+              .filter(c => filterGrade === 'all' || c.grade === filterGrade)
               .map(c => (
-                <SelectItem key={c.className} value={c.className}>{c.className}</SelectItem>
+                <SelectItem key={c.value} value={c.value}>{c.label}</SelectItem>
               ))}
           </SelectContent>
         </Select>

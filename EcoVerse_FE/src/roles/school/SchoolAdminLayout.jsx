@@ -93,9 +93,9 @@ function SchoolAdminSidebar({ schoolInfo, isProfileLoading }) {
             )}
           >
             <div className="relative">
-              {schoolInfo?.logoUrl ? (
+              {schoolInfo?.logoPresignedUrl || schoolInfo?.logoUrl ? (
                 <img
-                  src={schoolInfo.logoUrl}
+                  src={schoolInfo.logoPresignedUrl || schoolInfo.logoUrl}
                   alt="School logo"
                   className={cn(
                     "rounded-2xl object-cover border-2 border-eco-green/20",
@@ -352,8 +352,8 @@ export default function SchoolAdminLayout() {
                   </p>
                 </div>
                 <Avatar className="w-9 h-9 border-2 border-primary/20 transition-transform hover:scale-105">
-                  {schoolInfo?.logoUrl ? (
-                    <AvatarImage src={schoolInfo.logoUrl} />
+                  {schoolInfo?.logoPresignedUrl || schoolInfo?.logoUrl ? (
+                    <AvatarImage src={schoolInfo.logoPresignedUrl || schoolInfo.logoUrl} />
                   ) : null}
                   <AvatarFallback className="bg-primary text-primary-foreground font-bold text-sm">
                     {schoolInfo?.principalName?.charAt(0) || "A"}

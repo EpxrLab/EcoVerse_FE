@@ -50,7 +50,7 @@ export function StudentFormDialog({
     
     // Required fields
     if (!form.student_name?.trim()) newErrors.student_name = "Họ tên không được để trống";
-    if (!form.gradeLevel) newErrors.gradeLevel = "Vui lòng chọn khối";
+    if (!form.gradeLevel) newErrors.gradeLevel = "Vui lòng chọn lớp";
     if (!form.className?.trim()) newErrors.className = "Vui lòng nhập tên lớp";
     if (!form.date_of_birth) newErrors.date_of_birth = "Vui lòng chọn ngày sinh";
     if (!form.gender) newErrors.gender = "Vui lòng chọn giới tính";
@@ -139,23 +139,23 @@ export function StudentFormDialog({
 
               <div className="grid grid-cols-2 gap-3">
                 <div className="space-y-2">
-                  <Label className="font-medium">Khối <span className="text-destructive">*</span></Label>
+                  <Label className="font-medium">Lớp <span className="text-destructive">*</span></Label>
                   <Select
                     value={form.gradeLevel}
                     onValueChange={(v) => onFormChange({ ...form, gradeLevel: v })}
                   >
                     <SelectTrigger className={errors.gradeLevel ? "border-destructive bg-destructive/5" : "bg-background"}>
-                      <SelectValue placeholder="Khối" />
+                      <SelectValue placeholder="Lớp" />
                     </SelectTrigger>
                     <SelectContent>
                       {[1, 2, 3, 4, 5].map(g => (
-                        <SelectItem key={g} value={String(g)}>Khối {g}</SelectItem>
+                        <SelectItem key={g} value={String(g)}>Lớp {g}</SelectItem>
                       ))}
                     </SelectContent>
                   </Select>
                 </div>
                 <div className="space-y-2">
-                  <Label className="font-medium">Lớp <span className="text-destructive">*</span></Label>
+                  <Label className="font-medium">Tên lớp <span className="text-destructive">*</span></Label>
                   <Input
                     placeholder="VD: A, B"
                     value={form.className}
