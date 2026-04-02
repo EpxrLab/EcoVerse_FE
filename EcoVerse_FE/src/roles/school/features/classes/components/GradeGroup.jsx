@@ -9,7 +9,6 @@ import {
   ChevronDown,
   ChevronRight,
   Users,
-  Target,
   GraduationCap,
   LayoutGrid,
   List,
@@ -22,8 +21,6 @@ export function GradeGroup({
   isExpanded, 
   onToggle, 
   onSelectClass,
-  onEditClass,
-  onDeleteClass,
 }) {
   // Auto switch to compact view when more than 6 classes
   const [viewMode, setViewMode] = useState('auto');
@@ -66,10 +63,6 @@ export function GradeGroup({
                   <span className="flex items-center gap-1">
                     <Users className="w-3.5 h-3.5" />
                     {group.totalStudents}
-                  </span>
-                  <span className="flex items-center gap-1">
-                    <Target className="w-3.5 h-3.5" />
-                    {group.avgAccuracy}%
                   </span>
                 </div>
               </div>
@@ -138,8 +131,6 @@ export function GradeGroup({
                     key={classItem.id}
                     classItem={classItem}
                     onSelect={onSelectClass}
-                    onEdit={onEditClass}
-                    onDelete={onDeleteClass}
                   />
                 ))}
               </div>
@@ -154,8 +145,6 @@ export function GradeGroup({
                     classItem={classItem}
                     compact
                     onSelect={onSelectClass}
-                    onEdit={onEditClass}
-                    onDelete={onDeleteClass}
                   />
                 ))}
               </div>

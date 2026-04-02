@@ -18,11 +18,20 @@ import {
   DropdownMenuTrigger,
 } from "@/shared/components/ui/dropdown-menu";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/shared/components/ui/tabs";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/shared/components/ui/alert-dialog";
 import { 
   ArrowLeft,
   Upload, 
   Users,
-  Target,
   Trophy,
   GraduationCap,
   Search,
@@ -69,6 +78,7 @@ export function StudentListView({
   const [searchQuery, setSearchQuery] = useState('');
   const [activeTab, setActiveTab] = useState('students');
   const [highlightedParentId, setHighlightedParentId] = useState(null);
+  const [studentToDelete, setStudentToDelete] = useState(null);
 
   // Email sending state
   const [emailPreviewData, setEmailPreviewData] = useState(null); // { parent, student }
@@ -189,19 +199,21 @@ export function StudentListView({
             </div>
           </CardContent>
         </Card>
-        <Card className="border-2 border-eco-blue/20 hover:border-eco-blue/40 transition-all hover:shadow-lg hover:-translate-y-0.5">
+
+        <Card className="border-2 border-amber-400/20 hover:border-amber-400/40 transition-all hover:shadow-lg hover:-translate-y-0.5">
           <CardContent className="p-4">
             <div className="flex items-center gap-3">
-              <div className="w-11 h-11 rounded-xl bg-eco-blue/10 flex items-center justify-center">
-                <Target className="w-5 h-5 text-eco-blue" />
+              <div className="w-11 h-11 rounded-xl bg-amber-500/10 flex items-center justify-center">
+                <Coins className="w-5 h-5 text-amber-500" />
               </div>
               <div>
-                <p className="text-2xl font-bold">{selectedClass.avg_accuracy || 0}%</p>
-                <p className="text-xs text-muted-foreground">Độ chính xác</p>
+                <p className="text-2xl font-bold">{(selectedClass.total_coins || 0).toLocaleString()}</p>
+                <p className="text-xs text-muted-foreground">Tổng Coins</p>
               </div>
             </div>
           </CardContent>
         </Card>
+       
 
         <Card className="border-2 border-eco-orange/20 hover:border-eco-orange/40 transition-all hover:shadow-lg hover:-translate-y-0.5">
           <CardContent className="p-4">
@@ -398,8 +410,8 @@ export function StudentListView({
                                 </DropdownMenuItem>
                               )}
                               <DropdownMenuItem 
-                                onClick={() => onDeleteStudent(student.id)}
-                                className="text-destructive focus:text-destructive"
+                                onClick={() => setStudentToDelete(student)}
+                                className="text-destructive focus:text-destructive cursor-pointer"
                               >
                                 <Trash2 className="w-4 h-4 mr-2" />
                                 Xóa học sinh
@@ -533,6 +545,35 @@ export function StudentListView({
           student={emailPreviewData.student}
         />
       )}
+
+      {/* Delete Confirmation Dialog */}
+      <AlertDialog 
+        open={!!studentToDelete} 
+        onOpenChange={(open) => !open && setStudentToDelete(null)}
+      >
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Xác nhận xóa học sinh?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Tất cả dữ liệu của học sinh <span className="font-bold text-foreground">"{studentToDelete?.student_name}"</span> sẽ bị xóa vĩnh viễn khỏi hệ thống. Hành động này không thể hoàn tác.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Hủy</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={() => {
+                if (studentToDelete) {
+                  onDeleteStudent(studentToDelete.id);
+                  setStudentToDelete(null);
+                }
+              }}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              Xác nhận xóa
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }

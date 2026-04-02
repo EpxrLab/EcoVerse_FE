@@ -1,1 +1,1 @@
-export { useClassForm } from './useClassForm';
+export { useClasses } from './useClasses';
