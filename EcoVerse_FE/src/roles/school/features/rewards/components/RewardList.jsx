@@ -34,9 +34,16 @@ export function RewardList({ rewards, status, onMarkDelivered, onConfirm, onAppr
                 {reward.studentCode && <p className="text-xs text-muted-foreground">{reward.studentCode}</p>}
               </TableCell>
               <TableCell>
-                <Badge variant="outline" className="bg-eco-blue/8 text-eco-blue border-eco-blue/25">
-                  {reward.reward}
-                </Badge>
+                <div className="flex items-center gap-3">
+                  {reward.imagePresignedUrl && (
+                    <div className="w-8 h-8 rounded-md overflow-hidden bg-muted flex-shrink-0 border">
+                      <img src={reward.imagePresignedUrl} alt={reward.reward} className="w-full h-full object-cover" />
+                    </div>
+                  )}
+                  <Badge variant="outline" className="bg-eco-blue/8 text-eco-blue border-eco-blue/25">
+                    {reward.reward}
+                  </Badge>
+                </div>
               </TableCell>
               <TableCell className="text-center font-bold text-eco-orange">{reward.coins}</TableCell>
               <TableCell className="text-center">
@@ -112,7 +119,16 @@ export function RewardList({ rewards, status, onMarkDelivered, onConfirm, onAppr
             <TableRow key={reward.id} className="hover:bg-eco-green/3">
               <TableCell className="font-mono text-sm">{reward.requestCode || reward.id}</TableCell>
               <TableCell><p className="font-semibold">{reward.student}</p></TableCell>
-              <TableCell><Badge variant="outline">{reward.reward}</Badge></TableCell>
+              <TableCell>
+                <div className="flex items-center gap-2">
+                  {reward.imagePresignedUrl && (
+                    <div className="w-7 h-7 rounded overflow-hidden bg-muted flex-shrink-0 border">
+                      <img src={reward.imagePresignedUrl} alt={reward.reward} className="w-full h-full object-cover" />
+                    </div>
+                  )}
+                  <Badge variant="outline">{reward.reward}</Badge>
+                </div>
+              </TableCell>
               <TableCell className="text-center font-bold text-eco-orange">{reward.coins}</TableCell>
               <TableCell>{reward.deliveredAt}</TableCell>
               <TableCell>{reward.confirmedAt || "-"}</TableCell>
@@ -154,7 +170,16 @@ export function RewardList({ rewards, status, onMarkDelivered, onConfirm, onAppr
             <TableRow key={reward.id}>
               <TableCell className="font-mono text-sm">{reward.requestCode || reward.id}</TableCell>
               <TableCell><p className="font-semibold">{reward.student}</p></TableCell>
-              <TableCell><Badge variant="outline">{reward.reward}</Badge></TableCell>
+              <TableCell>
+                <div className="flex items-center gap-2">
+                  {reward.imagePresignedUrl && (
+                    <div className="w-7 h-7 rounded overflow-hidden bg-muted flex-shrink-0 border">
+                      <img src={reward.imagePresignedUrl} alt={reward.reward} className="w-full h-full object-cover" />
+                    </div>
+                  )}
+                  <Badge variant="outline">{reward.reward}</Badge>
+                </div>
+              </TableCell>
               <TableCell className="text-center font-bold text-eco-green">+{reward.coins}</TableCell>
               <TableCell className="text-muted-foreground">{reward.cancelledDate || reward.requestDate}</TableCell>
               <TableCell><Badge variant="destructive">{reward.reason}</Badge></TableCell>

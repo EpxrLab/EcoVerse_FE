@@ -74,16 +74,7 @@ export function EmailPreviewDialog({ isOpen, onClose, onSent, parent, student })
     }
     setIsSending(true);
     try {
-      await classesService.sendCredentials({
-        student_id: student.id,
-        parent_email: parent.email,
-        student_name: student.student_name,
-        student_username: student.student_username || student.student_code,
-        student_password: student.student_password,
-        parent_name: parent.name,
-        parent_username: parent.username,
-        parent_password: parent.password,
-      });
+      await classesService.resendCredentials(student.parent_id);
       setIsSending(false);
       setSent(true);
       toast.success(`Đã gửi email đến ${parent.email}`);

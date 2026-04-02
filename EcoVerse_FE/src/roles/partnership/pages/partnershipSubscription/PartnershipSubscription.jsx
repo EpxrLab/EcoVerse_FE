@@ -367,19 +367,26 @@ export default function PartnershipSubscription() {
                   <Button 
                     className={cn(
                       "w-full",
-                      isPopular && (!currentSubscription || currentSubscription.status?.toUpperCase() === 'EXPIRED')
+                      isPopular && (!currentSubscription || currentSubscription.status?.toUpperCase() === 'EXPIRED' || (currentSubscription.status?.toUpperCase() === 'ACTIVE' && Number(plan.price || 0) > Number(currentSubscription.price || currentSubscription.amount || 0)))
                         ? "bg-eco-green hover:bg-eco-green/90" 
                         : "bg-muted hover:bg-muted/80 text-foreground"
                     )}
                     onClick={() => handleSelectPlan(plan)}
-                    disabled={(isProcessing && selectedPlan === plan.id) || (currentSubscription && currentSubscription.status?.toUpperCase() === 'ACTIVE')}
+                    disabled={
+                      (isProcessing && selectedPlan === plan.id) || 
+                      (currentSubscription && currentSubscription.status?.toUpperCase() === 'ACTIVE' && 
+                        Number(plan.price || 0) <= Number(currentSubscription.price || currentSubscription.amount || 0)
+                      )
+                    }
                   >
                     {isProcessing && selectedPlan === plan.id ? (
                       <div className="flex items-center gap-2">
                         <Loader2 className="w-4 h-4 animate-spin" />
                         <span>Đang xử lý...</span>
                       </div>
-                    ) : currentSubscription && currentSubscription.status?.toUpperCase() === 'ACTIVE' ? (
+                    ) : currentSubscription && currentSubscription.status?.toUpperCase() === 'ACTIVE' && (currentSubscription.planId === plan.id || currentSubscription.planCode === plan.planCode) ? (
+                      "Đang sử dụng"
+                    ) : currentSubscription && currentSubscription.status?.toUpperCase() === 'ACTIVE' && Number(plan.price || 0) <= Number(currentSubscription.price || currentSubscription.amount || 0) ? (
                       "Đã có gói hoạt động"
                     ) : (
                       currentSubscription && currentSubscription.status?.toUpperCase() === 'EXPIRED' && (currentSubscription.planId === plan.id || currentSubscription.planCode === plan.planCode) ? `Gia hạn gói ${plan.planName}` : `Chọn gói ${plan.planName}`

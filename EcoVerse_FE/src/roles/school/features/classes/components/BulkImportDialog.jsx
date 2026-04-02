@@ -1,5 +1,6 @@
 import { useState, useRef, useCallback } from 'react';
 import { Button } from '@/shared/components/ui/button';
+import { Badge } from '@/shared/components/ui/badge';
 import {
   Dialog,
   DialogContent,
@@ -27,6 +28,7 @@ import {
   Layers,
   ArrowLeft,
   Sparkles,
+  Mail,
 } from 'lucide-react';
 import { cn } from '@/shared/lib/utils';
 import { toast } from 'sonner';
@@ -318,7 +320,7 @@ export function BulkImportDialog({ isOpen, onClose, onImport }) {
           </DialogTitle>
         </DialogHeader>
 
-        <div className="flex-1 min-h-0 overflow-y-auto px-6 py-5 scrollbar-thin">
+        <div className="flex-1 min-h-0 overflow-y-auto overflow-x-hidden px-6 py-5 scrollbar-thin">
           <StepIndicator current={step} />
 
           {/* ── Step 0: Upload ── */}
@@ -449,8 +451,8 @@ Nguyễn Hoàng Nhật Ân,A1,1,2014-08-10,Male,8 Dương Văn Cam,Nguyễn Văn
           {/* ── Step 2: Result ── */}
           {step === 2 && importResult && (
             <div className="space-y-6 text-center py-6">
-              <div className="relative">
-                <div className="w-24 h-24 mx-auto rounded-full bg-eco-green/10 flex items-center justify-center animate-bounce-subtle">
+              <div className="relative overflow-hidden py-4">
+                <div className="w-24 h-24 mx-auto rounded-full bg-eco-green/10 flex items-center justify-center animate-bounce-soft">
                   <CheckCircle2 className="w-12 h-12 text-eco-green" />
                 </div>
                 <div className="absolute top-0 right-0 left-0 bottom-0 animate-ping opacity-20">
@@ -476,7 +478,6 @@ Nguyễn Hoàng Nhật Ân,A1,1,2014-08-10,Male,8 Dương Văn Cam,Nguyễn Văn
               </div>
 
               <div className="p-4 rounded-xl bg-eco-green/5 border-2 border-eco-green/20 text-sm text-eco-green-700 text-left flex items-start gap-3 shadow-sm shadow-eco-green/5">
-                <Sparkles className="w-5 h-5 shrink-0 mt-0.5 text-eco-green" />
                 <span className="font-medium">Tài khoản học sinh và phụ huynh đã được tự động tạo. Bạn có thể gửi thông tin đăng nhập trong phần Quản lý Tài khoản.</span>
               </div>
             </div>

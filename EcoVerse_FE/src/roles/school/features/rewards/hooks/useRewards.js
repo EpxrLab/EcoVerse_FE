@@ -32,7 +32,8 @@ export function useRewards() {
         name: r.rewardName,
         coins: r.coinCost,
         stock: r.isUnlimited ? '∞' : r.stockQuantity,
-        image: r.imageUrl,
+        image: r.imagePresignedUrl || r.imageUrl,
+        imagePresignedUrl: r.imagePresignedUrl,
         active: r.isActive,
         type: r.rewardType || 'PHYSICAL',
         ...r
@@ -102,6 +103,7 @@ export function useRewards() {
             hour12: false
           }).replace(',', '') : null,
           reason: req.rejectedReason || req.cancelledReason || 'N/A',
+          imagePresignedUrl: req.rewardImagePresignedUrl || req.imagePresignedUrl,
         };
 
         if (req.status === 'PENDING') pending.push(item);

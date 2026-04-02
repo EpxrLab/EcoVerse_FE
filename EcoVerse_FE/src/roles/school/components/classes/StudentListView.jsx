@@ -30,13 +30,9 @@ import {
   Pencil,
   Trash2,
   Coins,
-  Flame,
   Phone,
   Mail,
   User,
-  Lock,
-  Eye,
-  EyeOff,
   Ban,
   CheckCircle,
 } from "lucide-react";
@@ -74,10 +70,6 @@ export function StudentListView({
   const [activeTab, setActiveTab] = useState('students');
   const [highlightedParentId, setHighlightedParentId] = useState(null);
 
-  // State for showing/hiding passwords
-  const [showStudentPasswords, setShowStudentPasswords] = useState({});
-  const [showParentPasswords, setShowParentPasswords] = useState({});
-
   // Email sending state
   const [emailPreviewData, setEmailPreviewData] = useState(null); // { parent, student }
 
@@ -107,13 +99,7 @@ export function StudentListView({
       return acc;
     }, []);
 
-  const toggleStudentPassword = (studentId) => {
-    setShowStudentPasswords(prev => ({ ...prev, [studentId]: !prev[studentId] }));
-  };
 
-  const toggleParentPassword = (parentId) => {
-    setShowParentPasswords(prev => ({ ...prev, [parentId]: !prev[parentId] }));
-  };
 
   const handleParentClick = (studentId) => {
     setActiveTab('parents');
@@ -300,30 +286,12 @@ export function StudentListView({
                       <TableHead className="w-12 text-center">#</TableHead>
                       <TableHead>Học sinh</TableHead>
                       <TableHead className="text-center">Tên đăng nhập</TableHead>
-                      <TableHead className="text-center">
-                        <div className="flex items-center justify-center gap-1">
-                          <Lock className="w-4 h-4" />
-                          Mật khẩu
-                        </div>
-                      </TableHead>
                       <TableHead className="text-center">Giới tính</TableHead>
 
                       <TableHead className="text-center">
                         <div className="flex items-center justify-center gap-1">
-                          <Target className="w-4 h-4" />
-                          Độ chính xác
-                        </div>
-                      </TableHead>
-                      <TableHead className="text-center">
-                        <div className="flex items-center justify-center gap-1">
                           <Coins className="w-4 h-4" />
                           Coins
-                        </div>
-                      </TableHead>
-                      <TableHead className="text-center">
-                        <div className="flex items-center justify-center gap-1">
-                          <Flame className="w-4 h-4" />
-                          Streak
                         </div>
                       </TableHead>
 
@@ -363,27 +331,7 @@ export function StudentListView({
                             {student.student_code || '-'}
                           </span>
                         </TableCell>
-                        <TableCell className="text-center">
-                          <div className="flex items-center justify-center gap-1">
-                            <span className="font-mono text-sm text-muted-foreground">
-                              {student.student_password 
-                                ? (showStudentPasswords[student.id] ? student.student_password : '••••••')
-                                : '-'
-                              }
-                            </span>
-                            {student.student_password && (
-                              <button 
-                                onClick={() => toggleStudentPassword(student.id)}
-                                className="p-1 hover:bg-muted rounded"
-                              >
-                                {showStudentPasswords[student.id] 
-                                  ? <EyeOff className="w-3.5 h-3.5 text-muted-foreground" />
-                                  : <Eye className="w-3.5 h-3.5 text-muted-foreground" />
-                                }
-                              </button>
-                            )}
-                          </div>
-                        </TableCell>
+
                         <TableCell className="text-center">
                           <Badge variant="outline" className={cn(
                             "text-xs",
@@ -396,37 +344,7 @@ export function StudentListView({
                         </TableCell>
 
                         <TableCell className="text-center">
-                          <div className="flex items-center justify-center gap-2">
-                            <div className="w-16 h-2 bg-muted rounded-full overflow-hidden">
-                              <div 
-                                className={cn(
-                                  "h-full rounded-full transition-all",
-                                  student.accuracy >= 80 ? "bg-eco-green" :
-                                  student.accuracy >= 60 ? "bg-eco-orange" : "bg-red-500"
-                                )}
-                                style={{ width: `${student.accuracy}%` }}
-                              />
-                            </div>
-                            <span className={cn(
-                              "font-semibold text-sm",
-                              student.accuracy >= 80 ? "text-eco-green" :
-                              student.accuracy >= 60 ? "text-eco-orange" : "text-red-500"
-                            )}>
-                              {student.accuracy}%
-                            </span>
-                          </div>
-                        </TableCell>
-                        <TableCell className="text-center">
                           <span className="font-semibold text-eco-orange">{(student.coins ?? 0).toLocaleString()}</span>
-                        </TableCell>
-                        <TableCell className="text-center">
-                          <div className="flex items-center justify-center gap-1">
-                            <Flame className={cn(
-                              "w-4 h-4",
-                              student.streak >= 7 ? "text-orange-500" : "text-muted-foreground"
-                            )} />
-                            <span className="font-semibold">{student.streak}</span>
-                          </div>
                         </TableCell>
 
                         <TableCell className="text-center">
@@ -528,12 +446,6 @@ export function StudentListView({
                         </div>
                       </TableHead>
                       <TableHead className="text-center">Tên đăng nhập</TableHead>
-                      <TableHead className="text-center">
-                        <div className="flex items-center justify-center gap-1">
-                          <Lock className="w-4 h-4" />
-                          Mật khẩu
-                        </div>
-                      </TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
@@ -584,27 +496,7 @@ export function StudentListView({
                             {parent.username || '-'}
                           </span>
                         </TableCell>
-                        <TableCell className="text-center">
-                          <div className="flex items-center justify-center gap-1">
-                            <span className="font-mono text-sm text-muted-foreground">
-                              {parent.password 
-                                ? (showParentPasswords[parent.id] ? parent.password : '••••••')
-                                : '-'
-                              }
-                            </span>
-                            {parent.password && (
-                              <button 
-                                onClick={() => toggleParentPassword(parent.id)}
-                                className="p-1 hover:bg-muted rounded"
-                              >
-                                {showParentPasswords[parent.id] 
-                                  ? <EyeOff className="w-3.5 h-3.5 text-muted-foreground" />
-                                  : <Eye className="w-3.5 h-3.5 text-muted-foreground" />
-                                }
-                              </button>
-                            )}
-                          </div>
-                        </TableCell>
+
                       </TableRow>
                     ))}
                   </TableBody>

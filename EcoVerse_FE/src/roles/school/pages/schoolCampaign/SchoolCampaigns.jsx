@@ -8,7 +8,7 @@ import { Plus, Search, Edit, Play, CheckCircle2, Send, Clock } from 'lucide-reac
 import { toast } from 'sonner';
 import { useCampaigns } from '../../features/campaigns/hooks/useCampaigns';
 import { useCampaignForm } from '../../features/campaigns/hooks';
-import { CampaignStats, CampaignList, CampaignForm, CampaignDetail, StudentSelectionDialog, InvitationList } from '../../features/campaigns/components';
+import { CampaignStats, CampaignList, CampaignForm, CampaignDetail, StudentSelectionDialog, InvitationList, ConfirmDeleteDialog } from '../../features/campaigns/components';
 import { AddGameModal } from '../../features/campaigns/components/AddGameModal';
 import { AddQuizModal } from '../../features/campaigns/components/AddQuizModal';
 import { GAME_TYPES } from '../../features/campaigns/types/campaign';
@@ -31,7 +31,9 @@ export default function SchoolCampaigns() {
     declineInvitation,
     addStudentsToCampaign,
     revertToDraft,
-    activateCampaign
+    activateCampaign,
+    fetchCampaignDetail,
+    bindQuizzesToRound
   } = useCampaigns();
   
   // Create an object wrapper to satisfy TS ignore below until hook types catch up
@@ -71,6 +73,10 @@ export default function SchoolCampaigns() {
   const [isAddQuizOpen, setIsAddQuizOpen] = useState(false);
   const [gameConfigCampaign, setGameConfigCampaign] = useState(null);
   const [quizConfigCampaign, setQuizConfigCampaign] = useState(null);
+  const [targetRoundId, setTargetRoundId] = useState(null);
+  const [isDetailLoading, setIsDetailLoading] = useState(false);
+  const [isDeleteConfirmOpen, setIsDeleteConfirmOpen] = useState(false);
+  const [campaignToDelete, setCampaignToDelete] = useState(null);
 
   // Partnership Invitation logic
   const invitations = allCampaigns.filter(c => c.origin === 'partnership' && c.invitation_status === 'pending');
@@ -135,16 +141,47 @@ export default function SchoolCampaigns() {
     toast.success('Đã cập nhật cấu hình Game');
   };
 
-  const handleOpenAddQuiz = (campaign) => {
-    setQuizConfigCampaign(campaign);
+  const handleOpenAddQuiz = async (campaign, roundId = null) => {
+    // If opening from list view (no rounds in the campaign object),
+    // fetch details to get the rounds and currently bound quizzes
+    if (!campaign.rounds || campaign.rounds.length === 0) {
+      setIsDetailLoading(true);
+      const detail = await fetchCampaignDetail(campaign.id);
+      if (detail) {
+        setQuizConfigCampaign(detail);
+      } else {
+        setQuizConfigCampaign(campaign);
+      }
+      setIsDetailLoading(false);
+    } else {
+      setQuizConfigCampaign(campaign);
+    }
+    
+    setTargetRoundId(roundId);
     setIsAddQuizOpen(true);
   };
 
-  const handleSubmitQuiz = (campaignId, quizIds) => {
-    updateCampaign(campaignId, { quiz_ids: quizIds });
+  const handleSubmitQuiz = async (campaignId, quizIds, roundIdFromModal) => {
+    let rid = roundIdFromModal || targetRoundId;
+
+    // If called from list and no roundId, fetch detail to get the single round
+    if (!rid && campaignId) {
+      const detail = await fetchCampaignDetail(campaignId);
+      if (detail?.rounds?.length > 0) {
+        rid = detail.rounds[0].id;
+      }
+    }
+
+    if (rid) {
+      // BE supports PUT for both initial bind and update
+      await bindQuizzesToRound(rid, quizIds);
+    } else {
+      await updateCampaign(campaignId, { quiz_ids: quizIds });
+    }
+    
     setIsAddQuizOpen(false);
     setQuizConfigCampaign(null);
-    toast.success('Đã cập nhật Quiz');
+    setTargetRoundId(null);
   };
 
   const handleEditCampaign = (campaign) => {
@@ -174,9 +211,37 @@ export default function SchoolCampaigns() {
     toast.success('Đã cập nhật chiến dịch thành công');
   };
 
-  const handleViewDetail = (campaign) => {
+  const handleViewDetail = async (campaign) => {
     setSelectedCampaign(campaign);
     setIsDetailOpen(true);
+    
+    setIsDetailLoading(true);
+    try {
+      const detail = await fetchCampaignDetail(campaign.id);
+      if (detail) {
+        setSelectedCampaign(detail);
+      }
+    } catch (error) {
+      console.error('Error fetching campaign detail:', error);
+    } finally {
+      setIsDetailLoading(false);
+    }
+  };
+
+  const handleConfirmDelete = (id) => {
+    const campaign = allCampaigns.find(c => c.id === id);
+    if (campaign) {
+      setCampaignToDelete(campaign);
+      setIsDeleteConfirmOpen(true);
+    }
+  };
+
+  const executeDelete = async () => {
+    if (campaignToDelete) {
+      await deleteCampaign(campaignToDelete.id);
+      setIsDeleteConfirmOpen(false);
+      setCampaignToDelete(null);
+    }
   };
 
   const handleOpenInviteDialog = (campaign) => {
@@ -296,7 +361,7 @@ export default function SchoolCampaigns() {
             onEdit={handleEditCampaign}
             onInvite={handleOpenInviteDialog}
             onChangeStatus={changeStatus}
-            onDelete={deleteCampaign}
+            onDelete={handleConfirmDelete}
             onActivate={activateCampaign}
             onAddGame={handleOpenAddGame}
             onAddQuiz={handleOpenAddQuiz}
@@ -312,7 +377,7 @@ export default function SchoolCampaigns() {
             onEdit={handleEditCampaign}
             onInvite={handleOpenInviteDialog}
             onChangeStatus={changeStatus}
-            onDelete={deleteCampaign}
+            onDelete={handleConfirmDelete}
             onRevertToDraft={revertToDraft}
           />
         </TabsContent>
@@ -337,7 +402,7 @@ export default function SchoolCampaigns() {
                 onEdit={handleEditCampaign}
                 onInvite={handleOpenInviteDialog}
                 onChangeStatus={changeStatus}
-                onDelete={deleteCampaign}
+                onDelete={handleConfirmDelete}
               />
             </TabsContent>
 
@@ -351,7 +416,7 @@ export default function SchoolCampaigns() {
                 onEdit={handleEditCampaign}
                 onInvite={handleOpenInviteDialog}
                 onChangeStatus={changeStatus}
-                onDelete={deleteCampaign}
+                onDelete={handleConfirmDelete}
               />
             </TabsContent>
           </Tabs>
@@ -377,7 +442,7 @@ export default function SchoolCampaigns() {
                 onEdit={handleEditCampaign}
                 onInvite={handleOpenInviteDialog}
                 onChangeStatus={changeStatus}
-                onDelete={deleteCampaign}
+                onDelete={handleConfirmDelete}
               />
             </TabsContent>
 
@@ -391,7 +456,7 @@ export default function SchoolCampaigns() {
                 onEdit={handleEditCampaign}
                 onInvite={handleOpenInviteDialog}
                 onChangeStatus={changeStatus}
-                onDelete={deleteCampaign}
+                onDelete={handleConfirmDelete}
               />
             </TabsContent>
           </Tabs>
@@ -417,7 +482,7 @@ export default function SchoolCampaigns() {
                 onEdit={handleEditCampaign}
                 onInvite={handleOpenInviteDialog}
                 onChangeStatus={changeStatus}
-                onDelete={deleteCampaign}
+                onDelete={handleConfirmDelete}
               />
             </TabsContent>
 
@@ -431,7 +496,7 @@ export default function SchoolCampaigns() {
                 onEdit={handleEditCampaign}
                 onInvite={handleOpenInviteDialog}
                 onChangeStatus={changeStatus}
-                onDelete={deleteCampaign}
+                onDelete={handleConfirmDelete}
               />
             </TabsContent>
           </Tabs>
@@ -446,7 +511,7 @@ export default function SchoolCampaigns() {
             onEdit={handleEditCampaign}
             onInvite={handleOpenInviteDialog}
             onChangeStatus={changeStatus}
-            onDelete={deleteCampaign}
+            onDelete={handleConfirmDelete}
           />
         </TabsContent>
 
@@ -462,7 +527,7 @@ export default function SchoolCampaigns() {
 
       {/* Create Dialog */}
       <Dialog open={isCreateOpen} onOpenChange={setIsCreateOpen}>
-        <DialogContent className="max-w-4xl h-[80vh] overflow-hidden flex flex-col">
+        <DialogContent className="max-w-5xl h-[85vh] overflow-hidden flex flex-col">
           <DialogHeader>
             <DialogTitle>Tạo chiến dịch mới</DialogTitle>
             <DialogDescription>
@@ -488,7 +553,7 @@ export default function SchoolCampaigns() {
 
       {/* Edit Dialog */}
       <Dialog open={isEditOpen} onOpenChange={setIsEditOpen}>
-        <DialogContent className="max-w-4xl h-[80vh] overflow-hidden flex flex-col">
+        <DialogContent className="max-w-5xl h-[85vh] overflow-hidden flex flex-col">
           <DialogHeader>
             <DialogTitle>Chỉnh sửa chiến dịch</DialogTitle>
             <DialogDescription>
@@ -527,8 +592,9 @@ export default function SchoolCampaigns() {
       {quizConfigCampaign && (
         <AddQuizModal
           isOpen={isAddQuizOpen}
-          onClose={() => { setIsAddQuizOpen(false); setQuizConfigCampaign(null); }}
+          onClose={() => { setIsAddQuizOpen(false); setQuizConfigCampaign(null); setTargetRoundId(null); }}
           campaign={quizConfigCampaign}
+          roundId={targetRoundId}
           availableQuizzes={availableQuizzes}
           onSubmit={handleSubmitQuiz}
         />
@@ -541,50 +607,16 @@ export default function SchoolCampaigns() {
             <DialogTitle>Chi tiết chiến dịch</DialogTitle>
           </DialogHeader>
           {selectedCampaign && (
-            <CampaignDetail campaign={selectedCampaign} gameTypes={GAME_TYPES} />
+            <CampaignDetail 
+              campaign={selectedCampaign} 
+              gameTypes={GAME_TYPES} 
+              isLoading={isDetailLoading} 
+              onAddQuiz={handleOpenAddQuiz}
+            />
           )}
         </DialogContent>
       </Dialog>
 
-      {/* Invite Dialog */}
-      <Dialog open={isInviteOpen} onOpenChange={setIsInviteOpen}>
-        <DialogContent className="max-w-md">
-          <DialogHeader>
-            <DialogTitle>Gửi thông báo mời</DialogTitle>
-            <DialogDescription>
-              Gửi thông báo mời tham gia chiến dịch đến phụ huynh
-            </DialogDescription>
-          </DialogHeader>
-          {inviteCampaign && (
-            <div className="space-y-4 py-4">
-              <div className="space-y-2">
-                <p className="text-sm">
-                  <span className="font-medium">Chiến dịch:</span> {inviteCampaign.name}
-                </p>
-                <p className="text-sm">
-                  <span className="font-medium">Số lớp:</span> {inviteCampaign.participating_classes?.length || 0}
-                </p>
-                <p className="text-sm">
-                  <span className="font-medium">Tổng học sinh:</span>{' '}
-                  {inviteCampaign.participating_classes?.reduce((sum, cls) => sum + cls.students_count, 0) || 0}
-                </p>
-              </div>
-              <div className="flex justify-end gap-3">
-                <Button variant="outline" onClick={() => setIsInviteOpen(false)}>
-                  Hủy
-                </Button>
-                <Button
-                  onClick={handleSendInvitations}
-                  disabled={isSendingInvite}
-                  className="bg-eco-blue hover:bg-eco-blue/90"
-                >
-                  {isSendingInvite ? 'Đang gửi...' : 'Gửi thông báo'}
-                </Button>
-              </div>
-            </div>
-          )}
-        </DialogContent>
-      </Dialog>
       {/* Student Selection Dialog for Invitation Acceptance */}
       {acceptInviteCampaign && (
         <StudentSelectionDialog 
@@ -614,6 +646,13 @@ export default function SchoolCampaigns() {
           campaignName={addStudentCampaign.name}
         />
       )}
+      {/* Confirmation Dialogs */}
+      <ConfirmDeleteDialog
+        isOpen={isDeleteConfirmOpen}
+        onClose={() => setIsDeleteConfirmOpen(false)}
+        onConfirm={executeDelete}
+        title={campaignToDelete?.name}
+      />
     </div>
   );
 }

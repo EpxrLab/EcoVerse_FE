@@ -9,6 +9,7 @@ export function useRewardForm() {
     description: '',
     coinCost: 0,
     imageUrl: '',
+    imagePresignedUrl: '',
     stockQuantity: 0,
     isUnlimited: false,
     termsConditions: ''
@@ -34,6 +35,7 @@ export function useRewardForm() {
       description: '',
       coinCost: 0,
       imageUrl: '',
+      imagePresignedUrl: '',
       stockQuantity: 0,
       isUnlimited: false,
       termsConditions: ''
@@ -48,6 +50,7 @@ export function useRewardForm() {
       description: data.description || '',
       coinCost: data.coinCost !== undefined ? data.coinCost : (data.coins || 0),
       imageUrl: data.imageUrl || data.image || '',
+      imagePresignedUrl: data.imagePresignedUrl || '',
       stockQuantity: data.stockQuantity !== undefined ? data.stockQuantity : (data.stock || 0),
       isUnlimited: data.isUnlimited || false,
       termsConditions: data.termsConditions || ''

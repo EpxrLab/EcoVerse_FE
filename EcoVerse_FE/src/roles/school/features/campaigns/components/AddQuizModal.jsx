@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/shared/components/ui/dialog';
 import { Button } from '@/shared/components/ui/button';
 import { Label } from '@/shared/components/ui/label';
@@ -209,18 +209,34 @@ function AIGeneratePanel({ onGenerated, existingCount = 0 }) {
 
 // ─── Main Modal ───────────────────────────────────────────────────────────────
 
-export function AddQuizModal({ isOpen, onClose, campaign, availableQuizzes, onSubmit }) {
+export function AddQuizModal({ isOpen, onClose, campaign, roundId, availableQuizzes, onSubmit }) {
   const [selectedQuizIds, setSelectedQuizIds] = useState([]);
   const [aiGeneratedQuizzes, setAiGeneratedQuizzes] = useState([]);
   const [activeTab, setActiveTab] = useState('library');
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   React.useEffect(() => {
     if (isOpen) {
-      setSelectedQuizIds(campaign?.selected_quizzes?.map(q => q.quiz_id) || []);
+      let initialQuizzes = [];
+      
+      if (roundId && campaign?.rounds) {
+        // Mode: Specific round binding (Detail View)
+        const round = campaign.rounds.find(r => r.id === roundId);
+        initialQuizzes = round?.quizzes?.map(q => q.id) || [];
+      } else if (campaign?.rounds && campaign.rounds.length > 0) {
+        // Mode: Campaign level binding (List View - Single Round support)
+        // Pre-select from the first/only round
+        initialQuizzes = campaign.rounds[0].quizzes?.map(q => q.id) || [];
+      } else {
+        // Fallback or legacy (no rounds yet)
+        initialQuizzes = campaign?.selected_quizzes?.map(q => q.quiz_id) || [];
+      }
+
+      setSelectedQuizIds(initialQuizzes);
       setAiGeneratedQuizzes([]);
       setActiveTab('library');
     }
-  }, [isOpen, campaign]);
+  }, [isOpen, campaign, roundId]);
 
   const allQuizzes = [...availableQuizzes, ...aiGeneratedQuizzes];
 
@@ -246,9 +262,22 @@ export function AddQuizModal({ isOpen, onClose, campaign, availableQuizzes, onSu
   const mediumQuizzes = allQuizzes.filter(q => q.difficulty === 'medium');
   const hardQuizzes = allQuizzes.filter(q => q.difficulty === 'hard');
 
-  const handleSubmit = () => {
-    onSubmit(campaign.id, selectedQuizIds);
-    onClose();
+  const isUpdateMode = useMemo(() => {
+    if (roundId && campaign?.rounds) {
+      const round = campaign.rounds.find(r => r.id === roundId);
+      return (round?.quizzes?.length || 0) > 0;
+    }
+    return (campaign?.selected_quizzes?.length || 0) > 0;
+  }, [campaign, roundId]);
+
+  const handleSubmit = async () => {
+    setIsSubmitting(true);
+    try {
+      await onSubmit(campaign.id, selectedQuizIds, roundId);
+      onClose();
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   const QuizGroup = ({ quizzes, diffKey }) => {
@@ -305,8 +334,12 @@ export function AddQuizModal({ isOpen, onClose, campaign, availableQuizzes, onSu
               <Brain className="w-5 h-5 text-eco-blue" />
             </div>
             <div>
-              <DialogTitle className="text-xl font-bold">Thêm Quiz cho chiến dịch</DialogTitle>
-              <p className="text-xs text-muted-foreground mt-0.5">Cần chọn ít nhất 1 quiz Dễ, Trung bình và Khó</p>
+              <DialogTitle className="text-xl font-bold">
+                {isUpdateMode ? 'Cập nhật bộ Quiz' : 'Thêm Quiz cho chiến dịch'}
+              </DialogTitle>
+              <p className="text-xs text-muted-foreground mt-0.5">
+                {roundId ? 'Chọn các bộ câu hỏi để học sinh giải đố trong vòng này' : 'Cần chọn ít nhất 1 quiz Dễ, Trung bình và Khó'}
+              </p>
             </div>
           </div>
 
@@ -366,9 +399,17 @@ export function AddQuizModal({ isOpen, onClose, campaign, availableQuizzes, onSu
             Đã chọn <strong>{selectedQuizIds.length}</strong> quiz
             {!isValid && <span className="text-destructive ml-1">(Cần đủ 3 độ khó)</span>}
           </p>
-          <Button variant="ghost" onClick={onClose}>Hủy</Button>
-          <Button onClick={handleSubmit} disabled={!isValid} className="bg-eco-blue hover:bg-eco-blue/90 text-white">
-            Lưu Quiz
+          <Button variant="ghost" onClick={onClose} disabled={isSubmitting}>Hủy</Button>
+          <Button 
+            onClick={handleSubmit} 
+            disabled={(!isValid && !roundId) || isSubmitting} 
+            className="bg-eco-blue hover:bg-eco-blue/90 text-white min-w-[120px]"
+          >
+            {isSubmitting ? (
+              <Loader2 className="w-4 h-4 animate-spin" />
+            ) : (
+              isUpdateMode ? 'Cập nhật bộ Quiz' : 'Lưu bộ Quiz'
+            )}
           </Button>
         </DialogFooter>
       </DialogContent>

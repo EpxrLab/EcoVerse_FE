@@ -64,6 +64,7 @@ export function useClasses() {
             gender: child.gender === 'MALE' ? 'male' : child.gender === 'FEMALE' ? 'female' : 'other',
             address: child.address || '',
             ...parentInfo,
+            parent_id: acc.parentId,
             status: child.active ? 'active' : 'suspended',
             accuracy: child.accuracy || 0,
             items_sorted: child.items_sorted || 0,

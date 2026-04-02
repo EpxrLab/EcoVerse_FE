@@ -1,4 +1,4 @@
-import { useState, useMemo, useEffect } from 'react';
+import { useState, useMemo } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from "@/shared/components/ui/card";
 import { Button } from "@/shared/components/ui/button";
 import { Input } from "@/shared/components/ui/input";
@@ -656,11 +656,15 @@ export default function SchoolRewards() {
                               const formData = new FormData();
                               formData.append('file', file);
                               const res = await rewardService.uploadImage(formData);
-                              const url = res.data?.data || res.data?.url || res.data;
-                              if (typeof url === 'string') {
-                                updateItemForm({ imageUrl: url });
-                              } else if (res.data?.data?.url) {
-                                updateItemForm({ imageUrl: res.data.data.url });
+                              const data = res.data?.data || res.data;
+                              const url = data?.url || (typeof data === 'string' ? data : null);
+                              const presignedUrl = data?.presignedUrl || data?.imagePresignedUrl;
+                              
+                              if (url) {
+                                updateItemForm({ 
+                                  imageUrl: url, 
+                                  imagePresignedUrl: presignedUrl || url 
+                                });
                               }
                             } catch (error) {
                               console.error('Upload failed', error);
@@ -670,7 +674,7 @@ export default function SchoolRewards() {
                         />
                         {itemForm.imageUrl && (
                           <div className="shrink-0 w-10 h-10 border rounded-lg overflow-hidden relative">
-                            <img src={itemForm.imageUrl} alt="Preview" className="w-full h-full object-cover" />
+                            <img src={itemForm.imagePresignedUrl || itemForm.imageUrl} alt="Preview" className="w-full h-full object-cover" />
                           </div>
                         )}
                       </div>
@@ -782,11 +786,15 @@ export default function SchoolRewards() {
                               const formData = new FormData();
                               formData.append('file', file);
                               const res = await rewardService.uploadImage(formData);
-                              const url = res.data?.data || res.data?.url || res.data;
-                              if (typeof url === 'string') {
-                                updateItemForm({ imageUrl: url });
-                              } else if (res.data?.data?.url) {
-                                updateItemForm({ imageUrl: res.data.data.url });
+                              const data = res.data?.data || res.data;
+                              const url = data?.url || (typeof data === 'string' ? data : null);
+                              const presignedUrl = data?.presignedUrl || data?.imagePresignedUrl;
+                              
+                              if (url) {
+                                updateItemForm({ 
+                                  imageUrl: url, 
+                                  imagePresignedUrl: presignedUrl || url 
+                                });
                               }
                             } catch (error) {
                               console.error('Upload failed', error);
@@ -796,7 +804,7 @@ export default function SchoolRewards() {
                         />
                         {itemForm.imageUrl && (
                           <div className="shrink-0 w-10 h-10 border rounded-lg overflow-hidden relative">
-                            <img src={itemForm.imageUrl} alt="Preview" className="w-full h-full object-cover" />
+                            <img src={itemForm.imagePresignedUrl || itemForm.imageUrl} alt="Preview" className="w-full h-full object-cover" />
                           </div>
                         )}
                       </div>

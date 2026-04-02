@@ -14,7 +14,6 @@ import { DEFAULT_LEVEL_CONFIG } from '../gameConfig';
 
 const LANE_WIDTH = 2.5;
 const LANES = [-LANE_WIDTH, 0, LANE_WIDTH]; // left, center, right
-const PLAYER_SIZE = { w: 0.8, h: 1.4, d: 0.8 };
 const GROUND_SEGMENT_LENGTH = 50;
 const OBSTACLE_TYPES = [
   { name: 'crate', color: 0x8d6e63, w: 1.0, h: 1.0, d: 1.0 },
@@ -166,59 +165,49 @@ export default class EcoGameRunner {
   }
 
   _createPlayer() {
-    const group = new THREE.Group();
+    this.player = new THREE.Group();
+    this.player.position.set(LANES[this.currentLane], 0, 0);
+    this.scene.add(this.player);
 
-    // Body
-    const bodyGeo = new THREE.BoxGeometry(PLAYER_SIZE.w, PLAYER_SIZE.h * 0.6, PLAYER_SIZE.d);
-    const bodyMat = new THREE.MeshStandardMaterial({ color: 0x43a047, metalness: 0.1, roughness: 0.6 });
-    const body = new THREE.Mesh(bodyGeo, bodyMat);
-    body.position.y = PLAYER_SIZE.h * 0.3;
-    body.castShadow = true;
-    group.add(body);
+    const loader = new GLTFLoader();
+    loader.load(
+      '/assets/Chacracter.glb',
+      (gltf) => {
+        this.playerModel = gltf.scene;
 
-    // Head
-    const headGeo = new THREE.SphereGeometry(0.35, 16, 16);
-    const headMat = new THREE.MeshStandardMaterial({ color: 0xffcc80, metalness: 0.0, roughness: 0.7 });
-    const head = new THREE.Mesh(headGeo, headMat);
-    head.position.y = PLAYER_SIZE.h * 0.7 + 0.1;
-    head.castShadow = true;
-    group.add(head);
+        // Adjust rotation to face forward in the runner path.
+        this.playerModel.rotation.y = Math.PI;
 
-    // Eyes
-    const eyeGeo = new THREE.SphereGeometry(0.06, 8, 8);
-    const eyeMat = new THREE.MeshBasicMaterial({ color: 0x333333 });
-    for (let side of [-1, 1]) {
-      const eye = new THREE.Mesh(eyeGeo, eyeMat);
-      eye.position.set(side * 0.12, PLAYER_SIZE.h * 0.7 + 0.15, 0.28);
-      group.add(eye);
-    }
+        // Tăng kích thước model 
+        this.playerModel.scale.setScalar(2);
 
-    // Legs (animated)
-    const legGeo = new THREE.BoxGeometry(0.25, PLAYER_SIZE.h * 0.35, 0.25);
-    const legMat = new THREE.MeshStandardMaterial({ color: 0x2e7d32 });
-    this.leftLeg = new THREE.Mesh(legGeo, legMat);
-    this.leftLeg.position.set(-0.2, -PLAYER_SIZE.h * 0.05, 0);
-    this.leftLeg.castShadow = true;
-    group.add(this.leftLeg);
+        this.playerModel.traverse((child) => {
+          if (child.isMesh) {
+            child.castShadow = true;
+            child.receiveShadow = true;
+          }
+        });
 
-    this.rightLeg = new THREE.Mesh(legGeo, legMat);
-    this.rightLeg.position.set(0.2, -PLAYER_SIZE.h * 0.05, 0);
-    this.rightLeg.castShadow = true;
-    group.add(this.rightLeg);
+        this.player.add(this.playerModel);
 
-    group.position.set(LANES[this.currentLane], 0, 0);
-    this.scene.add(group);
-    this.player = group;
+        if (gltf.animations && gltf.animations.length > 0) {
+          this.mixer = new THREE.AnimationMixer(this.playerModel);
+          
+          // Play a run animation if found, else play the first animation
+          let runClip = gltf.animations.find((clip) => clip.name.toLowerCase().includes('run'));
+          if (!runClip) runClip = gltf.animations[0];
 
-    // Running animation for legs
-    this._animateLegs();
-  }
-
-  _animateLegs() {
-    const tl = gsap.timeline({ repeat: -1, yoyo: true });
-    tl.to(this.leftLeg.rotation, { x: 0.6, duration: 0.2, ease: 'sine.inOut' }, 0);
-    tl.to(this.rightLeg.rotation, { x: -0.6, duration: 0.2, ease: 'sine.inOut' }, 0);
-    this.legAnimation = tl;
+          if (runClip) {
+            const action = this.mixer.clipAction(runClip);
+            action.play();
+          }
+        }
+      },
+      undefined,
+      (error) => {
+        console.error('Failed to load Chacracter.glb:', error);
+      }
+    );
   }
 
   _createEnvironment() {
@@ -488,9 +477,6 @@ export default class EcoGameRunner {
     this.gameOver = true;
     this.isRunning = false;
 
-    // Stop leg animation
-    if (this.legAnimation) this.legAnimation.pause();
-
     // Hit effect
     gsap.to(this.player.rotation, {
       x: -0.3,
@@ -525,6 +511,11 @@ export default class EcoGameRunner {
   // ─── Update Loop ────────────────────────────────────────────────────────────
 
   update(delta) {
+    // Update player animation if mixer exists
+    if (this.mixer && this.isRunning && !this.gameOver) {
+      this.mixer.update(delta);
+    }
+
     if (!this.isRunning || this.gameOver) return;
 
     // Increase speed over time (configurable)
@@ -538,7 +529,6 @@ export default class EcoGameRunner {
     // Check if reached max distance (configurable)
     if (this.distance >= this.config.maxDistance) {
       this.isRunning = false;
-      if (this.legAnimation) this.legAnimation.pause();
       this.stateManager.distance = this.distance;
       setTimeout(() => {
         if (this._onStageComplete) this._onStageComplete();
@@ -633,8 +623,9 @@ export default class EcoGameRunner {
   dispose() {
     this._removeEventListeners();
 
-    if (this.legAnimation) {
-      this.legAnimation.kill();
+    if (this.mixer) {
+      this.mixer.stopAllAction();
+      this.mixer = null;
     }
 
     // Kill all GSAP animations on game objects

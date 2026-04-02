@@ -25,7 +25,7 @@ export function CampaignForm({
   const { students: allStudents, isLoading: isStudentsLoading } = useStudents();
   const [studentSelectionClass, setStudentSelectionClass] = useState(null);
   
-  const today = new Date().toISOString().split('T')[0];
+  const today = new Date(new Date().getTime() - new Date().getTimezoneOffset() * 60000).toISOString().slice(0, 16);
 
   const handleOpenStudentSelection = (cls, e) => {
     e.preventDefault();
@@ -87,7 +87,7 @@ export function CampaignForm({
                 </Label>
                 <Input
                   id={`${mode}-start-date`}
-                  type="date"
+                  type="datetime-local"
                   value={formData.start_date}
                   min={today}
                   onChange={(e) => onFormChange({ start_date: e.target.value })}
@@ -105,7 +105,7 @@ export function CampaignForm({
                 </Label>
                 <Input
                   id={`${mode}-end-date`}
-                  type="date"
+                  type="datetime-local"
                   value={formData.end_date}
                   min={formData.start_date || today}
                   onChange={(e) => onFormChange({ end_date: e.target.value })}
@@ -123,7 +123,7 @@ export function CampaignForm({
                 </Label>
                 <Input
                   id={`${mode}-invite-date`}
-                  type="date"
+                  type="datetime-local"
                   value={formData.invitation_send_date}
                   min={today}
                   max={formData.invitation_deadline || formData.start_date}
@@ -142,7 +142,7 @@ export function CampaignForm({
                 </Label>
                 <Input
                   id={`${mode}-invite-deadline`}
-                  type="date"
+                  type="datetime-local"
                   value={formData.invitation_deadline}
                   min={formData.invitation_send_date || today}
                   max={formData.start_date}

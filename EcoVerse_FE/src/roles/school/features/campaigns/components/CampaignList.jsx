@@ -30,7 +30,6 @@ import {
   Flag,
   MoreHorizontal,
   Calendar,
-  Users,
   Building2,
   Brain,
   Send,
@@ -168,24 +167,43 @@ export function CampaignList({
                   </div>
                 </TableCell>
                 <TableCell>
-                  <div className="flex items-center gap-1.5 text-sm text-muted-foreground">
-                    <Calendar className="w-4 h-4" />
-                    <span>
-                      {(() => {
-                        const start = new Date(campaign.start_date);
-                        const end = new Date(campaign.end_date);
-                        const isValidStart = campaign.start_date && !isNaN(start.getTime());
-                        const isValidEnd = campaign.end_date && !isNaN(end.getTime());
-                        
-                        return (
-                          <>
-                            {isValidStart ? format(start, 'dd/MM', { locale: vi }) : '??'}
-                            {' - '}
-                            {isValidEnd ? format(end, 'dd/MM/yyyy', { locale: vi }) : '??'}
-                          </>
-                        );
-                      })()}
-                    </span>
+                  <div className="space-y-1.5">
+                    <div className="flex items-center gap-1.5 text-sm text-muted-foreground">
+                      <Calendar className="w-4 h-4" />
+                      <span>
+                        {(() => {
+                          const start = new Date(campaign.start_date);
+                          const end = new Date(campaign.end_date);
+                          const isValidStart = campaign.start_date && !isNaN(start.getTime());
+                          const isValidEnd = campaign.end_date && !isNaN(end.getTime());
+                          
+                          return (
+                            <>
+                              {isValidStart ? format(start, 'HH:mm dd/MM', { locale: vi }) : '??'}
+                              {' - '}
+                              {isValidEnd ? format(end, 'HH:mm dd/MM/yyyy', { locale: vi }) : '??'}
+                            </>
+                          );
+                        })()}
+                      </span>
+                    </div>
+                    {/* Invitation Timing */}
+                    {(campaign.invitation_send_date || campaign.invitation_deadline) && (
+                      <div className="flex items-center gap-2 text-[10px] whitespace-nowrap">
+                        {campaign.invitation_send_date && (
+                          <span className="flex items-center gap-1 text-eco-blue bg-eco-blue/5 px-1.5 py-0.5 rounded border border-eco-blue/10">
+                            <Send className="w-2.5 h-2.5" />
+                            {format(new Date(campaign.invitation_send_date), 'HH:mm dd/MM', { locale: vi })}
+                          </span>
+                        )}
+                        {campaign.invitation_deadline && (
+                          <span className="flex items-center gap-1 text-eco-orange bg-eco-orange/5 px-1.5 py-0.5 rounded border border-eco-orange/10">
+                            <Clock className="w-2.5 h-2.5" />
+                            Hạn: {format(new Date(campaign.invitation_deadline), 'HH:mm dd/MM', { locale: vi })}
+                          </span>
+                        )}
+                      </div>
+                    )}
                   </div>
                 </TableCell>
                 <TableCell className="text-right">
@@ -210,13 +228,6 @@ export function CampaignList({
                           </DropdownMenuItem>
                         )}
                         
-                        {campaign.status !== 'scheduled' && (
-                          <DropdownMenuItem onClick={() => onInvite(campaign)}>
-                            <Send className="w-4 h-4 mr-2" />
-                            Mời
-                          </DropdownMenuItem>
-                        )}
-
                         <DropdownMenuSeparator />
 
                         {campaign.status === 'draft' && (
