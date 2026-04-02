@@ -89,11 +89,11 @@ export function InvitationList({
                   <div className="flex flex-col gap-1 text-sm text-muted-foreground">
                     <div className="flex items-center gap-2">
                       <Calendar className="w-3 h-3 text-green-600" />
-                      <span className="text-xs">Bắt đầu: {invitation.start_date ? format(new Date(invitation.start_date), 'dd/MM/yyyy', { locale: vi }) : 'N/A'}</span>
+                      <span className="text-xs">Bắt đầu: {invitation.start_date ? format(new Date(invitation.start_date), 'HH:mm dd/MM/yyyy', { locale: vi }) : 'N/A'}</span>
                     </div>
                     <div className="flex items-center gap-2">
                       <Flag className="w-3 h-3 text-red-600" />
-                      <span className="text-xs">Kết thúc: {invitation.end_date ? format(new Date(invitation.end_date), 'dd/MM/yyyy', { locale: vi }) : 'N/A'}</span>
+                      <span className="text-xs">Kết thúc: {invitation.end_date ? format(new Date(invitation.end_date), 'HH:mm dd/MM/yyyy', { locale: vi }) : 'N/A'}</span>
                     </div>
                   </div>
                 </TableCell>
@@ -102,7 +102,7 @@ export function InvitationList({
                     {deadline ? (
                        <Badge variant="outline" className="bg-red-50 text-red-700 border-red-200 gap-1">
                          <Clock className="w-3 h-3" />
-                         {format(new Date(deadline), 'dd/MM', { locale: vi })}
+                         {format(new Date(deadline), 'HH:mm dd/MM', { locale: vi })}
                        </Badge>
                     ) : (
                       <span className="text-muted-foreground text-xs">-</span>

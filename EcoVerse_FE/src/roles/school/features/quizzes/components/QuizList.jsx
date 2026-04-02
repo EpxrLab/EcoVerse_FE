@@ -99,11 +99,6 @@ export function QuizList({
                         <span className="font-bold text-foreground">{quiz.questions}</span>
                         <span className="text-[10px]">Câu hỏi</span>
                     </div>
-                    <div className="w-px h-8 bg-border" />
-                    <div className="flex flex-col items-center" title="Điểm trung bình">
-                        <span className="font-bold text-eco-leaf">{quiz.avgScore}%</span>
-                        <span className="text-[10px]">ĐTB</span>
-                    </div>
                 </div>
               </TableCell>
               <TableCell className="text-right">

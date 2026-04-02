@@ -29,6 +29,9 @@ export function MarketplaceItems({ items, onEdit, onDelete }) {
                 >
                   {item.active ? "Hoạt động" : "Tạm ngưng"}
                 </Badge>
+                <Badge variant="outline" className="text-[10px] uppercase font-bold border-eco-green/30 text-eco-green">
+                  {item.type}
+                </Badge>
               </div>
               <p className="text-sm">
                 <span className="font-bold text-eco-orange">{item.coins} xu</span>

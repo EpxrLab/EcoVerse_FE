@@ -1,4 +1,4 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription } from '@/shared/components/ui/dialog';
 import { Button } from '@/shared/components/ui/button';
 import { Input } from '@/shared/components/ui/input';
@@ -12,15 +12,23 @@ export function StudentSelectionDialog({
   onConfirm,
   studentLimit,
   students,
-  campaignName
+  campaignName,
+  initialSelectedIds = [],
+  isLoading = false
 }) {
   const [selectedIds, setSelectedIds] = useState([]);
+  
+  // Initialize selection when dialog opens
+  useEffect(() => {
+    if (isOpen) {
+      setSelectedIds(initialSelectedIds);
+    }
+  }, [isOpen, initialSelectedIds]);
   const [searchTerm, setSearchTerm] = useState('');
 
   const filteredStudents = useMemo(() => {
     return students.filter(student => 
-      student.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      student.class.toLowerCase().includes(searchTerm.toLowerCase())
+      student.name.toLowerCase().includes(searchTerm.toLowerCase()) 
     );
   }, [students, searchTerm]);
 
@@ -42,8 +50,8 @@ export function StudentSelectionDialog({
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="max-w-3xl max-h-[80vh] flex flex-col">
-        <DialogHeader>
+      <DialogContent className="max-w-3xl h-[80vh] flex flex-col overflow-hidden">
+        <DialogHeader className="shrink-0 pb-2">
           <DialogTitle>Chọn học sinh tham gia</DialogTitle>
           <DialogDescription>
             Chiến dịch: <span className="font-semibold">{campaignName}</span>
@@ -52,11 +60,12 @@ export function StudentSelectionDialog({
           </DialogDescription>
         </DialogHeader>
 
-        <div className="flex items-center gap-2 py-4">
-          <div className="relative flex-1">
+        {/* Search Input - Fixed */}
+        <div className="shrink-0 py-2">
+          <div className="relative">
             <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
             <Input
-              placeholder="Tìm kiếm theo tên hoặc lớp..."
+              placeholder="Tìm kiếm theo tên..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
               className="pl-8"
@@ -64,9 +73,10 @@ export function StudentSelectionDialog({
           </div>
         </div>
 
-        <div className="flex-1 overflow-auto border rounded-md">
+        {/* Table Area - Scrollable */}
+        <div className="flex-1 min-h-0 overflow-y-auto border rounded-md mt-2">
           <Table>
-            <TableHeader>
+            <TableHeader className="sticky top-0 bg-background z-10 shadow-sm">
               <TableRow>
                 <TableHead className="w-[50px]">
                   <Checkbox 
@@ -76,20 +86,25 @@ export function StudentSelectionDialog({
                 </TableHead>
                 <TableHead>Họ và tên</TableHead>
                 <TableHead>Lớp</TableHead>
-                <TableHead>Điểm hiện tại</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
-              {filteredStudents.length === 0 ? (
+              {isLoading ? (
                 <TableRow>
-                  <TableCell colSpan={4} className="text-center py-8 text-muted-foreground">
+                  <TableCell colSpan={3} className="text-center py-8">
+                    Đang tải danh sách học sinh...
+                  </TableCell>
+                </TableRow>
+              ) : filteredStudents.length === 0 ? (
+                <TableRow>
+                  <TableCell colSpan={3} className="text-center py-8 text-muted-foreground">
                     Không tìm thấy học sinh
                   </TableCell>
                 </TableRow>
               ) : (
                 filteredStudents.map((student) => {
                   const isSelected = selectedIds.includes(student.id);
-                  const  isDisabled = !isSelected && isLimitReached;
+                  const isDisabled = !isSelected && isLimitReached;
                   
                   return (
                     <TableRow key={student.id} className={isSelected ? 'bg-muted/50' : ''}>
@@ -102,7 +117,6 @@ export function StudentSelectionDialog({
                       </TableCell>
                       <TableCell className="font-medium">{student.name}</TableCell>
                       <TableCell>{student.class}</TableCell>
-                      <TableCell>{student.coins}</TableCell>
                     </TableRow>
                   );
                 })
@@ -111,7 +125,7 @@ export function StudentSelectionDialog({
           </Table>
         </div>
 
-        <DialogFooter className="mt-4 gap-2">
+        <DialogFooter className="shrink-0 pt-4 gap-2">
           <Button variant="outline" onClick={onClose}>Hủy</Button>
           <Button 
             onClick={() => {
@@ -119,6 +133,7 @@ export function StudentSelectionDialog({
               onClose();
             }}
             disabled={currentCount === 0}
+            className="bg-eco-green hover:bg-eco-green/90"
           >
             <UserPlus className="w-4 h-4 mr-2" />
             Xác nhận tham gia ({currentCount})

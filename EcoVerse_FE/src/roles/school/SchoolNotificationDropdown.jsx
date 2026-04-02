@@ -1,5 +1,7 @@
-import { useState } from 'react';
-import { Bell, Gift, Users, Info, Megaphone, Check, Trash2, FileQuestion } from 'lucide-react';
+import { useState, useEffect, useCallback } from 'react';
+import { Bell, Gift, Users, Info, Check, Trash2, FileQuestion, Loader2 } from 'lucide-react';
+import { formatDistanceToNow } from 'date-fns';
+import { vi } from 'date-fns/locale';
 import { Button } from '@/shared/components/ui/button';
 import {
   DropdownMenu,
@@ -8,42 +10,9 @@ import {
 } from '@/shared/components/ui/dropdown-menu';
 import { ScrollArea } from '@/shared/components/ui/scroll-area';
 import { cn } from '@/shared/lib/utils';
+import { notificationService } from './services';
 
-const mockNotifications = [
-  {
-    id: '1',
-    type: 'reward',
-    title: 'Yêu cầu đổi thưởng mới',
-    message: 'Nguyễn Văn A yêu cầu đổi "Voucher Sách 50K". Vui lòng duyệt.',
-    time: '5 phút trước',
-    read: false,
-  },
-  {
-    id: '2',
-    type: 'student',
-    title: 'Học sinh mới',
-    message: '3 học sinh mới đã được thêm vào lớp 5A.',
-    time: '1 giờ trước',
-    read: false,
-  },
-  {
-    id: '3',
-    type: 'quiz',
-    title: 'Quiz hoàn thành',
-    message: 'Quiz "Phân loại rác" đã được 25 học sinh hoàn thành.',
-    time: '2 giờ trước',
-    read: true,
-  },
-  {
-    id: '4',
-    type: 'system',
-    title: 'Cập nhật hệ thống',
-    message: 'Phiên bản mới đã được cập nhật với nhiều tính năng mới.',
-    time: '1 ngày trước',
-    read: true,
-  },
-];
-
+// Helpers remain for icon mapping based on notification type
 const getNotificationIcon = (type) => {
   switch (type) {
     case 'reward':
@@ -71,22 +40,76 @@ const getNotificationBg = (type) => {
 };
 
 export function SchoolNotificationDropdown() {
-  const [notifications, setNotifications] = useState(mockNotifications);
+  const [notifications, setNotifications] = useState([]);
+  const [unreadCount, setUnreadCount] = useState(0);
   const [isOpen, setIsOpen] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
 
-  const unreadCount = notifications.filter(n => !n.read).length;
+  const fetchNotifications = useCallback(async () => {
+    try {
+      setIsLoading(true);
+      const [notiRes, countRes] = await Promise.all([
+        notificationService.getNotifications(),
+        notificationService.getUnreadCount()
+      ]);
+      
+      const notiData = Array.isArray(notiRes.data?.data) 
+        ? notiRes.data.data 
+        : (Array.isArray(notiRes.data) ? notiRes.data : []);
+      
+      setNotifications(notiData);
+      
+      const unreadData = countRes.data?.data !== undefined 
+        ? countRes.data.data 
+        : (typeof countRes.data === 'number' ? countRes.data : 0);
+        
+      setUnreadCount(unreadData);
+    } catch (error) {
+      console.error('Failed to fetch notifications:', error);
+    } finally {
+      setIsLoading(false);
+    }
+  }, []);
 
-  const markAsRead = (id) => {
-    setNotifications(prev =>
-      prev.map(n => n.id === id ? { ...n, read: true } : n)
-    );
+  useEffect(() => {
+    fetchNotifications();
+    // Optional: Set up interval for real-time updates
+    const interval = setInterval(fetchNotifications, 60000); // every minute
+    return () => clearInterval(interval);
+  }, [fetchNotifications]);
+
+  const markAsRead = async (id) => {
+    try {
+      // Optimistic update
+      setNotifications(prev =>
+        prev.map(n => n.id === id ? { ...n, read: true } : n)
+      );
+      setUnreadCount(prev => Math.max(0, prev - 1));
+
+      await notificationService.markAsRead(id);
+    } catch (error) {
+      console.error('Failed to mark notification as read:', error);
+      // Rollback or refetch
+      fetchNotifications();
+    }
   };
 
-  const markAllAsRead = () => {
-    setNotifications(prev => prev.map(n => ({ ...n, read: true })));
+  const markAllAsRead = async () => {
+    try {
+      // Optimistic update
+      setNotifications(prev => prev.map(n => ({ ...n, read: true })));
+      setUnreadCount(0);
+
+      await notificationService.markAllAsRead();
+    } catch (error) {
+      console.error('Failed to mark all as read:', error);
+      fetchNotifications();
+    }
   };
 
   const deleteNotification = (id) => {
+    // Note: The user didn't provide a delete API, so I'll keep it local or remove if it's not supported by backend.
+    // For now, I'll just filter it out locally.
     setNotifications(prev => prev.filter(n => n.id !== id));
   };
 
@@ -123,21 +146,26 @@ export function SchoolNotificationDropdown() {
         </div>
 
         <ScrollArea className="max-h-[350px]">
-          {notifications.length === 0 ? (
+          {isLoading ? (
+            <div className="p-8 flex flex-col items-center justify-center text-muted-foreground">
+              <Loader2 className="w-8 h-8 animate-spin mb-2" />
+              <p className="text-sm">Đang tải...</p>
+            </div>
+          ) : (!Array.isArray(notifications) || notifications.length === 0) ? (
             <div className="p-8 text-center text-muted-foreground">
               <Bell className="w-10 h-10 mx-auto mb-2 opacity-50" />
               <p className="text-sm">Không có thông báo mới</p>
             </div>
           ) : (
             <div className="divide-y divide-border">
-              {notifications.map((notification) => (
+              {Array.isArray(notifications) && notifications.map((notification) => (
                 <div
                   key={notification.id}
                   className={cn(
                     "p-4 hover:bg-muted/50 transition-colors cursor-pointer relative group",
                     !notification.read && "bg-primary/5"
                   )}
-                  onClick={() => markAsRead(notification.id)}
+                  onClick={() => !notification.read && markAsRead(notification.id)}
                 >
                   <div className="flex gap-3">
                     <div className={cn(
@@ -162,7 +190,7 @@ export function SchoolNotificationDropdown() {
                         {notification.message}
                       </p>
                       <p className="text-[10px] text-muted-foreground/70 mt-1 font-medium">
-                        {notification.time}
+                        {notification.createdAt ? formatDistanceToNow(new Date(notification.createdAt), { addSuffix: true, locale: vi }) : notification.time}
                       </p>
                     </div>
                   </div>

@@ -4,4 +4,5 @@ export { CampaignForm } from './CampaignForm';
 export { CampaignDetail } from './CampaignDetail';
 export { StudentSelectionDialog } from './StudentSelectionDialog';
 export { InvitationList } from './InvitationList';
+export { ConfirmDeleteDialog } from './ConfirmDeleteDialog';
 

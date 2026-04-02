@@ -7,7 +7,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/shared/components/ui
 import { Badge } from '@/shared/components/ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/shared/components/ui/select';
 import { RadioGroup, RadioGroupItem } from '@/shared/components/ui/radio-group';
-import { Plus, Trash2, Check, Leaf, Loader2, Pencil } from 'lucide-react';
+import { Plus, Trash2, Check, Leaf, Loader2, Pencil, FileQuestion } from 'lucide-react';
 import { cn } from '@/shared/lib/utils';
 import { useEffect, useState } from 'react';
 
@@ -96,303 +96,320 @@ export function QuizForm({
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
-        <DialogHeader>
+      <DialogContent className="max-w-4xl h-[90vh] flex flex-col p-0 gap-0 overflow-hidden">
+        <DialogHeader className="px-6 pt-6 pb-4 border-b shrink-0">
           <DialogTitle className="flex items-center gap-2 text-xl font-bold">
             <Leaf className="w-5 h-5 text-eco-green" />
             {isEdit ? 'Cập nhật bài Quiz' : 'Tạo Quiz mới'}
           </DialogTitle>
         </DialogHeader>
 
-        <Tabs defaultValue="info" className="space-y-4">
-          <TabsList className="grid w-full grid-cols-2">
-            <TabsTrigger value="info">Thông tin Quiz</TabsTrigger>
-            <TabsTrigger value="questions">
-              Câu hỏi ({questions.length})
-            </TabsTrigger>
-          </TabsList>
+        <div className="flex-1 min-h-0 overflow-y-auto px-6 py-4">
+          <Tabs defaultValue="info" className="space-y-4">
+            <TabsList className="grid w-full grid-cols-2 sticky top-0 bg-background z-10 pb-1">
+              <TabsTrigger value="info">Thông tin Quiz</TabsTrigger>
+              <TabsTrigger value="questions">
+                Câu hỏi ({questions.length})
+              </TabsTrigger>
+            </TabsList>
 
-          {/* Tab 1: Quiz Info */}
-          <TabsContent value="info" className="space-y-4">
-            <div className="space-y-2">
-              <Label htmlFor="title">Tiêu đề Quiz *</Label>
-              <Input
-                id="title"
-                placeholder="VD: Quiz Phân loại rác cơ bản"
-                value={formData.title}
-                onChange={(e) => onFormChange({ title: e.target.value })}
-              />
-            </div>
+            {/* Tab 1: Quiz Info */}
+            <TabsContent value="info" className="space-y-4 pt-2">
+              <div className="space-y-2">
+                <Label htmlFor="title">Tiêu đề Quiz *</Label>
+                <Input
+                  id="title"
+                  placeholder="VD: Quiz Phân loại rác cơ bản"
+                  value={formData.title}
+                  onChange={(e) => onFormChange({ title: e.target.value })}
+                />
+              </div>
 
-            <div className="space-y-2">
-              <Label htmlFor="description">Mô tả</Label>
-              <Textarea
-                id="description"
-                placeholder="Mô tả ngắn về quiz..."
-                rows={3}
-                value={formData.description}
-                onChange={(e) => onFormChange({ description: e.target.value })}
-              />
-            </div>
+              <div className="space-y-2">
+                <Label htmlFor="description">Mô tả</Label>
+                <Textarea
+                  id="description"
+                  placeholder="Mô tả ngắn về quiz..."
+                  rows={3}
+                  value={formData.description}
+                  onChange={(e) => onFormChange({ description: e.target.value })}
+                />
+              </div>
 
-            <div className="space-y-2">
-              <Label>Độ khó *</Label>
-              <div className="grid grid-cols-3 gap-2">
-                {['easy', 'medium', 'hard'].map((diff) => (
-                  <Button
-                    key={diff}
-                    type="button"
-                    variant={formData.difficulty === diff ? "default" : "outline"}
-                    className={cn(
-                      "border-2",
-                      formData.difficulty === diff && diff === 'easy' && "bg-eco-green hover:bg-eco-green/90",
-                      formData.difficulty === diff && diff === 'medium' && "bg-eco-orange hover:bg-eco-orange/90",
-                      formData.difficulty === diff && diff === 'hard' && "bg-destructive hover:bg-destructive/90"
-                    )}
-                    onClick={() => onFormChange({ difficulty: diff })}
+              <div className="space-y-2">
+                <Label>Độ khó *</Label>
+                <div className="grid grid-cols-3 gap-2">
+                  {['easy', 'medium', 'hard'].map((diff) => (
+                    <Button
+                      key={diff}
+                      type="button"
+                      variant={formData.difficulty === diff ? "default" : "outline"}
+                      className={cn(
+                        "border-2",
+                        formData.difficulty === diff && diff === 'easy' && "bg-eco-green hover:bg-eco-green/90",
+                        formData.difficulty === diff && diff === 'medium' && "bg-eco-orange hover:bg-eco-orange/90",
+                        formData.difficulty === diff && diff === 'hard' && "bg-destructive hover:bg-destructive/90"
+                      )}
+                      onClick={() => onFormChange({ difficulty: diff })}
+                    >
+                      {diff === 'easy' ? 'Dễ' : diff === 'medium' ? 'Trung bình' : 'Khó'}
+                    </Button>
+                  ))}
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor="timeLimit">Thời gian/câu (giây) *</Label>
+                  <Input
+                    id="timeLimit"
+                    type="number"
+                    min={5}
+                    max={300}
+                    value={formData.timeLimit}
+                    onChange={(e) => onFormChange({ timeLimit: parseInt(e.target.value) || 0 })}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="passingScore">Điểm đạt (%) *</Label>
+                  <Input
+                    id="passingScore"
+                    type="number"
+                    min={1}
+                    max={100}
+                    value={formData.passingScore}
+                    onChange={(e) => onFormChange({ passingScore: parseInt(e.target.value) || 0 })}
+                  />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor="targetGrade">Hạng mục lớp *</Label>
+                  <Select 
+                    value={String(formData.targetGrade)} 
+                    onValueChange={(val) => onFormChange({ targetGrade: parseInt(val) })}
                   >
-                    {diff === 'easy' ? 'Dễ' : diff === 'medium' ? 'Trung bình' : 'Khó'}
-                  </Button>
-                ))}
-              </div>
-            </div>
-
-            <div className="grid grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label htmlFor="timeLimit">Thời gian/câu (giây) *</Label>
-                <Input
-                  id="timeLimit"
-                  type="number"
-                  min={5}
-                  max={300}
-                  value={formData.timeLimit}
-                  onChange={(e) => onFormChange({ timeLimit: parseInt(e.target.value) || 0 })}
-                />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="passingScore">Điểm đạt (%) *</Label>
-                <Input
-                  id="passingScore"
-                  type="number"
-                  min={1}
-                  max={100}
-                  value={formData.passingScore}
-                  onChange={(e) => onFormChange({ passingScore: parseInt(e.target.value) || 0 })}
-                />
-              </div>
-            </div>
-
-            <div className="grid grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label htmlFor="targetGrade">Hạng mục lớp *</Label>
-                <Select 
-                  value={String(formData.targetGrade)} 
-                  onValueChange={(val) => onFormChange({ targetGrade: parseInt(val) })}
-                >
-                  <SelectTrigger id="targetGrade">
-                    <SelectValue placeholder="Chọn lớp" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {[1, 2, 3, 4, 5].map((grade) => (
-                      <SelectItem key={grade} value={String(grade)}>Lớp {grade}</SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="coinsOnPass">Điểm thưởng *</Label>
-                <Input
-                  id="coinsOnPass"
-                  type="number"
-                  min={1}
-                  value={formData.coinsOnPass}
-                  onChange={(e) => onFormChange({ coinsOnPass: parseInt(e.target.value) || 0 })}
-                />
-              </div>
-            </div>
-          </TabsContent>
-
-          {/* Tab 2: Questions */}
-          <TabsContent value="questions" className="space-y-4">
-            <div className="p-4 border-2 rounded-xl space-y-3 bg-muted/30">
-              <h3 className="font-bold">{editingQuestionId ? 'Sửa câu hỏi' : 'Thêm câu hỏi mới'}</h3>
-              
-              <div className="space-y-2">
-                <Label>Loại câu hỏi</Label>
-                <Select 
-                    value={currentQuestion.type} 
-                    onValueChange={(val) => setCurrentQuestion(prev => ({ ...prev, type: val }))}
-                >
-                    <SelectTrigger>
-                    <SelectValue />
+                    <SelectTrigger id="targetGrade">
+                      <SelectValue placeholder="Chọn lớp" />
                     </SelectTrigger>
                     <SelectContent>
-                    <SelectItem value="multiple_choice">Trắc nghiệm</SelectItem>
-                    <SelectItem value="true_false">Đúng/Sai</SelectItem>
+                      {[1, 2, 3, 4, 5].map((grade) => (
+                        <SelectItem key={grade} value={String(grade)}>Lớp {grade}</SelectItem>
+                      ))}
                     </SelectContent>
-                </Select>
+                  </Select>
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="coinsOnPass">Điểm thưởng *</Label>
+                  <Input
+                    id="coinsOnPass"
+                    type="number"
+                    min={1}
+                    value={formData.coinsOnPass}
+                    onChange={(e) => onFormChange({ coinsOnPass: parseInt(e.target.value) || 0 })}
+                  />
+                </div>
+              </div>
+            </TabsContent>
+
+            {/* Tab 2: Questions */}
+            <TabsContent value="questions" className="space-y-4 pt-2">
+              <div className="p-4 border-2 rounded-xl space-y-3 bg-muted/30">
+                <h3 className="font-bold">{editingQuestionId ? 'Sửa câu hỏi' : 'Thêm câu hỏi mới'}</h3>
+                
+                <div className="space-y-2">
+                  <Label>Loại câu hỏi</Label>
+                  <Select 
+                      value={currentQuestion.type} 
+                      onValueChange={(val) => setCurrentQuestion(prev => ({ ...prev, type: val }))}
+                  >
+                      <SelectTrigger>
+                      <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                      <SelectItem value="multiple_choice">Trắc nghiệm</SelectItem>
+                      <SelectItem value="true_false">Đúng/Sai</SelectItem>
+                      </SelectContent>
+                  </Select>
+                </div>
+
+                <div className="space-y-2">
+                  <Label>Câu hỏi</Label>
+                  <Input
+                    placeholder="Nhập câu hỏi..."
+                    value={currentQuestion.question}
+                    onChange={(e) => setCurrentQuestion({ ...currentQuestion, question: e.target.value })}
+                  />
+                </div>
+
+                {currentQuestion.type === 'multiple_choice' && (
+                    <div className="space-y-2">
+                      <Label>Đáp án (chọn đáp án đúng)</Label>
+                      {currentQuestion.options.map((answer, idx) => (
+                        <div key={idx} className="flex items-center gap-2">
+                          <Button
+                            type="button"
+                            variant={currentQuestion.correctAnswer === idx ? "default" : "outline"}
+                            size="sm"
+                            className={cn(
+                              "w-8 h-8 p-0",
+                              currentQuestion.correctAnswer === idx && "bg-eco-green hover:bg-eco-green/90"
+                            )}
+                            onClick={() => setCurrentQuestion({ ...currentQuestion, correctAnswer: idx })}
+                          >
+                            {currentQuestion.correctAnswer === idx && <Check className="w-4 h-4" />}
+                          </Button>
+                          <Input
+                            placeholder={`Đáp án ${idx + 1}`}
+                            value={answer}
+                            onChange={(e) => {
+                              const newAnswers = [...currentQuestion.options];
+                              newAnswers[idx] = e.target.value;
+                              setCurrentQuestion({ ...currentQuestion, options: newAnswers });
+                            }}
+                          />
+                        </div>
+                      ))}
+                    </div>
+                )}
+
+                {currentQuestion.type === 'true_false' && (
+                    <div className="space-y-2">
+                      <Label>Đáp án đúng</Label>
+                      <RadioGroup 
+                          value={currentQuestion.trueFalseAnswer} 
+                          onValueChange={(val) => setCurrentQuestion({...currentQuestion, trueFalseAnswer: val})}
+                          className="flex gap-4"
+                      >
+                          <div className="flex items-center gap-2">
+                          <RadioGroupItem value="true" id="true" />
+                          <Label htmlFor="true">Đúng</Label>
+                          </div>
+                          <div className="flex items-center gap-2">
+                          <RadioGroupItem value="false" id="false" />
+                          <Label htmlFor="false">Sai</Label>
+                          </div>
+                      </RadioGroup>
+                    </div>
+                )}
+
+                <Button
+                  type="button"
+                  variant={editingQuestionId ? "default" : "outline"}
+                  className={cn(
+                      "w-full border-2 transition-all duration-300",
+                      editingQuestionId 
+                          ? "bg-eco-blue hover:bg-eco-blue-dark border-eco-blue text-white shadow-md" 
+                          : "border-dashed border-eco-green text-eco-green hover:bg-eco-green/10"
+                  )}
+                  onClick={handleAddQuestion}
+                >
+                  {editingQuestionId ? <Pencil className="w-4 h-4 mr-2" /> : <Plus className="w-4 h-4 mr-2" />}
+                  {editingQuestionId ? 'Cập nhật câu hỏi' : 'Thêm câu hỏi'}
+                </Button>
+                {editingQuestionId && (
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      className="w-full text-xs text-muted-foreground mt-1"
+                      onClick={onCancelAddQuestion}
+                    >
+                      Hủy sửa
+                    </Button>
+                )}
               </div>
 
+              {/* Questions List */}
               <div className="space-y-2">
-                <Label>Câu hỏi</Label>
-                <Input
-                  placeholder="Nhập câu hỏi..."
-                  value={currentQuestion.question}
-                  onChange={(e) => setCurrentQuestion({ ...currentQuestion, question: e.target.value })}
-                />
-              </div>
-
-              {currentQuestion.type === 'multiple_choice' && (
-                  <div className="space-y-2">
-                    <Label>Đáp án (chọn đáp án đúng)</Label>
-                    {currentQuestion.options.map((answer, idx) => (
-                      <div key={idx} className="flex items-center gap-2">
-                        <Button
-                          type="button"
-                          variant={currentQuestion.correctAnswer === idx ? "default" : "outline"}
-                          size="sm"
-                          className={cn(
-                            "w-8 h-8 p-0",
-                            currentQuestion.correctAnswer === idx && "bg-eco-green hover:bg-eco-green/90"
-                          )}
-                          onClick={() => setCurrentQuestion({ ...currentQuestion, correctAnswer: idx })}
-                        >
-                          {currentQuestion.correctAnswer === idx && <Check className="w-4 h-4" />}
-                        </Button>
-                        <Input
-                          placeholder={`Đáp án ${idx + 1}`}
-                          value={answer}
-                          onChange={(e) => {
-                            const newAnswers = [...currentQuestion.options];
-                            newAnswers[idx] = e.target.value;
-                            setCurrentQuestion({ ...currentQuestion, options: newAnswers });
-                          }}
-                        />
+                <h3 className="font-bold">Danh sách câu hỏi ({questions.length})</h3>
+                {questions.length === 0 ? (
+                  <div className="flex flex-col items-center justify-center py-12 border-2 border-dashed rounded-xl bg-muted/20">
+                    <FileQuestion className="w-10 h-10 text-muted-foreground/30 mb-2" />
+                    <p className="text-center text-muted-foreground">
+                      Chưa có câu hỏi nào
+                    </p>
+                  </div>
+                ) : (
+                  <div className="space-y-3">
+                    {questions.map((q, idx) => (
+                      <div key={q.id} className="p-4 border-2 rounded-xl bg-card hover:border-eco-blue/30 transition-colors">
+                        <div className="flex items-start justify-between gap-3">
+                          <div className="flex-1 min-w-0">
+                            <div className="flex items-center gap-2 mb-2">
+                              <span className="w-6 h-6 rounded-full bg-muted flex items-center justify-center text-xs font-bold shrink-0">
+                                {idx + 1}
+                              </span>
+                              <p className="font-bold truncate">{q.question}</p>
+                            </div>
+                            <div className="flex items-center gap-2 mb-3">
+                              <Badge variant="outline" className="text-[10px] h-5">
+                                 {q.type === 'multiple_choice' ? 'Trắc nghiệm' : 'Đúng/Sai'}
+                              </Badge>
+                            </div>
+                            {q.options && (
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
+                                {q.options.map((a, i) => (
+                                    <div key={i} className={cn(
+                                      "flex items-center gap-2 text-sm p-2 rounded-lg border",
+                                      a === q.correctAnswer ? "bg-eco-green/10 border-eco-green/30 text-eco-green-dark" : "bg-muted/30 border-transparent"
+                                    )}>
+                                      <span className={cn(
+                                          "w-5 h-5 rounded flex items-center justify-center text-[10px] font-bold shrink-0",
+                                          a === q.correctAnswer ? "bg-eco-green text-white" : "bg-muted-foreground/20 text-muted-foreground"
+                                      )}>
+                                          {String.fromCharCode(65 + i)}
+                                      </span>
+                                      <span className="truncate">{a}</span>
+                                    </div>
+                                ))}
+                                </div>
+                            )}
+                             {!q.options && (
+                                 <div className="flex items-center gap-2">
+                                   <Badge className="bg-eco-green">
+                                       Đáp án: {q.correctAnswer === 'true' ? 'Đúng' : 'Sai'}
+                                   </Badge>
+                                 </div>
+                             )}
+                          </div>
+                          <div className="flex items-center gap-1 shrink-0">
+                            <Button
+                              type="button"
+                              variant="ghost"
+                              size="icon"
+                              className="w-8 h-8 text-eco-blue hover:text-eco-blue hover:bg-eco-blue/10"
+                              onClick={() => onEditQuestion(q.id)}
+                            >
+                              <Pencil className="w-4 h-4" />
+                            </Button>
+                            <Button
+                              type="button"
+                              variant="ghost"
+                              size="icon"
+                              className="w-8 h-8 text-destructive hover:text-destructive hover:bg-destructive/10"
+                              onClick={() => onRemoveQuestion(q.id)}
+                            >
+                              <Trash2 className="w-4 h-4" />
+                            </Button>
+                          </div>
+                        </div>
                       </div>
                     ))}
                   </div>
-              )}
-
-              {currentQuestion.type === 'true_false' && (
-                  <div className="space-y-2">
-                    <Label>Đáp án đúng</Label>
-                    <RadioGroup 
-                        value={currentQuestion.trueFalseAnswer} 
-                        onValueChange={(val) => setCurrentQuestion({...currentQuestion, trueFalseAnswer: val})}
-                        className="flex gap-4"
-                    >
-                        <div className="flex items-center gap-2">
-                        <RadioGroupItem value="true" id="true" />
-                        <Label htmlFor="true">Đúng</Label>
-                        </div>
-                        <div className="flex items-center gap-2">
-                        <RadioGroupItem value="false" id="false" />
-                        <Label htmlFor="false">Sai</Label>
-                        </div>
-                    </RadioGroup>
-                  </div>
-              )}
-
-              <Button
-                type="button"
-                variant={editingQuestionId ? "default" : "outline"}
-                className={cn(
-                    "w-full border-2 transition-all duration-300",
-                    editingQuestionId 
-                        ? "bg-eco-blue hover:bg-eco-blue-dark border-eco-blue text-white shadow-md" 
-                        : "border-dashed border-eco-green text-eco-green hover:bg-eco-green/10"
                 )}
-                onClick={handleAddQuestion}
-              >
-                {editingQuestionId ? <Pencil className="w-4 h-4 mr-2" /> : <Plus className="w-4 h-4 mr-2" />}
-                {editingQuestionId ? 'Cập nhật câu hỏi' : 'Thêm câu hỏi'}
-              </Button>
-              {editingQuestionId && (
-                  <Button
-                    type="button"
-                    variant="ghost"
-                    className="w-full text-xs text-muted-foreground mt-1"
-                    onClick={onCancelAddQuestion}
-                  >
-                    Hủy sửa
-                  </Button>
-              )}
-            </div>
+              </div>
+            </TabsContent>
+          </Tabs>
+        </div>
 
-            {/* Questions List */}
-            <div className="space-y-2">
-              <h3 className="font-bold">Danh sách câu hỏi ({questions.length})</h3>
-              {questions.length === 0 ? (
-                <p className="text-center text-muted-foreground py-8 border-2 border-dashed rounded-xl">
-                  Chưa có câu hỏi nào
-                </p>
-              ) : (
-                questions.map((q, idx) => (
-                  <div key={q.id} className="p-3 border-2 rounded-lg bg-card">
-                    <div className="flex items-start justify-between gap-2">
-                      <div className="flex-1">
-                        <p className="font-semibold">Câu {idx + 1}: {q.question}</p>
-                        <p className="text-xs text-muted-foreground mb-2">
-                             {q.type === 'multiple_choice' ? 'Trắc nghiệm' : 'Đúng/Sai'}
-                        </p>
-                        {q.options && (
-                            <div className="space-y-1">
-                            {q.options.map((a, i) => (
-                                <div key={i} className="flex items-center gap-2 text-sm">
-                                <Badge 
-                                    variant={a === q.correctAnswer ? "default" : "outline"} 
-                                    className={cn(
-                                        a === q.correctAnswer ? "bg-eco-green" : ""
-                                    )}
-                                >
-                                    {String.fromCharCode(65 + i)}
-                                </Badge>
-                                <span>{a}</span>
-                                </div>
-                            ))}
-                            </div>
-                        )}
-                         {!q.options && (
-                             <Badge className="bg-eco-green">
-                                 Đáp án: {q.correctAnswer === 'true' ? 'Đúng' : 'Sai'}
-                             </Badge>
-                         )}
-                      </div>
-                      <div className="flex items-center gap-1">
-                        <Button
-                          type="button"
-                          variant="ghost"
-                          size="sm"
-                          className="text-eco-blue hover:text-eco-blue hover:bg-eco-blue/10"
-                          onClick={() => onEditQuestion(q.id)}
-                        >
-                          <Pencil className="w-4 h-4" />
-                        </Button>
-                        <Button
-                          type="button"
-                          variant="ghost"
-                          size="sm"
-                          className="text-destructive hover:text-destructive hover:bg-destructive/10"
-                          onClick={() => onRemoveQuestion(q.id)}
-                        >
-                          <Trash2 className="w-4 h-4" />
-                        </Button>
-                      </div>
-                    </div>
-                  </div>
-                ))
-              )}
-            </div>
-          </TabsContent>
-        </Tabs>
-
-        {/* Actions */}
-        <div className="flex gap-3 pt-4 border-t">
+        {/* Actions - Fixed Footer */}
+        <div className="flex gap-3 px-6 py-4 border-t bg-muted/20 shrink-0">
           <Button variant="outline" className="flex-1 border-2" onClick={onClose}>
             Hủy
           </Button>
           <Button
-            className="flex-1 bg-eco-orange hover:bg-eco-orange/90 text-primary-foreground font-semibold"
+            className="flex-1 bg-eco-orange hover:bg-eco-orange/90 text-primary-foreground font-bold shadow-lg"
             onClick={onSubmit}
             disabled={!isFormValid || isSubmitting}
           >
@@ -402,7 +419,9 @@ export function QuizForm({
                 {isEdit ? 'Đang cập nhật...' : 'Đang tạo...'}
               </>
             ) : (
-              `${isEdit ? 'Cập nhật' : 'Tạo'} Quiz (${questions.length} câu)`
+              <>
+                {isEdit ? 'Cập nhật' : 'Tạo'} Quiz ({questions.length} câu)
+              </>
             )}
           </Button>
         </div>

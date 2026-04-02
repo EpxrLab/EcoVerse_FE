@@ -23,9 +23,6 @@ import {
   Search,
   Mail,
   Phone,
-  Lock,
-  Eye,
-  EyeOff,
   SendHorizonal,
   CheckCircle2,
   Loader2,
@@ -46,9 +43,6 @@ export function SchoolAccountsView({ allStudents, onRefresh }) {
   const [filterGrade, setFilterGrade] = useState('all');
   const [filterClass, setFilterClass] = useState('all');
   const [currentPage, setCurrentPage] = useState(1);
-
-  // Show/hide passwords
-  const [showPwd, setShowPwd] = useState({});
 
   // Email state
   const [emailPreviewData, setEmailPreviewData] = useState(null);
@@ -116,11 +110,7 @@ export function SchoolAccountsView({ allStudents, onRefresh }) {
 
   const gradeOptions = [...new Set(allStudents.map(s => s.grade))].sort((a, b) => a - b);
 
-  // Toggle password
-  const togglePwd = (id, type) => {
-    const key = `${type}_${id}`;
-    setShowPwd(p => ({ ...p, [key]: !p[key] }));
-  };
+
 
   // Batch send
   const handleSendAll = async () => {
@@ -133,41 +123,17 @@ export function SchoolAccountsView({ allStudents, onRefresh }) {
     }
     
     setIsSendingAll(true);
-    let successCount = 0;
-    let failCount = 0;
-
-    for (const s of parentsToSend) {
-      try {
-        await classesService.sendCredentials({
-          student_id: s.id,
-          parent_email: s.parent_email,
-          student_name: s.student_name,
-          student_username: s.student_username || s.student_code,
-          student_password: s.student_password,
-          parent_name: s.parent_name,
-          parent_username: s.parent_username,
-          parent_password: s.parent_password,
-        });
-        successCount++;
-      } catch (error) {
-        console.error(`Error sending email to ${s.parent_email}:`, error);
-        failCount++;
-      }
-      // Small delay to avoid overwhelming the server
-      await new Promise(r => setTimeout(r, 250));
-    }
-    
-    setIsSendingAll(false);
-    
-    // Refresh data to get updated credentialEmailSent status
-    if (onRefresh && successCount > 0) {
-      await onRefresh();
-    }
-    
-    if (failCount === 0) {
-      toast.success(`Đã gửi email đến ${successCount} phụ huynh`);
-    } else {
-      toast.warning(`Đã gửi ${successCount} email thành công, ${failCount} email thất bại`);
+    try {
+      // Bulk send uses /school/send-credentials (backend handles all students)
+      await classesService.sendCredentials();
+      
+      toast.success("Hệ thống đang tiến hành gửi email cho tất cả phụ huynh");
+      if (onRefresh) onRefresh();
+    } catch (error) {
+      console.error("Bulk email error:", error);
+      toast.error("Không thể kích hoạt gửi email hàng loạt");
+    } finally {
+      setIsSendingAll(false);
     }
   };
 
@@ -294,18 +260,8 @@ export function SchoolAccountsView({ allStudents, onRefresh }) {
                 <TableHead className="text-xs font-medium">Học sinh</TableHead>
                 <TableHead className="text-center text-xs font-medium">Lớp</TableHead>
                 <TableHead className="text-center text-xs font-medium">TK học sinh</TableHead>
-                <TableHead className="text-center text-xs font-medium">
-                  <div className="flex items-center justify-center gap-1">
-                    <Lock className="w-3 h-3" /> MK học sinh
-                  </div>
-                </TableHead>
                 <TableHead className="text-xs font-medium">Phụ huynh</TableHead>
                 <TableHead className="text-center text-xs font-medium">TK phụ huynh</TableHead>
-                <TableHead className="text-center text-xs font-medium">
-                  <div className="flex items-center justify-center gap-1">
-                    <Lock className="w-3 h-3" /> MK phụ huynh
-                  </div>
-                </TableHead>
                 <TableHead className="text-center text-xs font-medium">Email PH</TableHead>
                 <TableHead className="w-20 text-center text-xs font-medium">Gửi</TableHead>
               </TableRow>
@@ -313,8 +269,6 @@ export function SchoolAccountsView({ allStudents, onRefresh }) {
             <TableBody>
               {paginatedStudents.map((s, i) => {
                 const globalIndex = (currentPage - 1) * PAGE_SIZE + i + 1;
-                const stuPwdKey = `stu_${s.id}`;
-                const parPwdKey = `par_${s.id}`;
                 return (
                   <TableRow key={s.id} className="hover:bg-muted/20 group">
                     {/* # */}
@@ -335,33 +289,14 @@ export function SchoolAccountsView({ allStudents, onRefresh }) {
 
                     {/* Class */}
                     <TableCell className="text-center">
-                      <Badge variant="outline" className="border-eco-green/30 text-eco-green text-[10px] px-1.5 py-0">
-                        {s.className}
+                      <Badge variant="outline" className="border-eco-blue/30 text-eco-blue bg-eco-blue/5">
+                        {s.grade}{s.className}
                       </Badge>
                     </TableCell>
 
                     {/* Student username */}
                     <TableCell className="text-center">
                       <code className="text-xs bg-muted/60 px-1.5 py-0.5 rounded">{s.student_username || '—'}</code>
-                    </TableCell>
-
-                    {/* Student password */}
-                    <TableCell className="text-center">
-                      <div className="flex items-center justify-center gap-1">
-                        <code className="text-xs text-muted-foreground">
-                          {s.student_password ? (showPwd[stuPwdKey] ? s.student_password : '••••••') : '—'}
-                        </code>
-                        {s.student_password && (
-                          <button
-                            onClick={() => togglePwd(s.id, 'stu')}
-                            className="p-0.5 hover:bg-muted rounded opacity-0 group-hover:opacity-100 transition-opacity"
-                          >
-                            {showPwd[stuPwdKey]
-                              ? <EyeOff className="w-3 h-3 text-muted-foreground" />
-                              : <Eye className="w-3 h-3 text-muted-foreground" />}
-                          </button>
-                        )}
-                      </div>
                     </TableCell>
 
                     {/* Parent name + phone */}
@@ -383,25 +318,6 @@ export function SchoolAccountsView({ allStudents, onRefresh }) {
                     {/* Parent username */}
                     <TableCell className="text-center">
                       <code className="text-xs bg-muted/60 px-1.5 py-0.5 rounded">{s.parent_username || '—'}</code>
-                    </TableCell>
-
-                    {/* Parent password */}
-                    <TableCell className="text-center">
-                      <div className="flex items-center justify-center gap-1">
-                        <code className="text-xs text-muted-foreground">
-                          {s.parent_password ? (showPwd[parPwdKey] ? s.parent_password : '••••••') : '—'}
-                        </code>
-                        {s.parent_password && (
-                          <button
-                            onClick={() => togglePwd(s.id, 'par')}
-                            className="p-0.5 hover:bg-muted rounded opacity-0 group-hover:opacity-100 transition-opacity"
-                          >
-                            {showPwd[parPwdKey]
-                              ? <EyeOff className="w-3 h-3 text-muted-foreground" />
-                              : <Eye className="w-3 h-3 text-muted-foreground" />}
-                          </button>
-                        )}
-                      </div>
                     </TableCell>
 
                     {/* Parent email */}

@@ -1,10 +1,12 @@
 import { useState, useRef, useCallback } from 'react';
 import { Button } from '@/shared/components/ui/button';
+import { Badge } from '@/shared/components/ui/badge';
 import {
   Dialog,
   DialogContent,
   DialogHeader,
   DialogTitle,
+  DialogFooter,
 } from '@/shared/components/ui/dialog';
 import {
   Table,
@@ -26,6 +28,7 @@ import {
   Layers,
   ArrowLeft,
   Sparkles,
+  Mail,
 } from 'lucide-react';
 import { cn } from '@/shared/lib/utils';
 import { toast } from 'sonner';
@@ -257,17 +260,13 @@ export function BulkImportDialog({ isOpen, onClose, onImport }) {
       let rows = [];
       try {
         if (ext === '.csv' || ext === '.txt') {
-          // If the data is read as ArrayBuffer (for unified excel/csv reading below), we decode to string first.
-          // In JS, readAsText is simpler for CSV, but readAsArrayBuffer is best for Excel.
-          // We will use readAsArrayBuffer for both and let SheetJS handle them or decode CSV to string ourselves.
           const text = new TextDecoder("utf-8").decode(data);
           rows = parseCSV(text);
         } else {
-          // Read Excel file
           const wb = read(data, { type: 'array' });
           const firstSheetName = wb.SheetNames[0];
           const ws = wb.Sheets[firstSheetName];
-          const jsonRows = utils.sheet_to_json(ws, { defval: "" }); // Convert sheet to JSON array
+          const jsonRows = utils.sheet_to_json(ws, { defval: "" });
           rows = parseExcelData(jsonRows);
         }
         
@@ -308,8 +307,8 @@ export function BulkImportDialog({ isOpen, onClose, onImport }) {
 
   return (
     <Dialog open={isOpen} onOpenChange={handleClose}>
-      <DialogContent className="max-w-2xl p-0 gap-0 overflow-hidden" style={{ maxHeight: '85vh' }}>
-        <DialogHeader className="px-6 pt-5 pb-0">
+      <DialogContent className="max-w-2xl h-[85vh] flex flex-col p-0 gap-0 overflow-hidden">
+        <DialogHeader className="shrink-0 px-6 pt-5 pb-2 border-b">
           <DialogTitle className="flex items-center gap-3">
             <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-eco-blue to-eco-green flex items-center justify-center shrink-0">
               <Sparkles className="w-4.5 h-4.5 text-white" />
@@ -321,199 +320,204 @@ export function BulkImportDialog({ isOpen, onClose, onImport }) {
           </DialogTitle>
         </DialogHeader>
 
-        <div className="px-6 pt-4 pb-5 overflow-y-auto" style={{ maxHeight: 'calc(85vh - 80px)' }}>
-        <StepIndicator current={step} />
+        <div className="flex-1 min-h-0 overflow-y-auto overflow-x-hidden px-6 py-5 scrollbar-thin">
+          <StepIndicator current={step} />
 
-        {/* ── Step 0: Upload ── */}
-        {step === 0 && (
-          <div className="space-y-4">
-            {/* Drag & Drop Zone */}
-            <div
-              className={cn(
-                'relative border-2 border-dashed rounded-xl p-8 text-center transition-all cursor-pointer',
-                isDragging
-                  ? 'border-eco-blue bg-eco-blue/5 scale-[1.01]'
-                  : 'border-muted-foreground/25 hover:border-eco-blue/50 hover:bg-muted/20'
-              )}
-              onDragOver={(e) => { e.preventDefault(); setIsDragging(true); }}
-              onDragLeave={() => setIsDragging(false)}
-              onDrop={handleDrop}
-              onClick={() => fileInputRef.current?.click()}
-            >
-              <input
-                ref={fileInputRef}
-                type="file"
-                accept=".csv,.txt,.xlsx,.xls"
-                className="hidden"
-                onChange={handleFileChange}
-              />
-              <div className="w-14 h-14 mx-auto rounded-xl bg-muted/80 flex items-center justify-center mb-3">
-                <FileSpreadsheet className="w-7 h-7 text-muted-foreground" />
-              </div>
-              <p className="text-sm font-semibold mb-0.5">
-                {isDragging ? 'Thả file vào đây' : 'Kéo & thả file hoặc click để chọn'}
-              </p>
-              <p className="text-xs text-muted-foreground">Hỗ trợ: Excel (.xlsx), CSV, TXT</p>
-            </div>
-
-            {importError && (
-              <div className="flex items-center gap-2 p-3 rounded-xl bg-destructive/10 border border-destructive/20 text-destructive text-sm">
-                <AlertCircle className="w-4 h-4 shrink-0" />
-                {importError}
-              </div>
-            )}
-
-            {/* Format Guide */}
-            <div className="p-3 rounded-xl bg-muted/30 border border-border space-y-1.5">
-              <p className="text-xs font-semibold flex items-center gap-1.5">
-                <FileSpreadsheet className="w-4 h-4 text-eco-blue" />
-                Định dạng file Excel / CSV
-              </p>
-              <div className="overflow-x-auto">
-                <code className="text-xs text-muted-foreground whitespace-pre block leading-relaxed">
-{`Student Full Name,Class Name,Grade Level,Date of Birth,Gender,Address,Parent Full Name,Parent Phone Number,Parent Email
-Nguyễn Hoàng Nhật Ân,A1,1,2014-08-10,Male,8 Dương Văn Cam,Nguyễn Văn Quốc,0905324995,nguyenhoangnhatan31@gmail.com`}
-                </code>
-              </div>
-              <Button
-                variant="outline"
-                size="sm"
-                className="mt-2 border-eco-blue/30 hover:bg-eco-blue/10 text-eco-blue"
-                onClick={(e) => { e.stopPropagation(); downloadSampleXLSX(); }}
+          {/* ── Step 0: Upload ── */}
+          {step === 0 && (
+            <div className="space-y-4">
+              <div
+                className={cn(
+                  'relative border-2 border-dashed rounded-xl p-8 text-center transition-all cursor-pointer',
+                  isDragging
+                    ? 'border-eco-blue bg-eco-blue/5 scale-[1.01]'
+                    : 'border-muted-foreground/25 hover:border-eco-blue/50 hover:bg-muted/20'
+                )}
+                onDragOver={(e) => { e.preventDefault(); setIsDragging(true); }}
+                onDragLeave={() => setIsDragging(false)}
+                onDrop={handleDrop}
+                onClick={() => fileInputRef.current?.click()}
               >
-                <Download className="w-3.5 h-3.5 mr-1.5" />
-                Tải file Excel mẫu
-              </Button>
-            </div>
-
-            <p className="text-[11px] text-muted-foreground text-center">
-              * Tài khoản HS và PH sẽ được tự động tạo sau khi import
-            </p>
-          </div>
-        )}
-
-        {/* ── Step 1: Preview ── */}
-        {step === 1 && (
-          <div className="space-y-4">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-2">
-                <CheckCircle2 className="w-4 h-4 text-eco-green" />
-                <span className="text-sm font-medium">{fileName}</span>
+                <input
+                  ref={fileInputRef}
+                  type="file"
+                  accept=".csv,.txt,.xlsx,.xls"
+                  className="hidden"
+                  onChange={handleFileChange}
+                />
+                <div className="w-14 h-14 mx-auto rounded-xl bg-muted/80 flex items-center justify-center mb-3">
+                  <FileSpreadsheet className="w-7 h-7 text-muted-foreground" />
+                </div>
+                <p className="text-sm font-semibold mb-0.5">
+                  {isDragging ? 'Thả file vào đây' : 'Kéo & thả file hoặc click để chọn'}
+                </p>
+                <p className="text-xs text-muted-foreground">Hỗ trợ: Excel (.xlsx), CSV, TXT</p>
               </div>
-              <Button
-                variant="ghost"
-                size="sm"
-                className="text-muted-foreground text-xs"
-                onClick={() => { setParsedRows([]); setFileName(''); setStep(0); }}
-              >
-                <ArrowLeft className="w-3.5 h-3.5 mr-1" />
-                Đổi file
-              </Button>
-            </div>
 
-            <PreviewSummary rows={parsedRows} />
-
-            {/* Preview Table */}
-            <div className="rounded-xl border border-border overflow-hidden">
-              <div className="max-h-64 overflow-y-auto">
-                <Table>
-                  <TableHeader>
-                    <TableRow className="bg-muted/50 hover:bg-muted/50">
-                      <TableHead className="text-xs w-8">#</TableHead>
-                      <TableHead className="text-xs">Lớp</TableHead>
-                      <TableHead className="text-xs">Học sinh</TableHead>
-                      <TableHead className="text-xs">Phụ huynh</TableHead>
-                      <TableHead className="text-xs">Email PH</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {parsedRows.slice(0, 50).map((row, i) => (
-                      <TableRow key={i} className="text-xs hover:bg-muted/20">
-                        <TableCell className="text-muted-foreground">{i + 1}</TableCell>
-                        <TableCell>
-                          <span className="font-medium">
-                            {row.grade}{row.class_name}
-                          </span>
-                        </TableCell>
-                        <TableCell className="font-medium">{row.student_name}</TableCell>
-                        <TableCell className="text-muted-foreground">{row.parent_name || '—'}</TableCell>
-                        <TableCell className="text-muted-foreground">{row.parent_email || '—'}</TableCell>
-                      </TableRow>
-                    ))}
-                  </TableBody>
-                </Table>
-              </div>
-              {parsedRows.length > 50 && (
-                <div className="py-2 text-center text-xs text-muted-foreground bg-muted/30 border-t">
-                  ... và {parsedRows.length - 50} học sinh khác
+              {importError && (
+                <div className="flex items-center gap-2 p-3 rounded-xl bg-destructive/10 border border-destructive/20 text-destructive text-sm font-medium italic">
+                  <AlertCircle className="w-4 h-4 shrink-0" />
+                  {importError}
                 </div>
               )}
-            </div>
 
-            <div className="flex gap-3">
+              <div className="p-4 rounded-xl bg-muted/30 border border-border space-y-2">
+                <p className="text-xs font-bold flex items-center gap-1.5 uppercase tracking-wider text-muted-foreground">
+                  <FileSpreadsheet className="w-4 h-4 text-eco-blue" />
+                  Định dạng file Excel / CSV
+                </p>
+                <div className="overflow-x-auto rounded-lg border bg-white p-2">
+                  <code className="text-[10px] text-muted-foreground whitespace-pre block leading-relaxed">
+{`Student Full Name,Class Name,Grade Level,Date of Birth,Gender,Address,Parent Full Name,Parent Phone Number,Parent Email
+Nguyễn Hoàng Nhật Ân,A1,1,2014-08-10,Male,8 Dương Văn Cam,Nguyễn Văn Quốc,0905324995,nguyen@example.com`}
+                  </code>
+                </div>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="mt-1 border-eco-blue/30 hover:bg-eco-blue/10 text-eco-blue w-full sm:w-auto"
+                  onClick={(e) => { e.stopPropagation(); downloadSampleXLSX(); }}
+                >
+                  <Download className="w-3.5 h-3.5 mr-1.5" />
+                  Tải file Excel mẫu
+                </Button>
+              </div>
+
+              <p className="text-[11px] text-muted-foreground text-center italic">
+                * Tài khoản HS và PH sẽ được tự động tạo sau khi import
+              </p>
+            </div>
+          )}
+
+          {/* ── Step 1: Preview ── */}
+          {step === 1 && (
+            <div className="space-y-4">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2 bg-eco-green/5 px-3 py-1.5 rounded-lg border border-eco-green/20">
+                  <CheckCircle2 className="w-4 h-4 text-eco-green" />
+                  <span className="text-sm font-semibold truncate max-w-[200px]">{fileName}</span>
+                </div>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="text-muted-foreground text-xs hover:text-eco-blue"
+                  onClick={() => { setParsedRows([]); setFileName(''); setStep(0); }}
+                >
+                  <ArrowLeft className="w-3.5 h-3.5 mr-1" />
+                  Đổi file
+                </Button>
+              </div>
+
+              <PreviewSummary rows={parsedRows} />
+
+              <div className="rounded-xl border border-border overflow-hidden bg-card">
+                <div className="max-h-[300px] overflow-y-auto">
+                  <Table>
+                    <TableHeader className="sticky top-0 bg-muted/95 backdrop-blur-sm z-10">
+                      <TableRow className="hover:bg-muted/50 border-b">
+                        <TableHead className="text-[10px] uppercase font-bold w-12 text-center">#</TableHead>
+                        <TableHead className="text-[10px] uppercase font-bold">Lớp</TableHead>
+                        <TableHead className="text-[10px] uppercase font-bold">Học sinh</TableHead>
+                        <TableHead className="text-[10px] uppercase font-bold">Phụ huynh</TableHead>
+                        <TableHead className="text-[10px] uppercase font-bold">Email PH</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {parsedRows.slice(0, 100).map((row, i) => (
+                        <TableRow key={i} className="text-xs hover:bg-muted/30 transition-colors">
+                          <TableCell className="text-muted-foreground text-center font-mono">{i + 1}</TableCell>
+                          <TableCell>
+                            <Badge variant="outline" className="font-bold text-eco-blue bg-eco-blue/5">
+                              {row.grade}{row.class_name}
+                            </Badge>
+                          </TableCell>
+                          <TableCell className="font-bold text-foreground">{row.student_name}</TableCell>
+                          <TableCell className="text-muted-foreground">{row.parent_name || '—'}</TableCell>
+                          <TableCell className="text-muted-foreground truncate max-w-[150px]">{row.parent_email || '—'}</TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
+                </div>
+                {parsedRows.length > 100 && (
+                  <div className="py-2.5 text-center text-xs font-medium text-muted-foreground bg-muted/20 border-t italic">
+                    ... và {parsedRows.length - 100} học sinh khác
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
+
+          {/* ── Step 2: Result ── */}
+          {step === 2 && importResult && (
+            <div className="space-y-6 text-center py-6">
+              <div className="relative overflow-hidden py-4">
+                <div className="w-24 h-24 mx-auto rounded-full bg-eco-green/10 flex items-center justify-center animate-bounce-soft">
+                  <CheckCircle2 className="w-12 h-12 text-eco-green" />
+                </div>
+                <div className="absolute top-0 right-0 left-0 bottom-0 animate-ping opacity-20">
+                   <div className="w-24 h-24 mx-auto rounded-full bg-eco-green/50"></div>
+                </div>
+              </div>
+              <div>
+                <h3 className="text-2xl font-bold mb-2 text-foreground">Import thành công!</h3>
+                <p className="text-muted-foreground text-sm max-w-sm mx-auto">Toàn bộ dữ liệu đã được tạo hệ thống và tài khoản đã được cấp phát cho phụ huynh.</p>
+              </div>
+
+              <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
+                {[
+                  { label: 'Lớp mới', value: importResult.createdClasses.length, icon: GraduationCap, color: 'eco-green' },
+                  { label: 'Học sinh', value: importResult.createdStudents, icon: Users, color: 'eco-leaf' },
+                  { label: 'Phụ huynh', value: importResult.createdStudents, icon: Mail, color: 'eco-blue' },
+                ].map(({ label, value, icon: Icon, color }) => (
+                  <div key={label} className="p-4 rounded-2xl bg-muted/40 border border-border shadow-sm text-center">
+                    <p className="text-3xl font-black text-foreground">{value}</p>
+                    <p className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground mt-1">{label}</p>
+                  </div>
+                ))}
+              </div>
+
+              <div className="p-4 rounded-xl bg-eco-green/5 border-2 border-eco-green/20 text-sm text-eco-green-700 text-left flex items-start gap-3 shadow-sm shadow-eco-green/5">
+                <span className="font-medium">Tài khoản học sinh và phụ huynh đã được tự động tạo. Bạn có thể gửi thông tin đăng nhập trong phần Quản lý Tài khoản.</span>
+              </div>
+            </div>
+          )}
+        </div>
+
+        <DialogFooter className="shrink-0 p-6 border-t mt-auto bg-background/95 backdrop-blur-sm">
+          {step === 1 ? (
+             <div className="flex gap-3 w-full">
               <Button variant="outline" onClick={() => setStep(0)} className="flex-1">
                 <ArrowLeft className="w-4 h-4 mr-2" />
                 Quay lại
               </Button>
               <Button
-                className="flex-1 bg-gradient-to-r from-eco-blue to-eco-green hover:opacity-90 shadow-lg"
+                className="flex-[2] bg-eco-green hover:bg-eco-green/90 text-white font-bold shadow-lg shadow-eco-green/20"
                 onClick={handleImport}
                 disabled={isImporting}
               >
                 {isImporting ? (
                   <><Loader2 className="w-4 h-4 mr-2 animate-spin" /> Đang tạo...</>
                 ) : (
-                  <><Sparkles className="w-4 h-4 mr-2" /> Tạo tất cả ({parsedRows.length} học sinh)</>
+                  <><Sparkles className="w-4 h-4 mr-2" /> Tạo {parsedRows.length} học sinh</>
                 )}
               </Button>
             </div>
-          </div>
-        )}
-
-        {/* ── Step 2: Result ── */}
-        {step === 2 && importResult && (
-          <div className="space-y-5 text-center">
-            <div className="w-20 h-20 mx-auto rounded-full bg-eco-green/10 flex items-center justify-center">
-              <CheckCircle2 className="w-10 h-10 text-eco-green" />
-            </div>
-            <div>
-              <h3 className="text-xl font-bold mb-1">Import thành công! </h3>
-              <p className="text-muted-foreground text-sm">Toàn bộ dữ liệu đã được tạo và tài khoản đã được cấp phát</p>
-            </div>
-
-            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-              {[
-                { label: 'Lớp mới', value: importResult.createdClasses.length, icon: GraduationCap, color: 'eco-green' },
-                { label: 'Học sinh', value: importResult.createdStudents, icon: Users, color: 'eco-leaf' },
-                { label: 'Phụ huynh', value: importResult.createdStudents, icon: Users, color: 'eco-orange' },
-              ].map(({ label, value, icon: Icon, color }) => (
-                <div key={label} className="p-3 rounded-xl bg-muted/40 border border-border text-center">
-                  <p className="text-2xl font-bold">{value}</p>
-                  <p className="text-xs text-muted-foreground">{label}</p>
-                </div>
-              ))}
-            </div>
-
-            <div className="p-3 rounded-xl bg-eco-green/5 border border-eco-green/20 text-sm text-eco-green text-left flex items-start gap-2">
-              <CheckCircle2 className="w-4 h-4 shrink-0 mt-0.5" />
-              <span>Tài khoản học sinh và phụ huynh đã được tự động tạo. Bạn có thể xem và gửi thông tin về email phụ huynh trong trang chi tiết lớp.</span>
-            </div>
-
-            <div className="flex gap-3">
+          ) : step === 2 ? (
+            <div className="flex gap-3 w-full">
               <Button variant="outline" onClick={handleClose} className="flex-1">
                 Đóng
               </Button>
               <Button
-                className="flex-1 bg-eco-green hover:bg-eco-green/90"
+                className="flex-[2] bg-eco-green hover:bg-eco-green/90 text-white font-bold"
                 onClick={handleClose}
               >
                 <Users className="w-4 h-4 mr-2" />
-                Xem danh sách lớp
+                Quay lại danh sách
               </Button>
             </div>
-          </div>
-        )}
-        </div>
+          ) : null}
+        </DialogFooter>
       </DialogContent>
     </Dialog>
   );

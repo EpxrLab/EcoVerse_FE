@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { Badge } from '@/shared/components/ui/badge';
-import { Card } from '@/shared/components/ui/card';
+import { Card, CardContent } from '@/shared/components/ui/card';
+import { Button } from '@/shared/components/ui/button';
 import {
   Table,
   TableBody,
@@ -21,15 +22,14 @@ import {
   Users,
   Brain,
   Gamepad2,
-  Recycle,
-  Zap,
   Layers,
   Send,
   CheckCircle2,
   XCircle,
   Clock,
   Gift,
-  Building2
+  Building2,
+  Plus
 } from 'lucide-react';
 import { format } from 'date-fns';
 import { vi } from 'date-fns/locale';
@@ -50,13 +50,24 @@ const difficultyConfig = {
 };
 
 const invitationStatusConfig = {
+  invited: { label: 'Đã mời', color: 'bg-eco-orange/15 text-eco-orange', icon: Clock },
+  approved: { label: 'Đã chấp nhận', color: 'bg-eco-green/15 text-eco-green', icon: CheckCircle2 },
+  declined: { label: 'Đã từ chối', color: 'bg-destructive/15 text-destructive', icon: XCircle },
   pending: { label: 'Chờ phản hồi', color: 'bg-eco-orange/15 text-eco-orange', icon: Clock },
-  accepted: { label: 'Đã chấp nhận', color: 'bg-eco-green/15 text-eco-green', icon: CheckCircle2 },
-  rejected: { label: 'Đã từ chối', color: 'bg-destructive/15 text-destructive', icon: XCircle },
 };
 
-export function CampaignDetail({ campaign, gameTypes }) {
+export function CampaignDetail({ campaign, gameTypes, isLoading, onAddQuiz }) {
   const [selectedClassFilter, setSelectedClassFilter] = useState('all');
+
+  if (isLoading && !campaign?.rounds) {
+    return (
+      <div className="flex flex-col items-center justify-center py-12 space-y-4">
+        <Clock className="w-12 h-12 text-eco-green animate-spin" />
+        <p className="text-muted-foreground animate-pulse">Đang tải chi tiết chiến dịch...</p>
+      </div>
+    );
+  }
+
   const isPendingInvitation = campaign.invitation_status === 'pending';
   const isInvitingStudents = campaign.status === 'inviting_students';
   const isCompleted = campaign.status === 'completed';
@@ -64,30 +75,24 @@ export function CampaignDetail({ campaign, gameTypes }) {
   const deadline = campaign.invitation_deadline || 
     (campaign.start_date ? new Date(new Date(campaign.start_date).getTime() - 5 * 24 * 60 * 60 * 1000).toISOString() : null);
 
-  // Filter student invitations by class and status (if completed)
-  const filteredInvitations = (selectedClassFilter === 'all'
-    ? campaign.student_invitations
-    : campaign.student_invitations?.filter(inv => inv.class_id === selectedClassFilter)
-  )?.filter(inv => !isCompleted || inv.status !== 'pending');
+  // Student invitations/participants mapping
+  const participants = campaign.participants || [];
+  
+  // Filter participants by class
+  const filteredParticipants = selectedClassFilter === 'all'
+    ? participants
+    : participants.filter(p => p.class_name === selectedClassFilter);
 
-  // Calculate invitation stats
-  const invitationStats = {
-    total: campaign.student_invitations?.length || 0,
-    pending: campaign.student_invitations?.filter(inv => inv.status === 'pending').length || 0,
-    accepted: campaign.student_invitations?.filter(inv => inv.status === 'accepted').length || 0,
-    rejected: campaign.student_invitations?.filter(inv => inv.status === 'rejected').length || 0,
+  // Calculate stats from participants
+  const participantStats = {
+    total: participants.length,
+    invited: participants.filter(p => p.approval_status === 'INVITED').length,
+    approved: participants.filter(p => p.approval_status === 'APPROVED').length,
+    declined: participants.filter(p => p.approval_status === 'DECLINED').length,
   };
 
-  // Get unique classes from invitations
-  const classesWithInvitations = Array.from(
-    new Set(campaign.student_invitations?.map(inv => inv.class_id) || [])
-  ).map(classId => {
-    const invitation = campaign.student_invitations?.find(inv => inv.class_id === classId);
-    return {
-      id: classId,
-      name: invitation?.class_name || '',
-    };
-  });
+  // Get unique classes
+  const uniqueClasses = Array.from(new Set(participants.map(p => p.class_name))).filter(Boolean);
 
   return (
     <div className="space-y-6 py-4">
@@ -112,12 +117,12 @@ export function CampaignDetail({ campaign, gameTypes }) {
             ) : deadline && (
                <Badge variant="outline" className="bg-red-50 text-red-700 border-red-200 gap-1">
                  <Clock className="w-3 h-3" />
-                 Hạn nhận: {format(new Date(deadline), 'dd/MM/yyyy', { locale: vi })}
+                 Hạn nhận: {format(new Date(deadline), 'HH:mm dd/MM/yyyy', { locale: vi })}
                </Badge>
             )}
             <span className="text-sm text-muted-foreground ml-1">
-              Thời gian: {format(new Date(campaign.start_date), 'dd/MM/yyyy', { locale: vi })} -{' '}
-              {format(new Date(campaign.end_date), 'dd/MM/yyyy', { locale: vi })}
+              Thời gian: {format(new Date(campaign.start_date), 'HH:mm dd/MM/yyyy', { locale: vi })} -{' '}
+              {format(new Date(campaign.end_date), 'HH:mm dd/MM/yyyy', { locale: vi })}
             </span>
           </div>
         </div>
@@ -130,20 +135,19 @@ export function CampaignDetail({ campaign, gameTypes }) {
       )}
 
       {/* Stats Grid */}
-      {/* Stats Grid - Hide for pending invitations OR inviting_students */}
       {!isPendingInvitation && !isInvitingStudents && (
-        <div className="grid grid-cols-3 gap-4">
+        <div className="grid grid-cols-2 gap-4">
           <div className="text-center p-3 rounded-xl bg-muted/50">
             <p className="text-2xl font-bold text-eco-green">
-              {campaign.total_students}
+              {participantStats.total}
             </p>
-            <p className="text-xs text-muted-foreground">Học sinh</p>
+            <p className="text-xs text-muted-foreground">Học sinh đăng ký</p>
           </div>
           <div className="text-center p-3 rounded-xl bg-muted/50">
             <p className="text-2xl font-bold text-eco-blue">
-              {campaign.participating_classes?.length || 0}
+              {campaign.rounds?.length || 0}
             </p>
-            <p className="text-xs text-muted-foreground">Lớp tham gia</p>
+            <p className="text-xs text-muted-foreground">Vòng chơi</p>
           </div>
         </div>
       )}
@@ -185,7 +189,8 @@ export function CampaignDetail({ campaign, gameTypes }) {
       )}
 
       {/* Invitation Timing */}
-      {campaign.invitation_send_date && campaign.invitation_deadline && (
+      {/* Invitation Timing */}
+      {(campaign.invitation_send_date || campaign.invitation_deadline) && (
         <div className="p-4 rounded-lg bg-eco-blue/5 border border-eco-blue/20">
           <h4 className="font-semibold mb-2 flex items-center gap-2">
             <Send className="w-4 h-4 text-eco-blue" />
@@ -194,11 +199,11 @@ export function CampaignDetail({ campaign, gameTypes }) {
           <div className="space-y-1 text-sm">
             <p>
               <span className="text-muted-foreground">Ngày gửi:</span>{' '}
-              <span className="font-medium">{format(new Date(campaign.invitation_send_date), 'dd/MM/yyyy', { locale: vi })}</span>
+              <span className="font-medium">{format(new Date(campaign.invitation_send_date), 'HH:mm dd/MM/yyyy', { locale: vi })}</span>
             </p>
             <p>
               <span className="text-muted-foreground">Hạn phản hồi:</span>{' '}
-              <span className="font-medium">{format(new Date(campaign.invitation_deadline), 'dd/MM/yyyy', { locale: vi })}</span>
+              <span className="font-medium">{format(new Date(campaign.invitation_deadline), 'HH:mm dd/MM/yyyy', { locale: vi })}</span>
             </p>
             <p className="text-xs text-muted-foreground italic">
               Các lời mời chưa phản hồi sẽ tự động bị từ chối sau hạn phản hồi
@@ -207,116 +212,82 @@ export function CampaignDetail({ campaign, gameTypes }) {
         </div>
       )}
 
-      {/* Operational Details - Hide for pending invitations AND inviting_students */}
-      {!isPendingInvitation && !isInvitingStudents && (
-        <>
-          {/* Selected Quizzes */}
-          <div>
-            <h4 className="font-semibold mb-3 flex items-center gap-2">
-              <Brain className="w-4 h-4 text-eco-blue" />
-              Quiz đã chọn
-            </h4>
-            <div className="flex flex-wrap gap-2">
-              {campaign.selected_quizzes?.map((quiz) => (
-                <Badge
-                  key={quiz.quiz_id}
-                  className={difficultyConfig[quiz.difficulty].color}
-                  variant="secondary"
-                >
-                  {quiz.quiz_title} ({quiz.questions_count} câu)
-                </Badge>
-              ))}
-            </div>
-          </div>
+      {/* Detailed Rounds - NEW Structure */}
+      {campaign.rounds && campaign.rounds.length > 0 && (
+        <div className="space-y-6">
+          <h4 className="font-bold text-lg flex items-center gap-2 border-l-4 border-eco-green pl-3">
+            <Layers className="w-5 h-5 text-eco-green" />
+            Cấu trúc vòng chơi
+          </h4>
+          <div className="space-y-4">
+            {campaign.rounds.map((round) => (
+              <Card key={round.id} className="overflow-hidden border-2 border-muted/20">
+                <div className="bg-muted/10 px-4 py-3 border-b flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <div className="w-7 h-7 rounded-full bg-eco-green text-white flex items-center justify-center text-xs font-bold">
+                      {round.number}
+                    </div>
+                    <span className="font-bold">{round.name}</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <Badge variant="outline" className={
+                      round.status === 'UPCOMING' ? 'bg-blue-50 text-blue-600' :
+                      round.status === 'ONGOING' ? 'bg-green-50 text-green-600' :
+                      'bg-slate-50 text-slate-600'
+                    }>
+                      {round.status}
+                    </Badge>
+                    <Button 
+                      size="sm" 
+                      variant="ghost" 
+                      className="h-7 px-2 text-eco-blue hover:text-eco-blue hover:bg-eco-blue/10 text-xs"
+                      onClick={() => onAddQuiz(campaign, round.id)}
+                    >
+                      <Plus className="w-3.5 h-3.5 mr-1" />
+                      Gán Quiz
+                    </Button>
+                  </div>
+                </div>
+                <CardContent className="p-4 space-y-4">
+                  <div className="flex flex-wrap gap-4 text-sm">
+                    <div className="flex items-center gap-1.5 text-muted-foreground">
+                      <Clock className="w-4 h-4" />
+                      <span>{format(new Date(round.start_time), 'HH:mm dd/MM')} - {format(new Date(round.end_time), 'HH:mm dd/MM')}</span>
+                    </div>
+                    <div className="flex items-center gap-1.5 font-medium">
+                      <Gamepad2 className="w-4 h-4 text-eco-orange" />
+                      <span>{round.game_type_name}</span>
+                      <Badge variant="secondary" className="ml-1 text-[10px] h-4">
+                        {round.difficulty}
+                      </Badge>
+                    </div>
+                  </div>
 
-          {/* Selected Games */}
-          <div>
-            <h4 className="font-semibold mb-3 flex items-center gap-2">
-              <Gamepad2 className="w-4 h-4 text-eco-orange" />
-              Loại Game
-            </h4>
-            <div className="flex flex-wrap gap-2">
-              {campaign.selected_games?.map((gameId) => {
-                const game = gameTypes.find(g => g.id === gameId);
-                return (
-                  <Badge key={gameId} variant="outline" className="px-3 py-1.5">
-                    {gameId === 'sorting' ? '🗑️' : '🏃'} {game?.name}
-                  </Badge>
-                );
-              })}
-            </div>
-          </div>
-
-          {/* Selected Levels */}
-          {campaign.selected_levels && campaign.selected_levels.length > 0 && (
-            <div>
-              <h4 className="font-semibold mb-3 flex items-center gap-2">
-                <Layers className="w-4 h-4 text-eco-purple" />
-                Cấp độ Game
-              </h4>
-              <div className="space-y-3">
-                {campaign.selected_games?.map((gameId) => {
-                  const gameName = gameTypes.find(g => g.id === gameId)?.name;
-                  const levelsForGame = campaign.selected_levels?.filter(l => l.game_type === gameId);
-                  
-                  if (!levelsForGame || levelsForGame.length === 0) return null;
-
-                  return (
-                    <div key={gameId} className="space-y-2">
-                      <div className="flex items-center gap-2">
-                        {gameId === 'sorting' ? <Recycle className="w-4 h-4 text-eco-green" /> : <Zap className="w-4 h-4 text-eco-blue" />}
-                        <span className="font-medium text-sm">{gameName}</span>
-                      </div>
-                      <div className="flex flex-wrap gap-2 pl-6">
-                        {levelsForGame.map((level) => (
-                          <Badge 
-                            key={level.level_id} 
-                            variant="outline" 
-                            className={`px-3 py-1 ${
-                              level.difficulty === 'Dễ' ? 'border-eco-green/30 bg-eco-green/5 text-eco-green' :
-                              level.difficulty === 'Trung bình' ? 'border-eco-orange/30 bg-eco-orange/5 text-eco-orange' :
-                              'border-destructive/30 bg-destructive/5 text-destructive'
-                            }`}
-                          >
-                            {level.level_name} ({level.difficulty})
-                          </Badge>
+                  {round.quizzes && round.quizzes.length > 0 && (
+                    <div className="space-y-2">
+                      <p className="text-xs font-bold text-muted-foreground uppercase tracking-wider flex items-center gap-1.5">
+                        <Brain className="w-3.5 h-3.5" />
+                        Danh sách Quiz ({round.quizzes.length})
+                      </p>
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                        {round.quizzes.map((quiz) => (
+                          <div key={quiz.id} className="flex items-center justify-between p-2 rounded-lg bg-eco-blue/5 border border-eco-blue/10">
+                            <span className="text-xs font-medium truncate max-w-[150px]">{quiz.title}</span>
+                            <div className="flex items-center gap-1">
+                              <Badge variant="outline" className="text-[9px] h-4 px-1 capitalize">
+                                {quiz.difficulty.toLowerCase()}
+                              </Badge>
+                            </div>
+                          </div>
                         ))}
                       </div>
                     </div>
-                  );
-                })}
-              </div>
-            </div>
-          )}
-
-          {/* Participating Classes */}
-          <div>
-            <h4 className="font-semibold mb-3 flex items-center gap-2">
-              <Users className="w-4 h-4" />
-              Danh sách lớp tham gia
-            </h4>
-            <Card className="border">
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>Lớp</TableHead>
-                    <TableHead>Khối</TableHead>
-                    <TableHead className="text-center">Học sinh</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {campaign.participating_classes?.map((cls) => (
-                    <TableRow key={cls.id}>
-                      <TableCell className="font-medium">{cls.class_name}</TableCell>
-                      <TableCell>Khối {cls.grade}</TableCell>
-                      <TableCell className="text-center">{cls.students_count}</TableCell>
-                    </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
-            </Card>
+                  )}
+                </CardContent>
+              </Card>
+            ))}
           </div>
-        </>
+        </div>
       )}
 
       {/* Student Participation Status - Show for inviting_students phase OR completed phase */}
@@ -330,19 +301,19 @@ export function CampaignDetail({ campaign, gameTypes }) {
           {/* Summary Cards */}
           <div className="grid grid-cols-4 gap-3 mb-4">
             <div className="p-3 rounded-lg bg-muted/50 text-center">
-              <p className="text-2xl font-bold">{invitationStats.total}</p>
+              <p className="text-2xl font-bold">{participantStats.total}</p>
               <p className="text-xs text-muted-foreground">Tổng số</p>
             </div>
             <div className="p-3 rounded-lg bg-eco-orange/10 text-center">
-              <p className="text-2xl font-bold text-eco-orange">{invitationStats.pending}</p>
-              <p className="text-xs text-muted-foreground">Chờ phản hồi</p>
+              <p className="text-2xl font-bold text-eco-orange">{participantStats.invited}</p>
+              <p className="text-xs text-muted-foreground">Đã mời</p>
             </div>
             <div className="p-3 rounded-lg bg-eco-green/10 text-center">
-              <p className="text-2xl font-bold text-eco-green">{invitationStats.accepted}</p>
+              <p className="text-2xl font-bold text-eco-green">{participantStats.approved}</p>
               <p className="text-xs text-muted-foreground">Đã chấp nhận</p>
             </div>
             <div className="p-3 rounded-lg bg-destructive/10 text-center">
-              <p className="text-2xl font-bold text-destructive">{invitationStats.rejected}</p>
+              <p className="text-2xl font-bold text-destructive">{participantStats.declined}</p>
               <p className="text-xs text-muted-foreground">Đã từ chối</p>
             </div>
           </div>
@@ -355,9 +326,9 @@ export function CampaignDetail({ campaign, gameTypes }) {
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="all">Tất cả lớp</SelectItem>
-                {classesWithInvitations.map((cls) => (
-                  <SelectItem key={cls.id} value={cls.id}>
-                    {cls.name}
+                {uniqueClasses.map((cls) => (
+                  <SelectItem key={cls} value={cls}>
+                    {cls}
                   </SelectItem>
                 ))}
               </SelectContent>
@@ -377,21 +348,24 @@ export function CampaignDetail({ campaign, gameTypes }) {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {filteredInvitations?.map((invitation) => {
-                  const StatusIcon = invitationStatusConfig[invitation.status].icon;
+                {filteredParticipants?.map((participant) => {
+                  const status = participant.approval_status || 'INVITED';
+                  const config = invitationStatusConfig[status.toLowerCase()] || invitationStatusConfig.pending;
+                  const StatusIcon = config.icon;
+                  
                   return (
-                    <TableRow key={invitation.id}>
-                      <TableCell className="font-medium">{invitation.student_name}</TableCell>
-                      <TableCell>{invitation.class_name}</TableCell>
-                      <TableCell>{invitation.parent_name}</TableCell>
-                      <TableCell>{invitation.parent_phone}</TableCell>
+                    <TableRow key={participant.id}>
+                      <TableCell className="font-medium">{participant.name}</TableCell>
+                      <TableCell>{participant.class_name}</TableCell>
+                      <TableCell>{participant.code}</TableCell>
+                      <TableCell>{participant.grade}</TableCell>
                       <TableCell className="text-center">
                         <Badge
-                          className={invitationStatusConfig[invitation.status].color}
+                          className={config.color}
                           variant="secondary"
                         >
                           <StatusIcon className="w-3 h-3 mr-1" />
-                          {invitationStatusConfig[invitation.status].label}
+                          {config.label}
                         </Badge>
                       </TableCell>
                     </TableRow>
