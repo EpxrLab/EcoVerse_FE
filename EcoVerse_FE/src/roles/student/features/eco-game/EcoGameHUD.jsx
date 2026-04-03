@@ -77,6 +77,12 @@ export default function EcoGameHUD({ game, onBack, levelConfig }) {
   const [showTransition, setShowTransition] = useState(false);
   const [showGameOver, setShowGameOver] = useState(false);
 
+  const fetchData = async () => {};
+
+  useEffect(() => {
+    fetchData();
+  }, []);
+
   const isSeaRescue = levelConfig?.stage1Game === "searescue";
 
   useEffect(() => {
