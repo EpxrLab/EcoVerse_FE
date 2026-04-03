@@ -137,9 +137,9 @@ function RewardCard({ reward, coins, onRedeem }) {
         <div
           className={`w-full h-32 rounded-xl mb-4 flex items-center justify-center text-5xl border ${cfg.color}`}
         >
-          {reward.imageUrl ? (
+          {reward.imagePresignedUrl ? (
             <img
-              src={reward.imageUrl}
+              src={reward.imagePresignedUrl}
               alt={reward.rewardName}
               className="w-full h-full object-cover rounded-xl"
             />
