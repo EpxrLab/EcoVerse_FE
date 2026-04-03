@@ -30,7 +30,7 @@ import AdminSchool from "./roles/admin/pages/adminSchool/adminSchool";
 import AdminPartnership from "./roles/admin/pages/adminPartnership/adminPartnership";
 import AdminGameLevels from "./roles/admin/pages/adminGameLevel/adminGameLevels";
 import AdminSubscription from "./roles/admin/pages/adminSubscription/adminSubscription";
-import AdminTransaction from "./roles/admin/pages/adminTransaction/adminTransaction";
+import AdminRevenue from "./roles/admin/pages/adminTransaction/adminTransaction";
 import AdminContent from "./roles/admin/pages/adminContent/adminContent";
 
 //=======================Student Routes==============================
@@ -77,6 +77,7 @@ import PartnershipProfile from "./roles/partnership/pages/partnershipProfile/par
 
 //========================Payment Routes==============================
 import PaymentResult from "./features/payment/pages/paymentResult/paymentResult";
+
 const queryClient = new QueryClient();
 
 const ProtectedRoute = ({ children, role }) => {
@@ -176,7 +177,7 @@ const App = () => (
                 <Route path="partnerships" element={<AdminPartnership />} />
                 <Route path="game-levels" element={<AdminGameLevels />} />
                 <Route path="subscriptions" element={<AdminSubscription />} />
-                <Route path="transactions" element={<AdminTransaction />} />
+                <Route path="transactions" element={<AdminRevenue />} />
                 <Route path="content" element={<AdminContent />} />
               </Route>
 

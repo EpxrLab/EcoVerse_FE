@@ -77,11 +77,14 @@ export default class EcoSeaRescue {
     this._onEndGame = cb;
   }
 
-  // ─── Audio loader ──────────────────────────────────────────────────────────
+  // ─── Audio loader ─────────────────────────────────────────────────────────
+  // Dùng THREE.AudioLoader để load buffer vào đúng AudioContext của audioListener.
+  // KHÔNG dùng Web Audio API trực tiếp vì buffer được decode bởi ctx của THREE —
+  // nếu play trên ctx khác sẽ throw InvalidStateError im lặng.
   _loadAudio() {
     const audioLoader = new THREE.AudioLoader();
 
-    // BGM — loop
+    // ── BGM ──
     this.bgm = new THREE.Audio(this.audioListener);
     audioLoader.load(
       "/assets/audio/music_game.mp3",
@@ -89,60 +92,74 @@ export default class EcoSeaRescue {
         this.bgm.setBuffer(buffer);
         this.bgm.setLoop(true);
         this.bgm.setVolume(0.4);
-        if (!this._stopped) this.bgm.play();
+        // Resume context trước khi play — browser suspend AudioContext cho đến
+        // khi có user gesture (click/keydown). BGM cần resume ở đây.
+        this._resumeThenCall(() => {
+          if (!this._stopped && !this.bgm.isPlaying) this.bgm.play();
+        });
       },
       undefined,
       () => console.warn("BGM not found"),
     );
 
-    // Collect sound — one-shot khi nhặt rác
-    this.collectSound = new THREE.Audio(this.audioListener);
-    audioLoader.load("/assets/audio/collect.mp3", (buffer) => {
-      this.collectSound.setBuffer(buffer);
-      this.collectSound.setVolume(0.6);
-    });
-
-    // Warning / hit sound — một-shot khi va chạm vật cản
-    this.warningSound = new THREE.Audio(this.audioListener);
-    audioLoader.load("/assets/audio/warning.mp3", (buffer) => {
-      this.warningSound.setBuffer(buffer);
-      this.warningSound.setVolume(0.7);
-    });
-
-    // Game-over sound
-    this.gameOverSound = new THREE.Audio(this.audioListener);
-    audioLoader.load("/assets/audio/gameover.mp3", (buffer) => {
-      this.gameOverSound.setBuffer(buffer);
-      this.gameOverSound.setVolume(0.8);
-    });
+    // ── SFX — dùng chung một helper để load ──
+    this.collectSound = this._makeSfx(
+      audioLoader,
+      "/assets/audio/collect.mp3",
+      0.6,
+    );
+    this.warningSound = this._makeSfx(
+      audioLoader,
+      "/assets/audio/warning.mp3",
+      0.7,
+    );
+    this.gameOverSound = this._makeSfx(
+      audioLoader,
+      "/assets/audio/gameover.mp3",
+      0.8,
+    );
   }
 
-  _playOneShot(sound) {
-    if (!sound || !sound.buffer) {
-      console.warn("Sound not ready:", sound);
-      return;
-    }
+  // Tạo một THREE.Audio, load buffer vào đó, trả về object
+  _makeSfx(loader, url, volume) {
+    const sfx = new THREE.Audio(this.audioListener);
+    loader.load(
+      url,
+      (buffer) => {
+        sfx.setBuffer(buffer);
+        sfx.setVolume(volume);
+      },
+      undefined,
+      () => console.warn(`SFX not found: ${url}`),
+    );
+    return sfx;
+  }
 
+  // Resume AudioContext rồi gọi callback — pattern an toàn cho mọi browser
+  _resumeThenCall(fn) {
+    // THREE.AudioContext là singleton dùng chung — lấy qua audioListener
     const ctx = this.audioListener?.context;
     if (!ctx) return;
-
-    const doPlay = () => {
-      const s = new THREE.Audio(this.audioListener);
-      s.setBuffer(sound.buffer);
-      s.setVolume(sound.getVolume());
-      s.play();
-
-      // auto cleanup
-      setTimeout(() => {
-        s.stop();
-      }, 1000);
-    };
-
     if (ctx.state === "suspended") {
-      ctx.resume().then(doPlay);
+      ctx
+        .resume()
+        .then(fn)
+        .catch(() => {});
     } else {
-      doPlay();
+      fn();
     }
+  }
+
+  // ─── _playOneShot ──────────────────────────────────────────────────────────
+  // Dùng đúng THREE.Audio object đã load buffer — KHÔNG tạo BufferSource thủ công.
+  // Lý do: buffer được decode bởi audioListener.context, phải play trên cùng ctx đó.
+  // Nếu tạo BufferSource thủ công từ ctx khác → InvalidStateError bị nuốt im lặng.
+  _playOneShot(sfx) {
+    if (!sfx?.buffer) return; // buffer chưa load xong
+    this._resumeThenCall(() => {
+      if (sfx.isPlaying) sfx.stop();
+      sfx.play();
+    });
   }
 
   // ─── init() ───────────────────────────────────────────────────────────────
@@ -246,27 +263,21 @@ export default class EcoSeaRescue {
       playerState: this._playerState,
       storage: this._gameState.storage,
       clock: { getDelta: () => delta },
+
+      setInventoryCount: h.setInventoryCount,
+      setInventoryFull: h.setInventoryFull,
+      setHudPulse: h.setHudPulse,
+      setDamageFlash: h.setDamageFlash,
+
+      // ── onPickup: gameTick gọi đúng 1 lần ngay khi nhặt được rác ──────────
       onPickup: () => {
         this._playOneShot(this.collectSound);
       },
 
-      setInventoryCount: (newCount) => {
-        this._prevInventorySize = newCount;
-        h.setInventoryCount(newCount);
-      },
-
-      setInventoryFull: h.setInventoryFull,
-      setHudPulse: h.setHudPulse,
-
-      setDamageFlash: (val) => {
-        if (val) {
-          const now = Date.now();
-          if (now - this._lastDamageSoundTime > 500) {
-            this._lastDamageSoundTime = now;
-            this._playOneShot(this.warningSound);
-          }
-        }
-        h.setDamageFlash(val);
+      // ── onDamage: gameTick gọi đúng 1 lần khi va chạm vật cản ───────────
+      // Đã có OBSTACLE_DAMAGE_COOLDOWN=1000ms trong gameTick nên không cần cooldown thêm.
+      onDamage: () => {
+        this._playOneShot(this.warningSound);
       },
 
       setScreenShake: h.setScreenShake,
@@ -357,23 +368,20 @@ export default class EcoSeaRescue {
     if (this._keyUp) window.removeEventListener("keyup", this._keyUp);
     if (this._gameState) this._gameState.stopped = true;
 
-    // ── Stop & cleanup ALL audio objects ──
-    // Nếu còn đang isPlaying thì phải stop() trước khi bỏ reference,
-    // nếu không Three.js sẽ throw "cannot disconnect" error.
-    [
-      this.bgm,
-      this.collectSound,
-      this.warningSound,
-      this.gameOverSound,
-    ].forEach((sound) => {
-      if (sound?.isPlaying) sound.stop();
+    // ── Stop BGM và SFX ngắn ngay lập tức ──
+    // gameOverSound KHÔNG stop — đang phát thì để chạy hết
+    [this.bgm, this.collectSound, this.warningSound].forEach((s) => {
+      if (s?.isPlaying) s.stop();
     });
 
-    // Gỡ AudioListener khỏi camera
-    if (this.audioListener) {
-      this.camera.remove(this.audioListener);
-      this.audioListener = null;
-    }
+    // Gỡ AudioListener sau 3s để gameOverSound kịp phát xong
+    // (null ngay để _playOneShot không gọi thêm sau dispose)
+    const _listener = this.audioListener;
+    const _camera = this.camera;
+    this.audioListener = null;
+    setTimeout(() => {
+      if (_listener) _camera.remove(_listener);
+    }, 3000);
 
     this.bgm = null;
     this.collectSound = null;
