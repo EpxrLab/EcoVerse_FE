@@ -32,7 +32,6 @@ import AdminGameLevels from "./roles/admin/pages/adminGameLevel/adminGameLevels"
 import AdminSubscription from "./roles/admin/pages/adminSubscription/adminSubscription";
 import AdminTransaction from "./roles/admin/pages/adminTransaction/adminTransaction";
 import AdminContent from "./roles/admin/pages/adminContent/adminContent";
-import AdminMarketPlace from "./roles/admin/pages/adminMarketPlace/adminMarketPlace";
 
 //=======================Student Routes==============================
 import { StudentProvider } from "./roles/student/context";
@@ -179,7 +178,6 @@ const App = () => (
                 <Route path="subscriptions" element={<AdminSubscription />} />
                 <Route path="transactions" element={<AdminTransaction />} />
                 <Route path="content" element={<AdminContent />} />
-                <Route path="marketplace" element={<AdminMarketPlace />} />
               </Route>
 
               {/* School Routes (Protected) */}
@@ -226,7 +224,10 @@ const App = () => (
                   element={<PartnershipLeaderboard />}
                 />
                 <Route path="rewards" element={<PartnershipRewards />} />
-                <Route path="subscription" element={<PartnershipSubscription />} />
+                <Route
+                  path="subscription"
+                  element={<PartnershipSubscription />}
+                />
               </Route>
               <Route
                 path="/partnership/profile"

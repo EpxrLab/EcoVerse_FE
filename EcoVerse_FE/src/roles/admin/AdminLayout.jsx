@@ -47,11 +47,6 @@ const menuItems = [
     icon: <TransactionOutlined />,
   },
   { key: "/admin/content", label: "Nội dung game", icon: <FileTextOutlined /> },
-  {
-    key: "/admin/marketplace",
-    label: "Marketplace",
-    icon: <ShoppingOutlined />,
-  },
 ];
 
 const AdminLayout = ({ children }) => {

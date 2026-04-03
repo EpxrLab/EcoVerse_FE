@@ -433,6 +433,8 @@ export function gameTick({
   setDamageFlash,
   setScreenShake,
   endGame,
+  onPickup,
+  onDamage,
   clock,
 }) {
   if (state.stopped) return;
@@ -597,6 +599,7 @@ export function gameTick({
       // Damage
       if (now - state.lastDamageTime > OBSTACLE_DAMAGE_COOLDOWN) {
         state.lastDamageTime = now;
+        if (onDamage) onDamage();
         state.hitTime = now;
 
         setDamageFlash(true);
@@ -672,6 +675,7 @@ export function gameTick({
       state.inventory.push(t);
       scene.remove(t);
       player.add(t);
+      if (onPickup) onPickup();
       t.position.set(0, 0.8 + state.inventory.length * 0.25, -0.4);
       t.scale.set(1, 1, 1);
       setInventoryCount(state.inventory.length);
