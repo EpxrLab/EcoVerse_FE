@@ -229,8 +229,8 @@ export default function SchoolProfile() {
                         <div className="relative group">
                           <div className="w-40 h-40 rounded-[2.5rem] bg-gradient-to-br from-eco-green to-eco-blue p-1.5 shadow-2xl transition-transform duration-300 hover:scale-[1.02]">
                             <div className="w-full h-full rounded-[2.2rem] bg-card border-4 border-white overflow-hidden flex items-center justify-center">
-                              {profile.logoUrl ? (
-                                <img src={profile.logoUrl} alt="School Logo" className="w-full h-full object-cover" />
+                              {profile.logoPresignedUrl || profile.logoUrl ? (
+                                <img src={profile.logoPresignedUrl || profile.logoUrl} alt="School Logo" className="w-full h-full object-cover" />
                               ) : (
                                 <School className="w-16 h-16 text-eco-green" />
                               )}
@@ -324,7 +324,7 @@ export default function SchoolProfile() {
                               </div>
                             </div>
                             <Button variant="outline" className="w-full rounded-xl" asChild>
-                              <a href={profile.licenseUrl} target="_blank" rel="noopener noreferrer">Xem tài liệu</a>
+                              <a href={profile.licensePresignedUrl || profile.licenseUrl} target="_blank" rel="noopener noreferrer">Xem tài liệu</a>
                             </Button>
                           </CardContent>
                         </Card>
@@ -523,8 +523,8 @@ export default function SchoolProfile() {
                               <label className="text-sm font-bold text-muted-foreground uppercase tracking-wider">Logo trường</label>
                               <div className="flex items-center gap-4">
                                 <div className="w-20 h-20 rounded-2xl border-2 border-dashed border-eco-green/20 overflow-hidden flex items-center justify-center bg-muted/20 shrink-0 shadow-inner group transition-all hover:border-eco-green/40">
-                                  {localPreviews.logoUrl || formData.logoUrl ? (
-                                    <img src={localPreviews.logoUrl || formData.logoUrl} alt="Logo Preview" className="w-full h-full object-cover transition-transform group-hover:scale-110" />
+                                  {localPreviews.logoUrl || profile.logoPresignedUrl || profile.logoUrl ? (
+                                    <img src={localPreviews.logoUrl || profile.logoPresignedUrl || profile.logoUrl} alt="Logo Preview" className="w-full h-full object-cover transition-transform group-hover:scale-110" />
                                   ) : (
                                     <School className="w-8 h-8 text-muted-foreground/40" />
                                   )}
@@ -558,8 +558,8 @@ export default function SchoolProfile() {
                               <label className="text-sm font-bold text-muted-foreground uppercase tracking-wider">Giấy phép thành lập (PNG/JPG)</label>
                               <div className="flex items-center gap-4">
                                 <div className="w-20 h-20 rounded-2xl border-2 border-dashed border-eco-green/20 overflow-hidden flex items-center justify-center bg-muted/20 shrink-0 shadow-inner group transition-all hover:border-eco-green/40">
-                                  {localPreviews.licenseUrl || formData.licenseUrl ? (
-                                    <img src={localPreviews.licenseUrl || formData.licenseUrl} alt="License Preview" className="w-full h-full object-cover transition-transform group-hover:scale-110" />
+                                  {localPreviews.licenseUrl || profile.licensePresignedUrl ? (
+                                    <img src={localPreviews.licenseUrl || profile.licensePresignedUrl} alt="License Preview" className="w-full h-full object-cover transition-transform group-hover:scale-110" />
                                   ) : (
                                     <FileText className="w-8 h-8 text-muted-foreground/40" />
                                   )}

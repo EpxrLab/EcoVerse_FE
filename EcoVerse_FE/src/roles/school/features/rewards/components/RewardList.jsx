@@ -1,7 +1,7 @@
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/shared/components/ui/table';
 import { Button } from '@/shared/components/ui/button';
 import { Badge } from '@/shared/components/ui/badge';
-import { Check, MoreHorizontal, PackageCheck } from 'lucide-react';
+import { Check, MoreHorizontal, PackageCheck, XCircle } from 'lucide-react';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -10,7 +10,7 @@ import {
   DropdownMenuTrigger,
 } from "@/shared/components/ui/dropdown-menu";
 
-export function RewardList({ rewards, status, onMarkDelivered, onConfirm }) {
+export function RewardList({ rewards, status, onMarkDelivered, onConfirm, onApprove, onReject, onDeliver }) {
   if (status === 'pending') {
     return (
       <Table>
@@ -20,43 +20,78 @@ export function RewardList({ rewards, status, onMarkDelivered, onConfirm }) {
             <TableHead className="font-bold">Học sinh</TableHead>
             <TableHead className="font-bold">Phần thưởng</TableHead>
             <TableHead className="text-center font-bold">Xu</TableHead>
-            <TableHead className="font-bold">Hết hạn</TableHead>
+            <TableHead className="text-center font-bold">Trạng thái</TableHead>
+            <TableHead className="font-bold">Ngày yêu cầu</TableHead>
             <TableHead className="text-right font-bold w-[100px]">Thao tác</TableHead>
           </TableRow>
         </TableHeader>
         <TableBody>
           {rewards.map((reward) => (
             <TableRow key={reward.id} className="hover:bg-eco-orange/3">
-              <TableCell className="font-mono text-sm">{reward.id}</TableCell>
+              <TableCell className="font-mono text-sm">{reward.requestCode || reward.id}</TableCell>
               <TableCell>
                 <p className="font-semibold">{reward.student}</p>
-                {reward.class && <p className="text-xs text-muted-foreground">Lớp {reward.class}</p>}
+                {reward.studentCode && <p className="text-xs text-muted-foreground">{reward.studentCode}</p>}
               </TableCell>
               <TableCell>
-                <Badge variant="outline" className="bg-eco-blue/8 text-eco-blue border-eco-blue/25">
-                  {reward.reward}
-                </Badge>
+                <div className="flex items-center gap-3">
+                  {reward.imagePresignedUrl && (
+                    <div className="w-8 h-8 rounded-md overflow-hidden bg-muted flex-shrink-0 border">
+                      <img src={reward.imagePresignedUrl} alt={reward.reward} className="w-full h-full object-cover" />
+                    </div>
+                  )}
+                  <Badge variant="outline" className="bg-eco-blue/8 text-eco-blue border-eco-blue/25">
+                    {reward.reward}
+                  </Badge>
+                </div>
               </TableCell>
               <TableCell className="text-center font-bold text-eco-orange">{reward.coins}</TableCell>
-              <TableCell className="text-eco-orange font-medium">{reward.expiresAt}</TableCell>
+              <TableCell className="text-center">
+                {reward.rawStatus === 'PENDING' ? (
+                  <Badge variant="outline" className="bg-eco-orange/10 text-eco-orange border-eco-orange/25">
+                    Chờ duyệt
+                  </Badge>
+                ) : (
+                  <Badge variant="outline" className="bg-eco-blue/10 text-eco-blue border-eco-blue/25">
+                    Đã duyệt
+                  </Badge>
+                )}
+              </TableCell>
+              <TableCell className="text-muted-foreground">{reward.requestDate}</TableCell>
               <TableCell className="text-right">
-                {onMarkDelivered && (
-                  <DropdownMenu>
-                    <DropdownMenuTrigger asChild>
-                      <Button variant="ghost" className="h-8 w-8 p-0">
-                        <span className="sr-only">Open menu</span>
-                        <MoreHorizontal className="h-4 w-4" />
-                      </Button>
-                    </DropdownMenuTrigger>
-                    <DropdownMenuContent align="end">
-                      <DropdownMenuLabel>Thao tác</DropdownMenuLabel>
-                      <DropdownMenuItem onClick={() => onMarkDelivered(reward.id)} className="text-eco-green font-medium">
-                        <Check className="mr-2 h-4 w-4" />
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <Button variant="ghost" className="h-8 w-8 p-0">
+                      <span className="sr-only">Open menu</span>
+                      <MoreHorizontal className="h-4 w-4" />
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="end">
+                    <DropdownMenuLabel>Thao tác</DropdownMenuLabel>
+                    {reward.rawStatus === 'PENDING' && (
+                      <>
+                        {onApprove && (
+                          <DropdownMenuItem onClick={() => onApprove(reward.id)} className="text-eco-green font-medium cursor-pointer">
+                            <Check className="mr-2 h-4 w-4" />
+                            Duyệt yêu cầu
+                          </DropdownMenuItem>
+                        )}
+                        {onReject && (
+                          <DropdownMenuItem onClick={() => onReject(reward.id)} className="text-destructive font-medium cursor-pointer">
+                            <XCircle className="mr-2 h-4 w-4" />
+                            Từ chối yêu cầu
+                          </DropdownMenuItem>
+                        )}
+                      </>
+                    )}
+                    {reward.rawStatus === 'APPROVED' && onDeliver && (
+                      <DropdownMenuItem onClick={() => onDeliver(reward.id)} className="text-eco-blue font-medium cursor-pointer">
+                        <PackageCheck className="mr-2 h-4 w-4" />
                         Đánh dấu đã giao
                       </DropdownMenuItem>
-                    </DropdownMenuContent>
-                  </DropdownMenu>
-                )}
+                    )}
+                  </DropdownMenuContent>
+                </DropdownMenu>
               </TableCell>
             </TableRow>
           ))}
@@ -75,16 +110,40 @@ export function RewardList({ rewards, status, onMarkDelivered, onConfirm }) {
             <TableHead className="font-bold">Phần thưởng</TableHead>
             <TableHead className="text-center font-bold">Xu</TableHead>
             <TableHead className="font-bold">Ngày giao</TableHead>
+            <TableHead className="font-bold">Ngày xác nhận</TableHead>
+            <TableHead className="text-center font-bold">Phụ huynh xác nhận</TableHead>
           </TableRow>
         </TableHeader>
         <TableBody>
           {rewards.map((reward) => (
             <TableRow key={reward.id} className="hover:bg-eco-green/3">
-              <TableCell className="font-mono text-sm">{reward.id}</TableCell>
+              <TableCell className="font-mono text-sm">{reward.requestCode || reward.id}</TableCell>
               <TableCell><p className="font-semibold">{reward.student}</p></TableCell>
-              <TableCell><Badge variant="outline">{reward.reward}</Badge></TableCell>
+              <TableCell>
+                <div className="flex items-center gap-2">
+                  {reward.imagePresignedUrl && (
+                    <div className="w-7 h-7 rounded overflow-hidden bg-muted flex-shrink-0 border">
+                      <img src={reward.imagePresignedUrl} alt={reward.reward} className="w-full h-full object-cover" />
+                    </div>
+                  )}
+                  <Badge variant="outline">{reward.reward}</Badge>
+                </div>
+              </TableCell>
               <TableCell className="text-center font-bold text-eco-orange">{reward.coins}</TableCell>
               <TableCell>{reward.deliveredAt}</TableCell>
+              <TableCell>{reward.confirmedAt || "-"}</TableCell>
+              <TableCell className="text-center">
+                {reward.rawStatus === 'CONFIRMED' ? (
+                  <Badge className="bg-eco-green hover:bg-eco-green text-white border-0">
+                    <Check className="w-3 h-3 mr-1" />
+                    Đã xác nhận
+                  </Badge>
+                ) : (
+                  <Badge variant="outline" className="bg-muted/30 text-muted-foreground border-muted-foreground/20">
+                    Chờ xác nhận
+                  </Badge>
+                )}
+              </TableCell>
             </TableRow>
           ))}
         </TableBody>
@@ -102,16 +161,27 @@ export function RewardList({ rewards, status, onMarkDelivered, onConfirm }) {
             <TableHead className="font-bold">Học sinh</TableHead>
             <TableHead className="font-bold">Phần thưởng</TableHead>
             <TableHead className="text-center font-bold">Xu (Hoàn)</TableHead>
+            <TableHead className="font-bold">Ngày hủy</TableHead>
             <TableHead className="font-bold">Lý do</TableHead>
           </TableRow>
         </TableHeader>
         <TableBody>
           {rewards.map((reward) => (
             <TableRow key={reward.id}>
-              <TableCell className="font-mono text-sm">{reward.id}</TableCell>
+              <TableCell className="font-mono text-sm">{reward.requestCode || reward.id}</TableCell>
               <TableCell><p className="font-semibold">{reward.student}</p></TableCell>
-              <TableCell><Badge variant="outline">{reward.reward}</Badge></TableCell>
+              <TableCell>
+                <div className="flex items-center gap-2">
+                  {reward.imagePresignedUrl && (
+                    <div className="w-7 h-7 rounded overflow-hidden bg-muted flex-shrink-0 border">
+                      <img src={reward.imagePresignedUrl} alt={reward.reward} className="w-full h-full object-cover" />
+                    </div>
+                  )}
+                  <Badge variant="outline">{reward.reward}</Badge>
+                </div>
+              </TableCell>
               <TableCell className="text-center font-bold text-eco-green">+{reward.coins}</TableCell>
+              <TableCell className="text-muted-foreground">{reward.cancelledDate || reward.requestDate}</TableCell>
               <TableCell><Badge variant="destructive">{reward.reason}</Badge></TableCell>
             </TableRow>
           ))}
@@ -138,7 +208,7 @@ export function RewardList({ rewards, status, onMarkDelivered, onConfirm }) {
       <TableBody>
         {rewards.map((reward) => (
           <TableRow key={reward.id} className="hover:bg-eco-blue/3">
-            <TableCell className="font-mono text-sm">{reward.id}</TableCell>
+            <TableCell className="font-mono text-sm">{reward.requestCode || reward.id}</TableCell>
             <TableCell>
               <p className="font-semibold">{reward.student}</p>
               <p className="text-xs text-muted-foreground">Lớp {reward.class}</p>

@@ -2,7 +2,7 @@
  * EcoGame - Main Orchestrator
  *
  * Manages the Three.js renderer, scene, camera, and delegates
- * to EcoGameRunner (Stage 1) and EcoGameSorter (Stage 2).
+ * to the Stage 1 Game (Runner or Sea Rescue) and EcoGameSorter (Stage 2).
  */
 import * as THREE from "three";
 import EcoGameStateManager, { GameState } from "./EcoGameStateManager";
@@ -19,7 +19,7 @@ export default class EcoGame {
     this.clock = new THREE.Clock();
     this.stateManager = new EcoGameStateManager();
 
-    this.runner = null;
+    this.stage1Game = null;
     this.sorter = null;
     this.activeStage = null;
 
@@ -100,14 +100,14 @@ export default class EcoGame {
     const gameType = this.levelConfig?.stage1Game ?? "runner";
 
     if (gameType === "searescue") {
-      this.runner = new EcoSeaRescue(
+      this.stage1Game = new EcoSeaRescue(
         this.scene,
         this.camera,
         this.stateManager,
         this.levelConfig.searescue ?? {},
       );
     } else {
-      this.runner = new EcoGameRunner(
+      this.stage1Game = new EcoGameRunner(
         this.scene,
         this.camera,
         this.stateManager,
@@ -115,23 +115,23 @@ export default class EcoGame {
       );
     }
 
-    this.runner.init();
-    this.activeStage = this.runner;
+    this.stage1Game.init();
+    this.activeStage = this.stage1Game;
 
-    // Register callbacks — EcoSeaRescue có cùng interface với EcoGameRunner
-    this.runner.onTrashCollected((count) => {
+    // Register callbacks — Both Stage 1 games share the same interface
+    this.stage1Game.onTrashCollected((count) => {
       if (this._hudCallbacks.onTrashCollected) {
         this._hudCallbacks.onTrashCollected(count);
       }
     });
 
-    this.runner.onDistanceUpdate((distance, speed) => {
+    this.stage1Game.onDistanceUpdate((distance, speed) => {
       if (this._hudCallbacks.onDistanceUpdate) {
         this._hudCallbacks.onDistanceUpdate(distance, speed);
       }
     });
 
-    this.runner.onStageComplete(() => {
+    this.stage1Game.onStageComplete(() => {
       this.switchToStage2();
     });
   }
@@ -144,10 +144,10 @@ export default class EcoGame {
       this._hudCallbacks.onStageChange(GameState.STAGE_2);
     }
 
-    // Dispose runner
-    if (this.runner) {
-      this.runner.dispose();
-      this.runner = null;
+    // Dispose Stage 1 game
+    if (this.stage1Game) {
+      this.stage1Game.dispose();
+      this.stage1Game = null;
     }
 
     this.startStage2();
@@ -212,9 +212,9 @@ export default class EcoGame {
    * Restart the entire game
    */
   restart() {
-    if (this.runner) {
-      this.runner.dispose();
-      this.runner = null;
+    if (this.stage1Game) {
+      this.stage1Game.dispose();
+      this.stage1Game = null;
     }
     if (this.sorter) {
       this.sorter.dispose();
@@ -315,9 +315,9 @@ export default class EcoGame {
 
     window.removeEventListener("resize", this._onResize);
 
-    if (this.runner) {
-      this.runner.dispose();
-      this.runner = null;
+    if (this.stage1Game) {
+      this.stage1Game.dispose();
+      this.stage1Game = null;
     }
     if (this.sorter) {
       this.sorter.dispose();

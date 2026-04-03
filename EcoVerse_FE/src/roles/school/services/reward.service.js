@@ -19,5 +19,14 @@ export const rewardService = {
         'Content-Type': 'multipart/form-data'
       }
     });
+  },
+  getRewardRequests: () => {
+    return axios.get('/school/rewards/requests');
+  },
+  approveRewardRequest: (id, data) => {
+    return axios.put(`/school/rewards/requests/${id}/approve`, data);
+  },
+  deliverRewardRequest: (id) => {
+    return axios.put(`/school/rewards/requests/${id}/deliver`);
   }
 };

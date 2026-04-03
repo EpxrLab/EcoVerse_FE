@@ -2,25 +2,23 @@ import { useState } from 'react';
 import { Card, CardContent } from "@/shared/components/ui/card";
 import { Button } from "@/shared/components/ui/button";
 import { Badge } from "@/shared/components/ui/badge";
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-} from "@/shared/components/ui/dialog";
 import { 
   Plus, 
   GraduationCap,
-  Edit,
   Loader2,
   Layers,
   Mail,
 } from "lucide-react";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/shared/components/ui/tabs";
 import { useClasses } from '../../features/classes/hooks/useClasses';
-import { useClassForm } from '../../features/classes/hooks';
-import { StudentListView, GradeGroup, SchoolAccountsView, StudentFormDialog } from '../../components/classes';
-import { ClassStats, ClassForm, BulkImportDialog } from '../../features/classes/components';
+import { 
+  StudentListView, 
+  GradeGroup, 
+  SchoolAccountsView, 
+  StudentFormDialog,
+  ClassStats, 
+  BulkImportDialog 
+} from '../../features/classes/components';
 import { cn } from "@/shared/lib/utils";
 
 export default function SchoolClasses() {
@@ -31,11 +29,7 @@ export default function SchoolClasses() {
     stats,
     selectedClass,
     isLoading,
-    isBulkImportOpen,
-    setIsBulkImportOpen,
     setSelectedClass,
-    updateClass,
-    deleteClass,
     fetchClasses,
     createStudent,
     updateStudent,
@@ -44,18 +38,19 @@ export default function SchoolClasses() {
     bulkImport,
   } = useClasses();
 
-  const {
-    classForm,
-    updateClassForm,
-    resetClassForm,
-    loadClassForm,
-    expandedGrades,
-    toggleGrade,
-    openAddClassForGrade,
-  } = useClassForm();
+  const [expandedGrades, setExpandedGrades] = useState(new Set([1, 2, 3, 4, 5]));
+  const toggleGrade = (grade) => {
+    setExpandedGrades(prev => {
+      const newSet = new Set(prev);
+      if (newSet.has(grade)) {
+        newSet.delete(grade);
+      } else {
+        newSet.add(grade);
+      }
+      return newSet;
+    });
+  };
 
-  const [editingClass, setEditingClass] = useState(null);
-  const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const [mainTab, setMainTab] = useState('classes');
   
   const initialStudentForm = {
@@ -73,25 +68,12 @@ export default function SchoolClasses() {
   };
   const [studentForm, setStudentForm] = useState(initialStudentForm);
   const [isAddStudentDialogOpen, setIsAddStudentDialogOpen] = useState(false);
+  const [isBulkImportOpen, setIsBulkImportOpen] = useState(false);
 
   // Handlers
 
-  const handleUpdateClass = async () => {
-    if (editingClass) {
-      await updateClass(editingClass, classForm);
-      setEditingClass(null);
-      setIsEditDialogOpen(false);
-      resetClassForm();
-    }
-  };
-
   const handleAddStudent = async (data) => {
-    // This is for adding student within a specific class (passed from StudentListView)
-    if (selectedClass) {
-      return await createStudent(selectedClass.id, data);
-    }
-    // This is for global addition (no classId)
-    return await createStudent(null, data);
+    return await createStudent(data);
   };
 
   const handleGlobalAddStudent = async () => {
@@ -104,17 +86,6 @@ export default function SchoolClasses() {
 
   const handleUpdateStudent = async (id, data) => {
     return await updateStudent(id, data);
-  };
-
-  const openEditDialog = (classItem) => {
-    setEditingClass(classItem.id);
-    loadClassForm({
-      name: classItem.name,
-      grade: classItem.grade,
-      teacher_name: classItem.teacher_name || '',
-      description: classItem.description || '',
-    });
-    setIsEditDialogOpen(true);
   };
 
   const handleBulkImport = async (file, parsedRows) => {
@@ -286,10 +257,7 @@ export default function SchoolClasses() {
                         group={group}
                         isExpanded={expandedGrades.has(group.grade)}
                         onToggle={() => toggleGrade(group.grade)}
-                        onAddClass={openAddClassForGrade}
                         onSelectClass={setSelectedClass}
-                        onEditClass={openEditDialog}
-                        onDeleteClass={deleteClass}
                       />
                     </div>
                   ))}
@@ -317,26 +285,6 @@ export default function SchoolClasses() {
         onFormChange={setStudentForm}
         onSubmit={handleGlobalAddStudent}
       />
-
-      <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
-        <DialogContent className="max-w-md">
-          <DialogHeader>
-            <DialogTitle className="flex items-center gap-2.5">
-              <div className="w-9 h-9 rounded-xl bg-eco-blue/10 flex items-center justify-center">
-                <Edit className="w-4.5 h-4.5 text-eco-blue" />
-              </div>
-              Chỉnh sửa lớp học
-            </DialogTitle>
-          </DialogHeader>
-          <ClassForm
-            mode="edit"
-            formData={classForm}
-            onFormChange={updateClassForm}
-            onSubmit={handleUpdateClass}
-            onCancel={() => setIsEditDialogOpen(false)}
-          />
-        </DialogContent>
-      </Dialog>
 
       <BulkImportDialog
         isOpen={isBulkImportOpen}

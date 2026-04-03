@@ -31,6 +31,10 @@ export const classesService = {
     return axios.post('/school/send-credentials', data);
   },
 
+  resendCredentials: (parentId) => {
+    return axios.post(`/school/resend-credentials/${parentId}`);
+  },
+
   toggleStudentStatus: (studentId, isActive) => {
     return axios.put(`/school/de-active/student/${studentId}`, isActive, {
       headers: {

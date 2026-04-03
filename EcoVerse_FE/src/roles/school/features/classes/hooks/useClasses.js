@@ -8,9 +8,6 @@ export function useClasses() {
   const [classStudents, setClassStudents] = useState([]);
   const [allStudents, setAllStudents] = useState([]); // All students in the school
   const [selectedClass, setSelectedClass] = useState(null);
-  const [selectedGrade, setSelectedGrade] = useState(null);
-  const [isAddStudentDialogOpen, setIsAddStudentDialogOpen] = useState(false);
-  const [isBulkImportOpen, setIsBulkImportOpen] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const schoolId = 1;
 
@@ -64,9 +61,13 @@ export function useClasses() {
             gender: child.gender === 'MALE' ? 'male' : child.gender === 'FEMALE' ? 'female' : 'other',
             address: child.address || '',
             ...parentInfo,
+            parent_id: acc.parentId,
             status: child.active ? 'active' : 'suspended',
             accuracy: child.accuracy || 0,
             items_sorted: child.items_sorted || 0,
+            coins: child.coins || 0,
+            level: child.level || 1,
+            streak: child.streak || 0,
           });
         });
       });
@@ -79,16 +80,11 @@ export function useClasses() {
 
       const classesWithStats = data.map((classItem) => {
         const classSts = mappedStudents.filter(s =>
-          Array.isArray(s.class)
-            ? s.class.find(c => c.id === classItem.id)
-            : (s.class_id === classItem.id ||
-              (s.class && s.class.id === classItem.id) ||
-              s.className === classItem.name)
+          s.class_id === classItem.id ||
+          (s.className === classItem.name && parseInt(s.grade) === classItem.grade)
         );
-        const avgAccuracy = classSts.length > 0
-          ? Math.round(classSts.reduce((sum, s) => sum + (s.accuracy || 0), 0) / classSts.length)
-          : 0;
         const totalItems = classSts.reduce((sum, s) => sum + (s.items_sorted || 0), 0);
+        const totalCoins = classSts.reduce((sum, s) => sum + (s.coins || 0), 0);
         const topStudent = classSts.length > 0
           ? [...classSts].sort((a, b) => (b.accuracy || 0) - (a.accuracy || 0))[0]?.student_name
           : null;
@@ -98,6 +94,7 @@ export function useClasses() {
           students_count: classSts.length,
           avg_accuracy: avgAccuracy,
           total_items: totalItems,
+          total_coins: totalCoins,
           top_student: topStudent,
         };
       });
@@ -109,7 +106,10 @@ export function useClasses() {
       const yearStudents = mappedStudents
         .filter(s => yearClassIds.includes(s.class_id) || yearClassIds.includes(s.class?.id))
         .map(s => {
-           let matchedClass = data.find(c => c.id === s.class_id || (s.class && c.id === s.class.id) || c.name === s.className);
+           let matchedClass = data.find(c =>
+             c.id === s.class_id ||
+             (c.name === s.className && c.grade === parseInt(s.grade))
+           );
            return {
              ...s,
              className: matchedClass?.name || s.className || '',
@@ -131,9 +131,6 @@ export function useClasses() {
         grade: parseInt(grade),
         classes: gradeClasses,
         totalStudents: gradeClasses.reduce((sum, c) => sum + (c.students_count || 0), 0),
-        avgAccuracy: gradeClasses.length > 0
-          ? Math.round(gradeClasses.reduce((sum, c) => sum + (c.avg_accuracy || 0), 0) / gradeClasses.length)
-          : 0,
       }));
 
       setGradeGroups(groups.sort((a, b) => a.grade - b.grade));
@@ -168,43 +165,17 @@ export function useClasses() {
   // Calculate stats
   const stats = {
     totalClasses: classes.length,
-    totalStudents: classes.reduce((sum, c) => sum + (c.students_count || 0), 0),
-    avgAccuracy: classes.length > 0
-      ? Math.round(classes.reduce((sum, c) => sum + (c.avg_accuracy || 0), 0) / classes.length)
-      : 0,
+    totalStudents: allStudents.length,
     totalGrades: gradeGroups.length,
   };
 
 
-  // Update class
-  const updateClass = async (classId, formData) => {
-    toast.success('Cập nhật lớp học thành công');
-    await fetchClasses();
-  };
-
-  // Delete class
-  const deleteClass = async (classId) => {
-    toast.success('Xóa lớp học thành công');
-    if (selectedClass?.id === classId) {
-      setSelectedClass(null);
-    }
-    await fetchClasses();
-  };
-
   // Student CRUD operations
-  const createStudent = async (classId, formData) => {
-    // If classId is provided, we are adding to a specific class
-    // If not, we use the className and gradeLevel from formData
-    let className = formData.className;
-    let gradeLevel = formData.gradeLevel;
+  const createStudent = async (formData) => {
+    // We use the className and gradeLevel from formData
+    const className = formData.className;
+    const gradeLevel = formData.gradeLevel;
 
-    if (classId) {
-      const classInfo = classes.find(c => c.id === classId);
-      if (classInfo) {
-        className = classInfo.name;
-        gradeLevel = String(classInfo.grade);
-      }
-    }
 
     try {
       const payload = {
@@ -328,23 +299,13 @@ export function useClasses() {
     allStudents,
     stats,
     selectedClass,
-    selectedGrade,
     isLoading,
     schoolId,
 
-    // Dialog states
-    isAddStudentDialogOpen,
-    setIsAddStudentDialogOpen,
-    isBulkImportOpen,
-    setIsBulkImportOpen,
-
     // Setters
     setSelectedClass,
-    setSelectedGrade,
 
     // class Actions
-    updateClass,
-    deleteClass,
     fetchClasses,
 
     // Student Actions

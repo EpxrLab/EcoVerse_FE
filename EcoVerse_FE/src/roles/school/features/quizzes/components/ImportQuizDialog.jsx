@@ -206,8 +206,8 @@ export function ImportQuizDialog({ isOpen, onClose, onImport, isImporting, impor
 
   return (
     <Dialog open={isOpen} onOpenChange={handleClose}>
-      <DialogContent className="max-w-3xl p-0 gap-0 overflow-hidden" style={{ maxHeight: '90vh' }}>
-        <DialogHeader className="px-6 pt-5 pb-0">
+      <DialogContent className="max-w-3xl h-[90vh] flex flex-col p-0 gap-0 overflow-hidden">
+        <DialogHeader className="px-6 pt-6 pb-4 border-b shrink-0">
           <DialogTitle className="flex items-center gap-3">
             <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-eco-blue to-eco-green flex items-center justify-center shrink-0">
               <FileUp className="w-4.5 h-4.5 text-white" />
@@ -219,14 +219,16 @@ export function ImportQuizDialog({ isOpen, onClose, onImport, isImporting, impor
           </DialogTitle>
         </DialogHeader>
 
-        <div className="px-6 pt-4 pb-5 overflow-y-auto" style={{ maxHeight: 'calc(90vh - 80px)' }}>
-          <StepIndicator current={step} />
+        <div className="flex-1 min-h-0 overflow-y-auto px-6 py-6">
+          <div className="sticky top-0 bg-background z-10 pb-4 mb-2">
+            <StepIndicator current={step} />
+          </div>
 
           {step === 0 && (
             <div className="space-y-4">
               <div
                 className={cn(
-                  'relative border-2 border-dashed rounded-xl p-10 text-center transition-all cursor-pointer',
+                  'relative border-2 border-dashed rounded-2xl p-12 text-center transition-all cursor-pointer group',
                   isDragging
                     ? 'border-eco-blue bg-eco-blue/5 scale-[1.01]'
                     : 'border-muted-foreground/25 hover:border-eco-blue/50 hover:bg-muted/20'
@@ -243,10 +245,10 @@ export function ImportQuizDialog({ isOpen, onClose, onImport, isImporting, impor
                   className="hidden"
                   onChange={handleFileChange}
                 />
-                <div className="w-16 h-16 mx-auto rounded-xl bg-muted/80 flex items-center justify-center mb-4">
-                  <FileSpreadsheet className="w-8 h-8 text-muted-foreground" />
+                <div className="w-20 h-20 mx-auto rounded-2xl bg-muted/80 flex items-center justify-center mb-4 transition-transform group-hover:scale-110">
+                  <FileSpreadsheet className="w-10 h-10 text-muted-foreground" />
                 </div>
-                <p className="text-sm font-semibold mb-1">
+                <p className="text-sm font-bold mb-1">
                   {isDragging ? 'Thả file vào đây' : 'Kéo & thả file hoặc click để chọn'}
                 </p>
                 <p className="text-xs text-muted-foreground">Hỗ trợ: Excel (.xlsx), CSV</p>
@@ -328,15 +330,15 @@ export function ImportQuizDialog({ isOpen, onClose, onImport, isImporting, impor
                 <div className="p-3 rounded-xl border-2 border-eco-orange/20 bg-eco-orange/5">
                   <Trophy className="w-4 h-4 text-eco-orange mb-1" />
                   <p className="text-lg font-bold">{parsedRows.reduce((acc, curr) => acc + (parseInt(curr.coins_on_pass) || 0), 0)}</p>
-                  <p className="text-[10px] text-muted-foreground uppercase tracking-wider font-semibold">Tổng điểm</p>
+                  <p className="text-[10px] text-muted-foreground uppercase tracking-wider font-semibold">Eco Points</p>
                 </div>
               </div>
 
               <div className="rounded-xl border border-border overflow-hidden bg-card">
-                <div className="max-h-72 overflow-y-auto">
+                <div className="max-h-[400px] overflow-auto">
                   <Table>
-                    <TableHeader>
-                      <TableRow className="bg-muted/50 hover:bg-muted/50">
+                    <TableHeader className="sticky top-0 bg-muted/80 backdrop-blur-sm z-10 transition-colors">
+                      <TableRow className="hover:bg-transparent">
                         <TableHead className="text-xs w-8">#</TableHead>
                         <TableHead className="text-xs">Tiêu đề Quiz</TableHead>
                         <TableHead className="text-xs">Câu hỏi</TableHead>
@@ -367,29 +369,11 @@ export function ImportQuizDialog({ isOpen, onClose, onImport, isImporting, impor
                   </div>
                 )}
               </div>
-
-              <div className="flex gap-3">
-                <Button variant="outline" onClick={() => setStep(0)} className="flex-1" disabled={isImporting}>
-                  <ArrowLeft className="w-4 h-4 mr-2" />
-                  Quay lại
-                </Button>
-                <Button
-                  className="flex-1 bg-gradient-to-r from-eco-blue to-eco-green hover:opacity-90 shadow-lg"
-                  onClick={handleImport}
-                  disabled={isImporting}
-                >
-                  {isImporting ? (
-                    <><Loader2 className="w-4 h-4 mr-2 animate-spin" /> Đang xử lý... ({importProgress?.done || 0}%)</>
-                  ) : (
-                    <><FileUp className="w-4 h-4 mr-2" /> Import tất cả</>
-                  )}
-                </Button>
-              </div>
             </div>
           )}
 
           {step === 2 && (
-            <div className="space-y-6 text-center py-4">
+            <div className="space-y-6 text-center py-8">
               <div className="w-20 h-20 mx-auto rounded-full bg-eco-green/10 flex items-center justify-center animate-bounce">
                 <CheckCircle2 className="w-10 h-10 text-eco-green" />
               </div>
@@ -397,14 +381,42 @@ export function ImportQuizDialog({ isOpen, onClose, onImport, isImporting, impor
                 <h3 className="text-2xl font-bold text-foreground">Import thành công!</h3>
                 <p className="text-muted-foreground max-w-sm mx-auto">Tất cả bài quiz và câu hỏi đã được tạo thành công vào hệ thống của trường.</p>
               </div>
-
-              <Button
-                className="w-full h-12 text-base font-semibold bg-eco-green hover:bg-eco-green-dark"
-                onClick={handleClose}
-              >
-                Hoàn tất
-              </Button>
             </div>
+          )}
+        </div>
+
+        {/* Fixed Footer Actions */}
+        <div className="px-6 py-4 border-t bg-muted/20 flex gap-3 shrink-0">
+          {step === 1 && (
+             <Button variant="outline" onClick={() => setStep(0)} className="flex-1" disabled={isImporting}>
+               <ArrowLeft className="w-4 h-4 mr-2" />
+               Quay lại
+             </Button>
+          )}
+          
+          {step === 2 ? (
+            <Button
+              className="w-full text-base font-semibold bg-eco-green hover:bg-eco-green-dark"
+              onClick={handleClose}
+            >
+              Hoàn tất
+            </Button>
+          ) : step === 0 ? (
+            <Button variant="outline" onClick={handleClose} className="flex-1">
+               Thoát
+            </Button>
+          ) : (
+            <Button
+              className="flex-1 bg-gradient-to-r from-eco-blue to-eco-green hover:opacity-90 shadow-lg"
+              onClick={handleImport}
+              disabled={isImporting}
+            >
+              {isImporting ? (
+                <><Loader2 className="w-4 h-4 mr-2 animate-spin" /> Đang xử lý... ({importProgress?.done || 0}%)</>
+              ) : (
+                <><FileUp className="w-4 h-4 mr-2" /> Import tất cả</>
+              )}
+            </Button>
           )}
         </div>
       </DialogContent>

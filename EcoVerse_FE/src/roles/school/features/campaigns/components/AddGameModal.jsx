@@ -96,15 +96,21 @@ export function AddGameModal({ isOpen, onClose, campaign, onSubmit }) {
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="max-w-xl max-h-[85vh] flex flex-col">
-        <DialogHeader className="shrink-0">
-          <DialogTitle className="text-xl font-bold">Thêm Game cho chiến dịch</DialogTitle>
+      <DialogContent className="max-w-xl h-[85vh] flex flex-col overflow-hidden">
+        <DialogHeader className="shrink-0 pb-2">
+          <DialogTitle className="text-xl font-bold text-eco-green flex items-center gap-2">
+            <Zap className="w-6 h-6" />
+            Thêm Game cho chiến dịch
+          </DialogTitle>
         </DialogHeader>
 
-        <div className="flex-1 overflow-y-auto py-4 space-y-5">
+        <div className="flex-1 min-h-0 overflow-y-auto py-4 px-1 scrollbar-thin space-y-6">
           {/* Step 1: Game Type */}
           <div className="space-y-3">
-            <Label className="text-sm font-medium">1. Chọn Loại Game</Label>
+            <Label className="text-sm font-bold flex items-center gap-2">
+              <span className="w-6 h-6 rounded-full bg-eco-blue/10 text-eco-blue flex items-center justify-center text-xs">1</span>
+              Chọn Loại Game
+            </Label>
             <div className="grid grid-cols-2 gap-3">
               {[
                 { value: 'sorting', icon: <Package className="w-5 h-5" />, label: 'Thu thập & Phân loại', color: 'eco-blue' },
@@ -116,7 +122,7 @@ export function AddGameModal({ isOpen, onClose, campaign, onSubmit }) {
                   className={cn(
                     "p-3 rounded-xl border-2 cursor-pointer transition-all",
                     gameType === value
-                      ? `bg-${color}/5 border-${color} shadow-sm`
+                      ? `bg-${color}/5 border-${color} shadow-sm ring-1 ring-${color}`
                       : "border-border hover:bg-muted/50"
                   )}
                 >
@@ -131,8 +137,11 @@ export function AddGameModal({ isOpen, onClose, campaign, onSubmit }) {
 
           {/* Step 2: Preset */}
           {gameType && (
-            <div className="space-y-3">
-              <Label className="text-sm font-medium">2. Chọn Preset</Label>
+            <div className="space-y-3 transition-all animate-in fade-in slide-in-from-top-2">
+              <Label className="text-sm font-bold flex items-center gap-2">
+                <span className="w-6 h-6 rounded-full bg-eco-blue/10 text-eco-blue flex items-center justify-center text-xs">2</span>
+                Chọn Preset
+              </Label>
               <div className="flex flex-col gap-2">
                 {filteredPresets.map(preset => {
                   const presetBins = new Set();
@@ -176,19 +185,22 @@ export function AddGameModal({ isOpen, onClose, campaign, onSubmit }) {
 
           {/* Step 3: Waste Items */}
           {presetId && availableWaste.length > 0 && (
-            <div className="space-y-3">
+            <div className="space-y-3 transition-all animate-in fade-in slide-in-from-top-2">
               <div className="flex items-center justify-between">
-                <Label className="text-sm font-medium">3. Chọn rác xuất hiện trong game</Label>
+                <Label className="text-sm font-bold flex items-center gap-2">
+                  <span className="w-6 h-6 rounded-full bg-eco-blue/10 text-eco-blue flex items-center justify-center text-xs">3</span>
+                  Chọn rác xuất hiện trong game
+                </Label>
                 <div className="flex gap-2">
                   <button type="button" onClick={() => setSelectedWasteIds(availableWaste.map(i => i.id))} className="text-xs text-eco-blue hover:underline font-medium">Chọn tất cả</button>
                   <span className="text-xs text-muted-foreground">|</span>
                   <button type="button" onClick={() => setSelectedWasteIds([])} className="text-xs text-muted-foreground hover:underline font-medium">Bỏ chọn</button>
                 </div>
               </div>
-              <div className="space-y-3">
+              <div className="space-y-4">
                 {groupedWaste.map(group => (
-                  <div key={group.bin}>
-                    <p className={`text-xs font-bold mb-2 uppercase tracking-wider text-${group.color}-600`}>Thùng {group.label}</p>
+                  <div key={group.bin} className="space-y-2">
+                    <p className={`text-[10px] font-bold uppercase tracking-widest text-${group.color}-600 pl-1`}>Thùng {group.label}</p>
                     <div className="grid grid-cols-2 gap-2">
                       {group.items.map(item => {
                         const selected = selectedWasteIds.includes(item.id);
@@ -215,16 +227,16 @@ export function AddGameModal({ isOpen, onClose, campaign, onSubmit }) {
                   </div>
                 ))}
               </div>
-              <p className="text-xs text-muted-foreground text-center pt-1">
+              <p className="text-xs text-muted-foreground text-center pt-2">
                 Đã chọn <span className="font-bold text-foreground">{selectedWasteIds.length}</span> / {availableWaste.length} loại rác
               </p>
             </div>
           )}
         </div>
 
-        <DialogFooter className="border-t pt-4 shrink-0">
+        <DialogFooter className="border-t pt-4 shrink-0 mt-auto bg-background">
           <Button variant="ghost" onClick={onClose} className="mr-auto">Hủy</Button>
-          <Button onClick={handleSubmit} disabled={!gameType || !presetId} className="bg-eco-blue hover:bg-eco-blue/90 text-white">
+          <Button onClick={handleSubmit} disabled={!gameType || !presetId} className="bg-eco-blue hover:bg-eco-blue/90 text-white min-w-[140px]">
             Lưu cấu hình Game
           </Button>
         </DialogFooter>

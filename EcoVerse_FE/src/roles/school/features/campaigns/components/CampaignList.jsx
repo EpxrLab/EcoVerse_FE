@@ -1,3 +1,4 @@
+import React from 'react';
 import { Card, CardContent } from '@/shared/components/ui/card';
 import { Button } from '@/shared/components/ui/button';
 import { Badge } from '@/shared/components/ui/badge';
@@ -17,10 +18,18 @@ import {
   DropdownMenuTrigger,
 } from '@/shared/components/ui/dropdown-menu';
 import {
+  Pagination,
+  PaginationContent,
+  PaginationItem,
+  PaginationLink,
+  PaginationNext,
+  PaginationPrevious,
+  PaginationEllipsis,
+} from '@/shared/components/ui/pagination';
+import {
   Flag,
   MoreHorizontal,
   Calendar,
-  Users,
   Building2,
   Brain,
   Send,
@@ -37,6 +46,7 @@ import {
 } from 'lucide-react';
 import { format } from 'date-fns';
 import { vi } from 'date-fns/locale';
+import { cn } from '@/shared/lib/utils';
 
 const statusConfig = {
   draft: { label: 'Nháp', color: 'bg-muted text-muted-foreground', icon: Edit },
@@ -62,6 +72,13 @@ export function CampaignList({
   onAddGame,
   onAddQuiz,
 }) {
+  const [currentPage, setCurrentPage] = React.useState(1);
+  const itemsPerPage = 5;
+
+  React.useEffect(() => {
+    setCurrentPage(1);
+  }, [campaigns.length]);
+
   if (campaigns.length === 0) {
     return (
       <Card className="border-2 border-dashed">
@@ -78,6 +95,13 @@ export function CampaignList({
     );
   }
 
+  const totalResults = campaigns.length;
+  const totalPages = Math.ceil(totalResults / itemsPerPage);
+  const paginatedCampaigns = campaigns.slice(
+    (currentPage - 1) * itemsPerPage,
+    currentPage * itemsPerPage
+  );
+
   return (
     <Card className="border-2">
       <Table>
@@ -85,14 +109,11 @@ export function CampaignList({
           <TableRow className={`${tableHeaderBg} hover:${tableHeaderBg}`}>
             <TableHead className="font-bold">Tên chiến dịch</TableHead>
             <TableHead className="font-bold">Thời gian</TableHead>
-            <TableHead className="text-center font-bold">{participantLabel}</TableHead>
-            <TableHead className="text-center font-bold">Quiz</TableHead>
-            <TableHead className="text-center font-bold">Game</TableHead>
             <TableHead className="text-right font-bold">Thao tác</TableHead>
           </TableRow>
         </TableHeader>
         <TableBody>
-          {campaigns.map((campaign) => {
+          {paginatedCampaigns.map((campaign) => {
             const StatusIcon = statusConfig[campaign.status].icon;
             return (
               <TableRow key={campaign.id} className={rowHoverBg}>
@@ -146,41 +167,43 @@ export function CampaignList({
                   </div>
                 </TableCell>
                 <TableCell>
-                  <div className="flex items-center gap-1.5 text-sm text-muted-foreground">
-                    <Calendar className="w-4 h-4" />
-                    <span>
-                      {format(new Date(campaign.start_date), 'dd/MM', { locale: vi })} -{' '}
-                      {format(new Date(campaign.end_date), 'dd/MM/yyyy', { locale: vi })}
-                    </span>
-                  </div>
-                </TableCell>
-                <TableCell className="text-center">
-                  <div className="flex items-center justify-center gap-1.5">
-                    <Users className="w-4 h-4 text-muted-foreground" />
-                    <span className="font-medium">
-                      {campaign.origin === 'partnership' 
-                        ? (campaign.participating_students?.length || 0)
-                        : (campaign.participating_classes?.length || 0)
-                      }
-                      <span className="text-[10px] text-muted-foreground ml-1">
-                        {campaign.origin === 'partnership' ? 'HS' : 'Lớp'}
+                  <div className="space-y-1.5">
+                    <div className="flex items-center gap-1.5 text-sm text-muted-foreground">
+                      <Calendar className="w-4 h-4" />
+                      <span>
+                        {(() => {
+                          const start = new Date(campaign.start_date);
+                          const end = new Date(campaign.end_date);
+                          const isValidStart = campaign.start_date && !isNaN(start.getTime());
+                          const isValidEnd = campaign.end_date && !isNaN(end.getTime());
+                          
+                          return (
+                            <>
+                              {isValidStart ? format(start, 'HH:mm dd/MM', { locale: vi }) : '??'}
+                              {' - '}
+                              {isValidEnd ? format(end, 'HH:mm dd/MM/yyyy', { locale: vi }) : '??'}
+                            </>
+                          );
+                        })()}
                       </span>
-                    </span>
-                  </div>
-                </TableCell>
-                <TableCell className="text-center">
-                  <div className="flex items-center justify-center gap-1.5">
-                    <Brain className="w-4 h-4 text-eco-blue" />
-                    <span className="font-medium">{campaign.selected_quizzes?.length || 0}</span>
-                  </div>
-                </TableCell>
-                <TableCell className="text-center">
-                  <div className="flex items-center justify-center gap-1">
-                    {campaign.selected_games?.map(game => (
-                      <Badge key={game} variant="outline" className="text-xs">
-                        {game === 'sorting' ? '🗑️' : '🏃'}
-                      </Badge>
-                    ))}
+                    </div>
+                    {/* Invitation Timing */}
+                    {(campaign.invitation_send_date || campaign.invitation_deadline) && (
+                      <div className="flex items-center gap-2 text-[10px] whitespace-nowrap">
+                        {campaign.invitation_send_date && (
+                          <span className="flex items-center gap-1 text-eco-blue bg-eco-blue/5 px-1.5 py-0.5 rounded border border-eco-blue/10">
+                            <Send className="w-2.5 h-2.5" />
+                            {format(new Date(campaign.invitation_send_date), 'HH:mm dd/MM', { locale: vi })}
+                          </span>
+                        )}
+                        {campaign.invitation_deadline && (
+                          <span className="flex items-center gap-1 text-eco-orange bg-eco-orange/5 px-1.5 py-0.5 rounded border border-eco-orange/10">
+                            <Clock className="w-2.5 h-2.5" />
+                            Hạn: {format(new Date(campaign.invitation_deadline), 'HH:mm dd/MM', { locale: vi })}
+                          </span>
+                        )}
+                      </div>
+                    )}
                   </div>
                 </TableCell>
                 <TableCell className="text-right">
@@ -205,13 +228,6 @@ export function CampaignList({
                           </DropdownMenuItem>
                         )}
                         
-                        {campaign.status !== 'scheduled' && (
-                          <DropdownMenuItem onClick={() => onInvite(campaign)}>
-                            <Send className="w-4 h-4 mr-2" />
-                            Mời
-                          </DropdownMenuItem>
-                        )}
-
                         <DropdownMenuSeparator />
 
                         {campaign.status === 'draft' && (
@@ -277,6 +293,88 @@ export function CampaignList({
           })}
         </TableBody>
       </Table>
+
+      {/* Pagination Footer */}
+      {totalPages > 1 && (
+        <div className="px-6 py-4 border-t flex flex-col sm:flex-row items-center justify-between gap-4 bg-muted/10">
+          <p className="text-xs text-muted-foreground order-2 sm:order-1">
+            Hiển thị <span className="font-medium">{Math.min((currentPage - 1) * itemsPerPage + 1, totalResults)}</span>
+            {' - '}
+            <span className="font-medium">{Math.min(currentPage * itemsPerPage, totalResults)}</span>
+            {' trên '}
+            <span className="font-medium">{totalResults}</span> kết quả
+          </p>
+          
+          <Pagination className="justify-end order-1 sm:order-2 mx-0 w-auto">
+            <PaginationContent>
+              <PaginationItem>
+                <PaginationPrevious 
+                  onClick={(e) => {
+                    e.preventDefault();
+                    if (currentPage > 1) setCurrentPage(currentPage - 1);
+                  }}
+                  className={cn(
+                    "cursor-pointer",
+                    currentPage === 1 && "pointer-events-none opacity-50"
+                  )}
+                />
+              </PaginationItem>
+              
+              {/* Simple page numbers */}
+              {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => {
+                
+                if (
+                  page === 1 || 
+                  page === totalPages || 
+                  (page >= currentPage - 1 && page <= currentPage + 1)
+                ) {
+                  return (
+                    <PaginationItem key={page}>
+                      <PaginationLink
+                        isActive={page === currentPage}
+                        onClick={(e) => {
+                          e.preventDefault();
+                          setCurrentPage(page);
+                        }}
+                        className="cursor-pointer"
+                      >
+                        {page}
+                      </PaginationLink>
+                    </PaginationItem>
+                  );
+                }
+                
+                // Show ellipsis if there's a gap
+                if (
+                  (page === 2 && currentPage > 3) || 
+                  (page === totalPages - 1 && currentPage < totalPages - 2)
+                ) {
+                  return (
+                    <PaginationItem key={page}>
+                      <PaginationEllipsis />
+                    </PaginationItem>
+                  );
+                }
+                
+                return null;
+              })}
+
+              <PaginationItem>
+                <PaginationNext 
+                  onClick={(e) => {
+                    e.preventDefault();
+                    if (currentPage < totalPages) setCurrentPage(currentPage + 1);
+                  }}
+                  className={cn(
+                    "cursor-pointer",
+                    currentPage === totalPages && "pointer-events-none opacity-50"
+                  )}
+                />
+              </PaginationItem>
+            </PaginationContent>
+          </Pagination>
+        </div>
+      )}
     </Card>
   );
 }
