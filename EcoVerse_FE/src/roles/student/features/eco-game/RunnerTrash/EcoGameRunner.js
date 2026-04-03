@@ -55,6 +55,12 @@ export default class EcoGameRunner {
     this.touchStartX = 0;
     this.touchStartY = 0;
 
+    // Audio
+    this.audioListener = null;
+    this.bgm = null;
+    this.collectSound = null;
+    this.gameOverSound = null;
+
     this._onKeyDown = this._onKeyDown.bind(this);
     this._onTouchStart = this._onTouchStart.bind(this);
     this._onTouchEnd = this._onTouchEnd.bind(this);
@@ -64,10 +70,11 @@ export default class EcoGameRunner {
 
   init() {
     console.log('--- RUNNER START WITH CONFIG ---', this.config);
+    this._setupCamera(); // Camera first for audio listener
     this._createGround();
     this._createPlayer();
     this._createEnvironment();
-    this._setupCamera();
+    this._loadAudio(); // Load and start audio
     this._addEventListeners();
 
     this.isRunning = true;
@@ -79,81 +86,126 @@ export default class EcoGameRunner {
   }
 
   _createGround() {
-    // Load the Runner_map_1 3D model as the environment
+    // Load the 3D map model
     const loader = new GLTFLoader();
-    loader.load('/assets/Runner_map_1.glb', (gltf) => {
+    const mapPath = '/assets/Runner_map_2.glb'; // Configured map path
+    
+    loader.load(mapPath, (gltf) => {
       this.mapModel = gltf.scene;
       
       // Rotate map 180 degrees on Y to face the correct direction
       this.mapModel.rotation.y = Math.PI;
 
-      // Find the specific road mesh
-      let roadMesh = null;
+      // Find road/ground meshes with priority
+      let roadMeshes = [];
+      const secondaryMeshes = [];
+      
+      const primaryKeywords = ['daolu', 'road', 'street', 'way', 'path'];
+      const secondaryKeywords = ['ground', 'floor', 'dixing', 'ditu', 'terrain'];
+      
       this.mapModel.traverse((child) => {
-        if (child.isMesh && child.name.includes('daolu')) {
-          roadMesh = child;
+        if (child.isMesh) {
+          const nameLower = child.name.toLowerCase();
+          if (primaryKeywords.some(k => nameLower.includes(k))) {
+            roadMeshes.push(child);
+          } else if (secondaryKeywords.some(k => nameLower.includes(k))) {
+            secondaryMeshes.push(child);
+          }
         }
       });
 
-      this.mapSegments = [];
+      // Use primary meshes if available, otherwise fallback to secondary
+      const targetMeshes = roadMeshes.length > 0 ? roadMeshes : secondaryMeshes;
+      const finalUsedMeshes = targetMeshes.length > 0 ? targetMeshes : [this.mapModel];
+
+      console.log(`--- MAP LOADED: ${mapPath} ---`, { 
+        primaryFound: roadMeshes.length,
+        secondaryFound: secondaryMeshes.length,
+        usingType: roadMeshes.length > 0 ? 'PRIMARY' : (secondaryMeshes.length > 0 ? 'SECONDARY' : 'FULL_MODEL')
+      });
+
+      // Measure coordinates 
+      this.mapModel.updateMatrixWorld(true);
       
-      if (roadMesh) {
-        // First measure UN-SCALED road to get the scaling factor
-        this.mapModel.updateMatrixWorld(true);
-        const roadBoxInitial = new THREE.Box3().setFromObject(roadMesh);
-        const roadSizeInitial = roadBoxInitial.getSize(new THREE.Vector3());
+      // Calculate a combined bounding box for target meshes
+      const roadBoxInitial = new THREE.Box3();
+      finalUsedMeshes.forEach(mesh => {
+        const meshBox = new THREE.Box3().setFromObject(mesh);
+        roadBoxInitial.union(meshBox);
+      });
 
-        // Scale map so the ROAD is 10 units wide
-        const scale = 10 / roadSizeInitial.x;
-        this.mapModel.scale.setScalar(scale);
-        
-        // Update world matrix after scaling to get the final road position
-        this.mapModel.updateMatrixWorld(true);
-        const roadBoxFinal = new THREE.Box3().setFromObject(roadMesh);
-        const roadSizeFinal = roadBoxFinal.getSize(new THREE.Vector3());
-        const roadCenterFinal = roadBoxFinal.getCenter(new THREE.Vector3());
+      const roadSizeInitial = roadBoxInitial.getSize(new THREE.Vector3());
+      const roadCenterInitial = roadBoxInitial.getCenter(new THREE.Vector3());
 
-        this.modelLength = roadSizeFinal.z;
+      // Scale map so the ROAD is 10 units wide
+      // Note: We use the combined width of all road segments
+      const scale = 10 / roadSizeInitial.x;
+      this.mapModel.scale.setScalar(scale);
+      
+      // Update world matrix after scaling to get the final unified properties
+      this.mapModel.updateMatrixWorld(true);
+      
+      const finalBox = new THREE.Box3();
+      finalUsedMeshes.forEach(mesh => {
+        const meshBox = new THREE.Box3().setFromObject(mesh);
+        finalBox.union(meshBox);
+      });
 
-        // Force maxDistance to match the model's road length for this level
-        // (So we end the game when the map ends)
-        this.config.maxDistance = this.modelLength + 380; // 30 unit buffer
-        console.log('--- SINGLE MAP CONFIG ---', { length: this.modelLength, maxDistance: this.config.maxDistance });
+      const roadSizeFinal = finalBox.getSize(new THREE.Vector3());
+      const roadCenterFinal = finalBox.getCenter(new THREE.Vector3());
 
-        // Alignment: Center the road center at X=0
-        this.centeringX = roadCenterFinal.x;
+      this.modelLength = roadSizeFinal.z;
 
-        // Position the single map segment
-        this.mapModel.position.set(
-          -this.centeringX,
-            -((roadCenterFinal.y - roadSizeFinal.y/2)) - 0.7,
-            -(roadCenterFinal.z) - 460
-        );
+      // Calculate configuration based on actual map length
+      // MAP_START_OFFSET: How far ahead of the player the map starts appearing
+      const MAP_START_OFFSET = 1210; 
+      
+      // Set maxDistance to match the model's road length
+      // Game ends when player reaches approximately the end of the map
+      this.config.maxDistance = this.modelLength + MAP_START_OFFSET - 1170;
+      
+      console.log('--- RUNNER MAP CONFIG ---', { 
+        mesh: finalUsedMeshes[0]?.name || 'FULL_MODEL',
+        length: this.modelLength.toFixed(1), 
+        maxDistance: this.config.maxDistance.toFixed(1) 
+      });
 
-        this.mapModel.traverse((child) => {
-          if (child.isMesh) {
-            child.castShadow = true;
-            child.receiveShadow = true;
-          }
-        });
+      // Alignment: Center the road at X=0, put the front edge at -MAP_START_OFFSET
+      // roadCenterFinal.z is the center in world space AFTER scale but BEFORE position change
+      // roadSizeFinal.z / 2 is distance from center to edge.
+      // So center at -(roadSizeFinal.z/2) + roadCenterFinal.z puts the FRONT edge at 0?
+      // Wait, let's just use local coordinates logic:
+      // We want WorldZ = -MAP_START_OFFSET to be where local FrontZ is.
+      // FrontZ is usually roadCenterFinal.z - roadSizeFinal.z/2 ? 
+      // Depends on orientation. Since we rotated 180, let's just use the center.
+      
+      this.mapModel.position.set(
+        -roadCenterFinal.x,
+        -((roadCenterFinal.y - roadSizeFinal.y/2)) - 0.7,
+        -(roadCenterFinal.z) - MAP_START_OFFSET
+      );
 
-        this.scene.add(this.mapModel);
-        this.mapSegments = [this.mapModel];
-      } else {
-        // Fallback
-        const scale = 0.005;
-        this.mapModel.scale.setScalar(scale);
-        this.mapModel.position.set(0, -0.7, -15);
-        this.scene.add(this.mapModel);
-        this.mapSegments.push(this.mapModel);
-        this.modelLength = 200;
-      }
+      this.mapModel.traverse((child) => {
+        if (child.isMesh) {
+          child.castShadow = true;
+          child.receiveShadow = true;
+        }
+      });
+
+      this.scene.add(this.mapModel);
+      this.mapSegments = [this.mapModel];
+      
     }, undefined, (error) => {
-      console.error('Failed to load Runner_map_1.glb:', error);
+      console.error(`Failed to load ${mapPath}:`, error);
+      
+      // Fallback if load fails
+      this.modelLength = 500;
+      this.config.maxDistance = 500;
     });
 
-    // Invisible ground segments for gameplay collision
-    for (let i = 0; i < 6; i++) {
+    // Invisible ground segments for gameplay collision (physics)
+    // We keep these to ensure there's always a floor even if the model is loading
+    for (let i = 0; i < 10; i++) {
       const groundGeo = new THREE.BoxGeometry(LANE_WIDTH * 3 + 2, 0.2, GROUND_SEGMENT_LENGTH);
       const groundMat = new THREE.MeshStandardMaterial({ color: 0x607d8b });
       const ground = new THREE.Mesh(groundGeo, groundMat);
@@ -239,6 +291,41 @@ export default class EcoGameRunner {
   _setupCamera() {
     this.camera.position.set(0, 5, 8);
     this.camera.lookAt(0, 1, -20);
+
+    // Setup Audio Listener
+    if (!this.audioListener) {
+      this.audioListener = new THREE.AudioListener();
+      this.camera.add(this.audioListener);
+    }
+  }
+
+  _loadAudio() {
+    const audioLoader = new THREE.AudioLoader();
+
+    // Background Music
+    this.bgm = new THREE.Audio(this.audioListener);
+    audioLoader.load('/assets/audio/music_game.mp3', (buffer) => {
+      this.bgm.setBuffer(buffer);
+      this.bgm.setLoop(true);
+      this.bgm.setVolume(0.4);
+      if (this.isRunning && !this.gameOver) {
+        this.bgm.play();
+      }
+    }, undefined, (err) => console.warn('BGM not found at /assets/audio/bgm_runner.mp3'));
+
+    // Collection Sound
+    this.collectSound = new THREE.Audio(this.audioListener);
+    audioLoader.load('/assets/audio/collect.mp3', (buffer) => {
+      this.collectSound.setBuffer(buffer);
+      this.collectSound.setVolume(0.5);
+    }, undefined, (err) => console.warn('Collect sound not found at /assets/audio/collect.mp3'));
+
+    // Game Over Sound
+    this.gameOverSound = new THREE.Audio(this.audioListener);
+    audioLoader.load('/assets/audio/gameover.mp3', (buffer) => {
+      this.gameOverSound.setBuffer(buffer);
+      this.gameOverSound.setVolume(0.6);
+    }, undefined, (err) => console.warn('GameOver sound not found at /assets/audio/gameover.mp3'));
   }
 
   // ─── Event Handling ─────────────────────────────────────────────────────────
@@ -256,6 +343,10 @@ export default class EcoGameRunner {
   }
 
   _onKeyDown(e) {
+    if (this.audioListener && this.audioListener.context.state === 'suspended') {
+      this.audioListener.context.resume();
+    }
+
     if (this.gameOver || !this.isRunning) return;
 
     switch (e.code) {
@@ -276,12 +367,20 @@ export default class EcoGameRunner {
   }
 
   _onTouchStart(e) {
+    if (this.audioListener && this.audioListener.context.state === 'suspended') {
+      this.audioListener.context.resume();
+    }
+
     const touch = e.touches[0];
     this.touchStartX = touch.clientX;
     this.touchStartY = touch.clientY;
   }
 
   _onTouchEnd(e) {
+    if (this.audioListener && this.audioListener.context.state === 'suspended') {
+      this.audioListener.context.resume();
+    }
+
     if (this.gameOver || !this.isRunning) return;
 
     const touch = e.changedTouches[0];
@@ -457,6 +556,12 @@ export default class EcoGameRunner {
         if (this._onTrashCollected) {
           this._onTrashCollected(this.stateManager.getTotalTrashCount());
         }
+
+        // Play collection sound
+        if (this.collectSound && this.collectSound.buffer) {
+          if (this.collectSound.isPlaying) this.collectSound.stop();
+          this.collectSound.play();
+        }
       }
     }
 
@@ -476,6 +581,16 @@ export default class EcoGameRunner {
     if (this.gameOver) return;
     this.gameOver = true;
     this.isRunning = false;
+
+    // Stop BGM
+    if (this.bgm && this.bgm.isPlaying) {
+      this.bgm.stop();
+    }
+
+    // Play Game Over sound
+    if (this.gameOverSound && this.gameOverSound.buffer) {
+      this.gameOverSound.play();
+    }
 
     // Hit effect
     gsap.to(this.player.rotation, {
@@ -626,6 +741,15 @@ export default class EcoGameRunner {
     if (this.mixer) {
       this.mixer.stopAllAction();
       this.mixer = null;
+    }
+
+    // Stop and cleanup audio
+    if (this.bgm && this.bgm.isPlaying) this.bgm.stop();
+    if (this.collectSound && this.collectSound.isPlaying) this.collectSound.stop();
+    if (this.gameOverSound && this.gameOverSound.isPlaying) this.gameOverSound.stop();
+    
+    if (this.audioListener) {
+      this.camera.remove(this.audioListener);
     }
 
     // Kill all GSAP animations on game objects
