@@ -1,5 +1,5 @@
 import { useState, useMemo, lazy, Suspense } from "react";
-import { Card, Button, Tabs, Spin } from "antd";
+import { Card, Button, Tabs, Spin, Modal } from "antd";
 import {
   CalendarOutlined,
   TrophyOutlined,
@@ -11,14 +11,14 @@ import {
   ClockCircleOutlined,
   TagOutlined,
   CodeOutlined,
+  LogoutOutlined,
 } from "@ant-design/icons";
 import { motion } from "framer-motion";
 import { useStudentCampaigns } from "../../hooks/useStudentCampaign";
 import { useCampaignContext } from "../../context";
 import { useNavigate } from "react-router";
-
-// ─── Status Config ────────────────────────────────────────────────────────────
-// BE trả về status dạng string tự do — map sang display config
+import { logoutFunction } from "../../../../features/auth/services";
+import toast from "react-hot-toast";
 
 const STATUS_CONFIG = {
   INVITED: {
@@ -38,7 +38,6 @@ const STATUS_CONFIG = {
   },
 };
 
-// campaignType từ BE
 const TYPE_CONFIG = {
   SCHOOL_INTERNAL: { label: "Nội bộ trường", tw: "bg-blue-100 text-blue-700" },
   INTER_SCHOOL: { label: "Liên trường", tw: "bg-indigo-100 text-indigo-700" },
@@ -292,6 +291,30 @@ export default function CampaignSelection() {
   const { campaigns, loading } = useStudentCampaigns();
   const { setSelectedCampaign } = useCampaignContext();
 
+  const handleLogout = () => {
+    try {
+      Modal.confirm({
+        title: "Xác nhận đăng xuất",
+        content: "Bạn có chắc chắn muốn thoát khỏi hệ thống không?",
+        okText: "Đăng xuất",
+        cancelText: "Hủy",
+        okType: "danger",
+        centered: true,
+        onOk: async () => {
+          const res = await logoutFunction();
+          if (res) {
+            toast.success("Đăng xuất thành công!");
+            navigate("/auth/student");
+          } else {
+            toast.error("Đăng xuất thất bại!");
+          }
+        },
+      });
+    } catch (error) {
+      console.log(error);
+    }
+  };
+
   const handleSelect = (campaign) => {
     setSelectedCampaign(campaign.id);
     navigate(`/student/campaign/${campaign.id}`);
@@ -399,6 +422,16 @@ export default function CampaignSelection() {
                 className="rounded-xl bg-gradient-to-r from-amber-400 to-orange-500 border-0 hover:from-amber-500 hover:to-orange-600"
               >
                 Đổi quà
+              </Button>
+            </motion.div>
+            <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
+              <Button
+                danger
+                onClick={handleLogout}
+                icon={<LogoutOutlined />}
+                className="rounded-xl border-2 border-red-100 hover:bg-red-50 flex items-center"
+              >
+                Đăng xuất
               </Button>
             </motion.div>
           </div>
