@@ -275,6 +275,16 @@ const deleteGameLevel = async (gameId, id) => {
   }
 };
 
+//====================Get Transactions Analytics===============
+const getAllTransactions = async () => {
+  try {
+    const res = await axios.get("/subscriptions/admin/all?page=0&size=10");
+    return res.data;
+  } catch (error) {
+    console.log(error);
+  }
+};
+
 export {
   uploadModel3D,
   uploadIconImage,
@@ -304,4 +314,5 @@ export {
   addNewGameLevel,
   updateGameLevel,
   deleteGameLevel,
+  getAllTransactions,
 };
