@@ -1,15 +1,6 @@
 import { useState, useMemo, useEffect } from "react";
 import { useNavigate } from "react-router";
-import {
-  Card,
-  Button,
-  Tabs,
-  Tag,
-  Empty,
-  Spin,
-  Popconfirm,
-  Pagination,
-} from "antd";
+import { Card, Button, Tabs, Tag, Empty, Spin, Modal } from "antd";
 import {
   GiftOutlined,
   HomeOutlined,
@@ -21,19 +12,17 @@ import {
   BgColorsOutlined,
   TagOutlined,
   InboxOutlined,
-  QuestionCircleOutlined,
+  StopOutlined,
 } from "@ant-design/icons";
 import { motion, AnimatePresence } from "framer-motion";
 import toast from "react-hot-toast";
 import {
-  getAllRewards,
-  getAuthenticatedStudentProfile,
+  cancelMyRequest,
   createRewardRequest,
   getAllMyRequests,
-  cancelMyRequest,
+  getAllRewards,
+  getAuthenticatedStudentProfile,
 } from "../../services";
-
-// ─── Constants ────────────────────────────────────────────────────────────────
 
 const TYPE_CONFIG = {
   PHYSICAL: {
@@ -67,6 +56,12 @@ const STATUS_CONFIG = {
     tw: "bg-blue-50 text-blue-600 border-blue-200",
     stripe: "bg-blue-500",
   },
+  REJECTED: {
+    icon: <StopOutlined />,
+    text: "Từ chối",
+    tw: "bg-gray-100 text-gray-600 border-gray-300",
+    stripe: "bg-gray-400",
+  },
   COMPLETED: {
     icon: <CheckCircleOutlined />,
     text: "Hoàn thành",
@@ -95,6 +90,8 @@ const cardVariants = {
   },
 };
 
+// ─── CoinIcon ─────────────────────────────────────────────────────────────────
+
 const CoinIcon = ({ className = "w-5 h-5" }) => (
   <svg viewBox="0 0 24 24" fill="currentColor" className={className}>
     <circle cx="12" cy="12" r="10" opacity="0.2" />
@@ -112,11 +109,22 @@ const CoinIcon = ({ className = "w-5 h-5" }) => (
   </svg>
 );
 
+// ─── RewardCard ───────────────────────────────────────────────────────────────
+
 function RewardCard({ reward, coins, onRedeem }) {
   const cfg = TYPE_CONFIG[reward.rewardType] ?? TYPE_CONFIG.PHYSICAL;
   const inStock = reward.isUnlimited || reward.stockQuantity > 0;
-  const canAfford = coins >= reward.coinCost;
+
+  // qty: số lượng người dùng muốn đổi
+  const [qty, setQty] = useState(1);
+  // maxQty: unlimited → 99, ngược lại = tồn kho thực tế
+  const maxQty = reward.isUnlimited ? 99 : (reward.stockQuantity ?? 0);
+  const totalCost = reward.coinCost * qty;
+  const canAfford = coins >= totalCost;
   const canRedeem = inStock && canAfford && reward.isActive;
+
+  const dec = () => setQty((q) => Math.max(1, q - 1));
+  const inc = () => setQty((q) => Math.min(maxQty, q + 1));
 
   return (
     <motion.div
@@ -189,21 +197,67 @@ function RewardCard({ reward, coins, onRedeem }) {
           )}
         </div>
 
+        {/* ── Quantity selector — chỉ hiện khi còn hàng và đang hoạt động ── */}
+        {inStock && reward.isActive && (
+          <div className="flex items-center justify-between mb-3 px-0.5">
+            <span className="text-xs text-gray-500 font-medium">Số lượng</span>
+            <div className="flex items-center gap-2">
+              <button
+                onClick={dec}
+                disabled={qty <= 1}
+                className={`w-7 h-7 rounded-lg border flex items-center justify-center font-bold text-sm transition-all select-none
+                  ${
+                    qty <= 1
+                      ? "border-gray-100 text-gray-300 cursor-not-allowed bg-gray-50"
+                      : "border-gray-200 text-gray-600 hover:border-gray-400 hover:bg-gray-50 active:scale-95"
+                  }`}
+              >
+                −
+              </button>
+              <span
+                className={`w-7 text-center font-bold text-sm tabular-nums ${!canAfford ? "text-red-500" : "text-gray-800"}`}
+              >
+                {qty}
+              </span>
+              <button
+                onClick={inc}
+                disabled={qty >= maxQty}
+                className={`w-7 h-7 rounded-lg border flex items-center justify-center font-bold text-sm transition-all select-none
+                  ${
+                    qty >= maxQty
+                      ? "border-gray-100 text-gray-300 cursor-not-allowed bg-gray-50"
+                      : "border-gray-200 text-gray-600 hover:border-gray-400 hover:bg-gray-50 active:scale-95"
+                  }`}
+              >
+                +
+              </button>
+            </div>
+          </div>
+        )}
+
         {/* Price + CTA */}
-        <div className="flex items-center justify-between pt-3 border-t border-gray-100">
-          <div
-            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg font-bold text-sm ${canAfford ? "bg-amber-50 text-amber-600" : "bg-gray-100 text-gray-400"}`}
-          >
-            <CoinIcon
-              className={`w-4 h-4 ${canAfford ? "text-amber-500" : "text-gray-400"}`}
-            />
-            {reward.coinCost.toLocaleString()}
+        <div className="flex items-center justify-between pt-3 border-t border-gray-100 mt-auto">
+          {/* Tổng xu — đỏ khi không đủ */}
+          <div className="flex flex-col items-start gap-0.5">
+            <div
+              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg font-bold text-sm ${canAfford ? "bg-amber-50 text-amber-600" : "bg-red-50 text-red-500"}`}
+            >
+              <CoinIcon
+                className={`w-4 h-4 ${canAfford ? "text-amber-500" : "text-red-400"}`}
+              />
+              {totalCost.toLocaleString()}
+            </div>
+            {qty > 1 && (
+              <span className="text-[10px] text-gray-400 pl-1">
+                {reward.coinCost.toLocaleString()} × {qty}
+              </span>
+            )}
           </div>
           <Button
             type="primary"
             size="small"
             disabled={!canRedeem}
-            onClick={() => onRedeem(reward)}
+            onClick={() => onRedeem(reward, qty)}
             className={`rounded-xl font-semibold text-xs px-4 ${canRedeem ? cfg.btnClass : ""}`}
           >
             {!reward.isActive
@@ -220,152 +274,163 @@ function RewardCard({ reward, coins, onRedeem }) {
   );
 }
 
+// ─── RequestCard ──────────────────────────────────────────────────────────────
+
 function RequestCard({ request, onCancel }) {
   const sc = STATUS_CONFIG[request.status] ?? STATUS_CONFIG.PENDING;
   const tc = TYPE_CONFIG[request.rewardType] ?? TYPE_CONFIG.PHYSICAL;
 
+  // Hàm helper để định dạng ngày tháng đơn giản
+  const formatDate = (dateStr) => {
+    if (!dateStr) return "—";
+    return new Date(dateStr).toLocaleString("vi-VN", {
+      hour: "2-digit",
+      minute: "2-digit",
+      day: "2-digit",
+      month: "2-digit",
+      year: "numeric",
+    });
+  };
+
   return (
     <Card
-      className="rounded-2xl border-2 hover:shadow-lg transition-all overflow-hidden"
+      className="rounded-2xl border-2 hover:shadow-lg transition-all"
       bodyStyle={{ padding: 0 }}
     >
       <div className="flex">
-        <div className={`w-1.5 flex-shrink-0 ${sc.stripe}`} />
-
+        <div className={`w-2 rounded-l-2xl flex-shrink-0 ${sc.stripe}`} />
         <div className="flex-1 p-4">
-          {/* Header: Ảnh, Tên phần thưởng và Mã yêu cầu */}
-          <div className="flex items-start gap-3 mb-3">
-            <img
-              src={request.rewardImageUrl}
-              alt={request.rewardName}
-              className="w-14 h-14 rounded-xl object-cover border border-gray-100 bg-gray-50"
-              onError={(e) => {
-                e.target.src = "https://placehold.co/100x100?text=Gift";
-              }}
-            />
-            <div className="flex-1 min-w-0">
-              <div className="flex justify-between items-start">
-                <h3 className="font-bold text-gray-800 truncate pr-2">
-                  {request.rewardName}
-                </h3>
-                <span
-                  className={`inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold text-white whitespace-nowrap ${tc.badge}`}
-                >
-                  {tc.label}
-                </span>
-              </div>
-              <p className="text-[10px] text-gray-400 font-mono">
-                #{request.requestCode}
-              </p>
-
-              <div className="flex items-center gap-3 mt-1">
-                <span className="flex items-center gap-1 font-bold text-amber-600 text-sm">
-                  <CoinIcon className="w-3.5 h-3.5" />
-                  {request.totalCoins}
-                </span>
-                {request.quantity > 1 && (
-                  <span className="text-xs text-gray-500">
-                    x{request.quantity}
-                  </span>
+          <div className="flex items-start justify-between gap-4 mb-3">
+            <div className="flex items-center gap-4">
+              <div
+                className={`w-12 h-12 rounded-xl flex items-center justify-center text-2xl border overflow-hidden ${tc.color}`}
+              >
+                {request.rewardImagePresignedUrl ? (
+                  <img
+                    src={request.rewardImagePresignedUrl}
+                    alt={request.rewardName}
+                    className="w-full h-full object-cover"
+                  />
+                ) : (
+                  tc.emoji
                 )}
               </div>
-            </div>
-          </div>
-
-          {/* Body: Trạng thái và Thời gian */}
-          <div className="flex items-center justify-between py-2 border-t border-gray-50">
-            <div className="flex flex-col">
-              <span className="text-[10px] text-gray-400 uppercase tracking-wider font-medium">
-                Ngày yêu cầu
-              </span>
-              <span className="text-xs text-gray-600 font-medium">
-                {new Date(request.createdAt).toLocaleDateString("vi-VN")}
-              </span>
+              <div>
+                <div className="flex items-center gap-2 mb-0.5">
+                  <h3 className="font-bold text-gray-800">
+                    {request.rewardName}
+                    <span className="text-gray-400 font-normal ml-2">
+                      x{request.quantity}
+                    </span>
+                  </h3>
+                  <span
+                    className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold text-white ${tc.badge}`}
+                  >
+                    {tc.label}
+                  </span>
+                </div>
+                <div className="flex items-center gap-3 text-xs text-gray-400">
+                  <span className="flex items-center gap-1 font-semibold text-amber-600 bg-amber-50 px-2 py-0.5 rounded border border-amber-100">
+                    <CoinIcon className="w-3 h-3" />
+                    {request.totalCoins}{" "}
+                    {/* Sửa từ coinCost thành totalCoins */}
+                  </span>
+                  <span className="flex items-center gap-1">
+                    <ClockCircleOutlined />
+                    Mã: {request.requestCode}
+                  </span>
+                </div>
+              </div>
             </div>
             <span
-              className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-xs font-bold border ${sc.tw}`}
+              className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold border flex-shrink-0 ${sc.tw}`}
             >
-              {sc.icon} {sc.text}
+              {sc.icon}
+              {sc.text}
             </span>
           </div>
 
-          {/* Footer: Hành động hoặc Thông tin chi tiết trạng thái */}
-          <div className="mt-2 pt-2 border-t border-dashed border-gray-100">
+          <div className="pt-2 border-t border-dashed border-gray-200 text-[11px]">
+            <div className="flex justify-between text-gray-500 mb-1">
+              <span>Ngày tạo: {formatDate(request.createdAt)}</span>
+              {request.updatedAt && (
+                <span>Cập nhật cuối: {formatDate(request.updatedAt)}</span>
+              )}
+            </div>
+
             {request.status === "PENDING" && (
-              <div className="flex items-center justify-between">
-                <span className="text-[10px] text-amber-500 italic flex items-center gap-1">
-                  <ClockCircleOutlined /> Đang chờ duyệt...
-                </span>
-                <Popconfirm
-                  title="Hủy yêu cầu đổi quà"
-                  description="Bạn có chắc chắn muốn hủy yêu cầu này không?"
-                  onConfirm={() => onCancel(request.id)}
-                  okText="Xác nhận hủy"
-                  cancelText="Quay lại"
-                  okButtonProps={{ danger: true }}
-                  icon={<QuestionCircleOutlined style={{ color: "red" }} />}
-                  placement="topRight"
+              <div className="flex items-center justify-between mt-1">
+                <div className="flex items-center gap-1.5 text-xs text-amber-600">
+                  <WarningOutlined />
+                  <span className="font-medium">
+                    Đang chờ hệ thống phê duyệt
+                  </span>
+                </div>
+                <Button
+                  type="text"
+                  size="small"
+                  danger
+                  onClick={() => onCancel(request.id)}
+                  className="text-xs text-red-500 hover:bg-red-50"
                 >
-                  <Button
-                    type="primary"
-                    danger
-                    ghost
-                    size="small"
-                    className="text-[11px] h-7 rounded-md font-medium"
-                  >
-                    Huỷ yêu cầu
-                  </Button>
-                </Popconfirm>
+                  Huỷ yêu cầu
+                </Button>
               </div>
             )}
 
             {request.status === "APPROVED" && (
-              <div className="flex flex-col gap-2">
-                <div className="text-[11px] text-blue-600 bg-blue-50 p-2 rounded-lg flex items-start gap-1.5">
-                  <CheckCircleOutlined className="mt-0.5" />
-                  <div className="flex flex-col">
-                    <span>
-                      <strong>Nhà trường đã duyệt:</strong> Đang chuẩn bị quà để
-                      trao cho bạn.
-                    </span>
-                    {request.approvedAt && (
-                      <span className="text-[10px] opacity-70">
-                        Thời gian duyệt:{" "}
-                        {new Date(request.approvedAt).toLocaleString("vi-VN")}
-                      </span>
-                    )}
-                  </div>
-                </div>
-              </div>
-            )}
-
-            {request.status === "CANCELLED" && (
-              <div className="text-[11px] text-red-500 bg-red-50 p-2 rounded-lg flex items-start gap-1.5">
-                <CloseCircleOutlined className="mt-0.5" />
+              <div className="flex items-center gap-1.5 text-xs text-blue-600 font-medium mt-1">
+                <CheckCircleOutlined />
                 <span>
-                  <strong>Đã huỷ:</strong>{" "}
-                  {request.cancelledReason || "Người dùng tự hủy hoặc hết hạn"}
+                  Yêu cầu đổi quà đã được duyệt. Vui lòng thông báo học sinh lên
+                  trường để nhận quà.
                 </span>
               </div>
             )}
 
             {request.status === "REJECTED" && (
-              <div className="text-[11px] text-red-600 bg-red-50 p-2 rounded-lg flex items-start gap-1.5">
-                <WarningOutlined className="mt-0.5" />
-                <span>
-                  <strong>Từ chối:</strong> {request.rejectedReason}
-                </span>
+              <div className="mt-3">
+                {/* Label trạng thái */}
+                <div className="flex items-center gap-1.5 text-xs text-red-600 font-bold mb-2">
+                  <CloseCircleOutlined />
+                  <span>YÊU CẦU BỊ TỪ CHỐI</span>
+                </div>
+
+                {/* Box hiển thị lý do - Hiển thị luôn field rejectedReason */}
+                <div className="bg-red-50 border border-red-100 rounded-xl p-3">
+                  <div className="text-[11px] uppercase tracking-wider text-red-400 font-semibold mb-1">
+                    Lý do từ chối:
+                  </div>
+                  <p className="text-sm text-gray-700 font-medium leading-relaxed">
+                    {request.rejectedReason ||
+                      request.cancelledReason ||
+                      "Chưa có lý do cụ thể từ quản trị viên."}
+                  </p>
+                  <div className="text-[10px] text-gray-400 mt-2 italic">
+                    Thời gian:{" "}
+                    {formatDate(request.rejectedAt || request.updatedAt)}
+                  </div>
+                </div>
               </div>
             )}
 
             {request.status === "COMPLETED" && (
-              <div className="flex items-center justify-between text-[11px] text-green-600 font-medium">
-                <span className="flex items-center gap-1">
-                  <CheckCircleOutlined /> Đã nhận quà
+              <div className="flex items-center gap-1.5 text-xs text-green-600 font-medium mt-1">
+                <CheckCircleOutlined />
+                <span>
+                  Hoàn thành vào{" "}
+                  {formatDate(request.deliveredAt || request.confirmedAt)}
                 </span>
-                <span className="text-gray-400 font-normal">
-                  {request.deliveredAt
-                    ? new Date(request.deliveredAt).toLocaleDateString("vi-VN")
+              </div>
+            )}
+
+            {request.status === "CANCELLED" && (
+              <div className="flex items-center gap-1.5 text-xs text-red-500 font-medium mt-1">
+                <CloseCircleOutlined />
+                <span>
+                  Đã huỷ vào {formatDate(request.cancelledAt)}{" "}
+                  {request.cancelledReason
+                    ? ` - Lý do: ${request.cancelledReason}`
                     : ""}
                 </span>
               </div>
@@ -376,6 +441,8 @@ function RequestCard({ request, onCancel }) {
     </Card>
   );
 }
+
+// ─── RewardGrid ───────────────────────────────────────────────────────────────
 
 function RewardGrid({ rewards, coins, type, onRedeem }) {
   const items = rewards.filter((r) => r.rewardType === type && r.isActive);
@@ -405,6 +472,8 @@ function RewardGrid({ rewards, coins, type, onRedeem }) {
   );
 }
 
+// ─── Main Component ───────────────────────────────────────────────────────────
+
 export default function StudentRewards() {
   const navigate = useNavigate();
   const [student, setStudent] = useState(null);
@@ -412,30 +481,13 @@ export default function StudentRewards() {
   const [requests, setRequests] = useState([]);
   const [shopTab, setShopTab] = useState("PHYSICAL");
   const [reqTab, setReqTab] = useState("PENDING");
-  const [currentPage, setCurrentPage] = useState(1);
-  const pageSize = 5;
-
-  useEffect(() => {
-    setCurrentPage(1);
-  }, [reqTab]);
-
-  const paginatedRequests = useMemo(() => {
-    const filtered = requests.filter((r) => r.status === reqTab);
-
-    const sorted = [...filtered].sort(
-      (a, b) =>
-        new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime(),
-    );
-    const startIndex = (currentPage - 1) * pageSize;
-    return sorted.slice(startIndex, startIndex + pageSize);
-  }, [requests, reqTab, currentPage]);
 
   const fetchData = async () => {
     try {
-      const res1 = await getAllRewards();
-      setRewards(res1.data);
-      const res2 = await getAuthenticatedStudentProfile();
-      setStudent(res2.data);
+      const res1 = await getAuthenticatedStudentProfile();
+      setStudent(res1.data);
+      const res2 = await getAllRewards();
+      setRewards(res2.data);
       const res3 = await getAllMyRequests();
       setRequests(res3.data);
     } catch (error) {
@@ -447,50 +499,82 @@ export default function StudentRewards() {
     fetchData();
   }, []);
 
-  const handleRedeem = async (reward) => {
-    if (student?.totalCoins < reward.coinCost) {
-      toast.error("Không đủ xu!");
+  const handleRedeem = async (reward, qty = 1) => {
+    const totalCost = reward.coinCost * qty;
+
+    if ((student?.totalCoins ?? 0) < totalCost) {
+      toast.error(
+        `Không đủ xu! Cần ${totalCost.toLocaleString()} xu, bạn có ${(student?.totalCoins ?? 0).toLocaleString()} xu.`,
+      );
       return;
     }
-    if (!reward.isUnlimited && reward.stockQuantity <= 0) {
-      toast.error("Phần thưởng đã hết hàng!");
-      return;
+
+    if (!reward.isUnlimited) {
+      if ((reward.stockQuantity ?? 0) <= 0) {
+        toast.error("Phần thưởng đã hết hàng!");
+        return;
+      }
+      if (qty > reward.stockQuantity) {
+        toast.error(
+          `Không đủ số lượng! Tồn kho chỉ còn ${reward.stockQuantity} sản phẩm.`,
+        );
+        return;
+      }
     }
 
-    const payload = {
-      rewardId: reward.id,
-      quantity: 1,
-      notes: "",
-      studentId: student.id,
-    };
-    const res = await createRewardRequest(payload);
-    if (res) {
-      toast.success(`Tạo yêu cầu đổi "${reward.rewardName} thành công"!`);
-    } else {
-      toast.error(`Tạo yêu cầu đổi "${reward.rewardName}" thất bại!`);
-    }
-
-    fetchData();
-  };
-
-  const handleCancel = async (id) => {
     try {
-      const res = await cancelMyRequest(id);
+      const payload = {
+        rewardId: reward.id,
+        quantity: qty,
+        notes: "",
+        studentId: student?.id,
+      };
+      const res = await createRewardRequest(payload);
       if (res) {
-        toast.success("Huỷ yêu cầu thành công!");
+        toast.success(`Đã tạo yêu cầu đổi "${reward.rewardName}" thành công!`);
       } else {
-        toast.error("Huỷ yêu cầu thất bại!");
+        toast.error(`Tạo yêu cầu đổi "${reward.rewardName}" thất bại!`);
       }
       fetchData();
-    } catch (error) {
-      console.log(error);
+    } catch (err) {
+      console.error(err);
+      toast.error("Đã xảy ra lỗi, vui lòng thử lại!");
     }
+  };
+
+  const handleCancel = (id) => {
+    Modal.confirm({
+      title: "Xác nhận hủy yêu cầu",
+      icon: <WarningOutlined className="text-red-500" />,
+      content:
+        "Bạn có chắc chắn muốn hủy yêu cầu đổi quà này không? Thao tác này không thể hoàn tác.",
+      okText: "Xác nhận hủy",
+      okType: "danger",
+      cancelText: "Quay lại",
+      centered: true,
+      onOk: async () => {
+        try {
+          const res = await cancelMyRequest(id);
+          if (res) {
+            toast.success("Đã huỷ yêu cầu thành công!");
+            fetchData();
+          } else {
+            toast.error("Đã huỷ yêu cầu thất bại!");
+          }
+        } catch (error) {
+          console.error(error);
+          toast.error("Đã xảy ra lỗi khi hủy yêu cầu!");
+        }
+      },
+    });
   };
 
   const byStatus = (s) => requests.filter((r) => r.status === s);
+
   const counts = {
     PENDING: byStatus("PENDING").length,
     APPROVED: byStatus("APPROVED").length,
+    REJECTED: byStatus("REJECTED").length,
     COMPLETED: byStatus("COMPLETED").length,
     CANCELLED: byStatus("CANCELLED").length,
   };
@@ -518,7 +602,8 @@ export default function StudentRewards() {
 
   const reqTabs = [
     { key: "PENDING", label: `Đang chờ (${counts.PENDING})` },
-    { key: "APPROVED", label: `Đã xác nhận (${counts.APPROVED})` },
+    { key: "APPROVED", label: `Đã duyệt (${counts.APPROVED})` },
+    { key: "REJECTED", label: `Bị từ chối (${counts.REJECTED})` },
     { key: "COMPLETED", label: `Hoàn thành (${counts.COMPLETED})` },
     { key: "CANCELLED", label: `Đã huỷ (${counts.CANCELLED})` },
   ];
@@ -585,7 +670,7 @@ export default function StudentRewards() {
                         Xu hiện có
                       </p>
                       <p className="text-2xl font-bold bg-gradient-to-r from-amber-600 to-orange-600 bg-clip-text text-transparent">
-                        {student?.totalCoins?.toLocaleString()}
+                        {student?.totalCoins.toLocaleString()}
                       </p>
                     </div>
                   </div>
@@ -636,7 +721,7 @@ export default function StudentRewards() {
             <Tabs
               activeKey={shopTab}
               onChange={setShopTab}
-              items={shopTabs.map((t) => ({
+              items={shopTabs?.map((t) => ({
                 key: t.key,
                 label: t.label,
                 children: (
@@ -654,7 +739,7 @@ export default function StudentRewards() {
                       >
                         {TYPE_CONFIG[t.key]?.icon}
                         {t.key === "PHYSICAL" &&
-                          "Quà thật sẽ được xác nhận bởi giáo viên trước khi nhận."}
+                          "Quà số được kích hoạt ngay lập tức vào tài khoản của bạn."}
                         {t.key === "VOUCHER" &&
                           "Mã voucher sẽ được gửi qua hệ thống sau khi xác nhận."}
                       </div>
@@ -692,6 +777,9 @@ export default function StudentRewards() {
                   <span className="px-2.5 py-0.5 rounded-full text-xs font-semibold bg-blue-50 text-blue-600 border border-blue-200">
                     {counts.APPROVED} đã duyệt
                   </span>
+                  <span className="px-2.5 py-0.5 rounded-full text-xs font-semibold bg-gray-100 text-gray-600 border border-gray-200">
+                    {counts.REJECTED} từ chối
+                  </span>
                   <span className="px-2.5 py-0.5 rounded-full text-xs font-semibold bg-green-50 text-green-600 border border-green-200">
                     {counts.COMPLETED} hoàn thành
                   </span>
@@ -700,8 +788,6 @@ export default function StudentRewards() {
             }
             bodyStyle={{ paddingTop: 8 }}
           >
-            {/* Tìm đến phần render Tabs của Requests và sửa lại như sau: */}
-
             <Tabs
               activeKey={reqTab}
               onChange={setReqTab}
@@ -717,39 +803,30 @@ export default function StudentRewards() {
                       exit={{ opacity: 0, y: -6 }}
                       transition={{ duration: 0.18 }}
                     >
-                      {paginatedRequests.length === 0 ? (
+                      {byStatus(t.key).length === 0 ? (
                         <div className="flex flex-col items-center gap-3 py-14 text-gray-400">
-                          <InboxOutlined className="text-5xl opacity-30" />
-                          <p className="font-medium">
-                            Chưa có yêu cầu nào ở trạng thái này
+                          {t.key === "PENDING" && (
+                            <ClockCircleOutlined className="text-5xl opacity-30" />
+                          )}
+                          {t.key === "COMPLETED" && (
+                            <CheckCircleOutlined className="text-5xl opacity-30" />
+                          )}
+                          {t.key === "CANCELLED" && (
+                            <CloseCircleOutlined className="text-5xl opacity-30" />
+                          )}
+                          <p className="font-medium text-gray-400">
+                            Chưa có yêu cầu nào
                           </p>
                         </div>
                       ) : (
-                        <div className="space-y-4">
-                          <div className="space-y-3">
-                            {paginatedRequests.map((req) => (
-                              <RequestCard
-                                key={req.id}
-                                request={req}
-                                onCancel={handleCancel}
-                              />
-                            ))}
-                          </div>
-
-                          {/* Thêm phần phân trang ở đây */}
-                          <div className="flex justify-center pt-4">
-                            <Pagination
-                              current={currentPage}
-                              pageSize={pageSize}
-                              total={
-                                requests.filter((r) => r.status === reqTab)
-                                  .length
-                              }
-                              onChange={(page) => setCurrentPage(page)}
-                              showSizeChanger={false}
-                              size="small"
+                        <div className="space-y-3">
+                          {byStatus(t.key).map((req) => (
+                            <RequestCard
+                              key={req.id}
+                              request={req}
+                              onCancel={handleCancel}
                             />
-                          </div>
+                          ))}
                         </div>
                       )}
                     </motion.div>

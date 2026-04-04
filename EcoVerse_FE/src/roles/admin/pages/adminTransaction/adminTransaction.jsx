@@ -8,8 +8,6 @@ import {
   Input,
   Button,
   Statistic,
-  Tabs,
-  Badge,
   Tooltip,
 } from "antd";
 import {
@@ -91,8 +89,6 @@ const fmtDate = (iso) => (iso ? dayjs(iso).format("DD/MM/YYYY") : "—");
 const fmtDateTime = (iso) =>
   iso ? dayjs(iso).format("DD/MM/YYYY HH:mm") : "—";
 
-// ─── Animation ────────────────────────────────────────────────────────────────
-
 const fadeUp = {
   hidden: { opacity: 0, y: 16 },
   visible: {
@@ -148,7 +144,6 @@ export default function AdminRevenue() {
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState("ALL");
   const [typeFilter, setTypeFilter] = useState("ALL");
-  const [activeTab, setActiveTab] = useState("overview");
 
   const fetchData = async () => {
     try {
@@ -158,7 +153,6 @@ export default function AdminRevenue() {
       console.log(error);
     }
   };
-  console.log(data);
 
   useEffect(() => {
     fetchData();
@@ -166,15 +160,14 @@ export default function AdminRevenue() {
 
   // ── Flatten tất cả transactions từ mọi subscription ──
   const allTransactions = useMemo(
-    () =>
-      data?.flatMap((sub) => sub.transactions.map((tx) => ({ ...tx, sub }))),
+    () => data.flatMap((sub) => sub.transactions.map((tx) => ({ ...tx, sub }))),
     [data],
   );
 
   // ── Filtered subscriptions ──
   const filtered = useMemo(() => {
     const q = search.trim().toLowerCase();
-    return data?.filter((s) => {
+    return data.filter((s) => {
       const matchStatus = statusFilter === "ALL" || s.status === statusFilter;
       const matchType = typeFilter === "ALL" || s.subscriberType === typeFilter;
       const matchSearch =
@@ -191,18 +184,18 @@ export default function AdminRevenue() {
   const stats = useMemo(() => {
     const completedTx = allTransactions.filter((t) => t.status === "COMPLETED");
     const totalRevenue = completedTx.reduce((s, t) => s + (t.amount ?? 0), 0);
-    const activeCount = data?.filter((s) => s.status === "ACTIVE").length;
+    const activeCount = data.filter((s) => s.status === "ACTIVE").length;
     const pendingAmount = allTransactions
       .filter((t) => t.status === "PENDING")
       .reduce((s, t) => s + (t.amount ?? 0), 0);
-    const schoolCount = data?.filter(
+    const schoolCount = data.filter(
       (s) => s.subscriberType === "SCHOOL",
     ).length;
-    const partnerCount = data?.filter(
+    const partnerCount = data.filter(
       (s) => s.subscriberType === "PARTNERSHIP",
     ).length;
-    const cancelledCount = data?.filter((s) => s.status === "CANCELLED").length;
-    const autoRenewCount = data?.filter((s) => s.autoRenew).length;
+    const cancelledCount = data.filter((s) => s.status === "CANCELLED").length;
+    const autoRenewCount = data.filter((s) => s.autoRenew).length;
 
     return {
       totalRevenue,
@@ -212,7 +205,7 @@ export default function AdminRevenue() {
       partnerCount,
       cancelledCount,
       autoRenewCount,
-      total: data?.length,
+      total: data.length,
     };
   }, [data, allTransactions]);
 
@@ -231,7 +224,7 @@ export default function AdminRevenue() {
   // ── Chart: Status distribution ──
   const statusDist = useMemo(() => {
     const map = {};
-    data?.forEach((s) => {
+    data.forEach((s) => {
       map[s.status] = (map[s.status] ?? 0) + 1;
     });
     return Object.entries(map).map(([status, count]) => ({
@@ -477,322 +470,182 @@ export default function AdminRevenue() {
 
   // ─── Render ───────────────────────────────────────────────────────────────
 
-  const tabItems = [
-    // ── Tab 1: Overview ──
-    {
-      key: "overview",
-      label: "Tổng quan",
-      children: (
-        <div className="space-y-6">
-          {/* Monthly revenue chart */}
-          <Card
-            className="rounded-2xl border-0 shadow-sm"
-            title={
-              <span className="font-bold text-gray-800">
-                Doanh thu theo tháng
-              </span>
-            }
-          >
-            {monthlyRevenue.length === 0 ? (
-              <div className="flex items-center justify-center h-48 text-gray-400 text-sm">
-                Chưa có dữ liệu
-              </div>
-            ) : (
-              <ResponsiveContainer width="100%" height={220}>
-                <AreaChart data={monthlyRevenue}>
-                  <defs>
-                    <linearGradient id="revGrad" x1="0" y1="0" x2="0" y2="1">
-                      <stop
-                        offset="5%"
-                        stopColor="#3b82f6"
-                        stopOpacity={0.18}
-                      />
-                      <stop offset="95%" stopColor="#3b82f6" stopOpacity={0} />
-                    </linearGradient>
-                  </defs>
-                  <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
-                  <XAxis
-                    dataKey="month"
-                    tick={{ fontSize: 11, fill: "#9ca3af" }}
-                  />
-                  <YAxis
-                    tickFormatter={fmtVND}
-                    tick={{ fontSize: 11, fill: "#9ca3af" }}
-                    width={55}
-                  />
-                  <ReTooltip
-                    formatter={(v) => [
-                      `${v?.toLocaleString()} VND`,
-                      "Doanh thu",
-                    ]}
-                  />
-                  <Area
-                    type="monotone"
-                    dataKey="revenue"
-                    stroke="#3b82f6"
-                    strokeWidth={2}
-                    fill="url(#revGrad)"
-                  />
-                </AreaChart>
-              </ResponsiveContainer>
-            )}
-          </Card>
+  // ── Charts block — inline (không dùng Tabs) ──
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            {/* Revenue by plan */}
-            <Card
-              className="rounded-2xl border-0 shadow-sm"
-              title={
-                <span className="font-bold text-gray-800">
-                  Doanh thu theo gói
-                </span>
-              }
-            >
-              {revenueByPlan.length === 0 ? (
-                <div className="flex items-center justify-center h-40 text-gray-400 text-sm">
-                  Chưa có dữ liệu
-                </div>
-              ) : (
-                <ResponsiveContainer width="100%" height={200}>
-                  <BarChart data={revenueByPlan} layout="vertical">
-                    <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
-                    <XAxis
-                      type="number"
-                      tickFormatter={fmtVND}
-                      tick={{ fontSize: 11, fill: "#9ca3af" }}
-                    />
-                    <YAxis
-                      type="category"
-                      dataKey="name"
-                      width={120}
-                      tick={{ fontSize: 11, fill: "#6b7280" }}
-                    />
-                    <ReTooltip
-                      formatter={(v) => [
-                        `${v?.toLocaleString()} VND`,
-                        "Doanh thu",
-                      ]}
-                    />
-                    <Bar dataKey="value" radius={[0, 6, 6, 0]}>
-                      {revenueByPlan.map((_, i) => (
-                        <Cell
-                          key={i}
-                          fill={CHART_COLORS[i % CHART_COLORS.length]}
-                        />
-                      ))}
-                    </Bar>
-                  </BarChart>
-                </ResponsiveContainer>
-              )}
-            </Card>
-
-            {/* Status pie */}
-            <Card
-              className="rounded-2xl border-0 shadow-sm"
-              title={
-                <span className="font-bold text-gray-800">
-                  Phân bổ trạng thái
-                </span>
-              }
-            >
-              <div className="flex items-center gap-4">
-                <ResponsiveContainer width="50%" height={180}>
-                  <PieChart>
-                    <Pie
-                      data={statusDist}
-                      dataKey="value"
-                      cx="50%"
-                      cy="50%"
-                      outerRadius={70}
-                      innerRadius={40}
-                    >
-                      {statusDist.map((entry, i) => (
-                        <Cell
-                          key={i}
-                          fill={CHART_COLORS[i % CHART_COLORS.length]}
-                        />
-                      ))}
-                    </Pie>
-                    <ReTooltip />
-                  </PieChart>
-                </ResponsiveContainer>
-                <div className="space-y-2">
-                  {statusDist.map((entry, i) => (
-                    <div key={i} className="flex items-center gap-2 text-sm">
-                      <div
-                        className="w-3 h-3 rounded-full flex-shrink-0"
-                        style={{
-                          background: CHART_COLORS[i % CHART_COLORS.length],
-                        }}
-                      />
-                      <span className="text-gray-600">{entry.name}</span>
-                      <span className="font-bold text-gray-800 ml-auto">
-                        {entry.value}
-                      </span>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            </Card>
+  const chartsBlock = (
+    <div className="space-y-6">
+      {/* Monthly revenue */}
+      <Card
+        className="rounded-2xl border-0 shadow-sm"
+        title={
+          <span className="font-bold text-gray-800">Doanh thu theo tháng</span>
+        }
+      >
+        {monthlyRevenue.length === 0 ? (
+          <div className="flex items-center justify-center h-48 text-gray-400 text-sm">
+            Chưa có dữ liệu
           </div>
+        ) : (
+          <ResponsiveContainer width="100%" height={220}>
+            <AreaChart data={monthlyRevenue}>
+              <defs>
+                <linearGradient id="revGrad" x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="5%" stopColor="#3b82f6" stopOpacity={0.18} />
+                  <stop offset="95%" stopColor="#3b82f6" stopOpacity={0} />
+                </linearGradient>
+              </defs>
+              <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
+              <XAxis dataKey="month" tick={{ fontSize: 11, fill: "#9ca3af" }} />
+              <YAxis
+                tickFormatter={fmtVND}
+                tick={{ fontSize: 11, fill: "#9ca3af" }}
+                width={55}
+              />
+              <ReTooltip
+                formatter={(v) => [`${v?.toLocaleString()} VND`, "Doanh thu"]}
+              />
+              <Area
+                type="monotone"
+                dataKey="revenue"
+                stroke="#3b82f6"
+                strokeWidth={2}
+                fill="url(#revGrad)"
+              />
+            </AreaChart>
+          </ResponsiveContainer>
+        )}
+      </Card>
 
-          {/* Subscriber type breakdown */}
-          <Card
-            className="rounded-2xl border-0 shadow-sm"
-            title={
-              <span className="font-bold text-gray-800">
-                Phân bổ theo loại đăng ký
-              </span>
-            }
-            bodyStyle={{ padding: "16px 20px" }}
-          >
-            <div className="grid grid-cols-2 gap-4">
-              {typeDist.map((t, i) => (
-                <div
-                  key={i}
-                  className="flex items-center justify-between p-4 rounded-xl bg-gray-50"
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        {/* Revenue by plan */}
+        <Card
+          className="rounded-2xl border-0 shadow-sm"
+          title={
+            <span className="font-bold text-gray-800">Doanh thu theo gói</span>
+          }
+        >
+          {revenueByPlan.length === 0 ? (
+            <div className="flex items-center justify-center h-40 text-gray-400 text-sm">
+              Chưa có dữ liệu
+            </div>
+          ) : (
+            <ResponsiveContainer width="100%" height={200}>
+              <BarChart data={revenueByPlan} layout="vertical">
+                <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
+                <XAxis
+                  type="number"
+                  tickFormatter={fmtVND}
+                  tick={{ fontSize: 11, fill: "#9ca3af" }}
+                />
+                <YAxis
+                  type="category"
+                  dataKey="name"
+                  width={120}
+                  tick={{ fontSize: 11, fill: "#6b7280" }}
+                />
+                <ReTooltip
+                  formatter={(v) => [`${v?.toLocaleString()} VND`, "Doanh thu"]}
+                />
+                <Bar dataKey="value" radius={[0, 6, 6, 0]}>
+                  {revenueByPlan.map((_, i) => (
+                    <Cell
+                      key={i}
+                      fill={CHART_COLORS[i % CHART_COLORS.length]}
+                    />
+                  ))}
+                </Bar>
+              </BarChart>
+            </ResponsiveContainer>
+          )}
+        </Card>
+
+        {/* Status pie */}
+        <Card
+          className="rounded-2xl border-0 shadow-sm"
+          title={
+            <span className="font-bold text-gray-800">Phân bổ trạng thái</span>
+          }
+        >
+          <div className="flex items-center gap-4">
+            <ResponsiveContainer width="50%" height={180}>
+              <PieChart>
+                <Pie
+                  data={statusDist}
+                  dataKey="value"
+                  cx="50%"
+                  cy="50%"
+                  outerRadius={70}
+                  innerRadius={40}
                 >
-                  <span className="text-sm text-gray-600 font-medium">
-                    {t.name}
+                  {statusDist.map((entry, i) => (
+                    <Cell
+                      key={i}
+                      fill={CHART_COLORS[i % CHART_COLORS.length]}
+                    />
+                  ))}
+                </Pie>
+                <ReTooltip />
+              </PieChart>
+            </ResponsiveContainer>
+            <div className="space-y-2">
+              {statusDist.map((entry, i) => (
+                <div key={i} className="flex items-center gap-2 text-sm">
+                  <div
+                    className="w-3 h-3 rounded-full flex-shrink-0"
+                    style={{
+                      background: CHART_COLORS[i % CHART_COLORS.length],
+                    }}
+                  />
+                  <span className="text-gray-600">{entry.name}</span>
+                  <span className="font-bold text-gray-800 ml-auto">
+                    {entry.value}
                   </span>
-                  <div className="flex items-center gap-2">
-                    <div className="w-20 h-2 rounded-full bg-gray-200 overflow-hidden">
-                      <div
-                        className="h-full rounded-full"
-                        style={{
-                          width: `${stats.total > 0 ? (t.value / stats.total) * 100 : 0}%`,
-                          background: CHART_COLORS[i],
-                        }}
-                      />
-                    </div>
-                    <span className="text-lg font-bold text-gray-800 w-6 text-right">
-                      {t.value}
-                    </span>
-                  </div>
                 </div>
               ))}
             </div>
-          </Card>
-        </div>
-      ),
-    },
-
-    // ── Tab 2: Subscriptions ──
-    {
-      key: "subscriptions",
-      label: (
-        <span className="flex items-center gap-1.5">
-          Đăng ký
-          <Badge
-            count={filtered.length}
-            style={{ backgroundColor: "#3b82f6" }}
-          />
-        </span>
-      ),
-      children: (
-        <Card
-          className="rounded-2xl border-0 shadow-sm"
-          bodyStyle={{ padding: 0 }}
-        >
-          {/* Filters */}
-          <div className="p-4 border-b border-gray-100 flex flex-wrap gap-3 items-center">
-            <Input
-              prefix={<SearchOutlined className="text-gray-300" />}
-              placeholder="Tìm theo mã, tên, gói..."
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
-              allowClear
-              className="rounded-xl w-72"
-            />
-            <Select
-              value={statusFilter}
-              onChange={setStatusFilter}
-              className="w-44"
-              options={[
-                { value: "ALL", label: "Tất cả trạng thái" },
-                { value: "ACTIVE", label: "Đang hoạt động" },
-                { value: "EXPIRED", label: "Hết hạn" },
-                { value: "CANCELLED", label: "Đã huỷ" },
-                { value: "PENDING", label: "Chờ xử lý" },
-              ]}
-            />
-            <Select
-              value={typeFilter}
-              onChange={setTypeFilter}
-              className="w-40"
-              options={[
-                { value: "ALL", label: "Tất cả loại" },
-                { value: "SCHOOL", label: "Trường học" },
-                { value: "PARTNERSHIP", label: "Đối tác" },
-              ]}
-            />
-            <span className="text-xs text-gray-400 ml-auto">
-              {filtered.length} kết quả
-            </span>
           </div>
-          <Table
-            dataSource={filtered}
-            columns={subColumns}
-            rowKey="id"
-            pagination={{
-              pageSize: 10,
-              showSizeChanger: false,
-              showTotal: (t) => `${t} đăng ký`,
-              className: "px-4 pb-4",
-            }}
-            locale={{
-              emptyText: (
-                <div className="py-12 text-gray-400 text-sm">
-                  Không tìm thấy đăng ký nào
-                </div>
-              ),
-            }}
-            className="[&_.ant-table-thead_th]:bg-gray-50 [&_.ant-table-thead_th]:text-gray-500 [&_.ant-table-thead_th]:font-medium"
-          />
         </Card>
-      ),
-    },
+      </div>
 
-    // ── Tab 3: Transactions ──
-    {
-      key: "transactions",
-      label: (
-        <span className="flex items-center gap-1.5">
-          Giao dịch
-          <Badge
-            count={allTransactions.length}
-            style={{ backgroundColor: "#22c55e" }}
-          />
-        </span>
-      ),
-      children: (
-        <Card
-          className="rounded-2xl border-0 shadow-sm"
-          bodyStyle={{ padding: 0 }}
-        >
-          <Table
-            dataSource={allTransactions}
-            columns={txColumns}
-            rowKey="paymentId"
-            pagination={{
-              pageSize: 10,
-              showSizeChanger: false,
-              showTotal: (t) => `${t} giao dịch`,
-              className: "px-4 pb-4",
-            }}
-            locale={{
-              emptyText: (
-                <div className="py-12 text-gray-400 text-sm">
-                  Chưa có giao dịch
+      {/* Type breakdown */}
+      <Card
+        className="rounded-2xl border-0 shadow-sm"
+        title={
+          <span className="font-bold text-gray-800">
+            Phân bổ theo loại đăng ký
+          </span>
+        }
+        bodyStyle={{ padding: "16px 20px" }}
+      >
+        <div className="grid grid-cols-2 gap-4">
+          {typeDist.map((t, i) => (
+            <div
+              key={i}
+              className="flex items-center justify-between p-4 rounded-xl bg-gray-50"
+            >
+              <span className="text-sm text-gray-600 font-medium">
+                {t.name}
+              </span>
+              <div className="flex items-center gap-2">
+                <div className="w-20 h-2 rounded-full bg-gray-200 overflow-hidden">
+                  <div
+                    className="h-full rounded-full"
+                    style={{
+                      width: `${stats.total > 0 ? (t.value / stats.total) * 100 : 0}%`,
+                      background: CHART_COLORS[i],
+                    }}
+                  />
                 </div>
-              ),
-            }}
-            className="[&_.ant-table-thead_th]:bg-gray-50 [&_.ant-table-thead_th]:text-gray-500 [&_.ant-table-thead_th]:font-medium"
-          />
-        </Card>
-      ),
-    },
-  ];
+                <span className="text-lg font-bold text-gray-800 w-6 text-right">
+                  {t.value}
+                </span>
+              </div>
+            </div>
+          ))}
+        </div>
+      </Card>
+    </div>
+  );
 
   return (
     <div className="min-h-screen bg-gray-50 p-6">
@@ -891,14 +744,146 @@ export default function AdminRevenue() {
           ))}
         </div>
 
-        {/* Tabs */}
+        {/* ── Charts ── */}
+        <motion.div variants={fadeUp}>{chartsBlock}</motion.div>
+
+        {/* ── Bảng Đăng ký ── */}
         <motion.div variants={fadeUp}>
-          <Tabs
-            activeKey={activeTab}
-            onChange={setActiveTab}
-            items={tabItems}
-            className="[&_.ant-tabs-nav]:mb-4 [&_.ant-tabs-tab]:font-medium [&_.ant-tabs-tab-active]:font-bold"
-          />
+          <Card
+            className="rounded-2xl border-0 shadow-sm"
+            bodyStyle={{ padding: 0 }}
+            title={
+              <div className="flex items-center justify-between flex-wrap gap-2">
+                <span className="font-bold text-gray-800">
+                  Danh sách đăng ký
+                </span>
+                <span className="text-xs text-gray-400 font-normal">
+                  {filtered.length} kết quả
+                </span>
+              </div>
+            }
+          >
+            {/* Filters */}
+            <div className="px-4 pb-3 pt-1 border-b border-gray-100 flex flex-wrap gap-3 items-center">
+              <Input
+                prefix={<SearchOutlined className="text-gray-300" />}
+                placeholder="Tìm theo mã, tên, gói..."
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+                allowClear
+                className="rounded-xl w-72"
+              />
+              <Select
+                value={statusFilter}
+                onChange={setStatusFilter}
+                className="w-44"
+                options={[
+                  { value: "ALL", label: "Tất cả trạng thái" },
+                  { value: "ACTIVE", label: "Đang hoạt động" },
+                  { value: "EXPIRED", label: "Hết hạn" },
+                  { value: "CANCELLED", label: "Đã huỷ" },
+                  { value: "PENDING", label: "Chờ xử lý" },
+                ]}
+              />
+              <Select
+                value={typeFilter}
+                onChange={setTypeFilter}
+                className="w-40"
+                options={[
+                  { value: "ALL", label: "Tất cả loại" },
+                  { value: "SCHOOL", label: "Trường học" },
+                  { value: "PARTNERSHIP", label: "Đối tác" },
+                ]}
+              />
+            </div>
+            <Table
+              dataSource={filtered}
+              columns={subColumns}
+              rowKey="id"
+              pagination={{
+                pageSize: 8,
+                showSizeChanger: false,
+                showTotal: (t) => `${t} đăng ký`,
+                className: "px-4 pb-4",
+              }}
+              locale={{
+                emptyText: (
+                  <div className="py-12 text-gray-400 text-sm text-center">
+                    Không tìm thấy đăng ký nào
+                  </div>
+                ),
+              }}
+              className="[&_.ant-table-thead_th]:bg-gray-50 [&_.ant-table-thead_th]:text-gray-500 [&_.ant-table-thead_th]:font-medium"
+              components={{
+                body: {
+                  row: ({ children, ...props }) => (
+                    <motion.tr
+                      {...props}
+                      initial={{ opacity: 0, x: -4 }}
+                      animate={{ opacity: 1, x: 0 }}
+                      transition={{ duration: 0.16 }}
+                      className="hover:bg-gray-50/80 transition-colors"
+                    >
+                      {children}
+                    </motion.tr>
+                  ),
+                },
+              }}
+            />
+          </Card>
+        </motion.div>
+
+        {/* ── Bảng Giao dịch ── */}
+        <motion.div variants={fadeUp}>
+          <Card
+            className="rounded-2xl border-0 shadow-sm"
+            bodyStyle={{ padding: 0 }}
+            title={
+              <div className="flex items-center justify-between flex-wrap gap-2">
+                <span className="font-bold text-gray-800">
+                  Lịch sử giao dịch
+                </span>
+                <span className="text-xs text-gray-400 font-normal">
+                  {allTransactions.length} giao dịch
+                </span>
+              </div>
+            }
+          >
+            <Table
+              dataSource={allTransactions}
+              columns={txColumns}
+              rowKey="paymentId"
+              pagination={{
+                pageSize: 8,
+                showSizeChanger: false,
+                showTotal: (t) => `${t} giao dịch`,
+                className: "px-4 pb-4",
+              }}
+              locale={{
+                emptyText: (
+                  <div className="py-12 text-gray-400 text-sm text-center">
+                    Chưa có giao dịch
+                  </div>
+                ),
+              }}
+              className="[&_.ant-table-thead_th]:bg-gray-50 [&_.ant-table-thead_th]:text-gray-500 [&_.ant-table-thead_th]:font-medium"
+              components={{
+                body: {
+                  row: ({ children, ...props }) => (
+                    <motion.tr
+                      {...props}
+                      initial={{ opacity: 0, x: -4 }}
+                      animate={{ opacity: 1, x: 0 }}
+                      transition={{ duration: 0.16 }}
+                      className="hover:bg-gray-50/80 transition-colors"
+                    >
+                      {children}
+                    </motion.tr>
+                  ),
+                },
+              }}
+            />
+          </Card>
         </motion.div>
       </motion.div>
     </div>
