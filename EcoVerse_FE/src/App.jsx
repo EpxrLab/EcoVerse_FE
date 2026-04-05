@@ -77,6 +77,7 @@ import PartnershipProfile from "./roles/partnership/pages/partnershipProfile/par
 
 //========================Payment Routes==============================
 import PaymentResult from "./features/payment/pages/paymentResult/paymentResult";
+import StudentRoundDetails from "./roles/student/pages/studentRoundDetail/studentRoundDetails";
 
 const queryClient = new QueryClient();
 
@@ -155,6 +156,10 @@ const App = () => (
                   element={<StudentDashboardLayout />}
                 >
                   <Route index element={<CampaignDashboard />} />
+                  <Route
+                    path="round/:roundId"
+                    element={<StudentRoundDetails />}
+                  />
                   <Route path="game" element={<StudentGame />} />
                   <Route path="game/play" element={<EcoGamePage />} />
                   <Route path="quiz" element={<StudentQuiz />} />

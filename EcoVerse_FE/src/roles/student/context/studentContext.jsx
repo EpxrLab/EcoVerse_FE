@@ -1,86 +1,24 @@
-import { createContext, useContext, useState } from "react";
+import { createContext, useContext, useEffect, useState } from "react";
+import { getAuthenticatedStudentProfile } from "../services";
 
 // Tạo context
 const StudentContext = createContext(undefined);
 
-// Mock student data - Primary school student
-const mockStudentData = {
-  id: "student-001",
-  name: "Nguyễn Minh An",
-  email: "minhan@student.edu.vn",
-  phone: "0123456789",
-  grade: 3,
-  class: "3A",
-  school: "Tiểu học Nguyễn Huệ",
-  avatar: "👦",
-  coins: 2450,
-  rank: 3,
-  joinedDate: "2024-01-15",
-  stats: {
-    campaignsJoined: 5,
-    quizzesCompleted: 23,
-    gamesPlayed: 15,
-    totalCoinsEarned: 3200,
-    averageQuizScore: 85,
-    currentStreak: 7,
-  },
-  achievements: [
-    {
-      id: 1,
-      name: "Phân loại Rác 2025",
-      icon: "♻️",
-      description: "Chiến dịch hoàn thành",
-      earned: "2025",
-    },
-    {
-      id: 2,
-      name: "Tiết kiệm Nước",
-      icon: "💧",
-      description: "Chiến dịch hoàn thành",
-      earned: "2024",
-    },
-    {
-      id: 3,
-      name: "Trồng Cây Xanh",
-      icon: "🌳",
-      description: "Chiến dịch hoàn thành",
-      earned: "2024",
-    },
-  ],
-  recentActivities: [
-    {
-      id: 1,
-      type: "quiz",
-      title: "Hoàn thành Quiz: Ô nhiễm không khí",
-      coins: 25,
-      date: "2024-01-20",
-    },
-    {
-      id: 2,
-      type: "game",
-      title: "Chơi Game: Thu gom rác",
-      coins: 15,
-      date: "2024-01-19",
-    },
-    {
-      id: 3,
-      type: "reward",
-      title: "Đổi quà: Avatar Gấu Xanh",
-      coins: -500,
-      date: "2024-01-18",
-    },
-    {
-      id: 4,
-      type: "quiz",
-      title: "Hoàn thành Quiz: Tiết kiệm năng lượng",
-      coins: 25,
-      date: "2024-01-17",
-    },
-  ],
-};
-
 export function StudentProvider({ children }) {
-  const [currentStudent, setCurrentStudent] = useState(mockStudentData);
+  const [currentStudent, setCurrentStudent] = useState(null);
+
+  const fetchAuthenticatedStudent = async () => {
+    try {
+      const res = await getAuthenticatedStudentProfile();
+      setCurrentStudent(res.data);
+    } catch (error) {
+      console.log(error);
+    }
+  };
+
+  useEffect(() => {
+    fetchAuthenticatedStudent();
+  }, []);
 
   const updateCoins = (amount) => {
     setCurrentStudent((prev) => ({

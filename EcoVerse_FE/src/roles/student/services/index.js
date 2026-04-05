@@ -45,10 +45,30 @@ const cancelMyRequest = async (id) => {
   }
 };
 
+const getAllCampaigns = async () => {
+  try {
+    const res = await axios.get("student/campaigns");
+    return res.data;
+  } catch (error) {
+    console.log(error);
+  }
+};
+
+const getCampaignDetails = async (id) => {
+  try {
+    const res = await axios.get(`/student/campaigns/${id}`);
+    return res.data;
+  } catch (error) {
+    console.log(error);
+  }
+};
+
 export {
   getAuthenticatedStudentProfile,
   getAllRewards,
   createRewardRequest,
   getAllMyRequests,
   cancelMyRequest,
+  getAllCampaigns,
+  getCampaignDetails,
 };
