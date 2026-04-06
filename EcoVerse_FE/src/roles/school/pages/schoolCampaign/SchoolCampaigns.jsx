@@ -5,6 +5,7 @@ import { Input } from '@/shared/components/ui/input';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/shared/components/ui/tabs';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/shared/components/ui/dialog';
 import { Plus, Search, Edit, Play, CheckCircle2, Send, Clock } from 'lucide-react';
+import { ScrollArea } from '@/shared/components/ui/scroll-area';
 import { toast } from 'sonner';
 import { useCampaigns } from '../../features/campaigns/hooks/useCampaigns';
 import { useCampaignForm } from '../../features/campaigns/hooks';
@@ -33,23 +34,15 @@ export default function SchoolCampaigns() {
     revertToDraft,
     activateCampaign,
     fetchCampaignDetail,
-    bindQuizzesToRound
+    bindQuizzesToRound,
+    getCampaigns
   } = useCampaigns();
   
-  // Create an object wrapper to satisfy TS ignore below until hook types catch up
-  const useCampaignsResult = { 
-    acceptInvitation, 
-    declineInvitation 
-  };
-
   // Use campaign form hook for all form logic
   const {
     formData,
     handleFormChange,
     handleClassToggle,
-    handleQuizToggle,
-    handleGameToggle,
-    handleLevelToggle,
     handleStudentSelection,
     resetForm,
     loadFormData,
@@ -63,7 +56,6 @@ export default function SchoolCampaigns() {
   const [isInviteOpen, setIsInviteOpen] = useState(false);
   const [inviteCampaign, setInviteCampaign] = useState(null);
   const [editingCampaign, setEditingCampaign] = useState(null);
-  const [isSendingInvite, setIsSendingInvite] = useState(false);
   const [isAcceptInviteOpen, setIsAcceptInviteOpen] = useState(false);
   const [acceptInviteCampaign, setAcceptInviteCampaign] = useState(null);
   const [isAddStudentOpen, setIsAddStudentOpen] = useState(false);
@@ -88,17 +80,17 @@ export default function SchoolCampaigns() {
 
   const handleAcceptInvite = (studentIds) => {
     if (acceptInviteCampaign) {
-      useCampaignsResult.acceptInvitation(acceptInviteCampaign.id, studentIds);
+      acceptInvitation(acceptInviteCampaign.id, studentIds);
       setIsAcceptInviteOpen(false);
       setAcceptInviteCampaign(null);
     }
   };
 
   const handleDeclineInvite = (campaign) => {
-    useCampaignsResult.declineInvitation(campaign.id);
+    declineInvitation(campaign.id);
   };
 
-  const { allStudents, availableClasses, isLoading: isStudentsLoading } = useStudents();
+  const { allStudents, availableClasses } = useStudents();
 
 
 
@@ -123,22 +115,30 @@ export default function SchoolCampaigns() {
 
   // Handlers
   const handleCreateCampaign = () => {
-    addCampaign(formData, availableClasses);
+    addCampaign(formData);
     resetForm();
     setIsCreateOpen(false);
     toast.success('Đã tạo bản nháp chiến dịch thành công!');
   };
 
-  const handleOpenAddGame = (campaign) => {
-    setGameConfigCampaign(campaign);
+  const handleOpenAddGame = async (campaign) => {
+    // Fetch full detail to ensure rounds are present (needed for roundId in game config)
+    if (!campaign.rounds || campaign.rounds.length === 0) {
+      setIsDetailLoading(true);
+      const detail = await fetchCampaignDetail(campaign.id);
+      setGameConfigCampaign(detail || campaign);
+      setIsDetailLoading(false);
+    } else {
+      setGameConfigCampaign(campaign);
+    }
     setIsAddGameOpen(true);
   };
 
-  const handleSubmitGame = (campaignId, gameData) => {
-    updateCampaign(campaignId, gameData);
+  const handleSubmitGame = () => {
     setIsAddGameOpen(false);
     setGameConfigCampaign(null);
     toast.success('Đã cập nhật cấu hình Game');
+    getCampaigns && getCampaigns();
   };
 
   const handleOpenAddQuiz = async (campaign, roundId = null) => {
@@ -161,7 +161,7 @@ export default function SchoolCampaigns() {
     setIsAddQuizOpen(true);
   };
 
-  const handleSubmitQuiz = async (campaignId, quizIds, roundIdFromModal) => {
+  const handleSubmitQuiz = async (campaignId, quizIds, roundIdFromModal, maxAttempts) => {
     let rid = roundIdFromModal || targetRoundId;
 
     // If called from list and no roundId, fetch detail to get the single round
@@ -174,7 +174,7 @@ export default function SchoolCampaigns() {
 
     if (rid) {
       // BE supports PUT for both initial bind and update
-      await bindQuizzesToRound(rid, quizIds);
+      await bindQuizzesToRound(rid, quizIds, maxAttempts);
     } else {
       await updateCampaign(campaignId, { quiz_ids: quizIds });
     }
@@ -182,22 +182,29 @@ export default function SchoolCampaigns() {
     setIsAddQuizOpen(false);
     setQuizConfigCampaign(null);
     setTargetRoundId(null);
+    getCampaigns && getCampaigns();
   };
 
-  const handleEditCampaign = (campaign) => {
-    setEditingCampaign(campaign);
+  const handleEditCampaign = async (campaign) => {
+    setIsDetailLoading(true);
+    const detail = await fetchCampaignDetail(campaign.id);
+    setIsDetailLoading(false);
+
+    const target = detail || campaign;
+    setEditingCampaign(target);
+    
     loadFormData({
-      name: campaign.name,
-      description: campaign.description || '',
-      start_date: campaign.start_date,
-      end_date: campaign.end_date,
-      invitation_send_date: campaign.invitation_send_date || '',
-      invitation_deadline: campaign.invitation_deadline || '',
-      class_ids: campaign.participating_classes?.map(c => c.class_id) || campaign.class_ids || [],
-      student_ids: campaign.student_ids || [],
-      quiz_ids: campaign.selected_quizzes?.map(q => q.quiz_id) || [],
-      game_types: campaign.selected_games || [],
-      level_ids: campaign.selected_levels?.map(l => l.level_id) || [],
+      name: target.name,
+      description: target.description || '',
+      start_date: target.start_date,
+      end_date: target.end_date,
+      invitation_send_date: target.invitation_send_date || '',
+      invitation_deadline: target.invitation_deadline || '',
+      class_ids: target.class_ids || target.participating_classes?.map(c => c.class_id) || target.class_ids || [],
+      student_ids: target.student_ids || [],
+      quiz_ids: target.rounds?.[0]?.quizzes?.map(q => q.id) || target.selected_quizzes?.map(q => q.quiz_id) || [],
+      game_types: target.selected_games || [],
+      level_ids: target.selected_levels?.map(l => l.level_id) || [],
     });
     setIsEditOpen(true);
   };
@@ -264,8 +271,8 @@ export default function SchoolCampaigns() {
   const handleSendInvitations = async () => {
     if (!inviteCampaign) return;
     
-    setIsSendingInvite(true);
-    await new Promise(resolve => setTimeout(resolve, 1500));
+    // Simulate API call
+    await new Promise(resolve => setTimeout(resolve, 1000));
     
     const totalStudents = inviteCampaign.participating_classes?.reduce(
       (sum, cls) => sum + cls.students_count, 0
@@ -275,7 +282,6 @@ export default function SchoolCampaigns() {
       description: `Chiến dịch "${inviteCampaign.name}" - ${inviteCampaign.participating_classes?.length || 0} lớp`,
     });
     
-    setIsSendingInvite(false);
     setIsInviteOpen(false);
     setInviteCampaign(null);
   };
@@ -602,18 +608,20 @@ export default function SchoolCampaigns() {
 
       {/* Detail Dialog */}
       <Dialog open={isDetailOpen} onOpenChange={setIsDetailOpen}>
-        <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
-          <DialogHeader>
+        <DialogContent className="max-w-3xl h-[85vh] flex flex-col p-0 overflow-hidden">
+          <DialogHeader className="p-6 pb-2">
             <DialogTitle>Chi tiết chiến dịch</DialogTitle>
           </DialogHeader>
-          {selectedCampaign && (
-            <CampaignDetail 
-              campaign={selectedCampaign} 
-              gameTypes={GAME_TYPES} 
-              isLoading={isDetailLoading} 
-              onAddQuiz={handleOpenAddQuiz}
-            />
-          )}
+          <ScrollArea className="flex-1 p-6 pt-0">
+            {selectedCampaign && (
+              <CampaignDetail 
+                campaign={selectedCampaign} 
+                gameTypes={GAME_TYPES} 
+                isLoading={isDetailLoading} 
+                onAddQuiz={handleOpenAddQuiz}
+              />
+            )}
+          </ScrollArea>
         </DialogContent>
       </Dialog>
 

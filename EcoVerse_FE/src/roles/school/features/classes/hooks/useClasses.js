@@ -1,9 +1,8 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useMemo } from 'react';
 import { toast } from 'sonner';
 import { classesService } from '../services/classes.service';
 
 export function useClasses() {
-  const [classes, setClasses] = useState([]);
   const [gradeGroups, setGradeGroups] = useState([]);
   const [classStudents, setClassStudents] = useState([]);
   const [allStudents, setAllStudents] = useState([]); // All students in the school
@@ -92,14 +91,12 @@ export function useClasses() {
         return {
           ...classItem,
           students_count: classSts.length,
-          avg_accuracy: avgAccuracy,
           total_items: totalItems,
           total_coins: totalCoins,
           top_student: topStudent,
         };
       });
 
-      setClasses(classesWithStats);
 
       // Build allStudents for school from mappedStudents
       const yearClassIds = data.map(c => c.id);
@@ -163,11 +160,11 @@ export function useClasses() {
   }, [selectedClass, fetchClassStudents]);
 
   // Calculate stats
-  const stats = {
-    totalClasses: classes.length,
+  const stats = useMemo(() => ({
+    totalClasses: gradeGroups.reduce((sum, g) => sum + (g.classes?.length || 0), 0),
     totalStudents: allStudents.length,
     totalGrades: gradeGroups.length,
-  };
+  }), [gradeGroups, allStudents.length]);
 
 
   // Student CRUD operations
@@ -293,14 +290,12 @@ export function useClasses() {
 
   return {
     // Data
-    classes,
     gradeGroups,
     classStudents,
     allStudents,
     stats,
     selectedClass,
     isLoading,
-    schoolId,
 
     // Setters
     setSelectedClass,
@@ -313,7 +308,6 @@ export function useClasses() {
     updateStudent,
     deleteStudent,
     toggleStudentStatus,
-    fetchClassStudents,
 
     // Bulk Import
     bulkImport,

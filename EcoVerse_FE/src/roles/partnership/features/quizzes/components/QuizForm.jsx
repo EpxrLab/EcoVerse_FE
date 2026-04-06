@@ -26,7 +26,6 @@ export function QuizForm({
   editingQuestionId = null,
   onSaveQuestion,
   onCancelAddQuestion,
-  questionForm: hookQuestionForm,
 }) {
   // Local state for new question creation
   const [currentQuestion, setCurrentQuestion] = useState({
@@ -37,20 +36,23 @@ export function QuizForm({
     trueFalseAnswer: 'true',
   });
 
-  // Sync with hook state when editing starts
+  // Sync with questions list when editing starts
   useEffect(() => {
-    if (editingQuestionId && hookQuestionForm) {
-      const isMultipleChoice = hookQuestionForm.type === 'multiple_choice';
-      setCurrentQuestion({
-        question: hookQuestionForm.question,
-        type: hookQuestionForm.type,
-        options: hookQuestionForm.options || ['', '', '', ''],
-        correctAnswer: isMultipleChoice 
-          ? (hookQuestionForm.options?.indexOf(hookQuestionForm.correctAnswer) ?? 0)
-          : 0,
-        trueFalseAnswer: isMultipleChoice ? 'true' : String(hookQuestionForm.correctAnswer),
-      });
-    } else if (!editingQuestionId) {
+    if (editingQuestionId) {
+      const q = questions.find(question => question.id === editingQuestionId);
+      if (q) {
+        const isMultipleChoice = q.type === 'multiple_choice';
+        setCurrentQuestion({
+          question: q.question,
+          type: q.type || 'multiple_choice',
+          options: q.options || ['', '', '', ''],
+          correctAnswer: isMultipleChoice 
+            ? (q.options?.indexOf(q.correctAnswer) ?? 0)
+            : 0,
+          trueFalseAnswer: isMultipleChoice ? 'true' : String(q.correctAnswer),
+        });
+      }
+    } else {
       setCurrentQuestion({
         question: '',
         type: 'multiple_choice',
@@ -59,7 +61,7 @@ export function QuizForm({
         trueFalseAnswer: 'true',
       });
     }
-  }, [editingQuestionId, hookQuestionForm]);
+  }, [editingQuestionId, questions]);
 
   const handleAddQuestion = () => {
     if (!currentQuestion.question) {
@@ -96,13 +98,15 @@ export function QuizForm({
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
-        <DialogHeader>
+      <DialogContent className="max-w-4xl h-[90vh] flex flex-col p-0 gap-0 overflow-hidden">
+        <DialogHeader className="px-6 pt-6 pb-4 border-b shrink-0">
           <DialogTitle className="flex items-center gap-2 text-xl font-bold text-eco-green-dark">
             <Leaf className="w-5 h-5 text-eco-green" />
             {isEdit ? 'Cập nhật bài Quiz' : 'Tạo Quiz mới'}
           </DialogTitle>
         </DialogHeader>
+
+        <div className="flex-1 min-h-0 overflow-y-auto px-6 py-4">
 
         <Tabs defaultValue="info" className="space-y-4">
           <TabsList className="grid w-full grid-cols-2 bg-muted/50 p-1 border-2 border-eco-green/15">
@@ -186,7 +190,7 @@ export function QuizForm({
               </div>
             </div>
 
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 gap-4">
               <div className="space-y-2">
                 <Label htmlFor="targetGrade" className="font-semibold">Hạng mục lớp *</Label>
                 <Select 
@@ -202,17 +206,6 @@ export function QuizForm({
                     ))}
                   </SelectContent>
                 </Select>
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="coinsOnPass" className="font-semibold">Điểm thưởng *</Label>
-                <Input
-                  id="coinsOnPass"
-                  type="number"
-                  min={1}
-                  value={formData.coinsOnPass}
-                  onChange={(e) => onFormChange({ coinsOnPass: parseInt(e.target.value) || 0 })}
-                  className="border-2 focus-visible:ring-eco-green"
-                />
               </div>
             </div>
           </TabsContent>
@@ -396,24 +389,27 @@ export function QuizForm({
             </div>
           </TabsContent>
         </Tabs>
+        </div>
 
-        {/* Actions */}
-        <div className="flex gap-3 pt-6 border-t mt-4">
-          <Button variant="outline" className="flex-1 h-11 border-2 font-bold" onClick={onClose}>
+        {/* Actions - Fixed Footer */}
+        <div className="flex gap-3 px-6 py-4 border-t bg-muted/20 shrink-0">
+          <Button variant="outline" className="flex-1 border-2" onClick={onClose}>
             Hủy
           </Button>
           <Button
-            className="flex-1 h-11 bg-eco-orange hover:bg-eco-orange-dark text-white font-bold shadow-lg shadow-eco-orange/20"
+            className="flex-1 bg-eco-orange hover:bg-eco-orange/90 text-primary-foreground font-bold shadow-lg"
             onClick={onSubmit}
             disabled={!isFormValid || isSubmitting}
           >
             {isSubmitting ? (
               <>
-                <Loader2 className="w-5 h-5 mr-2 animate-spin" />
+                <Loader2 className="w-4 h-4 mr-2 animate-spin" />
                 {isEdit ? 'Đang cập nhật...' : 'Đang tạo...'}
               </>
             ) : (
-              `${isEdit ? 'Cập nhật' : 'Tạo'} Quiz (${questions.length} câu)`
+              <>
+                {isEdit ? 'Cập nhật' : 'Tạo'} Quiz ({questions.length} câu)
+              </>
             )}
           </Button>
         </div>

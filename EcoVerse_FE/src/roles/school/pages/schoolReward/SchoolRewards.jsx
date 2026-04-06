@@ -49,8 +49,6 @@ export default function SchoolRewards() {
     setIsAddItemOpen,
     isEditItemOpen,
     setIsEditItemOpen,
-    searchTerm,
-    setSearchTerm,
   } = useRewardForm();
 
   const {
@@ -58,8 +56,10 @@ export default function SchoolRewards() {
     setPage,
     filtered,
     paged,
-    PAGE_SIZE
-  } = useRewardPagination(rewards, searchTerm);
+    PAGE_SIZE,
+    searchTerm,
+    setSearchTerm,
+  } = useRewardPagination(rewards);
 
   const [rejectionId, setRejectionId] = useState(null);
   const [rejectionReason, setRejectionReason] = useState('');
@@ -121,9 +121,24 @@ export default function SchoolRewards() {
     }
   };
 
-  const handleEditItem = (item) => {
-    loadItemForm(item);
-    setIsEditItemOpen(true);
+  const handleEditItem = async (item) => {
+    try {
+      const res = await rewardService.getRewardById(item.id);
+      const detail = res.data?.data || res.data;
+      if (detail) {
+        loadItemForm(detail);
+        setIsEditItemOpen(true);
+      } else {
+        // Fallback to list data if detail not found
+        loadItemForm(item);
+        setIsEditItemOpen(true);
+      }
+    } catch (error) {
+      console.error('Failed to fetch reward detail', error);
+      // Fallback
+      loadItemForm(item);
+      setIsEditItemOpen(true);
+    }
   };
 
   const handleDeleteItem = (id) => {
@@ -673,8 +688,12 @@ export default function SchoolRewards() {
                           className="cursor-pointer file:cursor-pointer file:bg-eco-green/10 file:text-eco-green file:border-0 file:rounded-md file:px-2 file:py-1 file:mr-3 file:font-semibold hover:file:bg-eco-green/20 transition-all text-xs"
                         />
                         {itemForm.imageUrl && (
-                          <div className="shrink-0 w-10 h-10 border rounded-lg overflow-hidden relative">
-                            <img src={itemForm.imagePresignedUrl || itemForm.imageUrl} alt="Preview" className="w-full h-full object-cover" />
+                          <div className="shrink-0 w-10 h-10 border rounded-lg overflow-hidden relative flex items-center justify-center bg-muted/20">
+                            {typeof itemForm.imageUrl === 'string' && (itemForm.imageUrl.startsWith('http') || itemForm.imageUrl.startsWith('/') || itemForm.imageUrl.startsWith('blob:') || itemForm.imageUrl.length > 5) ? (
+                                <img src={itemForm.imagePresignedUrl || itemForm.imageUrl} alt="Preview" className="w-full h-full object-cover" />
+                            ) : (
+                                <span className="text-xl">{itemForm.imageUrl}</span>
+                            )}
                           </div>
                         )}
                       </div>
@@ -803,8 +822,12 @@ export default function SchoolRewards() {
                           className="cursor-pointer file:cursor-pointer file:bg-eco-green/10 file:text-eco-green file:border-0 file:rounded-md file:px-2 file:py-1 file:mr-3 file:font-semibold hover:file:bg-eco-green/20 transition-all text-xs"
                         />
                         {itemForm.imageUrl && (
-                          <div className="shrink-0 w-10 h-10 border rounded-lg overflow-hidden relative">
-                            <img src={itemForm.imagePresignedUrl || itemForm.imageUrl} alt="Preview" className="w-full h-full object-cover" />
+                          <div className="shrink-0 w-10 h-10 border rounded-lg overflow-hidden relative flex items-center justify-center bg-muted/20">
+                            {typeof itemForm.imageUrl === 'string' && (itemForm.imageUrl.startsWith('http') || itemForm.imageUrl.startsWith('/') || itemForm.imageUrl.startsWith('blob:') || itemForm.imageUrl.length > 5) ? (
+                                <img src={itemForm.imagePresignedUrl || itemForm.imageUrl} alt="Preview" className="w-full h-full object-cover" />
+                            ) : (
+                                <span className="text-xl">{itemForm.imageUrl}</span>
+                            )}
                           </div>
                         )}
                       </div>

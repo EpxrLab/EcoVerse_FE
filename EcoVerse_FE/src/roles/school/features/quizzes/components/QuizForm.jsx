@@ -26,7 +26,6 @@ export function QuizForm({
   editingQuestionId = null,
   onSaveQuestion,
   onCancelAddQuestion,
-  questionForm: hookQuestionForm,
 }) {
   // Local state for new question creation
   const [currentQuestion, setCurrentQuestion] = useState({
@@ -37,20 +36,23 @@ export function QuizForm({
     trueFalseAnswer: 'true',
   });
 
-  // Sync with hook state when editing starts
+  // Sync with questions list when editing starts
   useEffect(() => {
-    if (editingQuestionId && hookQuestionForm) {
-      const isMultipleChoice = hookQuestionForm.type === 'multiple_choice';
-      setCurrentQuestion({
-        question: hookQuestionForm.question,
-        type: hookQuestionForm.type,
-        options: hookQuestionForm.options || ['', '', '', ''],
-        correctAnswer: isMultipleChoice 
-          ? (hookQuestionForm.options?.indexOf(hookQuestionForm.correctAnswer) ?? 0)
-          : (hookQuestionForm.correctAnswer === 'true' ? 0 : 0),
-        trueFalseAnswer: isMultipleChoice ? 'true' : String(hookQuestionForm.correctAnswer),
-      });
-    } else if (!editingQuestionId) {
+    if (editingQuestionId) {
+      const q = questions.find(question => question.id === editingQuestionId);
+      if (q) {
+        const isMultipleChoice = q.type === 'multiple_choice';
+        setCurrentQuestion({
+          question: q.question,
+          type: q.type || 'multiple_choice',
+          options: q.options || ['', '', '', ''],
+          correctAnswer: isMultipleChoice 
+            ? (q.options?.indexOf(q.correctAnswer) ?? 0)
+            : (q.correctAnswer === 'true' ? 0 : 0),
+          trueFalseAnswer: isMultipleChoice ? 'true' : String(q.correctAnswer),
+        });
+      }
+    } else {
       setCurrentQuestion({
         question: '',
         type: 'multiple_choice',
@@ -59,7 +61,7 @@ export function QuizForm({
         trueFalseAnswer: 'true',
       });
     }
-  }, [editingQuestionId, hookQuestionForm]);
+  }, [editingQuestionId, questions]);
 
   const handleAddQuestion = () => {
     if (!currentQuestion.question) {

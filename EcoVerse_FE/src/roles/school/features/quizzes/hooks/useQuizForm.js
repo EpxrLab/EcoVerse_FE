@@ -15,17 +15,8 @@ export function useQuizForm() {
   // Questions state
   const [questions, setQuestions] = useState([]);
 
-  // Question form state
-  const [questionForm, setQuestionForm] = useState({
-    question: '',
-    type: 'multiple_choice',
-    options: ['', '', '', ''],
-    correctAnswer: '',
-  });
-
-  // Dialog states
+  // Dialog & Editing states
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
-  const [isAddQuestionOpen, setIsAddQuestionOpen] = useState(false);
   const [editingQuestionId, setEditingQuestionId] = useState(null);
 
   // Handlers
@@ -33,61 +24,19 @@ export function useQuizForm() {
     setQuizForm(prev => ({ ...prev, ...data }));
   };
 
-  const updateQuestionForm = (data) => {
-    setQuestionForm(prev => ({ ...prev, ...data }));
-  };
-
   const addQuestion = (data) => {
-    if (data) {
-        setQuestions(prev => [...prev, data]);
-        return;
-    }
-    const newQuestion = {
-      id: Date.now().toString(),
-      question: questionForm.question,
-      type: questionForm.type,
-      options: questionForm.type === 'multiple_choice' ? questionForm.options : undefined,
-      correctAnswer: questionForm.correctAnswer,
-    };
-    setQuestions(prev => [...prev, newQuestion]);
-    resetQuestionForm();
-    setIsAddQuestionOpen(false);
+    if (!data) return;
+    setQuestions(prev => [...prev, data]);
   };
 
   const saveQuestion = (data) => {
-    // If data is passed (from QuizForm local state), use it
-    if (data) {
-        setQuestions(prev => prev.map(q => q.id == data.id ? { ...q, ...data } : q));
-        setEditingQuestionId(null);
-        return;
-    }
-
-    const updatedQuestion = {
-      id: editingQuestionId,
-      question: questionForm.question,
-      type: questionForm.type,
-      options: questionForm.type === 'multiple_choice' ? questionForm.options : undefined,
-      correctAnswer: questionForm.correctAnswer,
-    };
-    
-    setQuestions(prev => prev.map(q => q.id == editingQuestionId ? { ...q, ...updatedQuestion } : q));
-    resetQuestionForm();
+    if (!data) return;
+    setQuestions(prev => prev.map(q => q.id == data.id ? { ...q, ...data } : q));
     setEditingQuestionId(null);
-    setIsAddQuestionOpen(false);
   };
 
   const startEditQuestion = (id) => {
-    const q = questions.find(question => question.id === id);
-    if (q) {
-      setQuestionForm({
-        question: q.question,
-        type: q.type || 'multiple_choice',
-        options: q.options || ['', '', '', ''],
-        correctAnswer: q.correctAnswer,
-      });
-      setEditingQuestionId(id);
-      setIsAddQuestionOpen(true);
-    }
+    setEditingQuestionId(id);
   };
 
   const removeQuestion = (id) => {
@@ -105,15 +54,6 @@ export function useQuizForm() {
       coinsOnPass: 1,
     });
     setQuestions([]);
-  };
-
-  const resetQuestionForm = () => {
-    setQuestionForm({
-      question: '',
-      type: 'multiple_choice',
-      options: ['', '', '', ''],
-      correctAnswer: '',
-    });
   };
 
   const loadQuizForm = (data, questionsData = []) => {
@@ -141,25 +81,15 @@ export function useQuizForm() {
     addQuestion,
     removeQuestion,
 
-    // Question form
-    questionForm,
-    updateQuestionForm,
-    resetQuestionForm,
-
     // Editing
     editingQuestionId,
     startEditQuestion,
     saveQuestion,
     cancelAddQuestion: () => {
-        setIsAddQuestionOpen(false);
-        resetQuestionForm();
         setEditingQuestionId(null);
     },
-
     // Dialog states
     isCreateDialogOpen,
     setIsCreateDialogOpen,
-    isAddQuestionOpen,
-    setIsAddQuestionOpen,
   };
 }

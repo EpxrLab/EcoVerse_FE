@@ -11,32 +11,32 @@ export function MarketplaceItems({ items, onEdit, onDelete }) {
         items.map((item) => (
           <div 
             key={item.id} 
-            className={`flex items-center gap-4 p-3 rounded-xl bg-muted/40 border border-border/50 ${!item.active ? "opacity-50" : ""}`}
+            className={`flex items-center gap-4 p-3 rounded-xl bg-muted/40 border border-border/50 ${!item.isActive ? "opacity-50" : ""}`}
           >
             <div className="w-11 h-11 rounded-xl bg-eco-leaf/10 flex items-center justify-center text-xl border border-eco-leaf/20 overflow-hidden">
-              {typeof item.image === 'string' && item.image.startsWith('http') ? (
-                <img src={item.image} alt={item.name} className="w-full h-full object-cover" />
+              {typeof item.imageUrl === 'string' && item.imageUrl.startsWith('http') ? (
+                <img src={item.imageUrl} alt={item.rewardName} className="w-full h-full object-cover" />
               ) : (
-                item.image
+                item.imageUrl
               )}
             </div>
             <div className="flex-1">
               <div className="flex items-center gap-2">
-                <h4 className="font-semibold">{item.name}</h4>
+                <h4 className="font-semibold">{item.rewardName}</h4>
                 <Badge 
-                  variant={item.active ? "default" : "secondary"} 
-                  className={item.active ? "bg-eco-green text-xs" : "text-xs"}
+                  variant={item.isActive ? "default" : "secondary"} 
+                  className={item.isActive ? "bg-eco-green text-xs" : "text-xs"}
                 >
-                  {item.active ? "Hoạt động" : "Tạm ngưng"}
+                  {item.isActive ? "Hoạt động" : "Tạm ngưng"}
                 </Badge>
                 <Badge variant="outline" className="text-[10px] uppercase font-bold border-eco-green/30 text-eco-green">
-                  {item.type}
+                  {item.rewardType}
                 </Badge>
               </div>
               <p className="text-sm">
-                <span className="font-bold text-eco-orange">{item.coins} xu</span>
+                <span className="font-bold text-eco-orange">{item.coinCost} xu</span>
                 {' '}
-                <span className="text-muted-foreground">• SL: {item.stock}</span>
+                <span className="text-muted-foreground">• SL: {item.isUnlimited ? '∞' : item.stockQuantity}</span>
               </p>
             </div>
             <div className="flex gap-1">

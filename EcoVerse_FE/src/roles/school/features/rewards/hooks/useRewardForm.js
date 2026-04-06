@@ -14,13 +14,10 @@ export function useRewardForm() {
     isUnlimited: false,
     termsConditions: ''
   });
-
+  
   // Dialog states
   const [isAddItemOpen, setIsAddItemOpen] = useState(false);
   const [isEditItemOpen, setIsEditItemOpen] = useState(false);
-
-  // Search state
-  const [searchTerm, setSearchTerm] = useState('');
 
   // Handlers
   const updateItemForm = (data) => {
@@ -69,9 +66,5 @@ export function useRewardForm() {
     setIsAddItemOpen,
     isEditItemOpen,
     setIsEditItemOpen,
-
-    // Search
-    searchTerm,
-    setSearchTerm,
   };
 }

@@ -18,14 +18,41 @@ export const campaignService = {
     return axios.get(`/school/campaigns/${id}`);
   },
 
-  bindQuizzesToRound: (roundId, quizIds) => {
-    // Using PUT for both initial bind and update (Upsert pattern)
-    const payload = quizIds.map(id => ({
-      quizId: id,
-      maxAttempts: 3,
+  bindQuizzesToRound: (roundId, quizIds, maxAttempts = 1) => {
+    const payload = [{
+      quizIds: quizIds,
+      maxAttempts: maxAttempts,
+      displayOrder: 1,
       isRequired: true
-    }));
+    }];
     return axios.put(`/campaign-rounds/${roundId}/quizzes/bind`, payload);
+  },
+
+  // Game Config
+  getGameTypes: () => {
+    return axios.get('/admin/game-types');
+  },
+
+  getGameTypePresets: (gameTypeId) => {
+    return axios.get(`/admin/game-types/${gameTypeId}/presets`);
+  },
+
+  getAvailableSubCategories: (roundId, gameTypeId, presetIds) => {
+    return axios.get(`/campaign-rounds/${roundId}/game-config/available-sub-categories`, {
+      params: { gameTypeId, presetIds }
+    });
+  },
+
+  saveGameConfig: (roundId, payload) => {
+    return axios.put(`/campaign-rounds/${roundId}/game-config`, payload);
+  },
+
+  activateCampaign: (id) => {
+    return axios.put(`/school/campaigns/${id}/activate`);
+  },
+
+  setDraft: (id) => {
+    return axios.put(`/school/campaigns/${id}/set-draft`);
   },
 
   deleteCampaign: (id) => {
