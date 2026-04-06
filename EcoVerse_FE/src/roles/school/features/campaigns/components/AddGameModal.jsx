@@ -140,7 +140,6 @@ export function AddGameModal({ isOpen, onClose, campaign, onSubmit }) {
         setLoadingSubCategories(false);
       }
     })();
-  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [selectedPresetIds, roundId]);
 
   // ── Derived ───────────────────────────────────────────────────────────────
@@ -151,7 +150,6 @@ export function AddGameModal({ isOpen, onClose, campaign, onSubmit }) {
     1: true, 
     2: !!selectedGameTypeId, 
     3: selectedPresetIds.length > 0, 
-    // Must select at least one sub-category for EACH selected preset
     4: selectedPresetIds.every(id => selectedSubCategoryIds[id]?.length > 0)
   };
 
@@ -196,7 +194,7 @@ export function AddGameModal({ isOpen, onClose, campaign, onSubmit }) {
     // Only include IDs that are actually available for that specific preset
     const payload = {
       gameTypeId: selectedGameTypeId,
-      difficultyOverride: null, // Multiple selection could mean multiple difficulties
+      difficultyOverride: null, 
       selectedPresetIds: selectedPresetIds,
       presetSubCategoryConfigs: selectedPresetIds.map(presetId => {
         const presetData = subCategoryData.find(d => d.presetId === presetId);
