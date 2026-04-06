@@ -173,7 +173,7 @@ export function CampaignForm({
                       <Checkbox
                         id={`${mode}-class-${cls.id}`}
                         checked={formData.class_ids.includes(cls.id)}
-                        onCheckedChange={() => onClassToggle(cls.id)}
+                        onCheckedChange={() => onClassToggle(cls.id, allStudents.filter(s => s.class === cls.name).map(s => s.id))}
                       />
                       <label
                         htmlFor={`${mode}-class-${cls.id}`}

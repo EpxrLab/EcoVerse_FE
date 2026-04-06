@@ -53,7 +53,9 @@ const invitationStatusConfig = {
   invited: { label: 'Đã mời', color: 'bg-eco-orange/15 text-eco-orange', icon: Clock },
   approved: { label: 'Đã chấp nhận', color: 'bg-eco-green/15 text-eco-green', icon: CheckCircle2 },
   declined: { label: 'Đã từ chối', color: 'bg-destructive/15 text-destructive', icon: XCircle },
+  rejected: { label: 'Đã từ chối', color: 'bg-destructive/15 text-destructive', icon: XCircle },
   pending: { label: 'Chờ phản hồi', color: 'bg-eco-orange/15 text-eco-orange', icon: Clock },
+  pending_parent_approval: { label: 'Chờ PH duyệt', color: 'bg-eco-orange/15 text-eco-orange', icon: Clock },
 };
 
 export function CampaignDetail({ campaign, gameTypes, isLoading, onAddQuiz }) {
@@ -86,9 +88,9 @@ export function CampaignDetail({ campaign, gameTypes, isLoading, onAddQuiz }) {
   // Calculate stats from participants
   const participantStats = {
     total: participants.length,
-    invited: participants.filter(p => p.approval_status === 'INVITED').length,
+    invited: participants.filter(p => p.approval_status === 'INVITED' || p.approval_status === 'PENDING_PARENT_APPROVAL').length,
     approved: participants.filter(p => p.approval_status === 'APPROVED').length,
-    declined: participants.filter(p => p.approval_status === 'DECLINED').length,
+    declined: participants.filter(p => p.approval_status === 'DECLINED' || p.approval_status === 'REJECTED').length,
   };
 
   // Get unique classes
@@ -290,8 +292,8 @@ export function CampaignDetail({ campaign, gameTypes, isLoading, onAddQuiz }) {
         </div>
       )}
 
-      {/* Student Participation Status - Show for inviting_students phase OR completed phase */}
-      {(isInvitingStudents || isCompleted) && campaign.student_invitations && campaign.student_invitations.length > 0 && (
+      {/* Student Participation Status - Show if there are participants */}
+      {participants.length > 0 && (
         <div>
           <h4 className="font-semibold mb-3 flex items-center gap-2">
             <Users className="w-4 h-4 text-eco-purple" />
@@ -340,11 +342,9 @@ export function CampaignDetail({ campaign, gameTypes, isLoading, onAddQuiz }) {
             <Table>
               <TableHeader>
                 <TableRow>
-                  <TableHead>Học sinh</TableHead>
+                  <TableHead>Tên học sinh</TableHead>
                   <TableHead>Lớp</TableHead>
-                  <TableHead>Phụ huynh</TableHead>
-                  <TableHead>Số điện thoại</TableHead>
-                  <TableHead className="text-center">Trạng thái</TableHead>
+                  <TableHead className="text-center">Trạng thái tham gia</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -356,9 +356,7 @@ export function CampaignDetail({ campaign, gameTypes, isLoading, onAddQuiz }) {
                   return (
                     <TableRow key={participant.id}>
                       <TableCell className="font-medium">{participant.name}</TableCell>
-                      <TableCell>{participant.class_name}</TableCell>
-                      <TableCell>{participant.code}</TableCell>
-                      <TableCell>{participant.grade}</TableCell>
+                      <TableCell>{participant.grade}{participant.class_name}</TableCell>
                       <TableCell className="text-center">
                         <Badge
                           className={config.color}

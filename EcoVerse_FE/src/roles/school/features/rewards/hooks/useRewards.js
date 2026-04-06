@@ -8,8 +8,6 @@ import {
 } from '../../../data/reward.data';
 
 export function useRewards() {
-  const [searchTerm, setSearchTerm] = useState('');
-  const [isAddItemOpen, setIsAddItemOpen] = useState(false);
 
   const [partnershipRewards, setPartnershipRewards] = useState(partnershipRewardsData);
   const [marketplaceItems, setMarketplaceItems] = useState([]);
@@ -28,15 +26,15 @@ export function useRewards() {
       const res = await rewardService.getRewards();
       const rewardsList = res.data?.data || [];
       const mapped = rewardsList.map(r => ({
+        ...r,
         id: r.id,
-        name: r.rewardName,
-        coins: r.coinCost,
-        stock: r.isUnlimited ? '∞' : r.stockQuantity,
-        image: r.imagePresignedUrl || r.imageUrl,
+        rewardName: r.rewardName,
+        coinCost: r.coinCost,
+        stockQuantity: r.stockQuantity,
+        imageUrl: r.imagePresignedUrl || r.imageUrl,
         imagePresignedUrl: r.imagePresignedUrl,
-        active: r.isActive,
-        type: r.rewardType || 'PHYSICAL',
-        ...r
+        isActive: r.isActive,
+        rewardType: r.rewardType || 'PHYSICAL',
       }));
       setMarketplaceItems(mapped);
     } catch (e) {
@@ -216,12 +214,7 @@ export function useRewards() {
     deliverRewardRequest,
     stats: localStats,
     topRewards: localTopRewards,
-    statusDistribution: statusDistributionData,
     partnershipRewards,
     confirmPartnershipReward,
-    searchTerm,
-    setSearchTerm,
-    isAddItemOpen,
-    setIsAddItemOpen,
   };
 }

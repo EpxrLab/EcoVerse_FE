@@ -35,8 +35,6 @@ export default function PartnershipQuizzes() {
     questions,
     addQuestion,
     removeQuestion,
-    questionForm,
-    updateQuestionForm,
     isCreateDialogOpen,
     setIsCreateDialogOpen,
     editingQuestionId,
@@ -103,7 +101,6 @@ export default function PartnershipQuizzes() {
           timeLimit: detailedQuiz.timePerQuestion,
           passingScore: detailedQuiz.passScorePercentage,
           targetGrade: detailedQuiz.targetGrade,
-          coinsOnPass: detailedQuiz.coinsOnPass,
         }, qData);
         
         setOriginalQuestions(JSON.parse(JSON.stringify(qData)));
@@ -126,7 +123,7 @@ export default function PartnershipQuizzes() {
         difficulty: quizForm.difficulty.toUpperCase(),
         quizType: 'MULTIPLE_CHOICE',
         targetGrade: quizForm.targetGrade,
-        coinsOnPass: quizForm.coinsOnPass,
+        coinsOnPass: 0,
         timePerQuestion: quizForm.timeLimit,
         passScorePercentage: quizForm.passingScore,
       };
@@ -211,7 +208,7 @@ export default function PartnershipQuizzes() {
         difficulty: quizForm.difficulty.toUpperCase(),
         quizType: 'MULTIPLE_CHOICE',
         targetGrade: quizForm.targetGrade,
-        coinsOnPass: quizForm.coinsOnPass,
+        coinsOnPass: 0,
         timePerQuestion: quizForm.timeLimit,
         passScorePercentage: quizForm.passingScore,
         questions: questions.map((q, index) => ({
@@ -325,8 +322,6 @@ export default function PartnershipQuizzes() {
             formData={quizForm}
             questions={questions}
             onFormChange={updateQuizForm}
-            questionForm={questionForm}
-            onQuestionFormChange={updateQuestionForm}
             onAddQuestion={addQuestion}
             onRemoveQuestion={wrapRemoveQuestion}
             onEditQuestion={startEditQuestion}

@@ -1,246 +1,546 @@
-import React, { useState } from 'react';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/shared/components/ui/dialog';
+import React, { useState, useEffect } from 'react';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/shared/components/ui/dialog';
 import { Button } from '@/shared/components/ui/button';
-import { Label } from '@/shared/components/ui/label';
-import { Package, Zap, Check } from 'lucide-react';
+import { Input } from '@/shared/components/ui/input';
+import { Badge } from '@/shared/components/ui/badge';
+import { ScrollArea } from '@/shared/components/ui/scroll-area';
+import {
+  ChevronRight, ChevronLeft, Loader2, AlertCircle, Check,
+  Gamepad2, Zap, RotateCcw, Save, Clock, Package, Shield, Layers
+} from 'lucide-react';
 import { cn } from '@/shared/lib/utils';
+import { campaignService } from '@/roles/school/services';
 
-// ─── Demo Data ────────────────────────────────────────────────────────────────
-
-const DEMO_PRESETS = [
-  { id: 1, name: "Preset Cơ bản", gameType: "sorting", difficulty: "Dễ", levels: [
-    { levelNumber: 1, itemCount: 15, timeLimitSeconds: 60, lives: null, binTypes: ["plastic", "paper", "organic"] }
-  ]},
-  { id: 2, name: "Preset Thử thách", gameType: "sorting", difficulty: "Trung bình", levels: [
-    { levelNumber: 1, itemCount: 20, timeLimitSeconds: 45, lives: 3, binTypes: ["plastic", "paper"] }
-  ]},
-  { id: 3, name: "Preset Khởi động", gameType: "runner", difficulty: "Dễ", levels: [
-    { levelNumber: 1, itemCount: 10, timeLimitSeconds: 0, lives: null, binTypes: ["organic", "others"] }
-  ]},
-  { id: 4, name: "Preset Tăng tốc", gameType: "runner", difficulty: "Trung bình", levels: [
-    { levelNumber: 1, itemCount: 20, timeLimitSeconds: 45, lives: 3, binTypes: ["plastic", "paper"] },
-    { levelNumber: 2, itemCount: 25, timeLimitSeconds: 40, lives: 3, binTypes: ["plastic", "paper", "organic"] }
-  ]},
+// ─── Constants ────────────────────────────────────────────────────────────────
+const STEPS = [
+  { id: 1, label: 'Coin thưởng' },
+  { id: 2, label: 'Loại game' },
+  { id: 3, label: 'Độ khó' },
+  { id: 4, label: 'Danh mục rác' },
+  { id: 5, label: 'Xem trước' },
 ];
 
-const WASTE_ITEMS = [
-  { id: 1, image: "🥤", name: "Chai nhựa", category: "plastic" },
-  { id: 5, image: "🧃", name: "Hộp sữa", category: "plastic" },
-  { id: 2, image: "📄", name: "Giấy A4", category: "paper" },
-  { id: 6, image: "📰", name: "Báo cũ", category: "paper" },
-  { id: 3, image: "🍎", name: "Vỏ táo", category: "organic" },
-  { id: 7, image: "🍌", name: "Vỏ chuối", category: "organic" },
-  { id: 4, image: "🥡", name: "Hộp xốp", category: "others" },
-  { id: 8, image: "🔋", name: "Pin", category: "others" },
-];
+const DIFFICULTY_META = {
+  EASY:   { label: 'Easy',   color: 'text-eco-green',    border: 'border-eco-green',     bg: 'bg-eco-green/5' },
+  MEDIUM: { label: 'Medium', color: 'text-eco-green',    border: 'border-eco-green',     bg: 'bg-eco-green/5' },
+  HARD:   { label: 'Hard',   color: 'text-emerald-700',  border: 'border-emerald-700',   bg: 'bg-emerald-700/5' },
+};
 
-const BIN_LABEL = { plastic: "Nhựa", paper: "Giấy", organic: "Hữu cơ", others: "Khác" };
-const BIN_COLOR = { plastic: "blue", paper: "green", organic: "amber", others: "gray" };
+const DEFAULT_COIN = 20;
+
+const WASTE_LABEL = { ORGANIC: 'Hữu cơ', RECYCLABLE: 'Tái chế', GENERAL: 'Chung', HAZARDOUS: 'Nguy hại' };
 
 // ─── Component ────────────────────────────────────────────────────────────────
-
 export function AddGameModal({ isOpen, onClose, campaign, onSubmit }) {
-  const [gameType, setGameType] = useState('');
-  const [presetId, setPresetId] = useState(null);
-  const [selectedWasteIds, setSelectedWasteIds] = useState([]);
+  const [step, setStep] = useState(1);
+  const [coinPerSession, setCoinPerSession] = useState(DEFAULT_COIN);
 
-  React.useEffect(() => {
-    if (isOpen) {
-      setGameType(campaign?.selected_games?.[0] || '');
-      setPresetId(campaign?.game_configs?.presetId || null);
-      setSelectedWasteIds(campaign?.waste_item_ids || []);
+  // Step 2 – Game Type
+  const [gameTypes, setGameTypes] = useState([]);
+  const [selectedGameTypeId, setSelectedGameTypeId] = useState(null);
+  const [loadingGameTypes, setLoadingGameTypes] = useState(false);
+
+  // Step 3 – Presets (= difficulty selection)
+  const [presets, setPresets] = useState([]);       // raw from API
+  const [selectedPresetIds, setSelectedPresetIds] = useState([]);
+  const [loadingPresets, setLoadingPresets] = useState(false);
+
+  const [subCategoryData, setSubCategoryData] = useState([]); // Raw grouped from API
+  const [selectedSubCategoryIds, setSelectedSubCategoryIds] = useState({}); // { presetId: [subCatId1, ...] }
+  const [loadingSubCategories, setLoadingSubCategories] = useState(false);
+
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [error, setError] = useState(null);
+
+  const roundId = campaign?.rounds?.[0]?.id;
+  const existingRound = campaign?.rounds?.[0];
+
+  // Holds IDs to apply once sub-categories are loaded (restoration flow)
+  const pendingSubCategoryIdsRef = React.useRef({});
+
+  // ── On open: load game types, restore config ─────────────────────────────
+  useEffect(() => {
+    if (!isOpen) {
+      pendingSubCategoryIdsRef.current = {};
+      return;
     }
-  }, [isOpen, campaign]);
+    setError(null);
 
-  const handleGameTypeChange = (type) => {
-    setGameType(type);
-    setPresetId(null);
-    setSelectedWasteIds([]);
+    const hasConfig = !!existingRound?.game_type_id;
+    if (!hasConfig) {
+      setStep(1);
+      setCoinPerSession(DEFAULT_COIN);
+      setSelectedGameTypeId(null);
+      setSelectedPresetIds([]);
+      setPresets([]);
+      setSelectedSubCategoryIds({});
+      pendingSubCategoryIdsRef.current = {};
+    } else {
+      setStep(1);
+      setCoinPerSession(existingRound?.coin_per_session ?? DEFAULT_COIN);
+      setSelectedGameTypeId(existingRound.game_type_id);
+      setSelectedPresetIds(existingRound.selected_preset_ids || []);
+
+      // presetSubCategoryConfig is a dict: { presetId: [subCatId, ...] }
+      const configDict = existingRound.preset_sub_category_config;
+      if (configDict && typeof configDict === 'object' && !Array.isArray(configDict)) {
+        pendingSubCategoryIdsRef.current = { ...configDict };
+      } else {
+        pendingSubCategoryIdsRef.current = {};
+      }
+    }
+
+    const load = async () => {
+      setLoadingGameTypes(true);
+      try {
+        const res = await campaignService.getGameTypes();
+        setGameTypes(res.data?.data || []);
+      } catch {
+        setError('Không thể tải danh sách game');
+      } finally {
+        setLoadingGameTypes(false);
+      }
+    };
+    load();
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isOpen]);
+
+  // ── Load presets when game type changes ───────────────────────────────────
+  useEffect(() => {
+    if (!selectedGameTypeId) { setPresets([]); return; }
+    setLoadingPresets(true);
+    (async () => {
+      try {
+        const res = await campaignService.getGameTypePresets(selectedGameTypeId);
+        setPresets(res.data?.data || []);
+      } catch {
+        setError('Không thể tải preset');
+      } finally {
+        setLoadingPresets(false);
+      }
+    })();
+  }, [selectedGameTypeId]);
+
+  // ── Load sub-categories when presets change ───────────────────────────────
+  useEffect(() => {
+    if (selectedPresetIds.length === 0 || !roundId) { setSubCategoryData([]); return; }
+    setLoadingSubCategories(true);
+    (async () => {
+      try {
+        const res = await campaignService.getAvailableSubCategories(roundId, selectedGameTypeId, selectedPresetIds);
+        setSubCategoryData(res.data?.data || []);
+        // If we have pending IDs to restore (from a previous config), apply them now
+        if (Object.keys(pendingSubCategoryIdsRef.current).length > 0) {
+          setSelectedSubCategoryIds(pendingSubCategoryIdsRef.current);
+          pendingSubCategoryIdsRef.current = {};
+        }
+      } catch {
+        setError('Không thể tải danh mục rác');
+      } finally {
+        setLoadingSubCategories(false);
+      }
+    })();
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [selectedPresetIds, roundId]);
+
+  // ── Derived ───────────────────────────────────────────────────────────────
+  const selectedGameType = gameTypes.find(g => g.id === selectedGameTypeId);
+  
+
+  const canGoNext = { 
+    1: true, 
+    2: !!selectedGameTypeId, 
+    3: selectedPresetIds.length > 0, 
+    // Must select at least one sub-category for EACH selected preset
+    4: selectedPresetIds.every(id => selectedSubCategoryIds[id]?.length > 0)
   };
 
-  const handlePresetChange = (id) => {
-    setPresetId(id);
-    setSelectedWasteIds([]);
-  };
+  const handleNext = () => setStep(s => Math.min(s + 1, 5));
+  const handleBack = () => setStep(s => Math.max(s - 1, 1));
+  const handleStepClick = (s) => { if (s <= step) setStep(s); };
 
-  const filteredPresets = DEMO_PRESETS.filter(p => p.gameType === gameType);
-
-  const selectedPreset = DEMO_PRESETS.find(p => p.id === presetId);
-  const allowedBinTypes = (() => {
-    if (!selectedPreset) return [];
-    const bins = new Set();
-    selectedPreset.levels.forEach(l => (l.binTypes || []).forEach(b => bins.add(b)));
-    return [...bins];
-  })();
-
-  const availableWaste = WASTE_ITEMS.filter(w => allowedBinTypes.includes(w.category));
-  const groupedWaste = allowedBinTypes.map(bin => ({
-    bin, label: BIN_LABEL[bin], color: BIN_COLOR[bin],
-    items: availableWaste.filter(w => w.category === bin)
-  }));
-
-  const toggleWasteItem = (itemId) => {
-    setSelectedWasteIds(prev =>
-      prev.includes(itemId) ? prev.filter(id => id !== itemId) : [...prev, itemId]
+  const togglePreset = (id) => {
+    setSelectedPresetIds(prev => 
+      prev.includes(id) ? prev.filter(i => i !== id) : [...prev, id]
     );
+    // Clear pending restoration
+    pendingSubCategoryIdsRef.current = {};
+    
+    // Also clean up selectedSubCategoryIds if a preset is removed
+    setSelectedSubCategoryIds(prev => {
+      if (prev[id]) {
+        const newObj = { ...prev };
+        delete newObj[id];
+        return newObj;
+      }
+      return prev;
+    });
   };
 
-  const handleSubmit = () => {
-    onSubmit(campaign.id, {
-      selected_games: gameType ? [gameType] : [],
-      game_configs: { presetId },
-      waste_item_ids: selectedWasteIds,
+  const toggleSubCategory = (presetId, subCatId) => {
+    setSelectedSubCategoryIds(prev => {
+      const current = prev[presetId] || [];
+      return {
+        ...prev,
+        [presetId]: current.includes(subCatId) 
+          ? current.filter(i => i !== subCatId) 
+          : [...current, subCatId]
+      };
     });
-    onClose();
+  };
+
+  const handleSubmit = async () => {
+    if (!roundId) { setError('Không tìm thấy vòng chơi'); return; }
+    
+    // Map selected SubCategory IDs to each preset's config
+    // Only include IDs that are actually available for that specific preset
+    const payload = {
+      gameTypeId: selectedGameTypeId,
+      difficultyOverride: null, // Multiple selection could mean multiple difficulties
+      selectedPresetIds: selectedPresetIds,
+      presetSubCategoryConfigs: selectedPresetIds.map(presetId => {
+        const presetData = subCategoryData.find(d => d.presetId === presetId);
+        const availableForThisPreset = (presetData?.availableSubCategories || []).map(sc => sc.id);
+        const userSelected = selectedSubCategoryIds[presetId] || [];
+        return {
+          presetId: presetId,
+          selectedSubCategoryIds: userSelected.filter(id => availableForThisPreset.includes(id))
+        };
+      }),
+      coinPerSession: Number(coinPerSession) || 0,
+    };
+
+    setIsSubmitting(true);
+    try {
+      await campaignService.saveGameConfig(roundId, payload);
+      onSubmit && onSubmit(campaign.id, payload);
+      onClose();
+    } catch {
+      setError('Không thể lưu cấu hình. Vui lòng thử lại.');
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="max-w-xl h-[85vh] flex flex-col overflow-hidden">
-        <DialogHeader className="shrink-0 pb-2">
-          <DialogTitle className="text-xl font-bold text-eco-green flex items-center gap-2">
-            <Zap className="w-6 h-6" />
-            Thêm Game cho chiến dịch
+      <DialogContent className="max-w-3xl flex flex-col overflow-hidden p-0 gap-0" style={{ height: '90vh', maxHeight: 680 }}>
+        {/* Header */}
+        <DialogHeader className="px-6 pt-5 pb-0 shrink-0">
+          <DialogTitle className="flex items-center gap-2 text-lg font-bold">
+            <Gamepad2 className="w-5 h-5 text-eco-green" />
+            Thêm Game
+            {campaign?.name && <span className="font-normal text-muted-foreground text-sm">— {campaign.name}</span>}
           </DialogTitle>
         </DialogHeader>
 
-        <div className="flex-1 min-h-0 overflow-y-auto py-4 px-1 scrollbar-thin space-y-6">
-          {/* Step 1: Game Type */}
-          <div className="space-y-3">
-            <Label className="text-sm font-bold flex items-center gap-2">
-              <span className="w-6 h-6 rounded-full bg-eco-blue/10 text-eco-blue flex items-center justify-center text-xs">1</span>
-              Chọn Loại Game
-            </Label>
-            <div className="grid grid-cols-2 gap-3">
-              {[
-                { value: 'sorting', icon: <Package className="w-5 h-5" />, label: 'Thu thập & Phân loại', color: 'eco-blue' },
-                { value: 'runner', icon: <Zap className="w-5 h-5" />, label: 'Chạy & Phân loại', color: 'eco-green' },
-              ].map(({ value, icon, label, color }) => (
-                <div
-                  key={value}
-                  onClick={() => handleGameTypeChange(value)}
-                  className={cn(
-                    "p-3 rounded-xl border-2 cursor-pointer transition-all",
-                    gameType === value
-                      ? `bg-${color}/5 border-${color} shadow-sm ring-1 ring-${color}`
-                      : "border-border hover:bg-muted/50"
-                  )}
-                >
-                  <div className="flex items-center gap-2">
-                    <span className={gameType === value ? `text-${color}` : "text-muted-foreground"}>{icon}</span>
-                    <span className={cn("font-semibold text-sm", gameType === value ? `text-${color}` : "text-foreground")}>{label}</span>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
+        <style dangerouslySetInnerHTML={{ __html: `
+          .no-scrollbar::-webkit-scrollbar { display: none; }
+          .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+        `}} />
 
-          {/* Step 2: Preset */}
-          {gameType && (
-            <div className="space-y-3 transition-all animate-in fade-in slide-in-from-top-2">
-              <Label className="text-sm font-bold flex items-center gap-2">
-                <span className="w-6 h-6 rounded-full bg-eco-blue/10 text-eco-blue flex items-center justify-center text-xs">2</span>
-                Chọn Preset
-              </Label>
-              <div className="flex flex-col gap-2">
-                {filteredPresets.map(preset => {
-                  const presetBins = new Set();
-                  preset.levels.forEach(l => (l.binTypes || []).forEach(b => presetBins.add(b)));
-                  return (
-                    <div
-                      key={preset.id}
-                      onClick={() => handlePresetChange(preset.id)}
-                      className={cn(
-                        "p-3 rounded-xl border-2 cursor-pointer transition-all text-sm",
-                        presetId === preset.id ? "bg-green-50 border-green-500 shadow-sm" : "bg-background border-border hover:border-green-300"
-                      )}
-                    >
-                      <div className="flex justify-between items-start">
-                        <div>
-                          <p className={cn("font-semibold", presetId === preset.id ? "text-green-800" : "text-foreground")}>{preset.name}</p>
-                          <p className="text-xs text-muted-foreground mt-1">{preset.levels.length} Cấp độ • Độ khó: {preset.difficulty}</p>
-                          <div className="flex gap-1 mt-1.5 flex-wrap">
-                            {[...presetBins].map(bin => (
-                              <span key={bin} className={`text-[10px] px-1.5 py-0.5 rounded-md font-medium bg-${BIN_COLOR[bin]}-100 text-${BIN_COLOR[bin]}-700`}>
-                                {BIN_LABEL[bin]}
-                              </span>
-                            ))}
-                          </div>
-                        </div>
-                        <div className={cn("w-5 h-5 rounded-full border-2 flex items-center justify-center shrink-0 mt-0.5",
-                          presetId === preset.id ? "border-green-500 bg-green-500" : "border-muted-foreground/30"
-                        )}>
-                          {presetId === preset.id && <div className="w-2 h-2 rounded-full bg-white" />}
-                        </div>
-                      </div>
-                    </div>
-                  );
-                })}
-                {filteredPresets.length === 0 && (
-                  <p className="text-sm text-muted-foreground italic text-center py-4 bg-muted/20 rounded-lg">Chưa có preset nào</p>
+        {/* Step Tabs */}
+        <div className="flex border-b mx-6 mt-4 shrink-0 overflow-x-auto no-scrollbar scroller-hide">
+          {STEPS.map(s => {
+            const done   = step > s.id;
+            const active = step === s.id;
+            return (
+              <button
+                key={s.id}
+                onClick={() => handleStepClick(s.id)}
+                className={cn(
+                  "flex items-center gap-1.5 px-4 py-2.5 text-sm font-medium border-b-2 -mb-px transition-colors whitespace-nowrap",
+                  active ? "border-eco-green text-eco-green" : "border-transparent",
+                  done ? "text-eco-green cursor-pointer" : !active ? "text-muted-foreground cursor-default" : ""
                 )}
-              </div>
-            </div>
-          )}
-
-          {/* Step 3: Waste Items */}
-          {presetId && availableWaste.length > 0 && (
-            <div className="space-y-3 transition-all animate-in fade-in slide-in-from-top-2">
-              <div className="flex items-center justify-between">
-                <Label className="text-sm font-bold flex items-center gap-2">
-                  <span className="w-6 h-6 rounded-full bg-eco-blue/10 text-eco-blue flex items-center justify-center text-xs">3</span>
-                  Chọn rác xuất hiện trong game
-                </Label>
-                <div className="flex gap-2">
-                  <button type="button" onClick={() => setSelectedWasteIds(availableWaste.map(i => i.id))} className="text-xs text-eco-blue hover:underline font-medium">Chọn tất cả</button>
-                  <span className="text-xs text-muted-foreground">|</span>
-                  <button type="button" onClick={() => setSelectedWasteIds([])} className="text-xs text-muted-foreground hover:underline font-medium">Bỏ chọn</button>
-                </div>
-              </div>
-              <div className="space-y-4">
-                {groupedWaste.map(group => (
-                  <div key={group.bin} className="space-y-2">
-                    <p className={`text-[10px] font-bold uppercase tracking-widest text-${group.color}-600 pl-1`}>Thùng {group.label}</p>
-                    <div className="grid grid-cols-2 gap-2">
-                      {group.items.map(item => {
-                        const selected = selectedWasteIds.includes(item.id);
-                        return (
-                          <div
-                            key={item.id}
-                            onClick={() => toggleWasteItem(item.id)}
-                            className={cn(
-                              "flex items-center gap-2.5 p-2.5 rounded-xl border-2 cursor-pointer transition-all text-sm",
-                              selected ? `bg-${group.color}-50 border-${group.color}-400 shadow-sm` : "bg-background border-border hover:border-muted-foreground/40"
-                            )}
-                          >
-                            <span className="text-xl leading-none">{item.image}</span>
-                            <span className={cn("font-medium flex-1", selected ? `text-${group.color}-800` : "text-foreground")}>{item.name}</span>
-                            <div className={cn("w-5 h-5 rounded-md border-2 flex items-center justify-center shrink-0",
-                              selected ? `border-${group.color}-500 bg-${group.color}-500` : "border-muted-foreground/30"
-                            )}>
-                              {selected && <Check className="w-3 h-3 text-white" />}
-                            </div>
-                          </div>
-                        );
-                      })}
-                    </div>
-                  </div>
-                ))}
-              </div>
-              <p className="text-xs text-muted-foreground text-center pt-2">
-                Đã chọn <span className="font-bold text-foreground">{selectedWasteIds.length}</span> / {availableWaste.length} loại rác
-              </p>
-            </div>
-          )}
+              >
+                <span className={cn(
+                  "w-5 h-5 rounded-full text-xs flex items-center justify-center font-bold shrink-0",
+                  active ? "bg-eco-green text-white" : done ? "bg-eco-green/20 text-eco-green" : "bg-muted text-muted-foreground"
+                )}>
+                  {done ? <Check className="w-3 h-3" /> : s.id}
+                </span>
+                {s.label}
+              </button>
+            );
+          })}
         </div>
 
-        <DialogFooter className="border-t pt-4 shrink-0 mt-auto bg-background">
-          <Button variant="ghost" onClick={onClose} className="mr-auto">Hủy</Button>
-          <Button onClick={handleSubmit} disabled={!gameType || !presetId} className="bg-eco-blue hover:bg-eco-blue/90 text-white min-w-[140px]">
-            Lưu cấu hình Game
-          </Button>
-        </DialogFooter>
+        {/* Content */}
+        <ScrollArea className="flex-1 min-h-0 no-scrollbar">
+          <div className="px-6 py-5 space-y-4">
+            {error && (
+              <div className="flex items-center gap-2 p-3 rounded-lg bg-destructive/10 text-destructive text-sm">
+                <AlertCircle className="w-4 h-4 shrink-0" />{error}
+              </div>
+            )}
+
+            {/* ── Step 1: Coin thưởng ─────────────────────────── */}
+            {step === 1 && (
+              <div className="space-y-4">
+                <SectionLabel>COIN THƯỞNG KHI HOÀN THÀNH GAME</SectionLabel>
+                <div className="flex gap-2 items-center">
+                  <div className="relative flex-1">
+                    <Input
+                      type="number" min={0}
+                      value={coinPerSession}
+                      onChange={e => setCoinPerSession(e.target.value)}
+                      className="pr-28 text-lg font-semibold h-12"
+                    />
+                    <span className="absolute right-3 top-1/2 -translate-y-1/2 text-sm text-muted-foreground">coin / session</span>
+                  </div>
+                  <Button variant="secondary" onClick={() => setCoinPerSession(DEFAULT_COIN)} className="h-12 shrink-0">
+                    <RotateCcw className="w-4 h-4 mr-2" />
+                    Dùng mặc định hệ thống
+                  </Button>
+                </div>
+              </div>
+            )}
+
+            {/* ── Step 2: Loại game ───────────────────────────── */}
+            {step === 2 && (
+              <div className="space-y-4">
+                <SectionLabel>LOẠI GAME</SectionLabel>
+                {loadingGameTypes ? <LoadingCard /> : (
+                  <div className="space-y-2">
+                    {gameTypes.map(gt => {
+                      const sel = selectedGameTypeId === gt.id;
+                      return (
+                        <div key={gt.id} onClick={() => { setSelectedGameTypeId(gt.id); setSelectedPresetIds([]); setSelectedSubCategoryIds({}); }}
+                          className={cn(
+                            "flex items-center gap-4 p-4 rounded-xl border-2 cursor-pointer transition-all",
+                            sel ? "border-eco-green bg-eco-green/5 shadow-sm" : "border-border hover:border-eco-green/30"
+                          )}>
+                          <div className={cn("w-12 h-12 rounded-xl flex items-center justify-center shrink-0", sel ? "bg-eco-green/20" : "bg-muted")}>
+                            {gt.iconPresignedUrl || gt.iconUrl
+                              ? <img src={gt.iconPresignedUrl || gt.iconUrl} alt={gt.name} className="w-8 h-8 object-contain" />
+                              : <Zap className={cn("w-6 h-6", sel ? "text-eco-green" : "text-muted-foreground")} />}
+                          </div>
+                          <div className="flex-1 min-w-0">
+                            <p className={cn("font-semibold text-base", sel ? "text-eco-green" : "")}>{gt.name || gt.typeName}</p>
+                            {gt.description && <p className="text-sm text-muted-foreground mt-0.5 line-clamp-1">{gt.description}</p>}
+                          </div>
+                          {sel && <div className="w-6 h-6 rounded-full bg-eco-green flex items-center justify-center shrink-0"><Check className="w-3.5 h-3.5 text-white" /></div>}
+                        </div>
+                      );
+                    })}
+                    {!loadingGameTypes && gameTypes.length === 0 && <EmptyCard message="Không có loại game nào" />}
+                  </div>
+                )}
+              </div>
+            )}
+
+            {/* ── Step 3: Độ khó (= chọn presets) ────────────── */}
+            {step === 3 && (
+              <div className="space-y-4">
+                <SectionLabel>ĐỘ KHÓ</SectionLabel>
+                {loadingPresets ? <LoadingCard /> : (
+                  <div className="space-y-3">
+                    {presets.map(preset => {
+                      const meta = DIFFICULTY_META[preset.difficulty] || DIFFICULTY_META.MEDIUM;
+                      const sel  = selectedPresetIds.includes(preset.id);
+                      const lvls = preset.items || [];
+                      const maxItems = Math.max(...lvls.map(l => l.itemCount), 0);
+                      const minTime  = Math.min(...lvls.map(l => l.timeLimitSeconds), 999);
+
+                      return (
+                        <div key={preset.id} onClick={() => togglePreset(preset.id)}
+                          className={cn(
+                            "rounded-xl border-2 cursor-pointer transition-all overflow-hidden",
+                            sel ? `${meta.border} ${meta.bg} shadow-sm` : "border-border hover:border-muted-foreground/40"
+                          )}>
+                          <div className="flex items-center justify-between px-4 pt-3 pb-2">
+                            <div className="flex items-center gap-2">
+                              <div>
+                                <div className="flex items-center gap-2">
+                                  <span className={cn("font-bold text-base", sel ? meta.color : "")}>{meta.label}</span>
+                                </div>
+                              </div>
+                            </div>
+                            {sel && <div className="w-6 h-6 rounded-full bg-eco-green flex items-center justify-center shrink-0"><Check className="w-3.5 h-3.5 text-white" /></div>}
+                          </div>
+                          <div className="grid grid-cols-3 divide-x border-t mx-0 text-center py-2 px-0 bg-background/50 text-xs">
+                            <div className="px-3"><p className="font-bold flex items-center justify-center gap-1"><Package className="w-3.5 h-3.5" />{maxItems}</p><p className="text-[10px] text-muted-foreground">vật phẩm</p></div>
+                            <div className="px-3"><p className="font-bold flex items-center justify-center gap-1"><Clock className="w-3.5 h-3.5" />{minTime}s</p><p className="text-[10px] text-muted-foreground">thời gian</p></div>
+                            <div className="px-3"><p className="font-bold flex items-center justify-center gap-1"><Shield className="w-3.5 h-3.5" />{lvls.length}</p><p className="text-[10px] text-muted-foreground">level</p></div>
+                          </div>
+                        </div>
+                      );
+                    })}
+                    {!loadingPresets && presets.length === 0 && <EmptyCard message="Không có preset nào cho loại game này" />}
+                  </div>
+                )}
+              </div>
+            )}
+
+            {step === 4 && (
+              <div className="space-y-6">
+                <SectionLabel>DANH MỤC RÁC SỬ DỤNG CHO TỪNG ĐỘ KHÓ</SectionLabel>
+                {loadingSubCategories ? <LoadingCard /> : (
+                  <div className="space-y-8">
+                    {selectedPresetIds.map(presetId => {
+                      const pData = subCategoryData.find(d => d.presetId === presetId);
+                      const pMeta = presets.find(p => p.id === presetId);
+                      const diffMeta = DIFFICULTY_META[pMeta?.difficulty] || DIFFICULTY_META.MEDIUM;
+                      const availableSc = pData?.availableSubCategories || [];
+                      const selectedCount = (selectedSubCategoryIds[presetId] || []).length;
+
+                      return (
+                        <div key={presetId} className="space-y-3">
+                          <div className="flex items-center justify-between pb-2 border-b">
+                            <h3 className={cn("font-bold text-sm uppercase tracking-wider flex items-center gap-2", diffMeta.color)}>
+                              CẤU HÌNH <Badge variant="outline" className={cn(diffMeta.color, diffMeta.border, diffMeta.bg)}>{diffMeta.label}</Badge>
+                            </h3>
+                            <span className="text-xs text-muted-foreground font-medium">
+                              Đã chọn <span className={cn(selectedCount > 0 ? "text-eco-green font-bold" : "text-destructive font-bold")}>{selectedCount}</span>/{availableSc.length}
+                            </span>
+                          </div>
+                          
+                          <div className="grid grid-cols-2 gap-3 mt-3">
+                            {availableSc.map(sc => {
+                              const isSelected = (selectedSubCategoryIds[presetId] || []).includes(sc.id);
+                              return (
+                                <div key={sc.id} onClick={() => toggleSubCategory(presetId, sc.id)}
+                                  className={cn(
+                                    "flex flex-col items-center gap-2 p-4 rounded-xl border-2 cursor-pointer transition-all text-center relative",
+                                    isSelected ? "border-eco-green bg-eco-green/5 shadow-sm" : "border-border hover:border-eco-green/30"
+                                  )}>
+                                  <div className={cn("w-14 h-14 rounded-full flex items-center justify-center", isSelected ? "bg-eco-green/20" : "bg-muted")}>
+                                    {sc.iconPresignedUrl || sc.iconUrl
+                                      ? <img src={sc.iconPresignedUrl || sc.iconUrl} alt={sc.displayName} className="w-9 h-9 object-contain" />
+                                      : <Layers className={cn("w-7 h-7", isSelected ? "text-eco-green" : "text-muted-foreground")} />}
+                                  </div>
+                                  <div className="min-w-0">
+                                    <p className={cn("font-bold text-sm", isSelected ? "text-eco-green" : "")}>{sc.displayName}</p>
+                                    <Badge variant="outline" className="text-[10px] uppercase mt-1">
+                                      {WASTE_LABEL[sc.category] || sc.category}
+                                    </Badge>
+                                  </div>
+                                  {isSelected && (
+                                    <div className="absolute top-2 right-2 w-5 h-5 rounded-full bg-eco-green flex items-center justify-center">
+                                      <Check className="w-3 h-3 text-white" />
+                                    </div>
+                                  )}
+                                </div>
+                              );
+                            })}
+                            {!loadingSubCategories && availableSc.length === 0 && (
+                              <div className="col-span-2"><EmptyCard message={`Không có rác nào khả dụng cho chế độ ${pMeta?.difficulty}`} /></div>
+                            )}
+                          </div>
+                        </div>
+                      );
+                    })}
+                    {!loadingSubCategories && selectedPresetIds.length === 0 && <EmptyCard message="Bạn chưa chọn độ khó nào" />}
+                  </div>
+                )}
+              </div>
+            )}
+
+            {/* ── Step 5: Xem trước ──────────────────────────── */}
+            {step === 5 && (
+              <div className="space-y-4">
+                <SectionLabel>XÁC NHẬN CẤU HÌNH GAME</SectionLabel>
+                <div className="border-2 border-muted/30 rounded-xl overflow-hidden">
+                  <div className="flex items-center gap-3 p-4 border-b">
+                    <div className="w-10 h-10 rounded-xl bg-muted flex items-center justify-center shrink-0">
+                      {selectedGameType?.iconPresignedUrl || selectedGameType?.iconUrl
+                        ? <img src={selectedGameType.iconPresignedUrl || selectedGameType.iconUrl} alt="" className="w-7 h-7 object-contain" />
+                        : <Gamepad2 className="w-5 h-5 text-muted-foreground" />}
+                    </div>
+                    <div>
+                      <p className="font-semibold">{selectedGameType?.name || selectedGameType?.typeName || '—'}</p>
+                      <p className="text-sm text-muted-foreground flex gap-1.5 flex-wrap">
+                        {selectedPresetIds.map(id => {
+                          const p = presets.find(pr => pr.id === id);
+                          return <span key={id} className="text-eco-green">#{p?.difficulty}</span>;
+                        })}
+                      </p>
+                    </div>
+                  </div>
+
+                  <div className="p-4 border-b space-y-3">
+                    <div>
+                      <p className="text-xs font-bold text-muted-foreground uppercase tracking-wider mb-2">Cấu hình Độ khó & Rác</p>
+                      <div className="space-y-3">
+                        {selectedPresetIds.map(id => {
+                          const p = presets.find(pr => pr.id === id);
+                          const lvls = p?.items || [];
+                          const pData = subCategoryData.find(d => d.presetId === id);
+                          const availableSc = pData?.availableSubCategories || [];
+                          const userSelected = selectedSubCategoryIds[id] || [];
+                          
+                          return (
+                            <div key={id} className="p-3 bg-muted/20 rounded-lg">
+                              <p className="font-bold text-xs text-muted-foreground flex justify-between uppercase border-b border-muted/50 pb-2 mb-2">
+                                <span>{p?.difficulty} PRESET</span>
+                                <span>{lvls.length} LEVELS</span>
+                              </p>
+                              
+                              <div className="mb-3">
+                                <p className="text-[10px] text-muted-foreground mb-1.5 uppercase font-medium">Danh mục rác:</p>
+                                <div className="flex flex-wrap gap-1">
+                                  {userSelected.length > 0 ? userSelected.map(scId => {
+                                    const sc = availableSc.find(s => s.id === scId);
+                                    return <Badge key={scId} variant="outline" className="bg-background text-[10px] py-0">{sc?.displayName || scId}</Badge>;
+                                  }) : <span className="text-[10px] text-destructive">Chưa chọn</span>}
+                                </div>
+                              </div>
+                              {lvls.slice(0, 3).map(lvl => (
+                                <div key={lvl.id} className="flex items-center justify-between text-[11px] py-1 border-b last:border-0 border-dashed border-muted/50">
+                                  <span>Level {lvl.levelNumber}</span>
+                                  <div className="flex items-center gap-3 text-muted-foreground">
+                                    <span>{lvl.itemCount} rác</span>
+                                    <span>{lvl.timeLimitSeconds}s</span>
+                                  </div>
+                                </div>
+                              ))}
+                              {lvls.length > 3 && <p className="text-[10px] text-muted-foreground mt-1 italic">... và {lvls.length - 3} level khác</p>}
+                            </div>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="p-4 text-center bg-eco-orange/10">
+                    <p className="text-2xl font-bold text-eco-orange">{coinPerSession}</p>
+                    <p className="text-xs text-muted-foreground">Coin / session</p>
+                  </div>
+                </div>
+              </div>
+            )}
+          </div>
+        </ScrollArea>
+
+        {/* Footer */}
+        <div className="border-t px-6 py-4 flex justify-between items-center bg-background shrink-0">
+          {step > 1
+            ? <Button variant="outline" onClick={handleBack}><ChevronLeft className="w-4 h-4 mr-1" /> Quay lại</Button>
+            : <Button variant="ghost" onClick={onClose}>Hủy</Button>
+          }
+          {step < 5 ? (
+            <Button onClick={handleNext} disabled={!canGoNext[step]} className="bg-eco-green hover:bg-eco-green/90 text-white">
+              Tiếp theo <ChevronRight className="w-4 h-4 ml-1" />
+            </Button>
+          ) : (
+            <Button onClick={handleSubmit} disabled={isSubmitting} className="bg-eco-green hover:bg-eco-green/90 text-white">
+              {isSubmitting ? <><Loader2 className="w-4 h-4 mr-2 animate-spin" /> Đang lưu...</> : <><Save className="w-4 h-4 mr-2" /> Lưu cấu hình ✓</>}
+            </Button>
+          )}
+        </div>
       </DialogContent>
     </Dialog>
   );
+}
+
+// ─── Helpers ──────────────────────────────────────────────────────────────────
+function SectionLabel({ children }) {
+  return <p className="text-xs font-bold uppercase tracking-widest text-muted-foreground">{children}</p>;
+}
+function LoadingCard() {
+  return <div className="flex items-center justify-center py-10 text-muted-foreground gap-2"><Loader2 className="w-5 h-5 animate-spin" /><span className="text-sm">Đang tải...</span></div>;
+}
+function EmptyCard({ message }) {
+  return <p className="text-sm text-muted-foreground italic text-center py-6 bg-muted/20 rounded-lg">{message}</p>;
 }
