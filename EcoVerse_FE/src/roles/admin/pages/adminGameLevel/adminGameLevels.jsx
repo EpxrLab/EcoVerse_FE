@@ -25,6 +25,7 @@ import {
   UploadOutlined,
   AppstoreOutlined,
   TrophyOutlined,
+  TagsOutlined,
 } from "@ant-design/icons";
 import {
   addNewGameLevel,
@@ -69,8 +70,6 @@ function GameTypeTab({ gameTypes, setGameTypes, onRefresh }) {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingItem, setEditingItem] = useState(null);
   const [form] = Form.useForm();
-
-  console.log(gameTypes);
 
   const openCreate = () => {
     setEditingItem(null);
@@ -572,16 +571,18 @@ function PresetTab({ gameTypes }) {
               {
                 key: "delete",
                 label: (
-                  <Popconfirm
-                    title="Xóa preset"
-                    description="Bạn có chắc chắn muốn xóa preset này?"
-                    onConfirm={() => handleDelete(record.id)}
-                    okText="Xóa"
-                    cancelText="Hủy"
-                    okButtonProps={{ danger: true }}
-                  >
-                    <span className="text-red-500">Xóa</span>
-                  </Popconfirm>
+                  <div onClick={(e) => e.stopPropagation()}>
+                    <Popconfirm
+                      title="Xóa preset"
+                      description="Bạn có chắc chắn muốn xóa preset này?"
+                      onConfirm={() => handleDelete(record.id)}
+                      okText="Xóa"
+                      cancelText="Hủy"
+                      okButtonProps={{ danger: true }}
+                    >
+                      <span className="text-red-500">Xóa</span>
+                    </Popconfirm>
+                  </div>
                 ),
                 icon: <DeleteOutlined className="text-red-500" />,
               },

@@ -41,112 +41,6 @@ const GENDER_MAP = {
 
 // ─── Demo Data (shape matches BE response) ────────────────────────────────────
 
-const DEMO_STUDENT = {
-  id: "eae58856-85e5-40ae-af6d-83e110152420",
-  studentCode: "SV000001",
-  fullName: "Le Van D",
-  className: "10A1",
-  gradeLevel: "10",
-  dateOfBirth: "2005-01-15",
-  gender: "MALE",
-  address: null,
-  avatarUrl: null,
-  totalCoins: 0,
-  isFirstLogin: false,
-  school: {
-    id: "ad50f7fa-e974-480a-87e3-1c597e47f60a",
-    schoolName: "EcoVerse Demo School",
-  },
-  // stats — từ API riêng, giữ demo
-  stats: {
-    campaignsJoined: 12,
-    quizzesCompleted: 48,
-    gamesPlayed: 156,
-    averageQuizScore: 87,
-  },
-  achievements: [
-    {
-      id: 1,
-      icon: "🏆",
-      name: "Nhà vô địch",
-      description: "Top 1 chiến dịch",
-      earned: "15/06/2024",
-    },
-    {
-      id: 2,
-      icon: "🎯",
-      name: "Bắn súng thần",
-      description: "100% độ chính xác",
-      earned: "10/06/2024",
-    },
-    {
-      id: 3,
-      icon: "🔥",
-      name: "Streak Master",
-      description: "30 ngày liên tiếp",
-      earned: "05/06/2024",
-    },
-    {
-      id: 4,
-      icon: "🌟",
-      name: "Học giả",
-      description: "Hoàn thành 50 quiz",
-      earned: "01/06/2024",
-    },
-    {
-      id: 5,
-      icon: "♻️",
-      name: "Eco Warrior",
-      description: "Thu gom 1000 rác",
-      earned: "28/05/2024",
-    },
-    {
-      id: 6,
-      icon: "💎",
-      name: "Đại gia xu",
-      description: "Tích luỹ 5000 xu",
-      earned: "20/05/2024",
-    },
-  ],
-  recentActivities: [
-    {
-      id: 1,
-      type: "quiz",
-      title: "Quiz về phân loại rác",
-      coins: 150,
-      date: "2 giờ trước",
-    },
-    {
-      id: 2,
-      type: "game",
-      title: "Chơi game thu gom",
-      coins: 200,
-      date: "5 giờ trước",
-    },
-    {
-      id: 3,
-      type: "reward",
-      title: "Đổi avatar mới",
-      coins: -500,
-      date: "1 ngày trước",
-    },
-    {
-      id: 4,
-      type: "quiz",
-      title: "Quiz về tái chế",
-      coins: 120,
-      date: "2 ngày trước",
-    },
-    {
-      id: 5,
-      type: "game",
-      title: "Chơi game phân loại",
-      coins: 180,
-      date: "3 ngày trước",
-    },
-  ],
-};
-
 const ACTIVITY_ICONS = {
   quiz: <BookOutlined />,
   game: <RocketOutlined />,
@@ -249,7 +143,7 @@ const itemVariants = {
 
 export default function StudentProfile() {
   const navigate = useNavigate();
-  const [student, setStudent] = useState(DEMO_STUDENT);
+  const [student, setStudent] = useState(null);
 
   const fetchStudentProfile = async () => {
     try {
@@ -259,17 +153,16 @@ export default function StudentProfile() {
       console.log(error);
     }
   };
-  console.log(student);
 
   useEffect(() => {
     fetchStudentProfile();
   }, []);
 
-  const gender = GENDER_MAP[student.gender] ?? {
-    label: student.gender ?? "—",
+  const gender = GENDER_MAP[student?.gender] ?? {
+    label: student?.gender ?? "—",
     color: "default",
   };
-  const age = calcAge(student.dateOfBirth);
+  const age = calcAge(student?.dateOfBirth);
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-white via-gray-50 to-gray-100">
@@ -292,7 +185,6 @@ export default function StudentProfile() {
           <span>/</span>
           <span className="text-gray-700 font-medium">Hồ sơ</span>
         </motion.div>
-
         {/* ── Profile Header ── */}
         <motion.div
           initial={{ opacity: 0, y: 20 }}
@@ -311,8 +203,8 @@ export default function StudentProfile() {
               <div className="relative flex flex-col lg:flex-row items-start gap-6">
                 {/* Avatar */}
                 <StudentAvatar
-                  avatarUrl={student.avatarUrl}
-                  fullName={student.fullName}
+                  avatarUrl={student?.avatarPresignedUrl}
+                  fullName={student?.fullName}
                 />
 
                 {/* Info block */}
@@ -321,9 +213,9 @@ export default function StudentProfile() {
                     {/* Name + first-login badge */}
                     <div className="flex items-center gap-3 flex-wrap mb-1">
                       <h1 className="text-4xl font-bold text-gray-800">
-                        {student.fullName}
+                        {student?.fullName}
                       </h1>
-                      {student.isFirstLogin && (
+                      {student?.isFirstLogin && (
                         <Tag
                           color="volcano"
                           className="rounded-full font-semibold"
@@ -337,13 +229,13 @@ export default function StudentProfile() {
                     <div className="flex items-center gap-3 flex-wrap text-gray-500 text-sm">
                       <div className="flex items-center gap-1.5">
                         <BankOutlined />
-                        <span>{student.school?.schoolName ?? "—"}</span>
+                        <span>{student?.school?.schoolName ?? "—"}</span>
                       </div>
                       <Tag color="blue" className="rounded-full">
-                        Lớp {student.className}
+                        Lớp {student?.className}
                       </Tag>
                       <Tag color="green" className="rounded-full">
-                        Khối {student.gradeLevel}
+                        Khối {student?.gradeLevel}
                       </Tag>
                     </div>
                   </div>
@@ -355,7 +247,7 @@ export default function StudentProfile() {
                       <IdcardOutlined className="text-gray-400" />
                       <span className="text-gray-400">Mã HS:</span>
                       <span className="font-mono font-semibold text-gray-700">
-                        {student.studentCode}
+                        {student?.studentCode}
                       </span>
                     </div>
 
@@ -364,7 +256,7 @@ export default function StudentProfile() {
                       <CalendarOutlined className="text-gray-400" />
                       <span className="text-gray-400">Ngày sinh:</span>
                       <span>
-                        {formatDate(student.dateOfBirth)}
+                        {formatDate(student?.dateOfBirth)}
                         {age ? ` (${age} tuổi)` : ""}
                       </span>
                     </div>
@@ -381,11 +273,11 @@ export default function StudentProfile() {
                     </div>
 
                     {/* Địa chỉ — hiện nếu có, ẩn nếu null */}
-                    {student.address && (
+                    {student?.address && (
                       <div className="flex items-center gap-2">
                         <EnvironmentOutlined className="text-gray-400" />
                         <span className="text-gray-400">Địa chỉ:</span>
-                        <span>{student.address}</span>
+                        <span>{student?.address}</span>
                       </div>
                     )}
                   </div>
@@ -402,73 +294,13 @@ export default function StudentProfile() {
                     </div>
                     <p className="text-sm text-gray-500 font-medium">Tổng xu</p>
                     <p className="text-3xl font-bold bg-gradient-to-r from-amber-600 to-orange-600 bg-clip-text text-transparent">
-                      {(student.totalCoins ?? 0).toLocaleString()}
+                      {(student?.totalCoins ?? 0).toLocaleString()}
                     </p>
                   </div>
                 </Card>
               </div>
             </div>
           </Card>
-        </motion.div>
-
-        {/* ── Stats Grid ── */}
-        <motion.div
-          className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4"
-          variants={containerVariants}
-          initial="hidden"
-          animate="visible"
-        >
-          {[
-            {
-              icon: <AimOutlined />,
-              label: "Chiến dịch tham gia",
-              value: student?.stats?.campaignsJoined,
-              bg: "bg-green-50",
-              color: "text-green-500",
-            },
-            {
-              icon: <BookOutlined />,
-              label: "Quiz hoàn thành",
-              value: student?.stats?.quizzesCompleted,
-              bg: "bg-blue-50",
-              color: "text-blue-500",
-            },
-            {
-              icon: <RocketOutlined />,
-              label: "Game đã chơi",
-              value: student?.stats?.gamesPlayed,
-              bg: "bg-purple-50",
-              color: "text-purple-500",
-            },
-            {
-              icon: <TrophyOutlined />,
-              label: "Điểm TB Quiz",
-              value: `${student?.stats?.averageQuizScore}%`,
-              bg: "bg-amber-50",
-              color: "text-amber-500",
-            },
-          ].map((stat, i) => (
-            <motion.div key={i} variants={itemVariants}>
-              <Card
-                className="border-2 rounded-2xl hover:shadow-lg transition-all"
-                bodyStyle={{ padding: "24px" }}
-              >
-                <div className="flex items-center gap-4">
-                  <div
-                    className={`w-12 h-12 rounded-xl ${stat.bg} flex items-center justify-center`}
-                  >
-                    <span className={`text-xl ${stat.color}`}>{stat.icon}</span>
-                  </div>
-                  <div>
-                    <p className="text-sm text-gray-400">{stat.label}</p>
-                    <p className="text-2xl font-bold text-gray-800">
-                      {stat.value}
-                    </p>
-                  </div>
-                </div>
-              </Card>
-            </motion.div>
-          ))}
         </motion.div>
 
         {/* ── Achievements + Recent Activities ── */}
