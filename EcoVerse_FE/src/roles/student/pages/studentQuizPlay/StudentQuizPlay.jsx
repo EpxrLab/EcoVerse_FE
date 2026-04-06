@@ -92,7 +92,6 @@ export default function StudentQuizPlay() {
   }, []);
 
   const handleFinish = (result) => {
-    // Navigate back to quiz list after seeing results
     navigate(`/student/campaign/${campaignId}/quiz`);
   };
 

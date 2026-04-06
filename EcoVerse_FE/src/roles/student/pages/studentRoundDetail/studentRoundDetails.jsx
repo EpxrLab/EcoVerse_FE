@@ -27,7 +27,6 @@ import { motion } from "framer-motion";
 
 const { Title, Text, Paragraph } = Typography;
 
-// --- Helpers ---
 const DIFFICULTY_COLOR = {
   EASY: "green",
   MEDIUM: "orange",
@@ -45,8 +44,6 @@ function StudentRoundDetails() {
   const { campaignId, roundId } = useParams();
   const navigate = useNavigate();
 
-  // Giả sử data được fetch từ API và lưu vào biến này
-  // Trong thực tế, bạn sẽ dùng: const { data } = useQuery(...) hoặc lấy từ context
   const mockData = {
     campaignId: campaignId,
     roundId: roundId,
@@ -92,7 +89,7 @@ function StudentRoundDetails() {
     ],
   };
 
-  const data = mockData; // Thay bằng data thực tế từ BE
+  const data = mockData;
 
   if (!data) return <Empty description="Không tìm thấy thông tin vòng đấu" />;
 
@@ -294,7 +291,7 @@ function StudentRoundDetails() {
                   iconPosition="end"
                   onClick={() =>
                     navigate(
-                      `/student/campaign/${campaignId}/quiz/${quiz.quizId}`,
+                      `/student/campaign/${campaignId}/round/${roundId}/quiz/${quiz.quizId}`,
                     )
                   }
                 >

@@ -4,33 +4,229 @@ import {
   Button,
   Radio,
   Typography,
-  Badge,
-  Tag,
   Divider,
   Progress,
-  Tooltip,
   Card,
+  Modal,
 } from "antd";
 import {
   ChevronLeft,
   Trophy,
-  Coins,
   Timer,
   X,
   Menu,
-  AlertCircle,
   CheckCircle2,
+  XCircle,
   RotateCcw,
-  Flag,
-  Info,
-  ArrowRight,
+  Clock,
+  Star,
+  TrendingUp,
+  Hash,
 } from "lucide-react";
 
 const { Title, Text } = Typography;
 
+function ResultModal({ result, onClose }) {
+  if (!result) return null;
+
+  const passed = result.isPassed;
+
+  // Format thời gian làm bài mm:ss
+  const fmtTime = (sec) => {
+    if (!sec && sec !== 0) return "—";
+    const m = Math.floor(sec / 60);
+    const s = sec % 60;
+    return `${m}:${String(s).padStart(2, "0")}`;
+  };
+
+  const stats = [
+    {
+      icon: (
+        <CheckCircle2
+          size={18}
+          className={passed ? "text-green-500" : "text-red-400"}
+        />
+      ),
+      label: "Câu đúng",
+      value: `${result.correctAnswers ?? "—"} / ${result.totalQuestions ?? "—"}`,
+      highlight: passed,
+    },
+    {
+      icon: <TrendingUp size={18} className="text-blue-500" />,
+      label: "Điểm lần này",
+      value:
+        result.scorePercentage != null ? `${result.scorePercentage}%` : "—",
+    },
+    {
+      icon: <Star size={18} className="text-amber-500" />,
+      label: "Điểm cao nhất",
+      value:
+        result.bestScorePercentage != null
+          ? `${result.bestScorePercentage}%`
+          : "—",
+    },
+    {
+      icon: <Clock size={18} className="text-purple-500" />,
+      label: "Thời gian làm",
+      value: fmtTime(result.timeTakenSeconds),
+    },
+    {
+      icon: <Hash size={18} className="text-gray-500" />,
+      label: "Lần thử",
+      value: result.maxAttempts
+        ? `${result.attemptsUsed ?? "—"} / ${result.maxAttempts}`
+        : `${result.attemptsUsed ?? "—"}`,
+    },
+  ];
+
+  return (
+    <Modal
+      open={!!result}
+      onCancel={onClose}
+      footer={null}
+      centered
+      width={480}
+      closable={false}
+      className="[&_.ant-modal-content]:rounded-2xl [&_.ant-modal-content]:overflow-hidden [&_.ant-modal-content]:p-0"
+    >
+      <motion.div
+        initial={{ opacity: 0, scale: 0.96, y: 12 }}
+        animate={{ opacity: 1, scale: 1, y: 0 }}
+        transition={{ duration: 0.32, ease: "easeOut" }}
+      >
+        {/* Banner */}
+        <div
+          className={`px-8 pt-8 pb-6 text-center ${passed ? "bg-gradient-to-br from-emerald-500 to-green-600" : "bg-gradient-to-br from-slate-700 to-slate-800"}`}
+        >
+          <motion.div
+            initial={{ scale: 0, rotate: -10 }}
+            animate={{ scale: 1, rotate: 0 }}
+            transition={{ delay: 0.15, type: "spring", stiffness: 220 }}
+            className="w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4 bg-white/20 backdrop-blur"
+          >
+            {passed ? (
+              <Trophy size={32} className="text-white" />
+            ) : (
+              <XCircle size={32} className="text-white/80" />
+            )}
+          </motion.div>
+
+          <h2 className="text-2xl font-extrabold text-white mb-1">
+            {passed ? "Hoàn thành xuất sắc!" : "Chưa đạt yêu cầu"}
+          </h2>
+          <p className="text-white/70 text-sm">
+            {passed
+              ? "Bạn đã vượt qua bài kiểm tra này"
+              : "Hãy thử lại để đạt kết quả tốt hơn"}
+          </p>
+
+          {/* Score ring */}
+          <div className="mt-5 inline-flex items-center justify-center">
+            <div
+              className={`relative w-24 h-24 rounded-full flex items-center justify-center border-4 ${passed ? "border-white/40 bg-white/15" : "border-white/20 bg-white/10"}`}
+            >
+              <div className="text-center">
+                <p className="text-3xl font-black text-white leading-none">
+                  {result.scorePercentage ?? "—"}%
+                </p>
+                <p className="text-[11px] text-white/60 mt-0.5">Điểm số</p>
+              </div>
+            </div>
+          </div>
+
+          {/* Xu nhận được */}
+          {result.coinsEarned != null && result.coinsEarned > 0 && (
+            <motion.div
+              initial={{ opacity: 0, y: 6 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.3 }}
+              className="mt-4 inline-flex items-center gap-2 px-4 py-2 rounded-full bg-amber-400/25 border border-amber-300/40 text-amber-200 font-bold text-sm"
+            >
+              <svg viewBox="0 0 24 24" fill="currentColor" className="w-5 h-5">
+                <circle cx="12" cy="12" r="10" opacity="0.25" />
+                <circle cx="12" cy="12" r="8" />
+                <text
+                  x="12"
+                  y="16"
+                  fontSize="10"
+                  fontWeight="bold"
+                  fill="white"
+                  textAnchor="middle"
+                >
+                  ₫
+                </text>
+              </svg>
+              +{result.coinsEarned} xu
+            </motion.div>
+          )}
+          {result.coinsEarned === 0 && (
+            <p className="mt-3 text-sm text-white/50">
+              Không nhận xu (chưa đạt)
+            </p>
+          )}
+        </div>
+
+        {/* Stats grid */}
+        <div className="p-6 bg-white space-y-3">
+          <div className="grid grid-cols-2 gap-3">
+            {stats.map((s, i) => (
+              <div
+                key={i}
+                className={`flex items-center gap-3 px-4 py-3 rounded-xl ${
+                  s.highlight
+                    ? "bg-green-50 border border-green-100"
+                    : "bg-gray-50 border border-gray-100"
+                }`}
+              >
+                <div className="flex-shrink-0">{s.icon}</div>
+                <div className="min-w-0">
+                  <p className="text-[11px] text-gray-400 leading-none mb-0.5">
+                    {s.label}
+                  </p>
+                  <p className="text-sm font-bold text-gray-800 truncate">
+                    {s.value}
+                  </p>
+                </div>
+              </div>
+            ))}
+
+            {/* attemptId / mã bài làm — chiếm full width nếu có */}
+            {result.attemptId && (
+              <div className="col-span-2 flex items-center gap-3 px-4 py-3 rounded-xl bg-gray-50 border border-gray-100">
+                <Hash size={16} className="text-gray-400 flex-shrink-0" />
+                <div className="min-w-0">
+                  <p className="text-[11px] text-gray-400 leading-none mb-0.5">
+                    Mã bài làm
+                  </p>
+                  <p className="text-xs font-mono text-gray-500 truncate">
+                    {result.attemptId}
+                  </p>
+                </div>
+              </div>
+            )}
+          </div>
+
+          {/* CTA */}
+          <div className="pt-2">
+            <Button
+              block
+              size="large"
+              type="primary"
+              onClick={onClose}
+              className={`rounded-xl h-12 font-bold text-base ${passed ? "bg-emerald-600 border-emerald-600 hover:bg-emerald-700" : "bg-slate-800 border-slate-800 hover:bg-slate-900"}`}
+            >
+              {passed ? "Tiếp tục" : "Đóng"}
+            </Button>
+          </div>
+        </div>
+      </motion.div>
+    </Modal>
+  );
+}
+
 export default function QuizPlay({ quiz, onFinish, onCancel }) {
   const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
-  const [answers, setAnswers] = useState({});
+  const [answers, setAnswers] = useState([]);
   const [timeLeft, setTimeLeft] = useState(quiz.timeLimit * 60);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [showResult, setShowResult] = useState(false);
@@ -39,8 +235,10 @@ export default function QuizPlay({ quiz, onFinish, onCancel }) {
 
   const questions = useMemo(() => quiz.questions || [], [quiz.questions]);
   const currentQuestion = questions[currentQuestionIndex];
-
-  const answeredCount = Object.keys(answers).length;
+  const currentAnswer = answers.find(
+    (a) => a.questionId === currentQuestion?.id,
+  );
+  const answeredCount = answers.length;
   const progressPercent = Math.round((answeredCount / questions.length) * 100);
 
   useEffect(() => {
@@ -49,367 +247,309 @@ export default function QuizPlay({ quiz, onFinish, onCancel }) {
     return () => clearInterval(timer);
   }, [timeLeft, showResult]);
 
+  // ── KHÔNG được thay đổi handleSelectAnswer, handleClearAnswer, handleFinish ──
+
+  const handleSelectAnswer = (selectedAnswerId) => {
+    setAnswers((prev) => {
+      const existingIndex = prev.findIndex(
+        (a) => a.questionId === currentQuestion.id,
+      );
+      if (existingIndex > -1) {
+        const newAnswers = [...prev];
+        newAnswers[existingIndex] = {
+          ...newAnswers[existingIndex],
+          selectedAnswerId,
+        };
+        return newAnswers;
+      }
+      return [...prev, { questionId: currentQuestion.id, selectedAnswerId }];
+    });
+  };
+
   const handleClearAnswer = () => {
-    const newAnswers = { ...answers };
-    delete newAnswers[currentQuestion.id];
-    setAnswers(newAnswers);
+    setAnswers((prev) =>
+      prev.filter((a) => a.questionId !== currentQuestion.id),
+    );
   };
 
   const handleFinish = () => {
     setIsSubmitting(true);
+
+    // 3. Payload format theo yêu cầu của bạn
+    const finalPayload = { answers };
+    console.log("Final Payload:", finalPayload);
+
     setTimeout(() => {
       const totalQuestions = questions.length;
-      // Giả sử logic check đúng/sai ở đây, hiện tại đang tính dựa trên số câu đã làm
-      const correctCount = Object.keys(answers).length;
+      const correctCount = answers.length;
       const scorePerc = Math.round((correctCount / totalQuestions) * 100);
       const isPassed = scorePerc >= quiz.passScorePercentage;
 
       setQuizResult({
         score: scorePerc,
-        coins: isPassed ? quiz.coinOnPass : 0,
-        isPassed: isPassed,
+        scorePercentage: scorePerc,
+        coinsEarned: isPassed ? quiz.coinOnPass : 0,
+        isPassed,
         correctAnswers: correctCount,
-        totalQuestions,
+        totalQuestions: totalQuestions,
+        timeTakenSeconds: quiz.timeLimit * 60 - timeLeft,
       });
       setShowResult(true);
       setIsSubmitting(false);
     }, 1200);
   };
 
-  // --- RENDER RESULT VIEW ---
-  if (showResult && quizResult) {
-    return (
-      <div className="fixed inset-0 z-[10001] bg-slate-900/40 backdrop-blur-sm flex items-center justify-center p-4">
-        <motion.div
-          initial={{ opacity: 0, scale: 0.95, y: 20 }}
-          animate={{ opacity: 1, scale: 1, y: 0 }}
-          className="max-w-lg w-full"
-        >
-          <Card className="rounded-2xl border-none shadow-2xl overflow-hidden p-0">
-            <div
-              className={`p-8 text-center ${quizResult.isPassed ? "bg-emerald-600" : "bg-slate-800"} text-white`}
-            >
-              <motion.div
-                initial={{ scale: 0 }}
-                animate={{ scale: 1 }}
-                transition={{ type: "spring", damping: 12, delay: 0.2 }}
-                className="inline-flex p-4 rounded-full bg-white/20 mb-4"
-              >
-                {quizResult.isPassed ? (
-                  <Trophy size={40} />
-                ) : (
-                  <AlertCircle size={40} />
-                )}
-              </motion.div>
-              <Title level={3} className="!text-white !m-0 !font-bold">
-                {quizResult.isPassed ? "Chúc mừng bạn!" : "Chưa đạt yêu cầu"}
-              </Title>
-              <Text className="text-white/80 text-sm mt-2 block">
-                {quizResult.isPassed
-                  ? "Bạn đã hoàn thành xuất sắc bài kiểm tra này."
-                  : "Bạn cần đạt kết quả cao hơn để vượt qua khóa học."}
-              </Text>
-            </div>
+  // ── Timer color ──
+  const timerRatio = timeLeft / (quiz.timeLimit * 60);
+  const timerColor =
+    timerRatio > 0.5
+      ? "text-slate-700"
+      : timerRatio > 0.25
+        ? "text-amber-500"
+        : "text-red-500 animate-pulse";
 
-            <div className="p-8 bg-white">
-              <div className="grid grid-cols-2 gap-4 mb-8">
-                <div className="p-4 rounded-xl bg-slate-50 border border-slate-100 text-center">
-                  <Text className="text-[10px] font-bold text-slate-400 uppercase tracking-widest block mb-1">
-                    Điểm số
-                  </Text>
-                  <Title
-                    level={2}
-                    className={`!m-0 ${quizResult.isPassed ? "text-emerald-600" : "text-slate-800"}`}
-                  >
-                    {quizResult.score}%
-                  </Title>
-                </div>
-                <div className="p-4 rounded-xl bg-slate-50 border border-slate-100 text-center">
-                  <Text className="text-[10px] font-bold text-slate-400 uppercase tracking-widest block mb-1">
-                    Phần thưởng
-                  </Text>
-                  <div className="flex items-center justify-center gap-2">
-                    <Coins size={20} className="text-amber-500" />
-                    <Title level={2} className="!m-0 text-amber-600">
-                      +{quizResult.coins}
-                    </Title>
-                  </div>
-                </div>
-              </div>
+  const beShapedResult = useMemo(() => {
+    if (!quizResult) return null;
+    return {
+      attemptId: quizResult.attemptId ?? null,
+      correctAnswers: quizResult.correctAnswers ?? 0,
+      totalQuestions: quizResult.totalQuestions ?? questions.length,
+      scorePercentage: quizResult.scorePercentage ?? quizResult.score ?? 0,
+      timeTakenSeconds: quizResult.timeTakenSeconds ?? 0,
+      isPassed: quizResult.isPassed ?? false,
+      coinsEarned: quizResult.coinsEarned ?? 0,
+      bestScorePercentage: quizResult.bestScorePercentage ?? null,
+      attemptsUsed: quizResult.attemptsUsed ?? null,
+      maxAttempts: quizResult.maxAttempts ?? null,
+    };
+  }, [quizResult, questions.length]);
 
-              <div className="space-y-3 mb-8">
-                <div className="flex justify-between text-sm">
-                  <Text className="text-slate-500 font-medium">
-                    Số câu trả lời đúng
-                  </Text>
-                  <Text className="font-bold text-slate-700">
-                    {quizResult.correctAnswers} / {quizResult.totalQuestions}
-                  </Text>
-                </div>
-                <Progress
-                  percent={quizResult.score}
-                  showInfo={false}
-                  strokeColor={quizResult.isPassed ? "#10b981" : "#1e293b"}
-                  strokeWidth={10}
-                  className="m-0"
-                />
-                <div className="flex justify-between items-center bg-indigo-50 p-3 rounded-lg">
-                  <Text className="text-[12px] text-indigo-700 font-medium">
-                    Yêu cầu đạt được:
-                  </Text>
-                  <Tag color="blue" className="mr-0 border-none font-bold">
-                    {quiz.passScorePercentage}%
-                  </Tag>
-                </div>
-              </div>
-
-              <Button
-                type="primary"
-                size="large"
-                block
-                onClick={() => onFinish(quizResult)}
-                className={`h-12 rounded-lg font-bold shadow-lg border-none ${quizResult.isPassed ? "bg-emerald-600 hover:bg-emerald-700" : "bg-slate-900"}`}
-              >
-                {quizResult.isPassed ? "Tiếp tục bài học" : "Quay lại khóa học"}
-              </Button>
-            </div>
-          </Card>
-        </motion.div>
-      </div>
-    );
-  }
-
-  // --- RENDER MAIN QUIZ PLAY ---
   return (
-    <div className="fixed inset-0 z-[9999] bg-[#f8f9fa] flex flex-col overflow-hidden font-sans text-slate-900">
-      <header className="h-14 border-b border-slate-200 px-4 flex items-center justify-between bg-white z-20 shadow-sm">
-        <div className="flex items-center gap-3">
-          <Button
-            type="text"
-            size="small"
-            icon={<Menu size={18} className="text-slate-600" />}
-            onClick={() => setIsSidebarOpen(!isSidebarOpen)}
-          />
-          <Divider type="vertical" className="h-6" />
-          <Text className="font-semibold text-slate-700 truncate max-w-[300px]">
-            {quiz.title}
-          </Text>
-        </div>
+    <>
+      {showResult && beShapedResult && (
+        <ResultModal
+          result={beShapedResult}
+          onClose={() => {
+            if (onFinish) onFinish();
+          }}
+        />
+      )}
 
-        <div className="flex items-center gap-6">
-          <div className="flex items-center gap-2">
-            <Timer
-              size={16}
-              className={timeLeft < 60 ? "text-red-500" : "text-slate-400"}
-            />
-            <span
-              className={`font-mono font-bold text-base ${timeLeft < 60 ? "text-red-600 animate-pulse" : "text-slate-700"}`}
-            >
-              {Math.floor(timeLeft / 60)}:
-              {(timeLeft % 60).toString().padStart(2, "0")}
-            </span>
-          </div>
-          <Tooltip title="Thoát bài làm">
+      <div className="fixed inset-0 z-[10] bg-[#f8f9fa] flex flex-col overflow-hidden font-sans text-slate-900">
+        {/* Header */}
+        <header className="h-14 border-b border-slate-200 px-4 flex items-center justify-between bg-white z-20 shadow-sm">
+          <div className="flex items-center gap-3">
             <Button
               type="text"
-              shape="circle"
-              icon={<X size={18} />}
-              onClick={onCancel}
-              className="hover:bg-slate-100"
+              size="small"
+              icon={<Menu size={18} className="text-slate-600" />}
+              onClick={() => setIsSidebarOpen(!isSidebarOpen)}
             />
-          </Tooltip>
-        </div>
-      </header>
-
-      <div className="flex flex-1 overflow-hidden">
-        {/* Navigation Sidebar */}
-        <AnimatePresence>
-          {isSidebarOpen && (
-            <motion.aside
-              initial={{ width: 0, opacity: 0 }}
-              animate={{ width: 300, opacity: 1 }}
-              exit={{ width: 0, opacity: 0 }}
-              className="border-r border-slate-200 flex flex-col bg-white"
+            <Divider type="vertical" className="h-6" />
+            <Text className="font-semibold text-slate-700 truncate max-w-[300px] text-sm">
+              {quiz.title}
+            </Text>
+          </div>
+          <div className="flex items-center gap-4">
+            <div
+              className={`flex items-center gap-1.5 font-mono font-bold text-sm ${timerColor}`}
             >
-              <div className="p-6">
-                <div className="mb-6">
-                  <div className="flex justify-between items-end mb-2">
-                    <Text className="text-[11px] font-bold text-slate-400 uppercase tracking-wider">
-                      Tiến độ
-                    </Text>
-                    <Text className="text-xs font-bold text-indigo-600">
-                      {progressPercent}%
-                    </Text>
-                  </div>
-                  <Progress
-                    percent={progressPercent}
-                    showInfo={false}
-                    strokeColor="#4f46e5"
-                    size="small"
-                  />
-                </div>
+              <Timer size={15} />
+              {Math.floor(timeLeft / 60)}:
+              {String(timeLeft % 60).padStart(2, "0")}
+            </div>
+            <button
+              onClick={onCancel}
+              className="w-8 h-8 rounded-lg flex items-center justify-center text-slate-400 hover:text-red-500 hover:bg-red-50 transition-colors"
+            >
+              <X size={18} />
+            </button>
+          </div>
+        </header>
 
-                <Text className="text-[11px] font-bold text-slate-400 uppercase tracking-wider block mb-4">
-                  Câu hỏi bài tập
+        <div className="flex flex-1 overflow-hidden">
+          {/* Sidebar */}
+          <AnimatePresence>
+            {isSidebarOpen && (
+              <motion.aside
+                initial={{ width: 0, opacity: 0 }}
+                animate={{ width: 260, opacity: 1 }}
+                exit={{ width: 0, opacity: 0 }}
+                transition={{ duration: 0.22, ease: "easeOut" }}
+                className="border-r border-slate-200 bg-white p-5 overflow-hidden flex-shrink-0"
+              >
+                <Text className="text-[11px] font-bold text-slate-400 uppercase block mb-3">
+                  Tiến độ — {answeredCount}/{questions.length}
                 </Text>
-                <div className="grid grid-cols-5 gap-2 overflow-y-auto max-h-[60vh] pr-2">
-                  {questions.map((q, idx) => (
-                    <button
-                      key={q.id}
-                      onClick={() => setCurrentQuestionIndex(idx)}
-                      className={`h-10 rounded-md text-xs font-semibold transition-all flex items-center justify-center border
-                        ${
-                          currentQuestionIndex === idx
-                            ? "bg-indigo-50 border-indigo-600 text-indigo-600 ring-1 ring-indigo-600"
-                            : answers[q.id]
-                              ? "bg-slate-900 border-slate-900 text-white"
-                              : "bg-white border-slate-200 text-slate-500 hover:border-slate-400"
-                        }`}
-                    >
-                      {idx + 1}
-                    </button>
-                  ))}
-                </div>
-              </div>
+                <Progress
+                  percent={progressPercent}
+                  strokeColor="#4f46e5"
+                  size="small"
+                  className="mb-5"
+                />
 
-              <div className="mt-auto p-6 border-t border-slate-100 bg-slate-50/50">
-                <div className="flex items-start gap-3">
-                  <Info size={16} className="text-slate-400 mt-0.5" />
-                  <Text className="text-[11px] text-slate-500 italic">
-                    Bạn cần đạt ít nhất {quiz.passScorePercentage}% để vượt qua
-                    bài kiểm tra này.
-                  </Text>
+                <div className="grid grid-cols-5 gap-1.5">
+                  {questions.map((q, idx) => {
+                    const isAnswered = answers.some(
+                      (a) => a.questionId === q.id,
+                    );
+                    const isCurrent = currentQuestionIndex === idx;
+                    return (
+                      <button
+                        key={q.id}
+                        onClick={() => setCurrentQuestionIndex(idx)}
+                        className={`h-9 rounded-lg text-xs font-semibold border transition-all
+                          ${
+                            isCurrent
+                              ? "border-indigo-600 text-indigo-600 bg-indigo-50 ring-1 ring-indigo-400"
+                              : isAnswered
+                                ? "bg-slate-800 text-white border-slate-800"
+                                : "bg-white text-slate-400 border-slate-200 hover:border-slate-400"
+                          }`}
+                      >
+                        {idx + 1}
+                      </button>
+                    );
+                  })}
                 </div>
-              </div>
-            </motion.aside>
-          )}
-        </AnimatePresence>
 
-        {/* Main Quiz Area */}
-        <main className="flex-1 overflow-y-auto bg-white relative">
-          <div className="max-w-[720px] mx-auto px-8 py-12">
-            <AnimatePresence mode="wait">
-              <motion.div
-                key={currentQuestionIndex}
-                initial={{ opacity: 0, y: 10 }}
-                animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0, y: -10 }}
-                transition={{ duration: 0.2 }}
-              >
-                <div className="flex justify-between items-center mb-6">
+                <div className="mt-5 space-y-1.5 text-xs text-slate-400">
                   <div className="flex items-center gap-2">
-                    <span className="text-xs font-bold text-indigo-600 uppercase tracking-widest">
-                      CÂU HỎI {currentQuestionIndex + 1}
-                    </span>
-                    {answers[currentQuestion.id] && (
-                      <CheckCircle2 size={14} className="text-emerald-500" />
-                    )}
+                    <div className="w-4 h-4 rounded bg-slate-800" />
+                    <span>Đã trả lời</span>
                   </div>
-                  <div className="flex gap-2">
-                    <Button
-                      type="text"
-                      size="small"
-                      icon={<Flag size={14} />}
-                      className="text-slate-400 text-[11px]"
-                    >
-                      Báo lỗi
-                    </Button>
-                    {answers[currentQuestion.id] && (
-                      <Button
-                        type="text"
-                        size="small"
-                        icon={<RotateCcw size={14} />}
-                        onClick={handleClearAnswer}
-                        className="text-slate-400 text-[11px]"
-                      >
-                        Xóa chọn
-                      </Button>
-                    )}
+                  <div className="flex items-center gap-2">
+                    <div className="w-4 h-4 rounded border-2 border-indigo-400 bg-indigo-50" />
+                    <span>Câu hiện tại</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <div className="w-4 h-4 rounded border border-slate-200 bg-white" />
+                    <span>Chưa trả lời</span>
                   </div>
                 </div>
+              </motion.aside>
+            )}
+          </AnimatePresence>
 
-                <Title
-                  level={4}
-                  className="!text-slate-800 !mb-10 !leading-relaxed !font-medium"
+          {/* Main */}
+          <main className="flex-1 overflow-y-auto p-8 md:p-12">
+            <div className="max-w-[700px] mx-auto">
+              {/* Question header */}
+              <div className="flex items-center justify-between mb-5">
+                <span className="text-xs font-bold text-indigo-600 uppercase tracking-widest">
+                  Câu hỏi {currentQuestionIndex + 1} / {questions.length}
+                </span>
+                {currentAnswer && (
+                  <button
+                    onClick={handleClearAnswer}
+                    className="flex items-center gap-1.5 text-xs text-slate-400 hover:text-red-500 transition-colors"
+                  >
+                    <RotateCcw size={13} />
+                    Xóa chọn
+                  </button>
+                )}
+              </div>
+
+              {/* Question text */}
+              <AnimatePresence mode="wait">
+                <motion.div
+                  key={currentQuestionIndex}
+                  initial={{ opacity: 0, x: 16 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  exit={{ opacity: 0, x: -16 }}
+                  transition={{ duration: 0.22 }}
                 >
-                  {currentQuestion.content}
-                </Title>
+                  <h2 className="text-xl font-bold text-slate-800 leading-relaxed mb-8">
+                    {currentQuestion.content}
+                  </h2>
 
-                <Radio.Group
-                  onChange={(e) =>
-                    setAnswers({
-                      ...answers,
-                      [currentQuestion.id]: e.target.value,
-                    })
-                  }
-                  value={answers[currentQuestion.id]}
-                  className="w-full flex flex-col gap-3"
+                  {/* Options */}
+                  <Radio.Group
+                    onChange={(e) => handleSelectAnswer(e.target.value)}
+                    value={currentAnswer?.selectedAnswerId}
+                    className="w-full"
+                  >
+                    <div className="space-y-3">
+                      {currentQuestion.options.map((option, idx) => {
+                        const selected =
+                          currentAnswer?.selectedAnswerId === option.id;
+                        return (
+                          <Radio.Button
+                            key={option.id}
+                            value={option.id}
+                            className={`!h-auto !py-3.5 !px-5 !rounded-xl !border-2 !flex !items-center !w-full !transition-all
+          ${selected ? "!border-indigo-500 !bg-indigo-50/40" : "!border-slate-200 hover:!border-slate-300 !bg-white"}`}
+                          >
+                            <div
+                              className={`w-8 h-8 rounded-full border-2 flex items-center justify-center mr-4 text-xs font-bold flex-shrink-0 transition-all
+          ${selected ? "bg-indigo-600 border-indigo-600 text-white" : "bg-white border-slate-300 text-slate-400"}`}
+                            >
+                              {String.fromCharCode(65 + idx)}
+                            </div>
+                            <span
+                              className={`text-sm font-medium flex-1 pr-4 leading-relaxed ${selected ? "text-indigo-700" : "text-slate-700"}`}
+                            >
+                              {option.text}
+                            </span>
+                            <div className="w-5 h-5 flex items-center justify-center flex-shrink-0">
+                              {selected && (
+                                <motion.div
+                                  initial={{ scale: 0.5, opacity: 0 }}
+                                  animate={{ scale: 1, opacity: 1 }}
+                                  transition={{ duration: 0.2 }}
+                                >
+                                  <CheckCircle2
+                                    size={20}
+                                    className="text-indigo-500"
+                                  />
+                                </motion.div>
+                              )}
+                            </div>
+                          </Radio.Button>
+                        );
+                      })}
+                    </div>
+                  </Radio.Group>
+                </motion.div>
+              </AnimatePresence>
+
+              {/* Navigation */}
+              <div className="flex items-center justify-between mt-12 pt-8 border-t border-slate-100">
+                <Button
+                  disabled={currentQuestionIndex === 0}
+                  onClick={() => setCurrentQuestionIndex((p) => p - 1)}
+                  icon={<ChevronLeft size={16} />}
+                  type="text"
+                  className="text-slate-500"
                 >
-                  {currentQuestion.options.map((option, idx) => (
-                    <Radio.Button
-                      key={option.id}
-                      value={option.id}
-                      className={`!h-auto !py-4 !px-5 !rounded-xl !border !flex !items-center !transition-all
-                        ${
-                          answers[currentQuestion.id] === option.id
-                            ? "!border-indigo-600 !bg-indigo-50/30 shadow-sm"
-                            : "!border-slate-200 hover:!border-indigo-300 hover:!bg-slate-50/50 !bg-white"
-                        }`}
-                    >
-                      <div
-                        className={`w-8 h-8 rounded-full border flex items-center justify-center mr-4 text-xs font-bold transition-colors
-                        ${answers[currentQuestion.id] === option.id ? "bg-indigo-600 border-indigo-600 text-white" : "bg-white border-slate-300 text-slate-500"}`}
-                      >
-                        {String.fromCharCode(65 + idx)}
-                      </div>
-                      <span
-                        className={`text-sm md:text-[15px] ${answers[currentQuestion.id] === option.id ? "text-indigo-900 font-medium" : "text-slate-600"}`}
-                      >
-                        {option.text}
-                      </span>
-                    </Radio.Button>
-                  ))}
-                </Radio.Group>
-              </motion.div>
-            </AnimatePresence>
+                  Câu trước
+                </Button>
 
-            <div className="flex items-center justify-between pt-10 border-t border-slate-100 mt-16">
-              <Button
-                disabled={currentQuestionIndex === 0}
-                onClick={() => setCurrentQuestionIndex((prev) => prev - 1)}
-                icon={<ChevronLeft size={18} />}
-                type="text"
-                className="text-slate-600 font-semibold"
-              >
-                Câu trước
-              </Button>
-
-              <div className="flex gap-3">
-                {currentQuestionIndex === questions.length - 1 ? (
+                <div className="flex items-center gap-2">
+                  <span className="text-xs text-slate-400">
+                    {answeredCount}/{questions.length} đã trả lời
+                  </span>
                   <Button
                     type="primary"
                     size="large"
                     loading={isSubmitting}
-                    onClick={handleFinish}
-                    className="bg-indigo-600 border-none rounded-md px-8 font-bold h-11"
+                    onClick={
+                      currentQuestionIndex === questions.length - 1
+                        ? handleFinish
+                        : () => setCurrentQuestionIndex((p) => p + 1)
+                    }
+                    className="bg-indigo-600 border-indigo-600 hover:bg-indigo-700 rounded-xl px-8 font-bold"
                   >
-                    Gửi bài làm
+                    {currentQuestionIndex === questions.length - 1
+                      ? "Gửi bài"
+                      : "Tiếp theo"}
                   </Button>
-                ) : (
-                  <Button
-                    type="primary"
-                    size="large"
-                    onClick={() => setCurrentQuestionIndex((prev) => prev + 1)}
-                    className="bg-indigo-600 border-none rounded-md px-8 font-bold h-11"
-                  >
-                    Tiếp tục
-                  </Button>
-                )}
+                </div>
               </div>
             </div>
-          </div>
-        </main>
+          </main>
+        </div>
       </div>
-    </div>
+    </>
   );
 }

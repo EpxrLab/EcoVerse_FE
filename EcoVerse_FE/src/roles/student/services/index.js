@@ -63,6 +63,29 @@ const getCampaignDetails = async (id) => {
   }
 };
 
+const startQuiz = async (campaignId, roundId, quizId) => {
+  try {
+    const res = await axios.post(
+      `/student/quiz/campaign/${campaignId}/rounds/${roundId}/quizzes/${quizId}/start`,
+    );
+    return res.data;
+  } catch (error) {
+    console.log(error);
+  }
+};
+
+const submitQuiz = async (attemptId, payload) => {
+  try {
+    const res = await axios.post(
+      `/student/quiz/quiz-attempts/${attemptId}/submit`,
+      payload,
+    );
+    return res.data;
+  } catch (error) {
+    console.log(error);
+  }
+};
+
 export {
   getAuthenticatedStudentProfile,
   getAllRewards,
@@ -71,4 +94,6 @@ export {
   cancelMyRequest,
   getAllCampaigns,
   getCampaignDetails,
+  startQuiz,
+  submitQuiz,
 };

@@ -130,7 +130,7 @@ const MOCK_API = [
         id: "r3-c2",
         roundNumber: 3,
         roundName: "Vòng đặc biệt: Kỹ năng sinh tồn",
-        status: "CANCELLED",
+        status: "UPCOMING",
         startTime: "2026-03-28T06:00:00.000Z",
         endTime: "2026-03-31T18:00:00.000Z",
         gameTypeId: "game-survival-001",

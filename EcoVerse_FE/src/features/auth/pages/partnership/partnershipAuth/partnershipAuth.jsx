@@ -302,6 +302,17 @@ export default function PartnershipAuth() {
                     )}
                   </div>
 
+                  <div className="flex justify-end items-center mt-[-8px]">
+                    <Button
+                      type="link"
+                      size="small"
+                      className="text-gray-400 hover:text-green-600 p-0 h-auto font-medium transition-all duration-300"
+                      onClick={() => navigate("/auth/forgot-password")}
+                    >
+                      Quên mật khẩu?
+                    </Button>
+                  </div>
+
                   <Button
                     type="primary"
                     size="large"
