@@ -5,7 +5,7 @@ import { Label } from '@/shared/components/ui/label';
 import { Input } from '@/shared/components/ui/input';
 import { Checkbox } from '@/shared/components/ui/checkbox';
 import { Badge } from '@/shared/components/ui/badge';
-import { Brain, Sparkles, Bot, BookOpen, Plus, Check, Loader2, Wand2 } from 'lucide-react';
+import { Brain, Sparkles, Bot, BookOpen, Plus, Minus, Check, Loader2, Wand2, RotateCcw } from 'lucide-react';
 import { cn } from '@/shared/lib/utils';
 
 // ─── Data ─────────────────────────────────────────────────────────────────────
@@ -213,6 +213,7 @@ export function AddQuizModal({ isOpen, onClose, campaign, roundId, availableQuiz
   const [selectedQuizIds, setSelectedQuizIds] = useState([]);
   const [aiGeneratedQuizzes, setAiGeneratedQuizzes] = useState([]);
   const [activeTab, setActiveTab] = useState('library');
+  const [maxAttempts, setMaxAttempts] = useState(1);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   React.useEffect(() => {
@@ -233,6 +234,7 @@ export function AddQuizModal({ isOpen, onClose, campaign, roundId, availableQuiz
       }
 
       setSelectedQuizIds(initialQuizzes);
+      setMaxAttempts(1);
       setAiGeneratedQuizzes([]);
       setActiveTab('library');
     }
@@ -273,7 +275,7 @@ export function AddQuizModal({ isOpen, onClose, campaign, roundId, availableQuiz
   const handleSubmit = async () => {
     setIsSubmitting(true);
     try {
-      await onSubmit(campaign.id, selectedQuizIds, roundId);
+      await onSubmit(campaign.id, selectedQuizIds, roundId, maxAttempts);
       onClose();
     } finally {
       setIsSubmitting(false);
@@ -394,21 +396,69 @@ export function AddQuizModal({ isOpen, onClose, campaign, roundId, availableQuiz
           )}
         </div>
 
-        <DialogFooter className="border-t pt-4 shrink-0 mt-auto bg-background">
-          <p className="text-xs text-muted-foreground mr-auto">
-            Đã chọn <strong>{selectedQuizIds.length}</strong> quiz
-            {!isValid && <span className="text-destructive ml-1">(Cần đủ 3 độ khó)</span>}
-          </p>
+        {/* Quiz Settings Section */}
+        <div className="px-1 py-3 border-t bg-muted/20">
+          <div className="flex items-center justify-between gap-4">
+            <div className="flex items-center gap-2">
+              <div className="w-8 h-8 rounded-lg bg-eco-green/10 flex items-center justify-center">
+                <RotateCcw className="w-4 h-4 text-eco-green" />
+              </div>
+              <div>
+                <p className="text-sm font-semibold text-foreground">Số lượt làm bài</p>
+                <p className="text-[10px] text-muted-foreground">Số lần tối đa học sinh được làm lại Quiz</p>
+              </div>
+            </div>
+            
+            <div className="flex items-center gap-1 bg-background border rounded-xl p-1 shadow-sm">
+              <Button 
+                variant="ghost" 
+                size="icon" 
+                className="h-8 w-8 rounded-lg hover:bg-muted"
+                onClick={() => setMaxAttempts(Math.max(1, maxAttempts - 1))}
+              >
+                <Minus className="w-3.5 h-3.5" />
+              </Button>
+              <Input 
+                id="max-attempts"
+                type="number" 
+                min="1" 
+                value={maxAttempts} 
+                onChange={(e) => setMaxAttempts(parseInt(e.target.value) || 1)}
+                className="h-8 w-12 border-0 text-center font-bold focus-visible:ring-0 text-sm p-0"
+              />
+              <Button 
+                variant="ghost" 
+                size="icon" 
+                className="h-8 w-8 rounded-lg hover:bg-muted"
+                onClick={() => setMaxAttempts(maxAttempts + 1)}
+              >
+                <Plus className="w-3.5 h-3.5" />
+              </Button>
+            </div>
+          </div>
+        </div>
+
+        <DialogFooter className="border-t pt-4 shrink-0 mt-auto bg-background px-1">
+          <div className="mr-auto">
+            <p className="text-xs text-muted-foreground">
+              Đã chọn <span className="font-bold text-eco-blue">{selectedQuizIds.length}</span> bộ Quiz
+              {!isValid && (
+                <span className="flex items-center text-destructive mt-0.5 font-medium">
+                  (Cần chọn đủ 3 độ khó)
+                </span>
+              )}
+            </p>
+          </div>
           <Button variant="ghost" onClick={onClose} disabled={isSubmitting}>Hủy</Button>
           <Button 
             onClick={handleSubmit} 
             disabled={(!isValid && !roundId) || isSubmitting} 
-            className="bg-eco-blue hover:bg-eco-blue/90 text-white min-w-[120px]"
+            className="bg-eco-blue hover:bg-eco-blue/90 text-white min-w-[120px] shadow-md shadow-eco-blue/10"
           >
             {isSubmitting ? (
               <Loader2 className="w-4 h-4 animate-spin" />
             ) : (
-              isUpdateMode ? 'Cập nhật bộ Quiz' : 'Lưu bộ Quiz'
+              isUpdateMode ? 'Cập nhật bộ Quiz' : 'Lưu cấu hình Quiz'
             )}
           </Button>
         </DialogFooter>

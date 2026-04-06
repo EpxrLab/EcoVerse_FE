@@ -1,5 +1,4 @@
 import { useState, useMemo } from 'react';
-import { getGameLevelsForSchool } from '@/shared/data/admin-game-levels.data';
 
 export function useCampaignForm(initialData) {
   const [formData, setFormData] = useState({
@@ -16,43 +15,6 @@ export function useCampaignForm(initialData) {
     level_ids: initialData?.level_ids || [],
   });
 
-  // Quiz validation
-  const quizValidation = useMemo(() => {
-    // This would need availableQuizzes passed in, but for now we'll keep it simple
-    return {
-      hasEasy: true,
-      hasMedium: true,
-      hasHard: true,
-      isValid: true,
-    };
-  }, [formData.quiz_ids]);
-
-  const schoolGameLevels = useMemo(() => getGameLevelsForSchool(), []);
-
-  // Level validation
-  const levelValidation = useMemo(() => {
-    const validation = {};
-    
-    formData.game_types.forEach(gameType => {
-      const selectedLevelsForGame = schoolGameLevels.filter(
-        level => formData.level_ids.includes(level.id) && level.gameType === gameType
-      );
-      
-      const hasEasy = selectedLevelsForGame.some(l => l.difficulty === 'Dễ');
-      const hasMedium = selectedLevelsForGame.some(l => l.difficulty === 'Trung bình');
-      const hasHard = selectedLevelsForGame.some(l => l.difficulty === 'Khó');
-      
-      validation[gameType] = {
-        hasEasy,
-        hasMedium,
-        hasHard,
-        isValid: hasEasy && hasMedium && hasHard
-      };
-    });
-    
-  const allValid = formData.game_types.length === 0 || formData.game_types.every(gt => validation[gt]?.isValid);
-    return { byGameType: validation, allValid };
-  }, [formData.game_types, formData.level_ids]);
 
   // Date Validation
   const dateValidation = useMemo(() => {
@@ -97,13 +59,30 @@ export function useCampaignForm(initialData) {
     setFormData(prev => ({ ...prev, ...data }));
   };
 
-  const handleClassToggle = (classId) => {
-    setFormData(prev => ({
-      ...prev,
-      class_ids: prev.class_ids.includes(classId)
+  const handleClassToggle = (classId, classStudentIds = []) => {
+    setFormData(prev => {
+      const isRemoving = prev.class_ids.includes(classId);
+      const updatedClassIds = isRemoving
         ? prev.class_ids.filter(id => id !== classId)
-        : [...prev.class_ids, classId],
-    }));
+        : [...prev.class_ids, classId];
+      
+      // Sync student_ids
+      let updatedStudentIds = [...(prev.student_ids || [])];
+      if (isRemoving) {
+        // Remove all students from this class
+        updatedStudentIds = updatedStudentIds.filter(id => !classStudentIds.includes(id));
+      } else {
+        // Add all students from this class (avoid duplicates)
+        const studentsToAdd = classStudentIds.filter(id => !updatedStudentIds.includes(id));
+        updatedStudentIds = [...updatedStudentIds, ...studentsToAdd];
+      }
+
+      return {
+        ...prev,
+        class_ids: updatedClassIds,
+        student_ids: updatedStudentIds,
+      };
+    });
   };
 
   const handleStudentSelection = (newStudentIds, classId, classStudentIds = []) => {
@@ -159,6 +138,7 @@ export function useCampaignForm(initialData) {
       invitation_send_date: '',
       invitation_deadline: '',
       class_ids: [],
+      student_ids: [],
       quiz_ids: [],
       game_types: [],
       level_ids: [],
@@ -183,8 +163,6 @@ export function useCampaignForm(initialData) {
 
   return {
     formData,
-    quizValidation,
-    levelValidation,
     dateValidation,
     handleFormChange,
     handleClassToggle,

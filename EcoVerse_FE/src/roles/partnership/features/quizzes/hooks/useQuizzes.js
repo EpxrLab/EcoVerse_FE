@@ -4,9 +4,6 @@ import { quizzesService } from '../services/quizzes.service';
 export function useQuizzes() {
   const [quizzes, setQuizzes] = useState([]);
   const [isLoading, setIsLoading] = useState(false);
-  const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
-  const [isAddQuestionOpen, setIsAddQuestionOpen] = useState(false);
-  const [questionType, setQuestionType] = useState('multiple_choice');
 
   const fetchQuizzes = async () => {
     setIsLoading(true);
@@ -70,15 +67,8 @@ export function useQuizzes() {
     quizzes: transformedQuizzes,
     defaultQuizzes,
     customQuizzes,
-    sampleQuestions: [],
     stats,
     isLoading,
-    isCreateDialogOpen,
-    setIsCreateDialogOpen,
-    isAddQuestionOpen,
-    setIsAddQuestionOpen,
-    questionType,
-    setQuestionType,
     getDifficultyStars,
     getDifficultyColor,
     refreshQuizzes: fetchQuizzes,

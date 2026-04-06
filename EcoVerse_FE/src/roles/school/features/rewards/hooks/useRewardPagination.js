@@ -1,6 +1,6 @@
 import { useState, useMemo, useEffect } from 'react';
 
-export function useRewardPagination(rewardsData, searchTerm) {
+export function useRewardPagination(rewardsData) {
   const [pages, setPages] = useState({
     pending: 1,
     approved: 1,
@@ -11,6 +11,8 @@ export function useRewardPagination(rewardsData, searchTerm) {
   });
 
   const PAGE_SIZE = 5;
+
+  const [searchTerm, setSearchTerm] = useState('');
 
   // Reset pages when searching
   useEffect(() => {
@@ -31,7 +33,8 @@ export function useRewardPagination(rewardsData, searchTerm) {
       r.requestCode?.toLowerCase().includes(lowerSearch) || 
       r.student?.toLowerCase().includes(lowerSearch) ||
       r.studentCode?.toLowerCase().includes(lowerSearch) ||
-      r.reward?.toLowerCase().includes(lowerSearch)
+      r.reward?.toLowerCase().includes(lowerSearch) ||
+      r.rewardName?.toLowerCase().includes(lowerSearch)
     );
   };
 
@@ -69,6 +72,8 @@ export function useRewardPagination(rewardsData, searchTerm) {
     setPage,
     filtered,
     paged,
-    PAGE_SIZE
+    PAGE_SIZE,
+    searchTerm,
+    setSearchTerm,
   };
 }

@@ -4,6 +4,9 @@ export const rewardService = {
   getRewards: () => {
     return axios.get('/school/rewards');
   },
+  getRewardById: (id) => {
+    return axios.get(`/school/rewards/${id}`);
+  },
   createReward: (data) => {
     return axios.post('/school/rewards', data);
   },

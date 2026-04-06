@@ -36,8 +36,6 @@ export default function SchoolQuizzes() {
     questions,
     addQuestion,
     removeQuestion,
-    questionForm,
-    updateQuestionForm,
     isCreateDialogOpen,
     setIsCreateDialogOpen,
     editingQuestionId,
@@ -329,8 +327,6 @@ export default function SchoolQuizzes() {
             formData={quizForm}
             questions={questions}
             onFormChange={updateQuizForm}
-            questionForm={questionForm}
-            onQuestionFormChange={updateQuestionForm}
             onAddQuestion={addQuestion}
             onRemoveQuestion={wrapRemoveQuestion}
             onEditQuestion={startEditQuestion}

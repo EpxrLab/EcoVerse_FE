@@ -134,22 +134,33 @@ export function CampaignList({
                           Trường
                         </Badge>
                       )}
-                      {/* Draft diagnostic badges for school campaigns */}
-                      {campaign.status === 'draft' && campaign.origin !== 'partnership' && (
-                        <>
-                          {(!campaign.selected_games || campaign.selected_games.length === 0) && (
-                            <Badge variant="outline" className="text-amber-600 border-amber-300 bg-amber-50 text-[10px] gap-1">
-                              <AlertCircle className="w-3 h-3" />
-                              Chưa có Game
-                            </Badge>
-                          )}
-                          {(!campaign.selected_quizzes || campaign.selected_quizzes.length === 0) && (
-                            <Badge variant="outline" className="text-orange-600 border-orange-300 bg-orange-50 text-[10px] gap-1">
-                              <AlertCircle className="w-3 h-3" />
-                              Chưa có Quiz
-                            </Badge>
-                          )}
-                        </>
+                      {/* Game & Quiz Status Indicators */}
+                      {campaign.has_game ? (
+                        <Badge variant="outline" className="bg-indigo-500/5 text-indigo-600 border-indigo-500/10 text-[10px] gap-1 py-0.5 font-medium">
+                          <Gamepad2 className="w-3 h-3 text-indigo-500" />
+                          Có Game
+                        </Badge>
+                      ) : (
+                        campaign.status === 'draft' && campaign.origin !== 'partnership' && (
+                          <Badge variant="outline" className="text-amber-600 border-amber-300 bg-amber-50 text-[10px] gap-1 py-0.5">
+                            <AlertCircle className="w-3 h-3" />
+                            Chưa có Game
+                          </Badge>
+                        )
+                      )}
+                      
+                      {campaign.has_quiz ? (
+                        <Badge variant="outline" className="bg-eco-orange/5 text-eco-orange border-eco-orange/10 text-[10px] gap-1 py-0.5 font-medium">
+                          <Brain className="w-3 h-3 text-eco-orange" />
+                          Có Quiz
+                        </Badge>
+                      ) : (
+                        campaign.status === 'draft' && campaign.origin !== 'partnership' && (
+                          <Badge variant="outline" className="text-orange-600 border-orange-300 bg-orange-50 text-[10px] gap-1 py-0.5">
+                            <AlertCircle className="w-3 h-3" />
+                            Chưa có Quiz
+                          </Badge>
+                        )
                       )}
                     </div>
                     {campaign.origin === 'partnership' && campaign.partnership_name ? (

@@ -1,5 +1,5 @@
 import { useState, useMemo, useEffect, useCallback } from 'react';
-import { mockAvailableClasses, mockStudentInvitations, mockSchoolInvitations } from '../../../data/campaign.data';
+import { mockStudentInvitations, mockSchoolInvitations } from '../../../data/campaign.data';
 import { defaultQuizzesData } from '../../../data/quiz.data';
 import { toast } from '@/shared/hooks/use-toast';
 import { campaignService } from '@/roles/school/services';
@@ -11,7 +11,6 @@ export function useCampaigns() {
   const [apiQuizzes, setApiQuizzes] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
-  const [statusFilter, setStatusFilter] = useState('all');
   const [selectedCampaign, setSelectedCampaign] = useState(null);
 
   const fetchCampaigns = useCallback(async () => {
@@ -73,9 +72,11 @@ export function useCampaigns() {
         end_date: c.endDate?.slice(0, 16) || c.end_date || '',
         invitation_send_date: c.invitationDate?.slice(0, 16) || c.invitation_send_date || '',
         invitation_deadline: c.invitationDeadline?.slice(0, 16) || c.invitation_deadline || '',
-        student_ids: c.studentIds || c.student_ids || [],
+        student_ids: c.studentIds || c.student_ids || c.participants?.map(p => p.studentId) || [],
         status: (c.status || 'draft').toLowerCase(),
         origin: 'school',
+        has_quiz: c.hasQuiz ?? false,
+        has_game: c.hasGame ?? false,
       };
     }).filter(Boolean);
 
@@ -85,18 +86,6 @@ export function useCampaigns() {
     return [...campaignsList, ...partnershipList];
   }, [campaigns]);
 
-  const filteredCampaigns = useMemo(() => {
-    const safeSearchQuery = (searchQuery || '').toLowerCase();
-    return allFormattedCampaigns.filter(campaign => {
-      if (!campaign) return false;
-      const name = (campaign.name || '').toLowerCase();
-      const description = (campaign.description || '').toLowerCase();
-      const matchesSearch = name.includes(safeSearchQuery) || 
-                           description.includes(safeSearchQuery);
-      const matchesStatus = statusFilter === 'all' || (campaign.status || '').toLowerCase() === statusFilter.toLowerCase();
-      return matchesSearch && matchesStatus;
-    });
-  }, [allFormattedCampaigns, searchQuery, statusFilter]);
 
   const stats = useMemo(() => {
     const list = allFormattedCampaigns || [];
@@ -113,7 +102,6 @@ export function useCampaigns() {
   }, [allFormattedCampaigns]);
 
 
-  const availableClasses = mockAvailableClasses;
   
   // Get all available quizzes (both default and custom)
   const availableQuizzes = useMemo(() => {
@@ -130,7 +118,7 @@ export function useCampaigns() {
     return [...defaultQuizzesData, ...publishedApiQuizzes];
   }, [apiQuizzes]);
 
-  const addCampaign = (data, dynamicClasses) => {
+  const addCampaign = (data) => {
     const calculatedDeadline = data.start_date 
       ? new Date(new Date(data.start_date).getTime() - 24 * 60 * 60 * 1000).toISOString()
       : undefined;
@@ -322,43 +310,40 @@ export function useCampaigns() {
     });
   };
 
-  const revertToDraft = (id) => {
-    setCampaigns(campaigns.map(c => 
-      c.id === id ? { ...c, status: 'draft', updated_at: new Date().toISOString() } : c
-    ));
-    toast({
-      title: "Đã chuyển về nháp",
-      description: "Chiến dịch đã được chuyển về trạng thái nháp",
-    });
+  const revertToDraft = async (id) => {
+    try {
+      await campaignService.setDraft(id);
+      toast({
+        title: "Đã chuyển về nháp",
+        description: "Chiến dịch đã được chuyển về trạng thái nháp",
+      });
+      fetchCampaigns();
+    } catch (error) {
+      console.error('Failed to revert campaign to draft:', error);
+      toast({
+        title: "Lỗi",
+        description: "Không thể chuyển chiến dịch về nháp. Vui lòng thử lại sau.",
+        variant: "destructive",
+      });
+    }
   };
 
-  const activateCampaign = (id) => {
-    setCampaigns(campaigns.map(c => {
-      if (c.id === id) {
-        const now = new Date();
-        const startDate = new Date(c.start_date);
-        const inviteDate = c.invitation_send_date ? new Date(c.invitation_send_date) : undefined;
-        
-        let newStatus = 'active';
-        
-        if (inviteDate && inviteDate > now) {
-          newStatus = 'scheduled';
-        } else if (!inviteDate && startDate > now) {
-          newStatus = 'scheduled';
-        } else if (inviteDate && inviteDate <= now) {
-          newStatus = 'inviting_students';
-        } else {
-          newStatus = 'active';
-        }
-
-        return { ...c, status: newStatus, updated_at: new Date().toISOString() };
-      }
-      return c;
-    }));
-    toast({
-      title: "Đã kích hoạt",
-      description: "Chiến dịch đã được kích hoạt thành công",
-    });
+  const activateCampaign = async (id) => {
+    try {
+      await campaignService.activateCampaign(id);
+      toast({
+        title: "Đã kích hoạt",
+        description: "Chiến dịch đã được kích hoạt thành công",
+      });
+      fetchCampaigns();
+    } catch (error) {
+      console.error('Failed to activate campaign:', error);
+      toast({
+        title: "Lỗi",
+        description: "Không thể kích hoạt chiến dịch. Vui lòng thử lại sau.",
+        variant: "destructive",
+      });
+    }
   };
 
   const fetchCampaignDetail = async (id) => {
@@ -391,6 +376,10 @@ export function useCampaigns() {
           game_type_id: r.gameTypeId,
           game_type_name: r.gameTypeName,
           difficulty: r.resolvedDifficulty,
+          difficulty_override: r.difficultyOverride,
+          coin_per_session: r.coinPerSession,
+          selected_preset_ids: r.selectedPresetIds || [],
+          preset_sub_category_config: r.presetSubCategoryConfig || {},
           quizzes: r.quizzes?.map(q => ({
             id: q.quizId,
             title: q.title,
@@ -407,7 +396,10 @@ export function useCampaigns() {
           grade: p.gradeLevel,
           class_name: p.className,
           approval_status: p.parentApprovalStatus
-        }))
+        })),
+        // Add flattened arrays for form selection
+        student_ids: data.participants?.map(p => p.studentId) || [],
+        class_ids: Array.from(new Set(data.participants?.map(p => `${p.gradeLevel || ''}${p.className || ''}`).filter(Boolean))) || []
       };
     } catch (error) {
       console.error('Failed to fetch campaign detail:', error);
@@ -420,9 +412,9 @@ export function useCampaigns() {
     }
   };
 
-  const bindQuizzesToRound = async (roundId, quizIds) => {
+  const bindQuizzesToRound = async (roundId, quizIds, maxAttempts) => {
     try {
-      await campaignService.bindQuizzesToRound(roundId, quizIds);
+      await campaignService.bindQuizzesToRound(roundId, quizIds, maxAttempts);
       toast({
         title: "Thành công",
         description: "Đã cập nhật bộ quiz cho vòng chơi",
@@ -445,16 +437,12 @@ export function useCampaigns() {
   };
 
   return {
-    campaigns: filteredCampaigns,
     allCampaigns: allFormattedCampaigns,
     stats,
     searchQuery,
     setSearchQuery,
-    statusFilter,
-    setStatusFilter,
     selectedCampaign,
     setSelectedCampaign,
-    availableClasses,
     availableQuizzes,
     addCampaign,
     updateCampaign,
@@ -467,7 +455,7 @@ export function useCampaigns() {
     activateCampaign,
     fetchCampaignDetail,
     bindQuizzesToRound,
-    refreshCampaigns: fetchCampaigns,
+    getCampaigns: fetchCampaigns,
     isLoading
   };
 }
