@@ -363,6 +363,25 @@ export function useCampaigns() {
       });
     }
   };
+  const extendInviting = async (id, payload) => {
+    try {
+      await campaignService.extendInviting(id, payload);
+      toast({
+        title: "Đã gia hạn thành công",
+        description: "Chiến dịch đã được gia hạn thời gian mời học sinh",
+      });
+      fetchCampaigns();
+      return true;
+    } catch (error) {
+      console.error('Failed to extend inviting:', error);
+      toast({
+        title: "Lỗi",
+        description: error.response?.data?.message || "Không thể gia hạn chiến dịch. Vui lòng thử lại sau.",
+        variant: "destructive",
+      });
+      return false;
+    }
+  };
 
   const fetchCampaignDetail = async (id) => {
     try {
@@ -472,6 +491,7 @@ export function useCampaigns() {
     revertToDraft,
     activateCampaign,
     cancelCampaign,
+    extendInviting,
     fetchCampaignDetail,
     bindQuizzesToRound,
     getCampaigns: fetchCampaigns,

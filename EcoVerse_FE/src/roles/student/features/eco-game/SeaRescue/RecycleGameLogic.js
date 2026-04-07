@@ -14,7 +14,7 @@ export const OBSTACLE_COLLISION_RADIUS = 1.0;
 
 export const SPEED_ZONE_COUNT = 3;
 export const SLOW_ZONE_COUNT = 3;
-export const ZONE_RADIUS = 3;
+export const ZONE_RADIUS = 5;
 
 export const TOTAL_TRASH = 12;
 export const OBSTACLE_COUNT = 5;
@@ -26,7 +26,7 @@ export const STORAGE_ZONE_RADIUS = 4;
 export const GAME_TIME = 60;
 export const REQUIRED_PERCENTAGE = 80;
 
-export const WORLD_SAFE_RADIUS = 70;
+export const WORLD_SAFE_RADIUS = 55;
 
 /* ===================== UTILS ===================== */
 export const isMobileDevice = () =>
@@ -87,22 +87,58 @@ export function initScene(container) {
   return { scene, camera, renderer };
 }
 
+function createBuoyMesh(isRed) {
+  const group = new THREE.Group();
+  const color = isRed ? 0xef4444 : 0xffffff;
+  const sphere = makeMesh(new THREE.SphereGeometry(0.5, 12, 12), color);
+  sphere.castShadow = true;
+  group.add(sphere);
+  const stick = makeMesh(new THREE.CylinderGeometry(0.05, 0.05, 0.8), 0x333333);
+  stick.position.y = 0.6;
+  group.add(stick);
+  const light = makeMesh(new THREE.SphereGeometry(0.12, 8, 8), isRed ? 0xff0000 : 0xffff00);
+  light.position.y = 1.0;
+  group.add(light);
+  return group;
+}
+
 /* ===================== INIT WORLD ===================== */
 export function initWorld(scene, state) {
   // Set sea background
   scene.background = new THREE.Color(0x7dd3fc);
 
-  // Ocean ground
+  // Ocean ground with Circular Clipping
   const gltfLoaderGround = new GLTFLoader();
-
   gltfLoaderGround.load(
     "/assets/ocean__water_perfect_loop.glb",
     (gltf) => {
       const oceanModel = gltf.scene;
-      oceanModel.scale.set(0.5, 0.5, 0.5);
+      oceanModel.scale.set(0.8, 0.8, 0.8);
       oceanModel.position.set(0, -0.3, 0);
       oceanModel.traverse((child) => {
-        if (child.isMesh) child.receiveShadow = true;
+        if (child.isMesh) {
+          child.receiveShadow = true;
+          // Apply circular clip shader
+          child.material.onBeforeCompile = (shader) => {
+            shader.uniforms.uWorldRadius = { value: WORLD_SAFE_RADIUS };
+            shader.vertexShader = shader.vertexShader.replace(
+              '#include <common>',
+              `#include <common>\nvarying vec3 vWorldPos;`
+            );
+            shader.vertexShader = shader.vertexShader.replace(
+              '#include <worldpos_vertex>',
+              `#include <worldpos_vertex>\nvWorldPos = (modelMatrix * vec4(transformed, 1.0)).xyz;`
+            );
+            shader.fragmentShader = shader.fragmentShader.replace(
+              '#include <common>',
+              `#include <common>\nvarying vec3 vWorldPos;\nuniform float uWorldRadius;`
+            );
+            shader.fragmentShader = shader.fragmentShader.replace(
+              '#include <dithering_fragment>',
+              `#include <dithering_fragment>\nif (length(vWorldPos.xz) > uWorldRadius) discard;`
+            );
+          };
+        }
       });
       scene.add(oceanModel);
       state.oceanModel = oceanModel;
@@ -115,29 +151,47 @@ export function initWorld(scene, state) {
     },
     undefined,
     () => {
-      // Fallback plain
-      const fallback = makeMesh(new THREE.PlaneGeometry(100, 100), 0x0ea5e9);
+      // Fallback
+      const fallback = makeMesh(new THREE.CircleGeometry(WORLD_SAFE_RADIUS, 64), 0x0ea5e9);
       fallback.rotation.x = -Math.PI / 2;
       scene.add(fallback);
-      state.fallbackPlane = fallback; // track for disposal
+      state.fallbackPlane = fallback;
     },
   );
 
-  // Underwater depth plane — tracked for disposal
-  const underwaterPlane = new THREE.Mesh(
-    new THREE.PlaneGeometry(200, 200),
-    new THREE.MeshStandardMaterial({
-      color: 0x0c4a6e,
-      transparent: true,
-      opacity: 0.8,
-    }),
-  );
-  underwaterPlane.rotation.x = -Math.PI / 2;
-  underwaterPlane.position.y = -2;
-  scene.add(underwaterPlane);
-  state.underwaterPlane = underwaterPlane; // track for disposal
+  // Deeper water layer
+  const depthGeo = new THREE.CircleGeometry(WORLD_SAFE_RADIUS - 0.5, 64);
+  const depthMat = new THREE.MeshStandardMaterial({
+    color: 0x0c4a6e,
+    transparent: true,
+    opacity: 0.9,
+    side: THREE.DoubleSide,
+  });
+  const depthDisc = new THREE.Mesh(depthGeo, depthMat);
+  depthDisc.rotation.x = -Math.PI / 2;
+  depthDisc.position.y = -0.5;
+  scene.add(depthDisc);
+  state.depthDisc = depthDisc;
 
-  // return oceanState;
+  // Buoy Perimeter (Physical indicator)
+  const buoyCount = 36;
+  const buoys = [];
+  for (let i = 0; i < buoyCount; i++) {
+    const angle = (i / buoyCount) * Math.PI * 2;
+    const isRed = i % 2 === 0;
+    const buoy = createBuoyMesh(isRed);
+    buoy.position.set(
+      Math.cos(angle) * WORLD_SAFE_RADIUS,
+      0.1,
+      Math.sin(angle) * WORLD_SAFE_RADIUS
+    );
+    buoy.lookAt(0, 0, 0);
+    scene.add(buoy);
+    buoys.push(buoy);
+  }
+
+  // Track for disposal
+  state.buoys = buoys;
 }
 
 /* ===================== INIT STORAGE (LIGHTHOUSE) ===================== */

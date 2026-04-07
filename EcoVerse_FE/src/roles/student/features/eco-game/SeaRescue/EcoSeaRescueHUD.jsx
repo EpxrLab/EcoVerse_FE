@@ -299,6 +299,14 @@ export function EcoSeaRescueHUD({ onComplete }) {
   const navigate = useNavigate();
   const containerRef = useRef();
   const gameRef = useRef({});
+  const audioRef = useRef({
+    listener: null,
+    bgm: null,
+    collect: null,
+    warning: null,
+    gameover: null,
+    stopped: false
+  });
 
   const [inventoryCount, setInventoryCount] = useState(0);
   const [recycledCount, setRecycledCount] = useState(0);
@@ -313,10 +321,72 @@ export function EcoSeaRescueHUD({ onComplete }) {
   const [inventoryFull, setInventoryFull] = useState(false);
   const [currentZone, setCurrentZone] = useState(null);
 
+  const loadAudio = (camera) => {
+    if (audioRef.current.listener) return;
+    const listener = new THREE.AudioListener();
+    camera.add(listener);
+    audioRef.current.listener = listener;
+
+    const loader = new THREE.AudioLoader();
+    const bgm = new THREE.Audio(listener);
+    audioRef.current.bgm = bgm;
+
+    loader.load("/assets/audio/music_game.mp3", (buffer) => {
+      if (audioRef.current.stopped) return;
+      bgm.setBuffer(buffer);
+      bgm.setLoop(true);
+      bgm.setVolume(0.4);
+      
+      const tryPlay = () => {
+        if (audioRef.current.stopped || !bgm || bgm.isPlaying) return;
+        const ctx = listener.context;
+        if (ctx.state === "suspended") {
+          ctx.resume().then(() => {
+            if (!audioRef.current.stopped && !bgm.isPlaying) bgm.play();
+          });
+        } else {
+          if (!bgm.isPlaying) bgm.play();
+        }
+      };
+      
+      tryPlay();
+      window.addEventListener("pointerdown", tryPlay, { once: true });
+      window.addEventListener("keydown", tryPlay, { once: true });
+    });
+
+    const makeSfx = (url, vol) => {
+      const sfx = new THREE.Audio(listener);
+      loader.load(url, (buffer) => {
+        sfx.setBuffer(buffer);
+        sfx.setVolume(vol);
+      });
+      return sfx;
+    };
+
+    audioRef.current.collect = makeSfx("/assets/audio/collect.mp3", 0.75);
+    audioRef.current.warning = makeSfx("/assets/audio/warning.mp3", 0.85);
+    audioRef.current.gameover = makeSfx("/assets/audio/gameover.mp3", 0.9);
+  };
+
+  const playOneShot = (sfx) => {
+    if (!sfx || !sfx.buffer) return;
+    const ctx = audioRef.current.listener?.context;
+    if (ctx?.state === "suspended") {
+      ctx.resume().then(() => {
+        if (sfx.isPlaying) sfx.stop();
+        sfx.play();
+      });
+    } else {
+      if (sfx.isPlaying) sfx.stop();
+      sfx.play();
+    }
+  };
+
   useEffect(() => {
     setIsMobile(isMobileDevice());
 
     const { scene, camera, renderer } = initScene(containerRef.current);
+    loadAudio(camera);
     const storage = initStorage(scene);
     const { player, playerState } = initPlayer(scene);
     const trash = initTrash(scene);
@@ -359,6 +429,13 @@ export function EcoSeaRescueHUD({ onComplete }) {
 
     const endGame = (reason) => {
       state.stopped = true;
+      audioRef.current.stopped = true;
+      
+      if (audioRef.current.bgm?.isPlaying) audioRef.current.bgm.stop();
+      if (reason === "death" || reason === "timeout") {
+        playOneShot(audioRef.current.gameover);
+      }
+
       cancelAnimationFrame(state.animationId);
       clearInterval(state.timerId);
       setGameOver(true);
@@ -370,10 +447,20 @@ export function EcoSeaRescueHUD({ onComplete }) {
       else setMessage("💀 Va chạm vật cản – Hết mạng!");
     };
 
-    const down = (e) => (state.keys[e.key.toLowerCase()] = true);
+    const resumeAudio = () => {
+      if (audioRef.current.listener?.context?.state === "suspended") {
+        audioRef.current.listener.context.resume();
+      }
+    };
+
+    const down = (e) => {
+      resumeAudio();
+      state.keys[e.key.toLowerCase()] = true;
+    };
     const up = (e) => (state.keys[e.key.toLowerCase()] = false);
     window.addEventListener("keydown", down);
     window.addEventListener("keyup", up);
+    window.addEventListener("pointerdown", resumeAudio);
 
     state.timerId = setInterval(() => {
       setTimeLeft((t) => {
@@ -405,6 +492,12 @@ export function EcoSeaRescueHUD({ onComplete }) {
         setDamageFlash,
         setScreenShake,
         endGame,
+        onPickup: () => {
+          playOneShot(audioRef.current.collect);
+        },
+        onDamage: () => {
+          playOneShot(audioRef.current.warning);
+        },
         clock,
       });
       state.animationId = requestAnimationFrame(loop);
@@ -415,8 +508,45 @@ export function EcoSeaRescueHUD({ onComplete }) {
     return () => {
       window.removeEventListener("keydown", down);
       window.removeEventListener("keyup", up);
+      window.removeEventListener("pointerdown", resumeAudio);
+      if (audioRef.current.bgm?.isPlaying) audioRef.current.bgm.stop();
+      if (audioRef.current.collect?.isPlaying) audioRef.current.collect.stop();
+      if (audioRef.current.warning?.isPlaying) audioRef.current.warning.stop();
+      audioRef.current.stopped = true;
       clearInterval(state.timerId);
       cancelAnimationFrame(state.animationId);
+
+      if (renderer) {
+        renderer.dispose();
+        if (containerRef.current && renderer.domElement.parentNode === containerRef.current) {
+          containerRef.current.removeChild(renderer.domElement);
+        }
+      }
+
+      const itemsToRemove = [
+        state.player,
+        state.storage,
+        state.skybox,
+        state.oceanModel,
+        state.depthDisc,
+        state.fallbackPlane,
+        ...(state.buoys ?? []),
+        ...(state.trash ?? []),
+        ...(state.obstacles ?? []),
+        ...(state.allZones ?? []),
+      ].filter(Boolean);
+
+      itemsToRemove.forEach((obj) => {
+        scene.remove(obj);
+        obj.traverse?.((child) => {
+          if (child.geometry) child.geometry.dispose();
+          if (child.material) {
+            if (Array.isArray(child.material))
+              child.material.forEach((m) => m.dispose());
+            else child.material.dispose();
+          }
+        });
+      });
     };
   }, []);
 

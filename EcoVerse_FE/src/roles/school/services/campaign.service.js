@@ -58,6 +58,10 @@ export const campaignService = {
   cancelCampaign: (id) => {
     return axios.put(`/school/campaigns/${id}/cancel`);
   },
+
+  extendInviting: (id, payload) => {
+    return axios.post(`/school/campaigns/${id}/extend-inviting`, payload);
+  },
   
   deleteCampaign: (id) => {
     return axios.delete(`/school/campaigns/${id}`);
