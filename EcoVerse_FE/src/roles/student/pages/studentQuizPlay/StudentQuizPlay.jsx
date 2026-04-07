@@ -3,97 +3,34 @@ import { useNavigate, useParams, useSearchParams } from "react-router";
 import { Spin, Result, Button, Modal } from "antd";
 import { LoadingOutlined } from "@ant-design/icons";
 import QuizPlay from "../../features/quizzes/components/QuizPlay";
-
-// Enhanced mock questions for development
-const QUIZ_QUESTIONS = {
-  1: [
-    {
-      id: "q001",
-      content:
-        "Hành động nào sau đây giúp giảm ô nhiễm không khí hiệu quả nhất?",
-      options: [
-        { id: "o1", text: "Đốt rác ngoài trời định kỳ" },
-        { id: "o2", text: "Trồng thêm cây xanh và bảo tồn rừng" },
-        { id: "o3", text: "Sử dụng bếp than tổ ong thay bếp gas" },
-        { id: "o4", text: "Chạy xe nổ máy tại chỗ để làm nóng động cơ" },
-      ],
-    },
-    {
-      id: "q002",
-      content:
-        "Nguồn phát thải khí CO2 lớn nhất trong các hoạt động sau đây là gì?",
-      options: [
-        { id: "o5", text: "Hoạt động đun nấu trong gia đình" },
-        { id: "o6", text: "Quá trình hô hấp của động vật" },
-        {
-          id: "o7",
-          text: "Sử dụng năng lượng hóa thạch trong giao thông và công nghiệp",
-        },
-        { id: "o8", text: "Quá trình phân hủy rác hữu cơ tự nhiên" },
-      ],
-    },
-    {
-      id: "q003",
-      content:
-        "Hiện tượng 'Hiệu ứng nhà kính' chủ yếu do loại khí nào sau đây gây ra?",
-      options: [
-        { id: "o9", text: "Oxy (O2)" },
-        { id: "o10", text: "Nitơ (N2)" },
-        { id: "o11", text: "Cacbon đioxit (CO2)" },
-        { id: "o12", text: "Hydro (H2)" },
-      ],
-    },
-    {
-      id: "q004",
-      content: "Phân loại rác tại nguồn giúp ích gì cho môi trường?",
-      options: [
-        { id: "o13", text: "Tiết kiệm thời gian cho người thu gom" },
-        {
-          id: "o14",
-          text: "Tăng hiệu quả tái chế và giảm lượng rác thải ra bãi chôn lấp",
-        },
-        { id: "o15", text: "Làm bãi rác trông đẹp hơn" },
-        { id: "o16", text: "Không có lợi ích rõ rệt" },
-      ],
-    },
-  ],
-};
+import { startQuiz } from "../../services";
 
 export default function StudentQuizPlay() {
   const navigate = useNavigate();
-  const { campaignId, quizId } = useParams();
+  const { campaignId, roundId, quizId } = useParams();
   const [searchParams] = useSearchParams();
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
-  const quizInfo = {
-    title: searchParams.get("title") || "Hành trình Xanh",
-    description:
-      "Khám phá kiến thức về bảo vệ môi trường và phát triển bền vững.",
-    difficulty: "EASY",
-    quizType: "MULTIPLE_CHOICE",
-    targetGrade: 10,
-    coinOnPass: 50,
-    timeLimit: Number(searchParams.get("time")) || 15,
-    passScorePercentage: 80, // Yêu cầu 80% như bạn mong muốn
+  const [quizInfo, setQuizInfo] = useState(null);
+
+  const fetchQuizData = async (cId, rId, qId) => {
+    setLoading(true);
+    try {
+      const res = await startQuiz(cId, rId, qId);
+      setQuizInfo(res.data);
+    } catch (error) {
+      console.log(error);
+    } finally {
+      setLoading(false);
+    }
   };
 
-  const quiz = useMemo(
-    () => ({
-      ...quizInfo,
-      id: quizId,
-      questions: QUIZ_QUESTIONS[quizId] || QUIZ_QUESTIONS["1"],
-    }),
-    [quizId, quizInfo],
-  );
-
   useEffect(() => {
-    const timer = setTimeout(() => setLoading(false), 1000);
-    return () => clearTimeout(timer);
-  }, []);
+    fetchQuizData(campaignId, roundId, quizId);
+  }, [quizId]);
 
   const handleFinish = (result) => {
-    // Navigate back to quiz list after seeing results
-    navigate(`/student/campaign/${campaignId}/quiz`);
+    navigate(-1);
   };
 
   const handleCancel = () => {
@@ -106,7 +43,7 @@ export default function StudentQuizPlay() {
       cancelText: "Ở lại",
       zIndex: 11000,
       onOk() {
-        navigate(`/student/campaign/${campaignId}/quiz`);
+        navigate(-1);
       },
     });
   };
@@ -155,6 +92,6 @@ export default function StudentQuizPlay() {
   }
 
   return (
-    <QuizPlay quiz={quiz} onFinish={handleFinish} onCancel={handleCancel} />
+    <QuizPlay quiz={quizInfo} onFinish={handleFinish} onCancel={handleCancel} />
   );
 }

@@ -77,6 +77,8 @@ import PartnershipProfile from "./roles/partnership/pages/partnershipProfile/par
 
 //========================Payment Routes==============================
 import PaymentResult from "./features/payment/pages/paymentResult/paymentResult";
+import StudentRoundDetails from "./roles/student/pages/studentRoundDetail/studentRoundDetails";
+import ForgotPassword from "./features/auth/pages/forgot-password/forgotPassword";
 
 const queryClient = new QueryClient();
 
@@ -137,6 +139,10 @@ const App = () => (
                 element={<SchoolRejected />}
               />
               <Route path="/auth/admin" element={<AdminAuth />} />
+              <Route
+                path="/auth/forgot-password"
+                element={<ForgotPassword />}
+              />
 
               {/* Student Routes */}
               <Route
@@ -155,6 +161,15 @@ const App = () => (
                   element={<StudentDashboardLayout />}
                 >
                   <Route index element={<CampaignDashboard />} />
+                  <Route
+                    path="round/:roundId"
+                    element={<StudentRoundDetails />}
+                  />
+                  <Route
+                    path="round/:roundId/quiz/:quizId"
+                    element={<StudentQuizPlay />}
+                  />
+
                   <Route path="game" element={<StudentGame />} />
                   <Route path="game/play" element={<EcoGamePage />} />
                   <Route path="quiz" element={<StudentQuiz />} />

@@ -90,6 +90,33 @@ const logoutFunction = async () => {
   }
 };
 
+const changePassword = async (payload) => {
+  try {
+    const res = await axios.put("/auth/change-password", payload);
+    return res.data;
+  } catch (error) {
+    console.log(error);
+  }
+};
+
+const sendOtpResetPass = async (payload) => {
+  try {
+    const res = await axios.post("/auth/forgot-password", payload);
+    return res.data;
+  } catch (error) {
+    console.log(error);
+  }
+};
+
+const resetPassword = async (payload) => {
+  try {
+    const res = await axios.post("/auth/verify-reset-password", payload);
+    return res.data;
+  } catch (error) {
+    console.log(error);
+  }
+};
+
 export {
   getProvinces,
   getWards,
@@ -100,6 +127,9 @@ export {
   partnershipRegister,
   loginFunction,
   logoutFunction,
+  changePassword,
+  sendOtpResetPass,
+  resetPassword,
 };
 
 // Re-export auth services as needed
