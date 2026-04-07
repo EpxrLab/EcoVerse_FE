@@ -314,7 +314,6 @@ export default function CampaignSelection() {
       console.log(error);
     }
   };
-  console.log(campaigns);
 
   const handleSelect = (campaign) => {
     setSelectedCampaign(campaign);

@@ -1,282 +1,559 @@
 import React, { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router";
-import {
-  Card,
-  Button,
-  Tag,
-  Space,
-  Typography,
-  Divider,
-  Row,
-  Col,
-  Statistic,
-  Empty,
-} from "antd";
+import { Card, Button, Tag, Tabs, Empty, Tooltip } from "antd";
 import {
   ArrowLeftOutlined,
   PlayCircleOutlined,
   BookOutlined,
   ClockCircleOutlined,
-  ThunderboltOutlined,
-  TrophyOutlined,
-  HeartOutlined,
   StarOutlined,
   RightOutlined,
+  LockOutlined,
+  CheckCircleOutlined,
+  TrophyOutlined,
+  HeartOutlined,
+  ThunderboltOutlined,
 } from "@ant-design/icons";
-import { motion } from "framer-motion";
+import { motion, AnimatePresence } from "framer-motion";
 import { getCurrentRoundContent } from "../../services";
 
-const { Title, Text, Paragraph } = Typography;
+// ─── Constants ────────────────────────────────────────────────────────────────
 
-const DIFFICULTY_COLOR = {
-  EASY: "green",
-  MEDIUM: "orange",
-  HARD: "red",
+const DIFFICULTY_CFG = {
+  EASY: {
+    label: "Dễ",
+    color: "bg-green-500",
+    badge: "bg-green-50 text-green-700 border-green-200",
+    tab: "text-green-600",
+  },
+  MEDIUM: {
+    label: "Trung bình",
+    color: "bg-amber-500",
+    badge: "bg-amber-50 text-amber-700 border-amber-200",
+    tab: "text-amber-600",
+  },
+  HARD: {
+    label: "Khó",
+    color: "bg-red-500",
+    badge: "bg-red-50 text-red-700 border-red-200",
+    tab: "text-red-600",
+  },
 };
 
-const WASTE_TYPE_LABEL = {
-  RECYCLABLE: "Rác tái chế",
-  NON_RECYCLABLE: "Rác không tái chế",
-  ORGANIC: "Rác hữu cơ",
-  HAZARDOUS: "Rác nguy hại",
+const WASTE_LABEL = {
+  RECYCLABLE: "Tái chế",
+  ORGANIC: "Hữu cơ",
+  HAZARDOUS: "Nguy hại",
+  GENERAL: "Rác thông thường",
+  NON_RECYCLABLE: "Không tái chế",
 };
 
-function StudentRoundDetails() {
+const WASTE_COLOR = {
+  RECYCLABLE: "blue",
+  ORGANIC: "green",
+  HAZARDOUS: "red",
+  GENERAL: "default",
+};
+
+const fmtTime = (s) =>
+  s >= 60 ? `${Math.floor(s / 60)}p ${s % 60}s` : `${s}s`;
+
+const fadeUp = {
+  hidden: { opacity: 0, y: 14 },
+  visible: {
+    opacity: 1,
+    y: 0,
+    transition: { duration: 0.32, ease: "easeOut" },
+  },
+};
+const stagger = {
+  hidden: { opacity: 0 },
+  visible: { opacity: 1, transition: { staggerChildren: 0.07 } },
+};
+
+// ─── LevelCard ────────────────────────────────────────────────────────────────
+
+function LevelCard({ item, isUnlocked, isCompleted, onPlay, campaignId }) {
+  return (
+    <motion.div variants={fadeUp}>
+      <div
+        className={`relative rounded-2xl border-2 overflow-hidden transition-all duration-200
+        ${
+          isCompleted
+            ? "border-green-300 bg-green-50/40"
+            : isUnlocked
+              ? "border-gray-200 bg-white hover:border-blue-300 hover:shadow-md"
+              : "border-gray-100 bg-gray-50/60 opacity-60"
+        }`}
+      >
+        {/* Left accent bar */}
+        <div
+          className={`absolute inset-y-0 left-0 w-1.5
+          ${isCompleted ? "bg-green-500" : isUnlocked ? "bg-blue-400" : "bg-gray-300"}`}
+        />
+
+        <div className="pl-5 pr-4 py-4">
+          <div className="flex items-center justify-between gap-4">
+            {/* Level badge + info */}
+            <div className="flex items-center gap-3 flex-1 min-w-0">
+              {/* Level number circle */}
+              <div
+                className={`w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0 font-black text-sm
+                ${
+                  isCompleted
+                    ? "bg-green-500 text-white shadow-sm shadow-green-200"
+                    : isUnlocked
+                      ? "bg-blue-500 text-white shadow-sm shadow-blue-200"
+                      : "bg-gray-200 text-gray-400"
+                }`}
+              >
+                {isCompleted ? (
+                  <CheckCircleOutlined />
+                ) : isUnlocked ? (
+                  item.levelNumber
+                ) : (
+                  <LockOutlined />
+                )}
+              </div>
+
+              <div className="flex-1 min-w-0">
+                <div className="flex items-center gap-2 flex-wrap mb-1">
+                  <span className="font-bold text-gray-800 text-sm">
+                    Màn {item.levelNumber}
+                  </span>
+                  {isCompleted && (
+                    <span className="text-[11px] bg-green-100 text-green-700 px-2 py-0.5 rounded-full font-semibold">
+                      ✓ Hoàn thành
+                    </span>
+                  )}
+                  {!isUnlocked && !isCompleted && (
+                    <span className="text-[11px] bg-gray-100 text-gray-500 px-2 py-0.5 rounded-full font-semibold">
+                      Chưa mở khóa
+                    </span>
+                  )}
+                </div>
+
+                {/* Stats row */}
+                <div className="flex flex-wrap gap-2.5 text-xs text-gray-500">
+                  <span className="flex items-center gap-1">
+                    <HeartOutlined className="text-red-400" />
+                    {item.lives} mạng
+                  </span>
+                  <span className="flex items-center gap-1">
+                    <ClockCircleOutlined className="text-blue-400" />
+                    {fmtTime(item.timeLimitSeconds)}
+                  </span>
+                  <span className="flex items-center gap-1">
+                    <ThunderboltOutlined className="text-amber-400" />
+                    {item.itemCount} vật phẩm
+                  </span>
+                  <span className="flex items-center gap-1 font-semibold text-blue-600">
+                    +{item.scorePerCorrect} điểm/đúng
+                  </span>
+                </div>
+
+                {/* Waste categories */}
+                {item.wasteCategories?.length > 0 && (
+                  <div className="flex gap-1.5 flex-wrap mt-1.5">
+                    {item.wasteCategories.map((cat) => (
+                      <Tag
+                        key={cat}
+                        color={WASTE_COLOR[cat] ?? "default"}
+                        className="rounded-full text-[10px] py-0 border-none m-0"
+                      >
+                        {WASTE_LABEL[cat] ?? cat}
+                      </Tag>
+                    ))}
+                  </div>
+                )}
+              </div>
+            </div>
+
+            {/* CTA */}
+            <div className="flex-shrink-0">
+              {isCompleted ? (
+                <Tooltip title="Bạn đã hoàn thành màn này và nhận thưởng">
+                  <Button
+                    size="small"
+                    disabled
+                    className="rounded-xl border-green-200 text-green-600 bg-green-50 cursor-default"
+                    icon={<CheckCircleOutlined />}
+                  >
+                    Đã xong
+                  </Button>
+                </Tooltip>
+              ) : isUnlocked ? (
+                <Button
+                  type="primary"
+                  size="small"
+                  onClick={() => onPlay(item.levelNumber)}
+                  className="rounded-xl bg-blue-500 border-blue-500 hover:bg-blue-600 font-semibold px-4"
+                  icon={<PlayCircleOutlined />}
+                >
+                  Chơi
+                </Button>
+              ) : (
+                <Tooltip title={`Hoàn thành màn ${item.levelNumber - 1} trước`}>
+                  <Button
+                    size="small"
+                    disabled
+                    className="rounded-xl border-gray-200 text-gray-400"
+                    icon={<LockOutlined />}
+                  >
+                    Khóa
+                  </Button>
+                </Tooltip>
+              )}
+            </div>
+          </div>
+        </div>
+      </div>
+    </motion.div>
+  );
+}
+
+// ─── PresetTabContent ─────────────────────────────────────────────────────────
+
+function PresetTabContent({ preset, onPlay, campaignId }) {
+  const cfg = DIFFICULTY_CFG[preset.difficulty] ?? DIFFICULTY_CFG.EASY;
+
+  // Logic mở khóa: level đầu luôn mở, các level sau chỉ mở khi level trước coinReceived=true
+  const items = [...(preset.items ?? [])].sort(
+    (a, b) => a.levelNumber - b.levelNumber,
+  );
+
+  const completedCount = items.filter((i) => i.coinReceived).length;
+  const progressPct =
+    items.length > 0 ? Math.round((completedCount / items.length) * 100) : 0;
+
+  const isUnlocked = (idx) => {
+    if (idx === 0) return true; // màn đầu luôn mở
+    return items[idx - 1]?.coinReceived === true; // mở nếu màn trước đã xong
+  };
+
+  return (
+    <div className="space-y-4">
+      {/* Preset header */}
+      <div className="flex items-center justify-between px-1">
+        <div className="flex items-center gap-2">
+          <span
+            className={`inline-flex px-3 py-1 rounded-full text-xs font-bold border ${cfg.badge}`}
+          >
+            {cfg.label}
+          </span>
+          <span className="text-xs text-gray-400">
+            {completedCount}/{items.length} màn hoàn thành
+          </span>
+        </div>
+        {/* Mini progress */}
+        <div className="flex items-center gap-2">
+          <div className="w-24 h-1.5 bg-gray-200 rounded-full overflow-hidden">
+            <div
+              className={`h-full rounded-full ${cfg.color} transition-all`}
+              style={{ width: `${progressPct}%` }}
+            />
+          </div>
+          <span className="text-xs font-bold text-gray-500">
+            {progressPct}%
+          </span>
+        </div>
+      </div>
+
+      {/* Level cards */}
+      <motion.div
+        className="space-y-3"
+        variants={stagger}
+        initial="hidden"
+        animate="visible"
+      >
+        {items.map((item, idx) => (
+          <LevelCard
+            key={item.levelNumber}
+            item={item}
+            isCompleted={item.coinReceived === true}
+            isUnlocked={isUnlocked(idx)}
+            onPlay={onPlay}
+            campaignId={campaignId}
+          />
+        ))}
+      </motion.div>
+    </div>
+  );
+}
+
+// ─── Main Component ───────────────────────────────────────────────────────────
+
+export default function StudentRoundDetails() {
   const { campaignId, roundId } = useParams();
   const navigate = useNavigate();
   const [roundData, setRoundData] = useState(null);
 
-  const fetchRoundDetails = async (id) => {
-    try {
-      const res = await getCurrentRoundContent(id);
-      setRoundData(res.data);
-    } catch (error) {
-      console.log(error);
-    }
-  };
-
   useEffect(() => {
-    fetchRoundDetails(campaignId);
+    if (!campaignId) return;
+    getCurrentRoundContent(campaignId)
+      .then((res) => setRoundData(res?.data ?? null))
+      .catch(console.error);
   }, [campaignId, roundId]);
 
   if (!roundData)
-    return <Empty description="Không tìm thấy thông tin vòng đấu" />;
+    return (
+      <Empty
+        description="Không tìm thấy thông tin vòng đấu"
+        className="mt-16"
+      />
+    );
+
+  const game = roundData.games?.[0]; // hiện tại chỉ xử lý game đầu
+
+  const handlePlay = (levelNumber) => {
+    navigate(`/student/campaign/${campaignId}/game`, {
+      state: { levelNumber },
+    });
+  };
+
+  // Build Tabs từ presets — sort theo thứ tự EASY→MEDIUM→HARD
+  const DIFF_ORDER = { EASY: 0, MEDIUM: 1, HARD: 2 };
+  const sortedPresets = [...(game?.presets ?? [])].sort(
+    (a, b) => (DIFF_ORDER[a.difficulty] ?? 9) - (DIFF_ORDER[b.difficulty] ?? 9),
+  );
+
+  const gameTabItems = sortedPresets.map((preset) => {
+    const cfg = DIFFICULTY_CFG[preset.difficulty] ?? DIFFICULTY_CFG.EASY;
+    const completed = (preset.items ?? []).filter((i) => i.coinReceived).length;
+    const total = (preset.items ?? []).length;
+    return {
+      key: preset.presetId,
+      label: (
+        <span className="flex items-center gap-2">
+          <span className={`font-bold ${cfg.tab}`}>{cfg.label}</span>
+          <span
+            className={`text-[11px] px-1.5 py-0.5 rounded-full font-bold ${
+              completed === total && total > 0
+                ? "bg-green-100 text-green-700"
+                : "bg-gray-100 text-gray-500"
+            }`}
+          >
+            {completed}/{total}
+          </span>
+        </span>
+      ),
+      children: (
+        <PresetTabContent
+          preset={preset}
+          onPlay={handlePlay}
+          campaignId={campaignId}
+        />
+      ),
+    };
+  });
 
   return (
-    <div className="max-w-6xl mx-auto p-4 md:p-6 space-y-6">
-      {/* Header Điều hướng */}
+    <div className="max-w-5xl mx-auto p-4 md:p-6 space-y-5">
+      {/* Back */}
       <Button
         icon={<ArrowLeftOutlined />}
         onClick={() => navigate(`/student/campaign/${campaignId}`)}
-        className="mb-2 border-none bg-transparent shadow-none hover:text-green-600"
+        type="text"
+        className="text-gray-500 hover:text-green-600 -ml-1"
       >
         Quay lại chiến dịch
       </Button>
 
-      {/* Hero Section - Thông tin chung của Vòng */}
+      {/* ── Hero ── */}
       <motion.div
-        initial={{ opacity: 0, y: 20 }}
+        initial={{ opacity: 0, y: 16 }}
         animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.4 }}
       >
-        <Card className="rounded-3xl border-2 shadow-sm bg-gradient-to-r from-green-50 to-blue-50 overflow-hidden">
-          <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
-            <div>
-              <Space direction="vertical" size={0}>
-                <Text className="text-green-600 font-bold uppercase tracking-wider text-xs">
-                  Vòng số {roundData.roundNumber}
-                </Text>
-                <Title level={2} style={{ margin: 0 }}>
+        <Card
+          className="rounded-3xl border-2 border-gray-100 shadow-sm overflow-hidden"
+          bodyStyle={{ padding: 0 }}
+        >
+          <div className="relative bg-gradient-to-br from-green-50 via-blue-50 to-purple-50 px-6 py-5">
+            <div className="absolute top-0 right-0 w-64 h-64 bg-gradient-to-br from-green-200/20 to-transparent rounded-full blur-3xl pointer-events-none" />
+            <div className="relative flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+              <div>
+                <span className="text-xs font-bold text-green-600 uppercase tracking-widest">
+                  Vòng {roundData.roundNumber}
+                </span>
+                <h1 className="text-2xl font-extrabold text-gray-800 mt-0.5">
                   {roundData.roundName}
-                </Title>
-                <Space className="mt-2 text-gray-500">
-                  <ClockCircleOutlined />
-                  <Text type="secondary">
-                    Kết thúc lúc:{" "}
-                    {new Date(roundData.roundEndTime).toLocaleString("vi-VN")}
-                  </Text>
-                </Space>
-              </Space>
-            </div>
-
-            <div className="bg-white/80 p-4 rounded-2xl border border-white shadow-inner flex gap-6">
-              <Statistic
-                title="Game"
-                value={roundData.games.length}
-                prefix={<PlayCircleOutlined />}
-              />
-              <Divider type="vertical" style={{ height: "auto" }} />
-              <Statistic
-                title="Quiz"
-                value={roundData.quizzes.length}
-                prefix={<BookOutlined />}
-              />
+                </h1>
+                <div className="flex flex-wrap gap-3 mt-2 text-sm text-gray-500">
+                  <span className="flex items-center gap-1">
+                    <ClockCircleOutlined className="text-gray-400" />
+                    {new Date(roundData.roundStartTime).toLocaleDateString(
+                      "vi-VN",
+                    )}
+                    {" → "}
+                    {new Date(roundData.roundEndTime).toLocaleDateString(
+                      "vi-VN",
+                    )}
+                  </span>
+                </div>
+              </div>
+              {/* Mini stats */}
+              <div className="flex gap-4 bg-white/70 backdrop-blur border border-white rounded-2xl px-5 py-3 shadow-sm flex-shrink-0">
+                <div className="text-center">
+                  <p className="text-2xl font-black text-gray-800">
+                    {roundData.games?.length ?? 0}
+                  </p>
+                  <p className="text-xs text-gray-400 flex items-center gap-1 justify-center">
+                    <PlayCircleOutlined />
+                    Game
+                  </p>
+                </div>
+                <div className="w-px bg-gray-100" />
+                <div className="text-center">
+                  <p className="text-2xl font-black text-gray-800">
+                    {roundData.quizzes?.length ?? 0}
+                  </p>
+                  <p className="text-xs text-gray-400 flex items-center gap-1 justify-center">
+                    <BookOutlined />
+                    Quiz
+                  </p>
+                </div>
+              </div>
             </div>
           </div>
         </Card>
       </motion.div>
 
-      <Row gutter={[24, 24]}>
-        {/* CỘT TRÁI: DANH SÁCH GAME */}
-        <Col xs={24} lg={15} className="space-y-6">
-          <Title level={4} className="flex items-center gap-2">
-            <ThunderboltOutlined className="text-amber-500" /> Hoạt động Game
-          </Title>
-
-          {roundData.games.map((game, idx) => (
-            <Card
-              key={idx}
-              className="rounded-2xl border-2 hover:border-green-300 transition-all shadow-sm"
-            >
-              <div className="flex justify-between items-start mb-4">
-                <Space direction="vertical" size={0}>
-                  <Title level={5} style={{ margin: 0 }}>
-                    {game.gameTypeName}
-                  </Title>
-                  <Space split={<Divider type="vertical" />}>
-                    <Tag color={DIFFICULTY_COLOR[game.resolvedDifficulty]}>
-                      Độ khó: {game.resolvedDifficulty}
-                    </Tag>
-                    <Text className="text-amber-600 font-bold">
-                      <StarOutlined /> +{game.coinPerSession} xu/phiên
-                    </Text>
-                  </Space>
-                </Space>
-                <Button
-                  type="primary"
-                  size="large"
-                  className="rounded-xl bg-green-500 border-none px-8 font-bold"
-                  onClick={() =>
-                    navigate(`/student/campaign/${campaignId}/game`)
-                  }
-                >
-                  Chơi ngay
-                </Button>
+      {/* ── Game section ── */}
+      {game && (
+        <motion.div
+          initial={{ opacity: 0, y: 12 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.1 }}
+        >
+          <Card
+            className="rounded-2xl border-2 border-gray-100 shadow-sm"
+            bodyStyle={{ padding: 0 }}
+          >
+            {/* Game header */}
+            <div className="px-5 py-4 border-b border-gray-100 flex items-center justify-between flex-wrap gap-3">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-xl bg-amber-50 flex items-center justify-center">
+                  <PlayCircleOutlined className="text-xl text-amber-500" />
+                </div>
+                <div>
+                  <p className="font-bold text-gray-800">{game.gameTypeName}</p>
+                  <p className="text-xs text-amber-600 font-semibold flex items-center gap-1">
+                    <StarOutlined />+{game.coinPerSession} xu / phiên
+                  </p>
+                </div>
               </div>
+              {/* Difficulty badge */}
+              {game.resolvedDifficulty && (
+                <span
+                  className={`text-xs font-bold px-3 py-1 rounded-full border ${DIFFICULTY_CFG[game.resolvedDifficulty]?.badge ?? ""}`}
+                >
+                  Mặc định:{" "}
+                  {DIFFICULTY_CFG[game.resolvedDifficulty]?.label ??
+                    game.resolvedDifficulty}
+                </span>
+              )}
+            </div>
 
-              {/* Chi tiết cấu hình levels/presets */}
-              <div className="bg-gray-50 rounded-xl p-4 space-y-4">
-                <Text strong className="text-gray-400 text-xs uppercase">
-                  Cấu hình thử thách:
-                </Text>
-                {game.presets.map((p) =>
-                  p.items.map((item, i) => (
-                    <Row key={i} gutter={[16, 16]} className="text-center">
-                      <Col span={6}>
-                        <div className="bg-white p-2 rounded-lg border">
-                          <Text type="secondary" size="small" block>
-                            Mạng:
-                          </Text>
-                          <Text strong className="text-red-500">
-                            {item.lives} <HeartOutlined />
-                          </Text>
+            {/* Preset tabs */}
+            <div className="px-5 py-4">
+              {sortedPresets.length === 0 ? (
+                <Empty description="Chưa có cấu hình màn chơi" />
+              ) : (
+                <Tabs
+                  items={gameTabItems}
+                  size="middle"
+                  className="[&_.ant-tabs-nav]:mb-4 [&_.ant-tabs-tab]:font-medium [&_.ant-tabs-tab-active]:font-bold"
+                />
+              )}
+            </div>
+          </Card>
+        </motion.div>
+      )}
+
+      {/* ── Quiz section ── */}
+      {roundData.quizzes?.length > 0 && (
+        <motion.div
+          initial={{ opacity: 0, y: 12 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.18 }}
+        >
+          <Card
+            className="rounded-2xl border-2 border-gray-100 shadow-sm"
+            bodyStyle={{ padding: 0 }}
+          >
+            <div className="px-5 py-4 border-b border-gray-100 flex items-center gap-3">
+              <div className="w-10 h-10 rounded-xl bg-blue-50 flex items-center justify-center">
+                <BookOutlined className="text-xl text-blue-500" />
+              </div>
+              <div>
+                <p className="font-bold text-gray-800">Bài Quiz</p>
+                <p className="text-xs text-gray-400">
+                  {roundData.quizzes.length} quiz trong vòng này
+                </p>
+              </div>
+            </div>
+
+            <div className="p-4 space-y-3">
+              <motion.div variants={stagger} initial="hidden" animate="visible">
+                {roundData.quizzes.map((quiz, idx) => (
+                  <motion.div key={quiz.quizId ?? idx} variants={fadeUp}>
+                    <div
+                      className={`rounded-2xl border-2 p-4 flex items-center justify-between gap-4 transition-all hover:shadow-sm
+                      ${quiz.isRequired ? "border-blue-100 bg-blue-50/30 hover:border-blue-300" : "border-gray-100 bg-white hover:border-gray-300"}`}
+                    >
+                      <div className="flex items-center gap-3 flex-1 min-w-0">
+                        <div
+                          className={`w-9 h-9 rounded-xl flex items-center justify-center flex-shrink-0 text-sm font-bold
+                          ${quiz.isRequired ? "bg-blue-500 text-white" : "bg-gray-100 text-gray-500"}`}
+                        >
+                          {idx + 1}
                         </div>
-                      </Col>
-                      <Col span={6}>
-                        <div className="bg-white p-2 rounded-lg border">
-                          <Text type="secondary" size="small" block>
-                            Thời gian:
-                          </Text>
-                          <Text strong> {item.timeLimitSeconds}s</Text>
-                        </div>
-                      </Col>
-                      <Col span={6}>
-                        <div className="bg-white p-2 rounded-lg border">
-                          <Text type="secondary" size="small" block>
-                            Số vật phẩm:
-                          </Text>
-                          <Text strong> {item.itemCount}</Text>
-                        </div>
-                      </Col>
-                      <Col span={6}>
-                        <div className="bg-white p-2 rounded-lg border">
-                          <Text type="secondary" size="small" block>
-                            Điểm/câu
-                          </Text>
-                          <Text strong className="text-blue-500">
-                            +{item.scorePerCorrect}
-                          </Text>
-                        </div>
-                      </Col>
-                      <Col span={24}>
-                        <div className="flex gap-2 flex-wrap items-center">
-                          <Text className="text-xs text-gray-400">
-                            Loại rác xuất hiện:
-                          </Text>
-                          {item.wasteCategories.map((cat) => (
-                            <Tag
-                              key={cat}
-                              className="rounded-md border-none bg-gray-200 text-gray-700"
+                        <div className="flex-1 min-w-0">
+                          <p className="font-bold text-gray-800 text-sm truncate">
+                            {quiz.title}
+                          </p>
+                          <div className="flex items-center gap-2 mt-0.5 flex-wrap">
+                            {quiz.isRequired && (
+                              <span className="text-[11px] text-red-600 bg-red-50 px-2 py-0.5 rounded-full font-bold">
+                                Bắt buộc
+                              </span>
+                            )}
+                            <span
+                              className={`text-[11px] px-2 py-0.5 rounded-full font-semibold ${DIFFICULTY_CFG[quiz.difficulty]?.badge ?? "bg-gray-100 text-gray-500"}`}
                             >
-                              {WASTE_TYPE_LABEL[cat] || cat}
-                            </Tag>
-                          ))}
+                              {DIFFICULTY_CFG[quiz.difficulty]?.label ??
+                                quiz.difficulty}
+                            </span>
+                            <span className="text-[11px] text-gray-400 flex items-center gap-1">
+                              <TrophyOutlined />
+                              Max {quiz.maxAttempts} lần
+                            </span>
+                          </div>
                         </div>
-                      </Col>
-                    </Row>
-                  )),
-                )}
-              </div>
-            </Card>
-          ))}
-        </Col>
-
-        {/* CỘT PHẢI: DANH SÁCH QUIZ */}
-        <Col xs={24} lg={9} className="space-y-6">
-          <Title level={4} className="flex items-center gap-2">
-            <BookOutlined className="text-blue-500" /> Bài Quiz bắt buộc
-          </Title>
-
-          {roundData.quizzes.map((quiz, idx) => (
-            <Card
-              key={idx}
-              className={`rounded-2xl border-2 transition-all ${quiz.isRequired ? "border-blue-100" : ""}`}
-              bodyStyle={{ padding: "20px" }}
-            >
-              <div className="flex flex-col gap-3">
-                <div className="flex justify-between items-start">
-                  <Tag color={quiz.isRequired ? "red" : "default"}>
-                    {quiz.isRequired ? "Bắt buộc" : "Tự chọn"}
-                  </Tag>
-                  <Text type="secondary">Thứ tự: {quiz.displayOrder}</Text>
-                </div>
-
-                <Title level={5} style={{ margin: 0 }}>
-                  {quiz.title}
-                </Title>
-
-                <div className="flex items-center gap-4 text-gray-500 text-sm">
-                  <span>
-                    <TrophyOutlined /> Độ khó: {quiz.difficulty}
-                  </span>
-                  <span>
-                    <ClockCircleOutlined /> Lượt thử: {quiz.maxAttempts}
-                  </span>
-                </div>
-
-                <Button
-                  block
-                  className="rounded-xl border-blue-500 text-blue-500 hover:bg-blue-50 font-semibold mt-2"
-                  icon={<RightOutlined />}
-                  iconPosition="end"
-                  onClick={() =>
-                    navigate(
-                      `/student/campaign/${campaignId}/round/${roundId}/quiz/${quiz.quizId}`,
-                    )
-                  }
-                >
-                  Bắt đầu Quiz
-                </Button>
-              </div>
-            </Card>
-          ))}
-
-          {roundData.quizzes.length === 0 && (
-            <Empty description="Không có bài quiz nào" />
-          )}
-        </Col>
-      </Row>
+                      </div>
+                      <Button
+                        type={quiz.isRequired ? "primary" : "default"}
+                        size="small"
+                        className={`rounded-xl font-semibold flex-shrink-0 ${quiz.isRequired ? "bg-blue-500 border-blue-500 hover:bg-blue-600" : ""}`}
+                        icon={<RightOutlined />}
+                        iconPosition="end"
+                        onClick={() =>
+                          navigate(
+                            `/student/campaign/${campaignId}/round/${roundId}/quiz/${quiz.quizId}`,
+                          )
+                        }
+                      >
+                        Làm Quiz
+                      </Button>
+                    </div>
+                  </motion.div>
+                ))}
+              </motion.div>
+            </div>
+          </Card>
+        </motion.div>
+      )}
     </div>
   );
 }
-
-export default StudentRoundDetails;
