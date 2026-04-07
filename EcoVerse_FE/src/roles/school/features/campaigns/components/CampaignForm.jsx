@@ -10,6 +10,7 @@ import { ScrollArea } from '@/shared/components/ui/scroll-area';
 import { Calendar, Send, Users, UserPlus, Clock } from 'lucide-react';
 import { StudentSelectionDialog } from './StudentSelectionDialog';
 import { useStudents } from '@/roles/school/hooks';
+import { getLocalNow } from '@/utils/dateUtils';
 
 export function CampaignForm({
   mode,
@@ -25,7 +26,7 @@ export function CampaignForm({
   const { students: allStudents, isLoading: isStudentsLoading } = useStudents();
   const [studentSelectionClass, setStudentSelectionClass] = useState(null);
   
-  const today = new Date(new Date().getTime() - new Date().getTimezoneOffset() * 60000).toISOString().slice(0, 16);
+  const today = getLocalNow();
 
   const handleOpenStudentSelection = (cls, e) => {
     e.preventDefault();
