@@ -9,7 +9,7 @@ import { ScrollArea } from '@/shared/components/ui/scroll-area';
 import { toast } from 'sonner';
 import { useCampaigns } from '../../features/campaigns/hooks/useCampaigns';
 import { useCampaignForm } from '../../features/campaigns/hooks';
-import { CampaignStats, CampaignList, CampaignForm, CampaignDetail, StudentSelectionDialog, InvitationList, ConfirmDeleteDialog, ConfirmCancelDialog } from '../../features/campaigns/components';
+import { CampaignStats, CampaignList, CampaignForm, CampaignDetail, StudentSelectionDialog, InvitationList, ConfirmDeleteDialog, ConfirmCancelDialog, ExtendInvitingDialog } from '../../features/campaigns/components';
 import { AddGameModal } from '../../features/campaigns/components/AddGameModal';
 import { AddQuizModal } from '../../features/campaigns/components/AddQuizModal';
 import { GAME_TYPES } from '../../features/campaigns/types/campaign';
@@ -34,6 +34,7 @@ export default function SchoolCampaigns() {
     revertToDraft,
     activateCampaign,
     cancelCampaign,
+    extendInviting,
     fetchCampaignDetail,
     bindQuizzesToRound,
     getCampaigns
@@ -61,6 +62,8 @@ export default function SchoolCampaigns() {
   const [acceptInviteCampaign, setAcceptInviteCampaign] = useState(null);
   const [isCancelConfirmOpen, setIsCancelConfirmOpen] = useState(false);
   const [campaignToCancel, setCampaignToCancel] = useState(null);
+  const [isExtendDialogOpen, setIsExtendDialogOpen] = useState(false);
+  const [extendingCampaign, setExtendingCampaign] = useState(null);
   const [isAddStudentOpen, setIsAddStudentOpen] = useState(false);
   const [addStudentCampaign, setAddStudentCampaign] = useState(null);
   // New: Add Game / Add Quiz modals
@@ -108,7 +111,7 @@ export default function SchoolCampaigns() {
   const activeCampaigns = filteredCampaigns.filter(c => c.status === 'on_going');
   const activeSchoolCampaigns = activeCampaigns.filter(c => c.origin === 'school');
   const activePartnershipCampaigns = activeCampaigns.filter(c => c.origin === 'partnership');
-  const sendingInvitesCampaigns = filteredCampaigns.filter(c => c.status === 'inviting');
+  const sendingInvitesCampaigns = filteredCampaigns.filter(c => c.status === 'inviting' || c.status === 'EXTENDED');
   const sendingInvitesSchoolCampaigns = sendingInvitesCampaigns.filter(c => c.origin === 'school');
   const sendingInvitesPartnershipCampaigns = sendingInvitesCampaigns.filter(c => c.origin === 'partnership');
   const completedCampaigns = filteredCampaigns.filter(c => c.status === 'completed');
@@ -269,6 +272,33 @@ export default function SchoolCampaigns() {
       setCampaignToCancel(null);
     }
   };
+  const handleOpenExtendDialog = async (id) => {
+    setIsDetailLoading(true);
+    const detail = await fetchCampaignDetail(id);
+    if (detail) {
+      setExtendingCampaign(detail);
+      setIsExtendDialogOpen(true);
+    } else {
+      const campaign = allCampaigns.find(c => c.id === id);
+      if (campaign) {
+        setExtendingCampaign(campaign);
+        setIsExtendDialogOpen(true);
+      }
+    }
+    setIsDetailLoading(false);
+  };
+
+  const handleConfirmExtend = async (payload) => {
+    if (extendingCampaign) {
+      setIsDetailLoading(true);
+      const success = await extendInviting(extendingCampaign.id, payload);
+      if (success) {
+        setIsExtendDialogOpen(false);
+        setExtendingCampaign(null);
+      }
+      setIsDetailLoading(false);
+    }
+  };
 
   const handleOpenInviteDialog = (campaign) => {
     if (campaign.origin === 'partnership') {
@@ -389,6 +419,7 @@ export default function SchoolCampaigns() {
             onDelete={handleConfirmDelete}
             onActivate={activateCampaign}
             onCancel={handleOpenCancelConfirm}
+            onExtend={handleOpenExtendDialog}
             onAddGame={handleOpenAddGame}
             onAddQuiz={handleOpenAddQuiz}
           />
@@ -406,6 +437,7 @@ export default function SchoolCampaigns() {
             onDelete={handleConfirmDelete}
             onRevertToDraft={revertToDraft}
             onCancel={handleOpenCancelConfirm}
+            onExtend={handleOpenExtendDialog}
           />
         </TabsContent>
 
@@ -431,6 +463,7 @@ export default function SchoolCampaigns() {
                 onChangeStatus={changeStatus}
                 onDelete={handleConfirmDelete}
                 onCancel={handleOpenCancelConfirm}
+                onExtend={handleOpenExtendDialog}
               />
             </TabsContent>
 
@@ -689,6 +722,16 @@ export default function SchoolCampaigns() {
         onClose={() => setIsCancelConfirmOpen(false)}
         onConfirm={handleConfirmCancel}
         title={campaignToCancel?.name}
+      />
+
+      <ExtendInvitingDialog 
+        isOpen={isExtendDialogOpen}
+        onClose={() => setIsExtendDialogOpen(false)}
+        onConfirm={handleConfirmExtend}
+        campaign={extendingCampaign}
+        allStudents={allStudents}
+        availableClasses={availableClasses}
+        isLoading={isDetailLoading}
       />
     </div>
   );
