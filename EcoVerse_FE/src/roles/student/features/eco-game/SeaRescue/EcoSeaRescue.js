@@ -89,34 +89,45 @@ export default class EcoSeaRescue {
     audioLoader.load(
       "/assets/audio/music_game.mp3",
       (buffer) => {
+        if (!this.bgm) return;
         this.bgm.setBuffer(buffer);
         this.bgm.setLoop(true);
         this.bgm.setVolume(0.4);
-        // Resume context trước khi play — browser suspend AudioContext cho đến
-        // khi có user gesture (click/keydown). BGM cần resume ở đây.
-        this._resumeThenCall(() => {
-          if (!this._stopped && !this.bgm.isPlaying) this.bgm.play();
-        });
+        
+        // Start playing as soon as context is ready and user has interacted
+        const tryPlay = () => {
+          if (this._stopped || !this.bgm || this.bgm.isPlaying) return;
+          this._resumeThenCall(() => {
+            if (!this._stopped && this.bgm && !this.bgm.isPlaying) {
+              this.bgm.play();
+            }
+          });
+        };
+        
+        tryPlay();
+        // Also listen for first interaction if context was suspended
+        window.addEventListener("pointerdown", tryPlay, { once: true });
+        window.addEventListener("keydown", tryPlay, { once: true });
       },
       undefined,
-      () => console.warn("BGM not found"),
+      () => console.warn("BGM not found: /assets/audio/music_game.mp3"),
     );
 
     // ── SFX — dùng chung một helper để load ──
     this.collectSound = this._makeSfx(
       audioLoader,
       "/assets/audio/collect.mp3",
-      0.6,
+      0.75, // Increased volume for cleaner sound
     );
     this.warningSound = this._makeSfx(
       audioLoader,
       "/assets/audio/warning.mp3",
-      0.7,
+      0.85, // Increased volume for impact
     );
     this.gameOverSound = this._makeSfx(
       audioLoader,
       "/assets/audio/gameover.mp3",
-      0.8,
+      0.9,
     );
   }
 
@@ -246,6 +257,7 @@ export default class EcoSeaRescue {
     };
     window.addEventListener("keydown", this._keyDown);
     window.addEventListener("keyup", this._keyUp);
+    window.addEventListener("pointerdown", resumeAudio, { once: true });
   }
 
   // ─── update(delta) ────────────────────────────────────────────────────────
@@ -392,12 +404,11 @@ export default class EcoSeaRescue {
     this.scene.fog = null;
 
     const toRemove = [
-      this._player,
-      this._gameState?.storage,
-      this._gameState?.skybox,
-      this._gameState?.underwaterPlane,
       this._gameState?.oceanModel,
+      this._gameState?.depthDisc,
       this._gameState?.fallbackPlane,
+      this._gameState?.mapRing,
+      ...(this._gameState?.buoys ?? []),
       ...(this._gameState?.trash ?? []),
       ...(this._gameState?.obstacles ?? []),
       ...(this._gameState?.allZones ?? []),

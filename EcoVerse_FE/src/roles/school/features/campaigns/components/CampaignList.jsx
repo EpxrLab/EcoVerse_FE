@@ -70,6 +70,7 @@ export function CampaignList({
   onRevertToDraft,
   onActivate,
   onCancel,
+  onExtend,
   onAddGame,
   onAddQuiz,
 }) {
@@ -276,14 +277,25 @@ export function CampaignList({
                           <>
                             <DropdownMenuSeparator />
                             
-                            {campaign.status === 'inviting' ? (
-                              <DropdownMenuItem
-                                onClick={() => onCancel ? onCancel(campaign.id) : onDelete(campaign.id)}
-                                className="text-destructive focus:text-destructive focus:bg-destructive/10"
-                              >
-                                <XCircle className="w-4 h-4 mr-2" />
-                                Hủy chiến dịch
-                              </DropdownMenuItem>
+                            {(campaign.status === 'inviting' || campaign.status === 'EXTENDED') ? (
+                              <>
+                                {campaign.status === 'EXTENDED' && (
+                                  <DropdownMenuItem
+                                    onClick={() => onCancel ? onCancel(campaign.id) : onDelete(campaign.id)}
+                                    className="text-destructive focus:text-destructive focus:bg-destructive/10"
+                                  >
+                                    <XCircle className="w-4 h-4 mr-2" />
+                                    Hủy chiến dịch
+                                  </DropdownMenuItem>
+                                )}
+                                <DropdownMenuItem
+                                  onClick={() => onExtend && onExtend(campaign.id)}
+                                  className="text-eco-orange focus:text-eco-orange focus:bg-eco-orange/10"
+                                >
+                                  <Calendar className="w-4 h-4 mr-2" />
+                                  Gia hạn thêm
+                                </DropdownMenuItem>
+                              </>
                             ) : (
                               <DropdownMenuItem
                                 onClick={() => onDelete(campaign.id)}
