@@ -37,8 +37,8 @@ import { vi } from 'date-fns/locale';
 const statusConfig = {
   draft: { label: 'Nháp', color: 'bg-muted text-muted-foreground' },
   scheduled: { label: 'Đã lên lịch', color: 'bg-purple-500/15 text-purple-500' },
-  active: { label: 'Đang hoạt động', color: 'bg-eco-green/15 text-eco-green' },
-  inviting_students: { label: 'Đang mời', color: 'bg-indigo-50 text-indigo-600' },
+  on_going: { label: 'Đang hoạt động', color: 'bg-eco-green/15 text-eco-green' },
+  inviting: { label: 'Đang mời', color: 'bg-indigo-50 text-indigo-600' },
   completed: { label: 'Hoàn thành', color: 'bg-eco-blue/15 text-eco-blue' },
   cancelled: { label: 'Đã hủy', color: 'bg-destructive/15 text-destructive' },
 };
@@ -58,7 +58,7 @@ const invitationStatusConfig = {
   pending_parent_approval: { label: 'Chờ PH duyệt', color: 'bg-eco-orange/15 text-eco-orange', icon: Clock },
 };
 
-export function CampaignDetail({ campaign, gameTypes, isLoading, onAddQuiz }) {
+export function CampaignDetail({ campaign, gameTypes, isLoading }) {
   const [selectedClassFilter, setSelectedClassFilter] = useState('all');
 
   if (isLoading && !campaign?.rounds) {
@@ -71,7 +71,7 @@ export function CampaignDetail({ campaign, gameTypes, isLoading, onAddQuiz }) {
   }
 
   const isPendingInvitation = campaign.invitation_status === 'pending';
-  const isInvitingStudents = campaign.status === 'inviting_students';
+  const isInvitingStudents = campaign.status === 'inviting';
   const isCompleted = campaign.status === 'completed';
   
   const deadline = campaign.invitation_deadline || 
@@ -83,7 +83,7 @@ export function CampaignDetail({ campaign, gameTypes, isLoading, onAddQuiz }) {
   // Filter participants by class
   const filteredParticipants = selectedClassFilter === 'all'
     ? participants
-    : participants.filter(p => p.class_name === selectedClassFilter);
+    : participants.filter(p => `${p.grade}${p.class_name}` === selectedClassFilter);
 
   // Calculate stats from participants
   const participantStats = {
@@ -94,7 +94,7 @@ export function CampaignDetail({ campaign, gameTypes, isLoading, onAddQuiz }) {
   };
 
   // Get unique classes
-  const uniqueClasses = Array.from(new Set(participants.map(p => p.class_name))).filter(Boolean);
+  const uniqueClasses = Array.from(new Set(participants.map(p => `${p.grade}${p.class_name}`))).filter(Boolean);
 
   return (
     <div className="space-y-6 py-4">
@@ -131,7 +131,7 @@ export function CampaignDetail({ campaign, gameTypes, isLoading, onAddQuiz }) {
       </div>
 
       {/* Description */}
-      {/* Description - Hide for inviting_students phase */}
+      {/* Description - Hide for inviting phase */}
       {campaign.description && !isInvitingStudents && (
         <p className="text-muted-foreground">{campaign.description}</p>
       )}
@@ -154,7 +154,7 @@ export function CampaignDetail({ campaign, gameTypes, isLoading, onAddQuiz }) {
         </div>
       )}
 
-      {/* Rewards Section - Hide for inviting_students phase */}
+      {/* Rewards Section - Hide for inviting phase */}
       {campaign.rewards && campaign.rewards.length > 0 && !isInvitingStudents && (
         <div>
           <h4 className="font-semibold mb-3 flex items-center gap-2">
@@ -232,22 +232,6 @@ export function CampaignDetail({ campaign, gameTypes, isLoading, onAddQuiz }) {
                     <span className="font-bold">{round.name}</span>
                   </div>
                   <div className="flex items-center gap-2">
-                    <Badge variant="outline" className={
-                      round.status === 'UPCOMING' ? 'bg-blue-50 text-blue-600' :
-                      round.status === 'ONGOING' ? 'bg-green-50 text-green-600' :
-                      'bg-slate-50 text-slate-600'
-                    }>
-                      {round.status}
-                    </Badge>
-                    <Button 
-                      size="sm" 
-                      variant="ghost" 
-                      className="h-7 px-2 text-eco-blue hover:text-eco-blue hover:bg-eco-blue/10 text-xs"
-                      onClick={() => onAddQuiz(campaign, round.id)}
-                    >
-                      <Plus className="w-3.5 h-3.5 mr-1" />
-                      Gán Quiz
-                    </Button>
                   </div>
                 </div>
                 <CardContent className="p-4 space-y-4">

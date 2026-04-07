@@ -55,6 +55,10 @@ export const campaignService = {
     return axios.put(`/school/campaigns/${id}/set-draft`);
   },
 
+  cancelCampaign: (id) => {
+    return axios.put(`/school/campaigns/${id}/cancel`);
+  },
+  
   deleteCampaign: (id) => {
     return axios.delete(`/school/campaigns/${id}`);
   }

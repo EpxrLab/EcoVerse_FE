@@ -9,7 +9,7 @@ import { ScrollArea } from '@/shared/components/ui/scroll-area';
 import { toast } from 'sonner';
 import { useCampaigns } from '../../features/campaigns/hooks/useCampaigns';
 import { useCampaignForm } from '../../features/campaigns/hooks';
-import { CampaignStats, CampaignList, CampaignForm, CampaignDetail, StudentSelectionDialog, InvitationList, ConfirmDeleteDialog } from '../../features/campaigns/components';
+import { CampaignStats, CampaignList, CampaignForm, CampaignDetail, StudentSelectionDialog, InvitationList, ConfirmDeleteDialog, ConfirmCancelDialog } from '../../features/campaigns/components';
 import { AddGameModal } from '../../features/campaigns/components/AddGameModal';
 import { AddQuizModal } from '../../features/campaigns/components/AddQuizModal';
 import { GAME_TYPES } from '../../features/campaigns/types/campaign';
@@ -33,6 +33,7 @@ export default function SchoolCampaigns() {
     addStudentsToCampaign,
     revertToDraft,
     activateCampaign,
+    cancelCampaign,
     fetchCampaignDetail,
     bindQuizzesToRound,
     getCampaigns
@@ -58,6 +59,8 @@ export default function SchoolCampaigns() {
   const [editingCampaign, setEditingCampaign] = useState(null);
   const [isAcceptInviteOpen, setIsAcceptInviteOpen] = useState(false);
   const [acceptInviteCampaign, setAcceptInviteCampaign] = useState(null);
+  const [isCancelConfirmOpen, setIsCancelConfirmOpen] = useState(false);
+  const [campaignToCancel, setCampaignToCancel] = useState(null);
   const [isAddStudentOpen, setIsAddStudentOpen] = useState(false);
   const [addStudentCampaign, setAddStudentCampaign] = useState(null);
   // New: Add Game / Add Quiz modals
@@ -102,10 +105,10 @@ export default function SchoolCampaigns() {
 
   const draftCampaigns = filteredCampaigns.filter(c => c.status === 'draft');
   const scheduledCampaigns = filteredCampaigns.filter(c => c.status === 'scheduled');
-  const activeCampaigns = filteredCampaigns.filter(c => c.status === 'active');
+  const activeCampaigns = filteredCampaigns.filter(c => c.status === 'on_going');
   const activeSchoolCampaigns = activeCampaigns.filter(c => c.origin === 'school');
   const activePartnershipCampaigns = activeCampaigns.filter(c => c.origin === 'partnership');
-  const sendingInvitesCampaigns = filteredCampaigns.filter(c => c.status === 'inviting_students');
+  const sendingInvitesCampaigns = filteredCampaigns.filter(c => c.status === 'inviting');
   const sendingInvitesSchoolCampaigns = sendingInvitesCampaigns.filter(c => c.origin === 'school');
   const sendingInvitesPartnershipCampaigns = sendingInvitesCampaigns.filter(c => c.origin === 'partnership');
   const completedCampaigns = filteredCampaigns.filter(c => c.status === 'completed');
@@ -251,6 +254,22 @@ export default function SchoolCampaigns() {
     }
   };
 
+  const handleOpenCancelConfirm = (id) => {
+    const campaign = allCampaigns.find(c => c.id === id);
+    if (campaign) {
+      setCampaignToCancel(campaign);
+      setIsCancelConfirmOpen(true);
+    }
+  };
+
+  const handleConfirmCancel = async () => {
+    if (campaignToCancel) {
+      await cancelCampaign(campaignToCancel.id);
+      setIsCancelConfirmOpen(false);
+      setCampaignToCancel(null);
+    }
+  };
+
   const handleOpenInviteDialog = (campaign) => {
     if (campaign.origin === 'partnership') {
       setAddStudentCampaign(campaign);
@@ -369,6 +388,7 @@ export default function SchoolCampaigns() {
             onChangeStatus={changeStatus}
             onDelete={handleConfirmDelete}
             onActivate={activateCampaign}
+            onCancel={handleOpenCancelConfirm}
             onAddGame={handleOpenAddGame}
             onAddQuiz={handleOpenAddQuiz}
           />
@@ -385,6 +405,7 @@ export default function SchoolCampaigns() {
             onChangeStatus={changeStatus}
             onDelete={handleConfirmDelete}
             onRevertToDraft={revertToDraft}
+            onCancel={handleOpenCancelConfirm}
           />
         </TabsContent>
 
@@ -409,6 +430,7 @@ export default function SchoolCampaigns() {
                 onInvite={handleOpenInviteDialog}
                 onChangeStatus={changeStatus}
                 onDelete={handleConfirmDelete}
+                onCancel={handleOpenCancelConfirm}
               />
             </TabsContent>
 
@@ -518,6 +540,7 @@ export default function SchoolCampaigns() {
             onInvite={handleOpenInviteDialog}
             onChangeStatus={changeStatus}
             onDelete={handleConfirmDelete}
+            onCancel={handleOpenCancelConfirm}
           />
         </TabsContent>
 
@@ -618,7 +641,6 @@ export default function SchoolCampaigns() {
                 campaign={selectedCampaign} 
                 gameTypes={GAME_TYPES} 
                 isLoading={isDetailLoading} 
-                onAddQuiz={handleOpenAddQuiz}
               />
             )}
           </ScrollArea>
@@ -660,6 +682,13 @@ export default function SchoolCampaigns() {
         onClose={() => setIsDeleteConfirmOpen(false)}
         onConfirm={executeDelete}
         title={campaignToDelete?.name}
+      />
+
+      <ConfirmCancelDialog
+        isOpen={isCancelConfirmOpen}
+        onClose={() => setIsCancelConfirmOpen(false)}
+        onConfirm={handleConfirmCancel}
+        title={campaignToCancel?.name}
       />
     </div>
   );
