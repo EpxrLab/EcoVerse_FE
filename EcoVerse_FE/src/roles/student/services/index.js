@@ -77,7 +77,7 @@ const getCurrentRoundContent = async (campaignId) => {
 const startQuiz = async (campaignId, roundId, quizId) => {
   try {
     const res = await axios.post(
-      `/student/quiz/campaign/${campaignId}/rounds/${roundId}/quizzes/${quizId}/start`,
+      `/student/quiz/campaigns/${campaignId}/rounds/${roundId}/quizzes/${quizId}/start`,
     );
     return res.data;
   } catch (error) {
@@ -97,6 +97,17 @@ const submitQuiz = async (attemptId, payload) => {
   }
 };
 
+const getAttemptResult = async (attemptId) => {
+  try {
+    const res = await axios.get(
+      `/student/quiz/quiz-attempts/${attemptId}/result`,
+    );
+    return res.data;
+  } catch (error) {
+    console.log(error);
+  }
+};
+
 export {
   getAuthenticatedStudentProfile,
   getAllRewards,
@@ -108,4 +119,5 @@ export {
   getCurrentRoundContent,
   startQuiz,
   submitQuiz,
+  getAttemptResult,
 };

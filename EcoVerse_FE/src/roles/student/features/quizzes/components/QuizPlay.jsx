@@ -24,6 +24,9 @@ import {
   Hash,
 } from "lucide-react";
 
+import { submitQuiz, getAttemptResult } from "../../../services";
+import toast from "react-hot-toast";
+
 const { Title, Text } = Typography;
 
 function ResultModal({ result, onClose }) {
@@ -31,7 +34,6 @@ function ResultModal({ result, onClose }) {
 
   const passed = result.isPassed;
 
-  // Format thời gian làm bài mm:ss
   const fmtTime = (sec) => {
     if (!sec && sec !== 0) return "—";
     const m = Math.floor(sec / 60);
@@ -81,7 +83,7 @@ function ResultModal({ result, onClose }) {
 
   return (
     <Modal
-      open={!!result}
+      open
       onCancel={onClose}
       footer={null}
       centered
@@ -224,16 +226,48 @@ function ResultModal({ result, onClose }) {
   );
 }
 
-export default function QuizPlay({ quiz, onFinish, onCancel }) {
+export default function QuizPlay({ quiz: _quiz, onFinish, onCancel }) {
+  const quiz = useMemo(() => {
+    if (!_quiz) return _quiz;
+    const questions = (_quiz?.questions ?? []).map((q) => ({
+      id: q.questionId ?? q.id,
+      content: q.questionText ?? q.content,
+      imageUrl: q.questionImagePresignedUrl ?? q.questionImageUrl ?? null,
+      options: (q.answers ?? q.options ?? []).map((a) => ({
+        id: a.answerId ?? a.id,
+        text: a.answerText ?? a.text,
+      })),
+      _raw: q,
+    }));
+
+    const totalSeconds =
+      (_quiz?.timePerQuestion ?? 0) *
+      (_quiz?.questionCount ?? questions.length);
+    const timeLimitMin =
+      totalSeconds > 0
+        ? Math.max(1, Math.ceil(totalSeconds / 60))
+        : (_quiz?.timeLimit ?? 10);
+
+    return {
+      ..._quiz,
+      questions,
+      timeLimit: timeLimitMin,
+      passScorePercentage: _quiz?.passScorePercentage ?? 80,
+      coinOnPass: _quiz?.coinOnPass ?? 0,
+      title: _quiz?.title ?? "Quiz",
+    };
+  }, [_quiz]);
+
+  const [attemptId, setAttemptId] = useState("");
   const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
   const [answers, setAnswers] = useState([]);
-  const [timeLeft, setTimeLeft] = useState(quiz.timeLimit * 60);
+  const [timeLeft, setTimeLeft] = useState(() => (quiz?.timeLimit ?? 10) * 60);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [showResult, setShowResult] = useState(false);
   const [quizResult, setQuizResult] = useState(null);
   const [isSidebarOpen, setIsSidebarOpen] = useState(true);
 
-  const questions = useMemo(() => quiz.questions || [], [quiz.questions]);
+  const questions = useMemo(() => quiz?.questions || [], [quiz?.questions]);
   const currentQuestion = questions[currentQuestionIndex];
   const currentAnswer = answers.find(
     (a) => a.questionId === currentQuestion?.id,
@@ -247,12 +281,16 @@ export default function QuizPlay({ quiz, onFinish, onCancel }) {
     return () => clearInterval(timer);
   }, [timeLeft, showResult]);
 
-  // ── KHÔNG được thay đổi handleSelectAnswer, handleClearAnswer, handleFinish ──
+  useEffect(() => {
+    if (_quiz?.attemptId) {
+      setAttemptId(_quiz.attemptId);
+    }
+  }, [_quiz]);
 
   const handleSelectAnswer = (selectedAnswerId) => {
     setAnswers((prev) => {
       const existingIndex = prev.findIndex(
-        (a) => a.questionId === currentQuestion.id,
+        (a) => a.questionId === currentQuestion?.id,
       );
       if (existingIndex > -1) {
         const newAnswers = [...prev];
@@ -262,45 +300,47 @@ export default function QuizPlay({ quiz, onFinish, onCancel }) {
         };
         return newAnswers;
       }
-      return [...prev, { questionId: currentQuestion.id, selectedAnswerId }];
+      return [...prev, { questionId: currentQuestion?.id, selectedAnswerId }];
     });
   };
 
   const handleClearAnswer = () => {
     setAnswers((prev) =>
-      prev.filter((a) => a.questionId !== currentQuestion.id),
+      prev.filter((a) => a.questionId !== currentQuestion?.id),
     );
   };
 
-  const handleFinish = () => {
+  const handleFinish = async () => {
     setIsSubmitting(true);
 
-    // 3. Payload format theo yêu cầu của bạn
     const finalPayload = { answers };
     console.log("Final Payload:", finalPayload);
 
-    setTimeout(() => {
-      const totalQuestions = questions.length;
-      const correctCount = answers.length;
-      const scorePerc = Math.round((correctCount / totalQuestions) * 100);
-      const isPassed = scorePerc >= quiz.passScorePercentage;
+    try {
+      const res = await submitQuiz(attemptId, finalPayload);
+      const resultRes = await getAttemptResult(attemptId);
 
-      setQuizResult({
-        score: scorePerc,
-        scorePercentage: scorePerc,
-        coinsEarned: isPassed ? quiz.coinOnPass : 0,
-        isPassed,
-        correctAnswers: correctCount,
-        totalQuestions: totalQuestions,
-        timeTakenSeconds: quiz.timeLimit * 60 - timeLeft,
-      });
+      if (res) {
+        toast.success("Nộp bài làm thành công!");
+      } else {
+        toast.error("Nộp bài làm thất bại!");
+      }
+
+      if (resultRes && resultRes.data) {
+        setQuizResult(resultRes.data);
+      } else {
+        setQuizResult(resultRes);
+      }
       setShowResult(true);
+    } catch (error) {
+      console.log(error);
+    } finally {
       setIsSubmitting(false);
-    }, 1200);
+    }
   };
 
   // ── Timer color ──
-  const timerRatio = timeLeft / (quiz.timeLimit * 60);
+  const timerRatio = timeLeft / ((quiz?.timeLimit ?? 10) * 60);
   const timerColor =
     timerRatio > 0.5
       ? "text-slate-700"
@@ -308,21 +348,21 @@ export default function QuizPlay({ quiz, onFinish, onCancel }) {
         ? "text-amber-500"
         : "text-red-500 animate-pulse";
 
-  const beShapedResult = useMemo(() => {
-    if (!quizResult) return null;
-    return {
-      attemptId: quizResult.attemptId ?? null,
-      correctAnswers: quizResult.correctAnswers ?? 0,
-      totalQuestions: quizResult.totalQuestions ?? questions.length,
-      scorePercentage: quizResult.scorePercentage ?? quizResult.score ?? 0,
-      timeTakenSeconds: quizResult.timeTakenSeconds ?? 0,
-      isPassed: quizResult.isPassed ?? false,
-      coinsEarned: quizResult.coinsEarned ?? 0,
-      bestScorePercentage: quizResult.bestScorePercentage ?? null,
-      attemptsUsed: quizResult.attemptsUsed ?? null,
-      maxAttempts: quizResult.maxAttempts ?? null,
-    };
-  }, [quizResult, questions.length]);
+  const beShapedResult = quizResult
+    ? {
+        attemptId: quizResult.attemptId ?? null,
+        attemptNumber: quizResult.attemptNumber ?? null,
+        correctAnswers: quizResult.correctAnswers ?? 0,
+        totalQuestions: quizResult.totalQuestions ?? questions.length,
+        scorePercentage: quizResult.scorePercentage ?? quizResult.score ?? 0,
+        timeTakenSeconds: quizResult.timeTakenSeconds ?? null,
+        isPassed: quizResult.isPassed ?? false,
+        coinsEarned: quizResult.coinsEarned ?? quizResult.coins ?? 0,
+        bestScorePercentage: quizResult.bestScorePercentage ?? null,
+        attemptsUsed: quizResult.attemptsUsed ?? null,
+        maxAttempts: quizResult.maxAttempts ?? null,
+      }
+    : null;
 
   return (
     <>
@@ -336,7 +376,6 @@ export default function QuizPlay({ quiz, onFinish, onCancel }) {
       )}
 
       <div className="fixed inset-0 z-[10] bg-[#f8f9fa] flex flex-col overflow-hidden font-sans text-slate-900">
-        {/* Header */}
         <header className="h-14 border-b border-slate-200 px-4 flex items-center justify-between bg-white z-20 shadow-sm">
           <div className="flex items-center gap-3">
             <Button
@@ -347,7 +386,7 @@ export default function QuizPlay({ quiz, onFinish, onCancel }) {
             />
             <Divider type="vertical" className="h-6" />
             <Text className="font-semibold text-slate-700 truncate max-w-[300px] text-sm">
-              {quiz.title}
+              {quiz?.title}
             </Text>
           </div>
           <div className="flex items-center gap-4">
@@ -460,7 +499,7 @@ export default function QuizPlay({ quiz, onFinish, onCancel }) {
                   transition={{ duration: 0.22 }}
                 >
                   <h2 className="text-xl font-bold text-slate-800 leading-relaxed mb-8">
-                    {currentQuestion.content}
+                    {currentQuestion?.content}
                   </h2>
 
                   {/* Options */}
@@ -470,7 +509,7 @@ export default function QuizPlay({ quiz, onFinish, onCancel }) {
                     className="w-full"
                   >
                     <div className="space-y-3">
-                      {currentQuestion.options.map((option, idx) => {
+                      {currentQuestion?.options.map((option, idx) => {
                         const selected =
                           currentAnswer?.selectedAnswerId === option.id;
                         return (
@@ -478,33 +517,25 @@ export default function QuizPlay({ quiz, onFinish, onCancel }) {
                             key={option.id}
                             value={option.id}
                             className={`!h-auto !py-3.5 !px-5 !rounded-xl !border-2 !flex !items-center !w-full !transition-all
-          ${selected ? "!border-indigo-500 !bg-indigo-50/40" : "!border-slate-200 hover:!border-slate-300 !bg-white"}`}
+                              ${selected ? "!border-indigo-500 !bg-indigo-50/40" : "!border-slate-200 hover:!border-slate-300 !bg-white"}`}
                           >
                             <div
                               className={`w-8 h-8 rounded-full border-2 flex items-center justify-center mr-4 text-xs font-bold flex-shrink-0 transition-all
-          ${selected ? "bg-indigo-600 border-indigo-600 text-white" : "bg-white border-slate-300 text-slate-400"}`}
+                              ${selected ? "bg-indigo-600 border-indigo-600 text-white" : "bg-white border-slate-300 text-slate-400"}`}
                             >
                               {String.fromCharCode(65 + idx)}
                             </div>
                             <span
-                              className={`text-sm font-medium flex-1 pr-4 leading-relaxed ${selected ? "text-indigo-700" : "text-slate-700"}`}
+                              className={`text-sm font-medium ${selected ? "text-indigo-700" : "text-slate-700"}`}
                             >
                               {option.text}
                             </span>
-                            <div className="w-5 h-5 flex items-center justify-center flex-shrink-0">
-                              {selected && (
-                                <motion.div
-                                  initial={{ scale: 0.5, opacity: 0 }}
-                                  animate={{ scale: 1, opacity: 1 }}
-                                  transition={{ duration: 0.2 }}
-                                >
-                                  <CheckCircle2
-                                    size={20}
-                                    className="text-indigo-500"
-                                  />
-                                </motion.div>
-                              )}
-                            </div>
+                            {selected && (
+                              <CheckCircle2
+                                size={18}
+                                className="text-indigo-500 ml-auto flex-shrink-0"
+                              />
+                            )}
                           </Radio.Button>
                         );
                       })}
