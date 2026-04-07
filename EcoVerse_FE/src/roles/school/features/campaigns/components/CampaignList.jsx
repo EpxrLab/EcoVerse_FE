@@ -51,8 +51,8 @@ import { cn } from '@/shared/lib/utils';
 const statusConfig = {
   draft: { label: 'Nháp', color: 'bg-muted text-muted-foreground', icon: Edit },
   scheduled: { label: 'Đã lên lịch', color: 'bg-purple-500/15 text-purple-500', icon: Clock },
-  active: { label: 'Đang hoạt động', color: 'bg-eco-green/15 text-eco-green', icon: Play },
-  inviting_students: { label: 'Đang mời', color: 'bg-indigo-50 text-indigo-600', icon: Send },
+  on_going: { label: 'Đang hoạt động', color: 'bg-eco-green/15 text-eco-green', icon: Play },
+  inviting: { label: 'Đang mời', color: 'bg-indigo-50 text-indigo-600', icon: Send },
   completed: { label: 'Hoàn thành', color: 'bg-eco-blue/15 text-eco-blue', icon: CheckCircle2 },
   cancelled: { label: 'Đã hủy', color: 'bg-destructive/15 text-destructive', icon: XCircle },
 };
@@ -69,6 +69,7 @@ export function CampaignList({
   onDelete,
   onRevertToDraft,
   onActivate,
+  onCancel,
   onAddGame,
   onAddQuiz,
 }) {
@@ -259,40 +260,39 @@ export function CampaignList({
                                 Thêm Quiz
                               </DropdownMenuItem>
                             )}
-                            <DropdownMenuItem onClick={() => onActivate ? onActivate(campaign.id) : onChangeStatus(campaign.id, 'active')}>
+                            <DropdownMenuItem onClick={() => onActivate ? onActivate(campaign.id) : onChangeStatus(campaign.id, 'on_going')}>
                               <Play className="w-4 h-4 mr-2" />
                               Kích hoạt
                             </DropdownMenuItem>
                           </>
                         )}
-                        {campaign.status === 'active' && (
+                        {campaign.status === 'on_going' && (
                           <>
-                            {campaign.origin !== 'partnership' && (
-                              <>
-                                <DropdownMenuItem onClick={() => onChangeStatus(campaign.id, 'completed')}>
-                                  <CheckCircle2 className="w-4 h-4 mr-2" />
-                                  Hoàn thành
-                                </DropdownMenuItem>
-                                <DropdownMenuItem onClick={() => onChangeStatus(campaign.id, 'cancelled')}>
-                                  <XCircle className="w-4 h-4 mr-2" />
-                                  Hủy chiến dịch
-                                </DropdownMenuItem>
-                              </>
-                            )}
+                            {/* Actions removed as requested */}
                           </>
                         )}
                         
-                        {campaign.origin !== 'partnership' && campaign.status !== 'scheduled' && (
+                        {campaign.origin !== 'partnership' && campaign.status !== 'scheduled' && campaign.status !== 'on_going' && (
                           <>
                             <DropdownMenuSeparator />
                             
-                            <DropdownMenuItem
-                              onClick={() => onDelete(campaign.id)}
-                              className="text-destructive focus:text-destructive focus:bg-destructive/10"
-                            >
-                              <Trash2 className="w-4 h-4 mr-2" />
-                              Xóa
-                            </DropdownMenuItem>
+                            {campaign.status === 'inviting' ? (
+                              <DropdownMenuItem
+                                onClick={() => onCancel ? onCancel(campaign.id) : onDelete(campaign.id)}
+                                className="text-destructive focus:text-destructive focus:bg-destructive/10"
+                              >
+                                <XCircle className="w-4 h-4 mr-2" />
+                                Hủy chiến dịch
+                              </DropdownMenuItem>
+                            ) : (
+                              <DropdownMenuItem
+                                onClick={() => onDelete(campaign.id)}
+                                className="text-destructive focus:text-destructive focus:bg-destructive/10"
+                              >
+                                <Trash2 className="w-4 h-4 mr-2" />
+                                Xóa
+                              </DropdownMenuItem>
+                            )}
                           </>
                         )}
                       </DropdownMenuContent>

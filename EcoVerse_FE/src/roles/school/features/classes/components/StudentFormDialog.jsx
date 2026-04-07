@@ -10,6 +10,7 @@ import {
   DialogTitle,
   DialogFooter,
 } from "@/shared/components/ui/dialog";
+import { toLocalISO } from '@/utils/dateUtils';
 import {
   Select,
   SelectContent,
@@ -173,7 +174,7 @@ export function StudentFormDialog({
                 <Input
                   type="date"
                   value={form.date_of_birth}
-                  max={new Date().toISOString().split('T')[0]}
+                  max={toLocalISO(new Date()).split('T')[0]}
                   onChange={(e) => onFormChange({ ...form, date_of_birth: e.target.value })}
                   className={errors.date_of_birth ? "border-destructive bg-destructive/5" : "bg-background"}
                 />

@@ -4,6 +4,7 @@ import { defaultQuizzesData } from '../../../data/quiz.data';
 import { toast } from '@/shared/hooks/use-toast';
 import { campaignService } from '@/roles/school/services';
 import { quizzesService } from '../../quizzes/services/quizzes.service';
+import { toLocalISO, toUTCISO } from '@/utils/dateUtils';
 
 
 export function useCampaigns() {
@@ -68,10 +69,10 @@ export function useCampaigns() {
         name: c.campaignName || 'Chưa đặt tên',
         code: c.campaignCode || '',
         description: c.description || '',
-        start_date: c.startDate?.slice(0, 16) || c.start_date || '',
-        end_date: c.endDate?.slice(0, 16) || c.end_date || '',
-        invitation_send_date: c.invitationDate?.slice(0, 16) || c.invitation_send_date || '',
-        invitation_deadline: c.invitationDeadline?.slice(0, 16) || c.invitation_deadline || '',
+        start_date: toLocalISO(c.startDate || c.start_date),
+        end_date: toLocalISO(c.endDate || c.end_date),
+        invitation_send_date: toLocalISO(c.invitationDate || c.invitation_send_date),
+        invitation_deadline: toLocalISO(c.invitationDeadline || c.invitation_deadline),
         student_ids: c.studentIds || c.student_ids || c.participants?.map(p => p.studentId) || [],
         status: (c.status || 'draft').toLowerCase(),
         origin: 'school',
@@ -91,9 +92,9 @@ export function useCampaigns() {
     const list = allFormattedCampaigns || [];
     return {
       totalCampaigns: list.length,
-      activeCampaigns: list.filter(c => c.status === 'active').length,
+      activeCampaigns: list.filter(c => c.status === 'on_going').length,
       scheduledCampaigns: list.filter(c => c.status === 'scheduled').length,
-      invitingCampaigns: list.filter(c => c.status === 'inviting_students').length,
+      invitingCampaigns: list.filter(c => c.status === 'inviting').length,
       completedCampaigns: list.filter(c => c.status === 'completed').length,
       cancelledCampaigns: list.filter(c => c.status === 'cancelled').length,
       pendingInvitations: list.filter(c => c.origin === 'partnership' && c.invitation_status === 'pending').length,
@@ -128,10 +129,10 @@ export function useCampaigns() {
     const payload = {
       campaignName: data.name,
       description: data.description || "",
-      startDate: data.start_date ? new Date(data.start_date).toISOString() : null,
-      endDate: data.end_date ? new Date(data.end_date).toISOString() : null,
-      invitationDate: data.invitation_send_date ? new Date(data.invitation_send_date).toISOString() : null,
-      invitationDeadline: finalDeadline,
+      startDate: toUTCISO(data.start_date),
+      endDate: toUTCISO(data.end_date),
+      invitationDate: toUTCISO(data.invitation_send_date),
+      invitationDeadline: toUTCISO(finalDeadline),
       topRankingCount: 0,
       bannerImageUrl: "",
       studentIds: data.student_ids || []
@@ -146,7 +147,7 @@ export function useCampaigns() {
           description: data.description || '',
           start_date: data.start_date || '',
           end_date: data.end_date || '',
-          invitation_deadline: finalDeadline?.slice(0, 16) || '',
+          invitation_deadline: toLocalISO(finalDeadline),
           status: 'draft',
           origin: 'school',
         };
@@ -182,10 +183,10 @@ export function useCampaigns() {
       const payload = {
         campaignName: data.name || existing.campaignName,
         description: data.description !== undefined ? data.description : (existing.description || ""),
-        startDate: data.start_date ? new Date(data.start_date).toISOString() : (existing.startDate ? new Date(existing.startDate).toISOString() : null),
-        endDate: data.end_date ? new Date(data.end_date).toISOString() : (existing.endDate ? new Date(existing.endDate).toISOString() : null),
-        invitationDate: data.invitation_send_date ? new Date(data.invitation_send_date).toISOString() : (existing.invitationDate ? new Date(existing.invitationDate).toISOString() : null),
-        invitationDeadline: data.invitation_deadline ? new Date(data.invitation_deadline).toISOString() : (existing.invitationDeadline ? new Date(existing.invitationDeadline).toISOString() : null),
+        startDate: toUTCISO(data.start_date || existing.startDate),
+        endDate: toUTCISO(data.end_date || existing.endDate),
+        invitationDate: toUTCISO(data.invitation_send_date || existing.invitationDate),
+        invitationDeadline: toUTCISO(data.invitation_deadline || existing.invitationDeadline),
         topRankingCount: data.top_ranking_count || existing.topRankingCount || 0,
         bannerImageUrl: data.banner_image_url || existing.bannerImageUrl || "",
         studentIds: data.student_ids || existing.studentIds || []
@@ -241,8 +242,8 @@ export function useCampaigns() {
     const statusLabels = {
       draft: 'Nháp',
       scheduled: 'Đã lên lịch',
-      active: 'Đang hoạt động',
-      inviting_students: 'Đang mời',
+      on_going: 'Đang hoạt động',
+      inviting: 'Đang mời',
       completed: 'Hoàn thành',
       cancelled: 'Đã hủy',
     };
@@ -257,7 +258,7 @@ export function useCampaigns() {
       if (c.id === id) {
         return {
           ...c,
-          status: 'inviting_students',
+          status: 'inviting',
           invitation_status: 'accepted',
           participating_students: selectedStudentIds,
           invitation_send_date: new Date().toISOString(),
@@ -341,6 +342,23 @@ export function useCampaigns() {
       toast({
         title: "Lỗi",
         description: "Không thể kích hoạt chiến dịch. Vui lòng thử lại sau.",
+        variant: "destructive",
+      });
+    }
+  };
+  const cancelCampaign = async (id) => {
+    try {
+      await campaignService.cancelCampaign(id);
+      toast({
+        title: "Đã hủy chiến dịch",
+        description: "Chiến dịch đã được chuyển sang trạng thái đã hủy",
+      });
+      fetchCampaigns();
+    } catch (error) {
+      console.error('Failed to cancel campaign:', error);
+      toast({
+        title: "Lỗi",
+        description: "Không thể hủy chiến dịch. Vui lòng thử lại sau.",
         variant: "destructive",
       });
     }
@@ -453,6 +471,7 @@ export function useCampaigns() {
     addStudentsToCampaign,
     revertToDraft,
     activateCampaign,
+    cancelCampaign,
     fetchCampaignDetail,
     bindQuizzesToRound,
     getCampaigns: fetchCampaigns,
