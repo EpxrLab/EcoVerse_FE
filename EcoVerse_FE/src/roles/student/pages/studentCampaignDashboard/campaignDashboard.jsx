@@ -1,4 +1,4 @@
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router";
 import { Card, Button, Tag, Progress } from "antd";
 import {
@@ -18,6 +18,7 @@ import {
 } from "@ant-design/icons";
 import { motion } from "framer-motion";
 import { useCampaignContext } from "../../context";
+import { getCampaignDetails } from "../../services";
 
 // ─── Constants ────────────────────────────────────────────────────────────────
 
@@ -259,10 +260,21 @@ function RoundCard({ round, campaignId, navigate }) {
 export default function CampaignDashboard() {
   const navigate = useNavigate();
   const { campaignId } = useParams();
-  const { selectedCampaign, fetchCampaignDetails } = useCampaignContext();
+  const [selectedCampaign, setSelectedCampaign] = useState(null);
+
+  const fetchCampaignDetails = async (id) => {
+    try {
+      const res = await getCampaignDetails(id);
+      setSelectedCampaign(res.data);
+    } catch (error) {
+      console.log(error);
+    }
+  };
 
   useEffect(() => {
-    if (campaignId) fetchCampaignDetails(campaignId);
+    if (campaignId) {
+      fetchCampaignDetails(campaignId);
+    }
   }, [campaignId]);
 
   if (!selectedCampaign) {

@@ -63,6 +63,17 @@ const getCampaignDetails = async (id) => {
   }
 };
 
+const getCurrentRoundContent = async (campaignId) => {
+  try {
+    const res = await axios.get(
+      `/student/campaigns/${campaignId}/current-round-content`,
+    );
+    return res.data;
+  } catch (error) {
+    console.log(error);
+  }
+};
+
 const startQuiz = async (campaignId, roundId, quizId) => {
   try {
     const res = await axios.post(
@@ -94,6 +105,7 @@ export {
   cancelMyRequest,
   getAllCampaigns,
   getCampaignDetails,
+  getCurrentRoundContent,
   startQuiz,
   submitQuiz,
 };

@@ -6,16 +6,6 @@ const CampaignContext = createContext(undefined);
 
 export function CampaignProvider({ children }) {
   const [selectedCampaign, setSelectedCampaign] = useState(null);
-
-  const fetchCampaignDetails = async (id) => {
-    try {
-      const res = await getCampaignDetails(id);
-      setSelectedCampaign(res.data);
-    } catch (error) {
-      console.log(error);
-    }
-  };
-
   const clearCampaign = () => setSelectedCampaign(null);
 
   return (
@@ -24,7 +14,6 @@ export function CampaignProvider({ children }) {
         selectedCampaign,
         setSelectedCampaign,
         clearCampaign,
-        fetchCampaignDetails,
       }}
     >
       {children}

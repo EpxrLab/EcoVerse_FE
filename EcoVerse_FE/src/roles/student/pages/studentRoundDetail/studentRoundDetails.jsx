@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router";
 import {
   Card,
@@ -24,6 +24,7 @@ import {
   RightOutlined,
 } from "@ant-design/icons";
 import { motion } from "framer-motion";
+import { getCurrentRoundContent } from "../../services";
 
 const { Title, Text, Paragraph } = Typography;
 
@@ -43,55 +44,23 @@ const WASTE_TYPE_LABEL = {
 function StudentRoundDetails() {
   const { campaignId, roundId } = useParams();
   const navigate = useNavigate();
+  const [roundData, setRoundData] = useState(null);
 
-  const mockData = {
-    campaignId: campaignId,
-    roundId: roundId,
-    roundNumber: 1,
-    roundName: "Cuộc chiến phân loại rác",
-    roundStartTime: "2026-04-05T04:13:42.272Z",
-    roundEndTime: "2026-04-10T04:13:42.272Z",
-    secondsToNextRound: 3600,
-    games: [
-      {
-        roundGameConfigId: "g1",
-        gameTypeName: "Phân loại rác (Eco-Sort)",
-        resolvedDifficulty: "EASY",
-        coinPerSession: 100,
-        presets: [
-          {
-            presetId: "p1",
-            difficulty: "EASY",
-            items: [
-              {
-                levelNumber: 1,
-                itemCount: 20,
-                timeLimitSeconds: 60,
-                scorePerCorrect: 10,
-                lives: 3,
-                wasteCategories: ["RECYCLABLE", "ORGANIC"],
-                coinReceived: true,
-              },
-            ],
-          },
-        ],
-      },
-    ],
-    quizzes: [
-      {
-        quizId: "q1",
-        title: "Kiến thức về nhựa dùng một lần",
-        difficulty: "EASY",
-        displayOrder: 1,
-        maxAttempts: 3,
-        isRequired: true,
-      },
-    ],
+  const fetchRoundDetails = async (id) => {
+    try {
+      const res = await getCurrentRoundContent(id);
+      setRoundData(res.data);
+    } catch (error) {
+      console.log(error);
+    }
   };
 
-  const data = mockData;
+  useEffect(() => {
+    fetchRoundDetails(campaignId);
+  }, [campaignId, roundId]);
 
-  if (!data) return <Empty description="Không tìm thấy thông tin vòng đấu" />;
+  if (!roundData)
+    return <Empty description="Không tìm thấy thông tin vòng đấu" />;
 
   return (
     <div className="max-w-6xl mx-auto p-4 md:p-6 space-y-6">
@@ -114,16 +83,16 @@ function StudentRoundDetails() {
             <div>
               <Space direction="vertical" size={0}>
                 <Text className="text-green-600 font-bold uppercase tracking-wider text-xs">
-                  Vòng số {data.roundNumber}
+                  Vòng số {roundData.roundNumber}
                 </Text>
                 <Title level={2} style={{ margin: 0 }}>
-                  {data.roundName}
+                  {roundData.roundName}
                 </Title>
                 <Space className="mt-2 text-gray-500">
                   <ClockCircleOutlined />
                   <Text type="secondary">
                     Kết thúc lúc:{" "}
-                    {new Date(data.roundEndTime).toLocaleString("vi-VN")}
+                    {new Date(roundData.roundEndTime).toLocaleString("vi-VN")}
                   </Text>
                 </Space>
               </Space>
@@ -132,13 +101,13 @@ function StudentRoundDetails() {
             <div className="bg-white/80 p-4 rounded-2xl border border-white shadow-inner flex gap-6">
               <Statistic
                 title="Game"
-                value={data.games.length}
+                value={roundData.games.length}
                 prefix={<PlayCircleOutlined />}
               />
               <Divider type="vertical" style={{ height: "auto" }} />
               <Statistic
                 title="Quiz"
-                value={data.quizzes.length}
+                value={roundData.quizzes.length}
                 prefix={<BookOutlined />}
               />
             </div>
@@ -153,7 +122,7 @@ function StudentRoundDetails() {
             <ThunderboltOutlined className="text-amber-500" /> Hoạt động Game
           </Title>
 
-          {data.games.map((game, idx) => (
+          {roundData.games.map((game, idx) => (
             <Card
               key={idx}
               className="rounded-2xl border-2 hover:border-green-300 transition-all shadow-sm"
@@ -257,7 +226,7 @@ function StudentRoundDetails() {
             <BookOutlined className="text-blue-500" /> Bài Quiz bắt buộc
           </Title>
 
-          {data.quizzes.map((quiz, idx) => (
+          {roundData.quizzes.map((quiz, idx) => (
             <Card
               key={idx}
               className={`rounded-2xl border-2 transition-all ${quiz.isRequired ? "border-blue-100" : ""}`}
@@ -301,7 +270,7 @@ function StudentRoundDetails() {
             </Card>
           ))}
 
-          {data.quizzes.length === 0 && (
+          {roundData.quizzes.length === 0 && (
             <Empty description="Không có bài quiz nào" />
           )}
         </Col>
