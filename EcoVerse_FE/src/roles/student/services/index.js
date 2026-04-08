@@ -108,6 +108,18 @@ const getAttemptResult = async (attemptId) => {
   }
 };
 
+const startGame = async (campaignId, roundId, configId, level) => {
+  try {
+    const res = await axios.post(
+      `/student/games/campaigns/${campaignId}/rounds/${roundId}/configs/${configId}/start`,
+      { level },
+    );
+    return res.data;
+  } catch (error) {
+    console.log(error);
+  }
+};
+
 export {
   getAuthenticatedStudentProfile,
   getAllRewards,
@@ -120,4 +132,5 @@ export {
   startQuiz,
   submitQuiz,
   getAttemptResult,
+  startGame,
 };

@@ -76,8 +76,8 @@ function ResultModal({ result, onClose }) {
       icon: <Hash size={18} className="text-gray-500" />,
       label: "Lần thử",
       value: result.maxAttempts
-        ? `${result.attemptsUsed ?? "—"} / ${result.maxAttempts}`
-        : `${result.attemptsUsed ?? "—"}`,
+        ? `${result.attemptUsed ?? result.attemptsUsed ?? "—"} / ${result.maxAttempts}`
+        : `${result.attemptUsed ?? result.attemptsUsed ?? "—"}`,
     },
   ];
 
@@ -163,7 +163,7 @@ function ResultModal({ result, onClose }) {
           )}
           {result.coinsEarned === 0 && (
             <p className="mt-3 text-sm text-white/50">
-              Không nhận xu (chưa đạt)
+              {passed ? "Không nhận thêm xu cho lần làm lại" : "Không nhận xu (chưa đạt)"}
             </p>
           )}
         </div>
@@ -359,7 +359,7 @@ export default function QuizPlay({ quiz: _quiz, onFinish, onCancel }) {
         isPassed: quizResult.isPassed ?? false,
         coinsEarned: quizResult.coinsEarned ?? quizResult.coins ?? 0,
         bestScorePercentage: quizResult.bestScorePercentage ?? null,
-        attemptsUsed: quizResult.attemptsUsed ?? null,
+        attemptsUsed: quizResult.attemptUsed ?? quizResult.attemptsUsed ?? null,
         maxAttempts: quizResult.maxAttempts ?? null,
       }
     : null;

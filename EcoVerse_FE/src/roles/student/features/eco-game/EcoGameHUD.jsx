@@ -65,7 +65,7 @@ function StageTransition({ stage }) {
 
 // ─── Main HUD Component ───────────────────────────────────────────────────────
 
-export default function EcoGameHUD({ game, onBack, levelConfig }) {
+export default function EcoGameHUD({ game, onBack, levelConfig, gameType }) {
   const [stage, setStage] = useState("STAGE_1");
   const [distance, setDistance] = useState(0);
   const [speed, setSpeed] = useState(levelConfig?.runner?.baseSpeed || 12);
@@ -76,6 +76,8 @@ export default function EcoGameHUD({ game, onBack, levelConfig }) {
   const [result, setResult] = useState(null);
   const [showTransition, setShowTransition] = useState(false);
   const [showGameOver, setShowGameOver] = useState(false);
+
+  console.log(gameType);
 
   const fetchData = async () => {};
 

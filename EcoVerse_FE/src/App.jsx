@@ -169,9 +169,12 @@ const App = () => (
                     path="round/:roundId/quiz/:quizId"
                     element={<StudentQuizPlay />}
                   />
-
+                  <Route
+                    path="round/:roundId/game/:roundGameConfigId/play"
+                    element={<EcoGamePage />}
+                  />
                   <Route path="game" element={<StudentGame />} />
-                  <Route path="game/play" element={<EcoGamePage />} />
+
                   <Route path="quiz" element={<StudentQuiz />} />
                   <Route path="quiz/:quizId" element={<StudentQuizPlay />} />
                   <Route path="leaderboard" element={<StudentLeaderboard />} />
