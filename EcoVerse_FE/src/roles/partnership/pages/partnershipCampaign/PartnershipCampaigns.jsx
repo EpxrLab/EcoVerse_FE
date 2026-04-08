@@ -1,6 +1,17 @@
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/shared/components/ui/tabs';
 import { Button } from '@/shared/components/ui/button';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/shared/components/ui/alert-dialog";
 import { FileText, Clock, CheckCircle, XCircle, Flag, Plus } from 'lucide-react';
+import { cn } from '@/shared/lib/utils';
 import { usePartnershipCampaigns } from '../../features/campaigns/hooks';
 import { CampaignStats, CampaignList, CampaignForm, CampaignDetail, AddGameModal, AddQuizModal } from '../../features/campaigns/components';
 
@@ -14,6 +25,7 @@ export default function PartnershipCampaigns() {
     handleCloseDetail,
     handleEdit,
     handleDelete,
+    handleCancel,
     handleActivate,
     isCreateOpen,
     handleOpenCreate,
@@ -24,9 +36,9 @@ export default function PartnershipCampaigns() {
     availableQuizzes,
     setAvailableQuizzes,
     availableGameLevels,
-    availableWasteItems,
     handleSubmit,
     handleRevertToDraft,
+    isEditing,
 
     isAddGameOpen,
     isAddQuizOpen,
@@ -37,6 +49,9 @@ export default function PartnershipCampaigns() {
     handleCloseAddQuiz,
     handleAddGameSubmit,
     handleAddQuizSubmit,
+
+    confirmConfig,
+    setConfirmConfig,
   } = usePartnershipCampaigns();
 
   return (
@@ -66,13 +81,13 @@ export default function PartnershipCampaigns() {
         draft={stats.draft}
         scheduled={stats.scheduled}
         inviting={stats.inviting}
-        active={stats.active}
+        active={stats.on_going}
         completed={stats.completed}
         cancelled={stats.cancelled}
       />
 
       {/* Campaign Tabs */}
-      <Tabs defaultValue="active" className="space-y-5">
+      <Tabs defaultValue="on_going" className="space-y-5">
         <TabsList className="bg-muted/50 p-1 border-2 border-eco-blue/15">
           <TabsTrigger 
             value="draft" 
@@ -96,11 +111,11 @@ export default function PartnershipCampaigns() {
             Đang mời ({stats.inviting})
           </TabsTrigger>
           <TabsTrigger 
-            value="active" 
+            value="on_going" 
             className="gap-2 font-medium data-[state=active]:bg-card data-[state=active]:text-eco-blue"
           >
             <Clock className="w-4 h-4" />
-            Đang diễn ra ({stats.active})
+            Đang diễn ra ({stats.on_going})
           </TabsTrigger>
           <TabsTrigger 
             value="completed" 
@@ -146,13 +161,13 @@ export default function PartnershipCampaigns() {
             campaigns={getCampaignsByStatus('inviting')} 
             onViewDetail={handleViewDetail}
             onEdit={handleEdit}
-            onDelete={handleDelete}
+            onCancel={handleCancel}
           />
         </TabsContent>
 
-        <TabsContent value="active">
+        <TabsContent value="on_going">
           <CampaignList 
-            campaigns={getCampaignsByStatus('active')} 
+            campaigns={getCampaignsByStatus('on_going')} 
             onViewDetail={handleViewDetail}
             onEdit={handleEdit}
             onDelete={handleDelete}
@@ -188,8 +203,8 @@ export default function PartnershipCampaigns() {
         availableQuizzes={availableQuizzes}
         setAvailableQuizzes={setAvailableQuizzes}
         availableGameLevels={availableGameLevels}
-        availableWasteItems={availableWasteItems}
         onSubmit={handleSubmit}
+        isEditing={isEditing}
       />
 
       <AddGameModal
@@ -216,6 +231,42 @@ export default function PartnershipCampaigns() {
         availableQuizzes={availableQuizzes}
         availableGameLevels={availableGameLevels}
       />
+
+      {/* Confirmation Dialog */}
+      <AlertDialog 
+        open={confirmConfig.isOpen} 
+        onOpenChange={(open) => setConfirmConfig(prev => ({ ...prev, isOpen: open }))}
+      >
+        <AlertDialogContent className="max-w-[400px]">
+          <AlertDialogHeader>
+            <AlertDialogTitle className={cn(
+              "text-xl font-bold",
+              confirmConfig.variant === 'destructive' ? "text-destructive" : 
+              confirmConfig.variant === 'eco-blue' ? "text-eco-blue" :
+              confirmConfig.variant === 'eco-orange' ? "text-eco-orange" : "text-foreground"
+            )}>
+              {confirmConfig.title}
+            </AlertDialogTitle>
+            <AlertDialogDescription className="text-sm">
+              {confirmConfig.description}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter className="mt-6">
+            <AlertDialogCancel className="bg-muted hover:bg-muted/80 border-none font-medium">Hủy</AlertDialogCancel>
+            <AlertDialogAction 
+              onClick={confirmConfig.onConfirm}
+              className={cn(
+                "text-white font-bold px-6",
+                confirmConfig.variant === 'destructive' ? "bg-destructive hover:bg-destructive/90" : 
+                confirmConfig.variant === 'eco-blue' ? "bg-eco-blue hover:bg-eco-blue/90" :
+                confirmConfig.variant === 'eco-orange' ? "bg-eco-orange hover:bg-eco-orange/90" : "bg-primary"
+              )}
+            >
+              {confirmConfig.confirmText}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }

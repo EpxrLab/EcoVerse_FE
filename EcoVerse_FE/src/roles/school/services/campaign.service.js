@@ -65,5 +65,21 @@ export const campaignService = {
   
   deleteCampaign: (id) => {
     return axios.delete(`/school/campaigns/${id}`);
+  },
+
+  getPartnershipInvitations: () => {
+    return axios.get('/school/partnership-invitations');
+  },
+
+  rejectPartnershipInvitation: (id) => {
+    return axios.put(`/school/partnership-invitations/${id}/reject`);
+  },
+
+  acceptPartnershipInvitation: (id) => {
+    return axios.put(`/school/partnership-invitations/${id}/accept`);
+  },
+
+  assignStudentsToPartnershipInvitation: (id, studentIds) => {
+    return axios.post(`/school/partnership-invitations/${id}/assign-students`, { studentIds });
   }
 };

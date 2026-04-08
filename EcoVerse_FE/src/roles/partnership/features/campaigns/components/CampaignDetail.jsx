@@ -10,7 +10,7 @@ export function CampaignDetail({ isOpen, onClose, campaign, availableQuizzes = [
     switch (status) {
       case 'draft': return 'bg-muted text-muted-foreground border-transparent';
       case 'inviting': return 'bg-eco-orange/10 text-eco-orange border-eco-orange/20';
-      case 'active': return 'bg-eco-blue/10 text-eco-blue border-eco-blue/20';
+      case 'on_going': return 'bg-eco-blue/10 text-eco-blue border-eco-blue/20';
       case 'completed': return 'bg-eco-green/10 text-eco-green border-eco-green/20';
       case 'cancelled': return 'bg-destructive/10 text-destructive border-destructive/20';
       default: return 'bg-muted text-muted-foreground';
@@ -21,7 +21,7 @@ export function CampaignDetail({ isOpen, onClose, campaign, availableQuizzes = [
     switch (status) {
       case 'draft': return 'Nháp';
       case 'inviting': return 'Đang mời';
-      case 'active': return 'Đang diễn ra';
+      case 'on_going': return 'Đang diễn ra';
       case 'completed': return 'Hoàn thành';
       case 'cancelled': return 'Đã hủy';
       default: return status;
@@ -29,38 +29,10 @@ export function CampaignDetail({ isOpen, onClose, campaign, availableQuizzes = [
   };
 
   const schoolStats = {
-    total: campaign.school_participations?.length || 0,
-    accepted: campaign.school_participations?.filter(s => s.status === 'accepted').length || 0,
-    declined: campaign.school_participations?.filter(s => s.status === 'declined').length || 0,
-    invited: campaign.school_participations?.filter(s => !s.status || s.status === 'invited').length || 0,
-  };
-
-  const selectedQuizzes = availableQuizzes.filter(q => campaign.quiz_ids?.includes(q.id));
-  const selectedGameLevels = availableGameLevels.filter(g => campaign.game_level_ids?.includes(g.id));
-
-  const getDifficultyColor = (difficulty) => {
-    switch (difficulty) {
-      case 'easy':
-      case 'Dễ':
-        return 'bg-eco-green/10 text-eco-green border-eco-green/20';
-      case 'medium':
-      case 'Trung bình':
-        return 'bg-eco-orange/10 text-eco-orange border-eco-orange/20';
-      case 'hard':
-      case 'Khó':
-        return 'bg-destructive/10 text-destructive border-destructive/20';
-      default:
-        return 'bg-muted text-muted-foreground';
-    }
-  };
-
-  const getDifficultyLabel = (difficulty) => {
-    switch (difficulty) {
-      case 'easy': return 'Dễ';
-      case 'medium': return 'TB';
-      case 'hard': return 'Khó';
-      default: return difficulty;
-    }
+    total: campaign.schoolParticipations?.length || 0,
+    accepted: campaign.schoolParticipations?.filter(s => s.status === 'accepted').length || 0,
+    declined: campaign.schoolParticipations?.filter(s => s.status === 'declined').length || 0,
+    invited: campaign.schoolParticipations?.filter(s => !s.status || s.status === 'invited').length || 0,
   };
 
   return (
@@ -77,16 +49,18 @@ export function CampaignDetail({ isOpen, onClose, campaign, availableQuizzes = [
             </div>
             <div className="flex-1">
               <DialogTitle className="text-2xl font-bold text-foreground leading-tight">
-                {campaign.name}
+                {campaign.campaignName}
               </DialogTitle>
               <div className="flex items-center gap-2 mt-2">
                 <Badge variant="outline" className={cn('px-2.5 py-0.5 font-medium', getStatusColor(campaign.status))}>
                    {getStatusLabel(campaign.status)}
                 </Badge>
-                <span className="text-sm text-muted-foreground flex items-center gap-1">
-                  <span className="w-1 h-1 rounded-full bg-muted-foreground" />
-                  Tạo ngày {new Date(campaign.created_at).toLocaleDateString('vi-VN')}
-                </span>
+                {campaign.createdAt && (
+                  <span className="text-sm text-muted-foreground flex items-center gap-1">
+                    <span className="w-1 h-1 rounded-full bg-muted-foreground" />
+                    Tạo ngày {new Date(campaign.createdAt).toLocaleDateString('vi-VN')}
+                  </span>
+                )}
               </div>
             </div>
           </div>
@@ -97,18 +71,18 @@ export function CampaignDetail({ isOpen, onClose, campaign, availableQuizzes = [
           <div className="grid grid-cols-3 gap-4">
             <div className="bg-white rounded-xl p-4 border shadow-sm flex flex-col items-center justify-center text-center">
               <span className="text-sm font-medium text-muted-foreground mb-1">Trường tham gia</span>
-              <span className="text-3xl font-bold text-eco-blue">{campaign.schools_count}</span>
+              <span className="text-3xl font-bold text-eco-blue">{campaign.schoolsCount || 0}</span>
             </div>
             
             <div className="bg-white rounded-xl p-4 border shadow-sm flex flex-col items-center justify-center text-center">
               <span className="text-sm font-medium text-muted-foreground mb-1">Tổng học sinh</span>
-              <span className="text-3xl font-bold text-eco-green">{campaign.students_count}</span>
+              <span className="text-3xl font-bold text-eco-green">{campaign.studentsCount || 0}</span>
             </div>
 
             <div className="bg-white rounded-xl p-4 border shadow-sm flex flex-col items-center justify-center text-center">
               <span className="text-sm font-medium text-muted-foreground mb-1">Tỷ lệ tham gia</span>
                <span className="text-3xl font-bold text-eco-orange">
-                {campaign.participation_rate !== undefined ? `${campaign.participation_rate}%` : '-'}
+                {campaign.participationRate !== undefined ? `${campaign.participationRate}%` : '-'}
               </span>
             </div>
           </div>
@@ -129,75 +103,44 @@ export function CampaignDetail({ isOpen, onClose, campaign, availableQuizzes = [
               </div>
 
               {/* Participating Schools Section */}
-              {campaign.school_participations && campaign.school_participations.length > 0 && (
+              {campaign.schoolParticipations && campaign.schoolParticipations.length > 0 && (
                 <div className="space-y-4">
                   <h3 className="text-base font-semibold text-foreground flex items-center gap-2">
                     <School className="w-4 h-4 text-primary" />
                     Danh sách trường ({schoolStats.total})
                   </h3>
 
-                  {/* Participation Summary Cards */}
-                  <div className="grid grid-cols-4 gap-3">
-                     <div className="p-3 rounded-lg bg-muted/50 text-center">
-                       <p className="text-2xl font-bold">{schoolStats.total}</p>
-                       <p className="text-xs text-muted-foreground">Tổng số</p>
-                     </div>
-                     <div className="p-3 rounded-lg bg-eco-orange/10 text-center">
-                       <p className="text-2xl font-bold text-eco-orange">{schoolStats.invited}</p>
-                       <p className="text-xs text-muted-foreground">Đã mời</p>
-                     </div>
-                     <div className="p-3 rounded-lg bg-eco-green/10 text-center">
-                       <p className="text-2xl font-bold text-eco-green">{schoolStats.accepted}</p>
-                       <p className="text-xs text-muted-foreground">Đã tham gia</p>
-                     </div>
-                     <div className="p-3 rounded-lg bg-destructive/10 text-center">
-                       <p className="text-2xl font-bold text-destructive">{schoolStats.declined}</p>
-                       <p className="text-xs text-muted-foreground">Từ chối</p>
-                     </div>
-                  </div>
-                  
-                  {/* Detailed Table */}
                   <div className="border rounded-xl overflow-hidden shadow-sm">
                     <table className="w-full text-sm">
                       <thead className="bg-muted/40 border-b">
                         <tr>
                           <th className="px-4 py-3 text-left font-medium text-muted-foreground">Tên trường</th>
-                          <th className="px-4 py-3 text-center font-medium text-muted-foreground">Học sinh tối đa</th>
                           <th className="px-4 py-3 text-right font-medium text-muted-foreground">Trạng thái</th>
                         </tr>
                       </thead>
                       <tbody className="divide-y bg-card">
-                        {campaign.school_participations.map((school) => (
-                          <tr key={school.school_id} className="hover:bg-muted/20 transition-colors">
+                        {campaign.schoolParticipations.map((school) => (
+                          <tr key={school.schoolId} className="hover:bg-muted/20 transition-colors">
                             <td className="px-4 py-3 align-middle font-medium text-foreground">
-                              {school.school_name || school.school_id}
-                            </td>
-                            <td className="px-4 py-3 text-center align-middle text-muted-foreground">
-                              {school.student_limit || '-'}
+                              {school.schoolName || school.schoolId}
                             </td>
                             <td className="px-4 py-3 text-right align-middle">
-                              {campaign.status === 'scheduled' ? (
-                                <Badge variant="outline" className="bg-muted/50 text-muted-foreground border-muted">
-                                  Chưa gửi
+                              {school.status === 'APPROVED' || school.status === 'approved' ? (
+                                <Badge variant="outline" className="bg-eco-green/10 text-eco-green border-eco-green/20">
+                                  Đã tham gia
+                                </Badge>
+                              ) : school.status === 'REJECTED' || school.status === 'rejected' ? (
+                                <Badge variant="outline" className="bg-destructive/10 text-destructive border-destructive/20">
+                                  Từ chối
+                                </Badge>
+                              ) : school.status === 'PENDING_SCHOOL_APPROVAL' ? (
+                                <Badge variant="outline" className="bg-eco-blue/10 text-eco-blue border-eco-blue/20">
+                                  Chờ xác nhận
                                 </Badge>
                               ) : (
-                                <>
-                                  {school.status === 'accepted' && (
-                                    <Badge variant="outline" className="bg-eco-green/10 text-eco-green border-eco-green/20">
-                                      Đã tham gia
-                                    </Badge>
-                                  )}
-                                  {school.status === 'declined' && (
-                                    <Badge variant="outline" className="bg-destructive/10 text-destructive border-destructive/20">
-                                      Từ chối
-                                    </Badge>
-                                  )}
-                                  {(!school.status || school.status === 'invited') && (
-                                    <Badge variant="outline" className="bg-eco-orange/10 text-eco-orange border-eco-orange/20">
-                                      Đã mời
-                                    </Badge>
-                                  )}
-                                </>
+                                <Badge variant="outline" className="bg-eco-orange/10 text-eco-orange border-eco-orange/20">
+                                  Đã mời
+                                </Badge>
                               )}
                             </td>
                           </tr>
@@ -208,139 +151,77 @@ export function CampaignDetail({ isOpen, onClose, campaign, availableQuizzes = [
                 </div>
               )}
 
-              {/* Qualifying Rounds Section */}
-              {campaign.qualifying_rounds && campaign.qualifying_rounds.length > 0 && (
+              {/* Rounds Section */}
+              {campaign.rounds && campaign.rounds.length > 0 && (
                 <div className="space-y-3">
                   <h3 className="text-base font-semibold text-foreground flex items-center gap-2">
                     <Package className="w-4 h-4 text-eco-blue" />
-                    Vòng loại ({campaign.qualifying_rounds.length})
+                    Cấu trúc vòng chơi ({campaign.rounds.length})
                   </h3>
                   <div className="space-y-3">
-                    {campaign.qualifying_rounds.map((round, index) => {
-                      const roundQuizzes = availableQuizzes.filter(q => round.quiz_ids?.includes(q.id));
-                      const roundGameLevels = availableGameLevels.filter(g => round.game_level_ids?.includes(g.id));
-                      
-                      return (
-                        <div key={index} className="border-2 rounded-xl p-4 bg-muted/30 space-y-3">
-                          <div className="flex items-center justify-between">
-                            <div className="flex items-center gap-2">
-                              <Badge variant="secondary" className="text-sm">
-                                Vòng {round.round_number}
-                              </Badge>
-                              <span className="font-semibold">{round.round_name}</span>
-                            </div>
-                            <Badge variant="outline" className="text-xs">
-                              Top {round.advancement_limit} học sinh
+                    {campaign.rounds.map((round, index) => (
+                      <div key={index} className="border-2 rounded-xl p-4 bg-muted/30 space-y-3">
+                        <div className="flex items-center justify-between">
+                          <div className="flex items-center gap-2">
+                            <Badge variant="secondary" className="text-sm">
+                              Vòng {round.roundNumber}
                             </Badge>
+                            <span className="font-semibold">{round.roundName}</span>
                           </div>
+                          {round.isFinalRound && (
+                            <Badge className="bg-eco-green text-white">Chung kết</Badge>
+                          )}
+                        </div>
 
-                          <div className="grid grid-cols-2 gap-3 text-sm">
-                            <div className="flex items-center gap-2 text-muted-foreground">
-                              <Calendar className="w-4 h-4" />
-                              <span>Bắt đầu: {new Date(round.start_date).toLocaleDateString('vi-VN')}</span>
-                            </div>
-                            <div className="flex items-center gap-2 text-muted-foreground">
-                              <Calendar className="w-4 h-4" />
-                              <span>Kết thúc: {new Date(round.end_date).toLocaleDateString('vi-VN')}</span>
-                            </div>
+                        <div className="grid grid-cols-2 gap-3 text-sm">
+                          <div className="flex items-center gap-2 text-muted-foreground">
+                            <Calendar className="w-4 h-4" />
+                            <span>Bắt đầu: {new Date(round.startTime).toLocaleString('vi-VN')}</span>
                           </div>
-
-                          {/* Round Content */}
-                          <div className="border-t pt-3 space-y-2">
-                            {roundQuizzes.length > 0 && (
-                              <div>
-                                <p className="text-xs font-medium text-muted-foreground mb-1">Quiz ({roundQuizzes.length})</p>
-                                <div className="flex flex-wrap gap-1">
-                                  {roundQuizzes.map(quiz => (
-                                    <Badge key={quiz.id} variant="outline" className="text-xs">
-                                      {quiz.title}
-                                    </Badge>
-                                  ))}
-                                </div>
-                              </div>
-                            )}
-                            
-                            {round.selected_game_type && roundGameLevels.length > 0 && (
-                              <div>
-                                <p className="text-xs font-medium text-muted-foreground mb-1">
-                                  Game: {round.selected_game_type === 'collection-sorting' ? 'Thu thập & Phân loại' : 'Chạy & Phân loại'} ({roundGameLevels.length})
-                                </p>
-                                <div className="flex flex-wrap gap-1">
-                                  {roundGameLevels.map(level => (
-                                    <Badge key={level.id} variant="outline" className="text-xs">
-                                      {level.name}
-                                    </Badge>
-                                  ))}
-                                </div>
-                              </div>
-                            )}
+                          <div className="flex items-center gap-2 text-muted-foreground">
+                            <Calendar className="w-4 h-4" />
+                            <span>Kết thúc: {new Date(round.endTime).toLocaleString('vi-VN')}</span>
                           </div>
                         </div>
-                      );
-                    })}
-                  </div>
-                </div>
-              )}
 
-              {/* Quizzes Section */}
-              {selectedQuizzes.length > 0 && (
-                <div className="space-y-3">
-                  <h3 className="text-base font-semibold text-foreground flex items-center gap-2">
-                    <FileQuestion className="w-4 h-4 text-eco-orange" />
-                    Quiz đã chọn ({selectedQuizzes.length})
-                  </h3>
-                  <div className="grid grid-cols-1 gap-2">
-                    {selectedQuizzes.map((quiz) => (
-                      <div key={quiz.id} className="p-3 rounded-lg border bg-card flex items-center justify-between">
-                        <div>
-                          <p className="text-sm font-semibold">{quiz.title}</p>
-                          <p className="text-xs text-muted-foreground">{quiz.question_count} câu hỏi</p>
+                        <div className="flex gap-4 text-xs font-medium text-muted-foreground">
+                          <span>Tham gia tối đa: {round.maxParticipants || 'Không giới hạn'}</span>
+                          <span>Số lượng thăng hạng: {round.advanceCount || '-'}</span>
                         </div>
-                        <Badge variant="outline" className={getDifficultyColor(quiz.difficulty)}>
-                          {getDifficultyLabel(quiz.difficulty)}
-                        </Badge>
                       </div>
                     ))}
                   </div>
                 </div>
               )}
 
-              {/* Game Levels Section */}
-              {campaign.selected_game_type && selectedGameLevels.length > 0 && (
-                <div className="space-y-3">
-                  <h3 className="text-base font-semibold text-foreground flex items-center gap-2">
-                    <Gamepad2 className="w-4 h-4 text-eco-green" />
-                    Game: {campaign.selected_game_type === 'collection-sorting' ? 'Thu thập & Phân loại' : 'Chạy & Phân loại'}
-                  </h3>
-                  <div className="grid grid-cols-1 gap-2">
-                    {selectedGameLevels.map((level) => (
-                      <div key={level.id} className="p-3 rounded-lg border bg-card flex items-center justify-between">
-                        <p className="text-sm font-semibold">{level.name}</p>
-                        <Badge variant="outline" className={getDifficultyColor(level.difficulty)}>
-                          {level.difficulty}
-                        </Badge>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              )}
-
-              {/* Reward Images Section */}
-              {campaign.reward_image_urls && campaign.reward_image_urls.length > 0 && (
+              {/* Rewards Section */}
+              {campaign.rewards && campaign.rewards.length > 0 && (
                 <div className="space-y-3">
                   <h3 className="text-base font-semibold text-foreground flex items-center gap-2">
                     <Package className="w-4 h-4 text-eco-orange" />
-                    Hình ảnh phần thưởng ({campaign.reward_image_urls.length})
+                    Giải thưởng ({campaign.rewards.length})
                   </h3>
-                  <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
-                    {campaign.reward_image_urls.map((url, index) => (
-                      <div key={index} className="relative group">
-                        <img 
-                          src={url} 
-                          alt={`Reward ${index + 1}`} 
-                          className="w-full h-32 object-cover rounded-lg border-2 cursor-pointer hover:scale-105 transition-transform"
-                          onClick={() => window.open(url, '_blank')}
-                        />
+                  <div className="grid grid-cols-1 gap-4">
+                    {campaign.rewards.map((reward, index) => (
+                      <div key={index} className="flex gap-4 p-4 border rounded-xl bg-card">
+                        {(reward.imagePresignedUrl || reward.imageUrl) && (
+                          <img 
+                            src={reward.imagePresignedUrl || reward.imageUrl} 
+                            alt={reward.rewardName} 
+                            className="w-24 h-24 object-cover rounded-lg border"
+                          />
+                        )}
+                        <div className="flex-1 space-y-1">
+                          <div className="flex items-center justify-between">
+                            <h4 className="font-bold text-foreground">Hạng {reward.rankPosition}: {reward.rewardName}</h4>
+                            {reward.sponsorName && (
+                              <Badge variant="outline" className="text-eco-blue border-eco-blue/20">
+                                {reward.sponsorName}
+                              </Badge>
+                            )}
+                          </div>
+                          <p className="text-sm text-muted-foreground">{reward.description}</p>
+                        </div>
                       </div>
                     ))}
                   </div>
@@ -353,31 +234,51 @@ export function CampaignDetail({ isOpen, onClose, campaign, availableQuizzes = [
               <div className="rounded-xl border bg-card p-4 space-y-4 shadow-sm">
                 <h3 className="font-semibold text-sm text-foreground mb-3 flex items-center gap-2 border-b pb-2">
                   <Calendar className="w-4 h-4" />
-                  Thời gian triển khai
+                  Thời gian quan trọng
                 </h3>
                 
                 <div className="space-y-4">
-                  <div className="flex justify-between items-center text-sm">
-                    <span className="text-muted-foreground">Bắt đầu:</span>
-                    <span className="font-semibold">{new Date(campaign.start_date).toLocaleDateString('vi-VN')}</span>
-                  </div>
-                  <div className="flex justify-between items-center text-sm">
-                    <span className="text-muted-foreground">Kết thúc:</span>
-                    <span className="font-semibold">{new Date(campaign.end_date).toLocaleDateString('vi-VN')}</span>
+                  <div className="space-y-1">
+                    <p className="text-xs text-muted-foreground">Thời gian chiến dịch:</p>
+                    <div className="flex justify-between items-center text-sm">
+                      <span className="font-semibold">{new Date(campaign.startDate).toLocaleDateString('vi-VN')}</span>
+                      <span className="text-muted-foreground">đến</span>
+                      <span className="font-semibold">{new Date(campaign.endDate).toLocaleDateString('vi-VN')}</span>
+                    </div>
                   </div>
 
-                  {campaign.invitation_send_date && (
-                    <div className="pt-3 mt-3 border-t">
-                      <div className="flex justify-between items-center text-sm">
-                        <span className="text-muted-foreground flex items-center gap-1">
-                          <Send className="w-3 h-3" /> Ngày gửi mời:
-                        </span>
-                        <span className="font-semibold text-eco-blue">
-                          {new Date(campaign.invitation_send_date).toLocaleDateString('vi-VN')}
-                        </span>
-                      </div>
+                  <div className="pt-3 border-t space-y-3">
+                    <div className="flex justify-between items-center text-sm">
+                      <span className="text-muted-foreground">Bắt đầu đăng ký:</span>
+                      <span className="font-semibold">{new Date(campaign.registrationDate).toLocaleDateString('vi-VN')}</span>
                     </div>
-                  )}
+                    <div className="flex justify-between items-center text-sm">
+                      <span className="text-muted-foreground">Hạn chót đăng ký:</span>
+                      <span className="font-semibold text-destructive">{new Date(campaign.registrationDeadline).toLocaleDateString('vi-VN')}</span>
+                    </div>
+                  </div>
+
+                  <div className="pt-3 border-t space-y-3">
+                    <div className="flex justify-between items-center text-sm">
+                      <span className="text-muted-foreground">Gửi lời mời:</span>
+                      <span className="font-semibold">{new Date(campaign.invitationDate).toLocaleDateString('vi-VN')}</span>
+                    </div>
+                    <div className="flex justify-between items-center text-sm">
+                      <span className="text-muted-foreground">Hạn chót lời mời:</span>
+                      <span className="font-semibold text-destructive">{new Date(campaign.invitationDeadline).toLocaleDateString('vi-VN')}</span>
+                    </div>
+                  </div>
+
+                  <div className="pt-3 border-t space-y-2">
+                    <div className="flex justify-between items-center text-sm">
+                      <span className="text-muted-foreground">HS tối đa/trường:</span>
+                      <span className="font-bold text-eco-blue">{campaign.maxStudentsPerSchool || "N/A"}</span>
+                    </div>
+                    <div className="flex justify-between items-center text-sm">
+                      <span className="text-muted-foreground">Tổng chỉ tiêu HS:</span>
+                      <span className="font-bold text-eco-green">{campaign.totalStudentQuota || "N/A"}</span>
+                    </div>
+                  </div>
                 </div>
               </div>
             </div>

@@ -9,7 +9,7 @@ import { ScrollArea } from '@/shared/components/ui/scroll-area';
 import { toast } from 'sonner';
 import { useCampaigns } from '../../features/campaigns/hooks/useCampaigns';
 import { useCampaignForm } from '../../features/campaigns/hooks';
-import { CampaignStats, CampaignList, CampaignForm, CampaignDetail, StudentSelectionDialog, InvitationList, ConfirmDeleteDialog, ConfirmCancelDialog, ExtendInvitingDialog } from '../../features/campaigns/components';
+import { CampaignStats, CampaignList, CampaignForm, CampaignDetail, InvitationList, ConfirmDeleteDialog, ConfirmCancelDialog, ExtendInvitingDialog, ConfirmInvitationDialog, PartnershipStudentAssignmentDialog } from '../../features/campaigns/components';
 import { AddGameModal } from '../../features/campaigns/components/AddGameModal';
 import { AddQuizModal } from '../../features/campaigns/components/AddQuizModal';
 import { GAME_TYPES } from '../../features/campaigns/types/campaign';
@@ -31,6 +31,7 @@ export default function SchoolCampaigns() {
     acceptInvitation,
     declineInvitation,
     addStudentsToCampaign,
+    assignStudentsToPartnership,
     revertToDraft,
     activateCampaign,
     cancelCampaign,
@@ -58,8 +59,6 @@ export default function SchoolCampaigns() {
   const [isInviteOpen, setIsInviteOpen] = useState(false);
   const [inviteCampaign, setInviteCampaign] = useState(null);
   const [editingCampaign, setEditingCampaign] = useState(null);
-  const [isAcceptInviteOpen, setIsAcceptInviteOpen] = useState(false);
-  const [acceptInviteCampaign, setAcceptInviteCampaign] = useState(null);
   const [isCancelConfirmOpen, setIsCancelConfirmOpen] = useState(false);
   const [campaignToCancel, setCampaignToCancel] = useState(null);
   const [isExtendDialogOpen, setIsExtendDialogOpen] = useState(false);
@@ -75,25 +74,34 @@ export default function SchoolCampaigns() {
   const [isDetailLoading, setIsDetailLoading] = useState(false);
   const [isDeleteConfirmOpen, setIsDeleteConfirmOpen] = useState(false);
   const [campaignToDelete, setCampaignToDelete] = useState(null);
+  const [isConfirmInvitationOpen, setIsConfirmInvitationOpen] = useState(false);
+  const [invitationAction, setInvitationAction] = useState({ type: 'accept', campaign: null });
 
   // Partnership Invitation logic
-  const invitations = allCampaigns.filter(c => c.origin === 'partnership' && c.invitation_status === 'pending');
+  const invitationsPending = allCampaigns.filter(c => c.origin === 'partnership' && c.invitation_status === 'INVITED');
+  const invitationsAccepted = allCampaigns.filter(c => c.origin === 'partnership' && c.invitation_status === 'APPROVED');
+  const invitationsRejected = allCampaigns.filter(c => c.origin === 'partnership' && (c.invitation_status === 'REJECTED' || c.invitation_status === 'DECLINED'));
 
   const handleOpenAcceptDialog = (campaign) => {
-    setAcceptInviteCampaign(campaign);
-    setIsAcceptInviteOpen(true);
-  };
-
-  const handleAcceptInvite = (studentIds) => {
-    if (acceptInviteCampaign) {
-      acceptInvitation(acceptInviteCampaign.id, studentIds);
-      setIsAcceptInviteOpen(false);
-      setAcceptInviteCampaign(null);
-    }
+    setInvitationAction({ type: 'accept', campaign });
+    setIsConfirmInvitationOpen(true);
   };
 
   const handleDeclineInvite = (campaign) => {
-    declineInvitation(campaign.id);
+    setInvitationAction({ type: 'reject', campaign });
+    setIsConfirmInvitationOpen(true);
+  };
+
+  const handleConfirmInvitationAction = () => {
+    if (invitationAction.campaign) {
+      if (invitationAction.type === 'accept') {
+        acceptInvitation(invitationAction.campaign.id);
+      } else {
+        declineInvitation(invitationAction.campaign.id);
+      }
+      setIsConfirmInvitationOpen(false);
+      setInvitationAction({ type: 'accept', campaign: null });
+    }
   };
 
   const { allStudents, availableClasses } = useStudents();
@@ -312,7 +320,7 @@ export default function SchoolCampaigns() {
 
   const handleAddStudents = (selectedIds) => {
     if (!addStudentCampaign) return;
-    addStudentsToCampaign(addStudentCampaign.id, selectedIds);
+    assignStudentsToPartnership(addStudentCampaign.id, selectedIds);
     setIsAddStudentOpen(false);
     setAddStudentCampaign(null);
   };
@@ -398,9 +406,9 @@ export default function SchoolCampaigns() {
           <TabsTrigger value="invitations" className="gap-2 font-medium data-[state=active]:bg-card data-[state=active]:text-purple-600 relative">
              <div className="flex items-center gap-2">
                Lời mời
-               {invitations.length > 0 && (
+               {invitationsPending.length > 0 && (
                  <span className="flex h-5 w-5 items-center justify-center rounded-full bg-red-500 text-[10px] text-white">
-                   {invitations.length}
+                   {invitationsPending.length}
                  </span>
                )}
              </div>
@@ -578,12 +586,49 @@ export default function SchoolCampaigns() {
         </TabsContent>
 
         <TabsContent value="invitations">
-            <InvitationList 
-              invitations={invitations}
-              onAccept={handleOpenAcceptDialog}
-              onDecline={handleDeclineInvite}
-              onView={handleViewDetail}
-            />
+          <Tabs defaultValue="pending" className="space-y-4">
+            <TabsList className="bg-muted/50 p-1">
+              <TabsTrigger value="pending" className="gap-2 data-[state=active]:bg-card data-[state=active]:text-purple-600">
+                Chờ phản hồi ({invitationsPending.length})
+              </TabsTrigger>
+              <TabsTrigger value="accepted" className="gap-2 data-[state=active]:bg-card data-[state=active]:text-eco-green">
+                Đã chấp nhận ({invitationsAccepted.length})
+              </TabsTrigger>
+              <TabsTrigger value="rejected" className="gap-2 data-[state=active]:bg-card data-[state=active]:text-destructive">
+                Đã từ chối ({invitationsRejected.length})
+              </TabsTrigger>
+            </TabsList>
+
+            <TabsContent value="pending">
+              <InvitationList 
+                invitations={invitationsPending}
+                onAccept={handleOpenAcceptDialog}
+                onDecline={handleDeclineInvite}
+                onView={handleViewDetail}
+              />
+            </TabsContent>
+
+            <TabsContent value="accepted">
+              <InvitationList 
+                invitations={invitationsAccepted}
+                onAccept={handleOpenAcceptDialog}
+                onDecline={handleDeclineInvite}
+                onView={handleViewDetail}
+                onAddStudent={handleOpenInviteDialog}
+                readOnly={true}
+              />
+            </TabsContent>
+
+            <TabsContent value="rejected">
+              <InvitationList 
+                invitations={invitationsRejected}
+                onAccept={handleOpenAcceptDialog}
+                onDecline={handleDeclineInvite}
+                onView={handleViewDetail}
+                readOnly={true}
+              />
+            </TabsContent>
+          </Tabs>
         </TabsContent>
       </Tabs>
 
@@ -680,33 +725,19 @@ export default function SchoolCampaigns() {
         </DialogContent>
       </Dialog>
 
-      {/* Student Selection Dialog for Invitation Acceptance */}
-      {acceptInviteCampaign && (
-        <StudentSelectionDialog 
-          isOpen={isAcceptInviteOpen}
-          onClose={() => {
-            setIsAcceptInviteOpen(false);
-            setAcceptInviteCampaign(null);
-          }}
-          onConfirm={handleAcceptInvite}
-          studentLimit={acceptInviteCampaign.student_limit || 0}
-          students={allStudents}
-          campaignName={acceptInviteCampaign.name}
-        />
-      )}
       
-      {/* Student Selection Dialog for Adding More Students */}
+      {/* Student Assigment Dialog for Partnership Campaigns */}
       {addStudentCampaign && (
-        <StudentSelectionDialog 
+        <PartnershipStudentAssignmentDialog 
           isOpen={isAddStudentOpen}
           onClose={() => {
             setIsAddStudentOpen(false);
             setAddStudentCampaign(null);
           }}
           onConfirm={handleAddStudents}
-          studentLimit={addStudentCampaign.student_limit || 0}
-          students={allStudents}
-          campaignName={addStudentCampaign.name}
+          campaign={addStudentCampaign}
+          availableClasses={availableClasses}
+          allStudents={allStudents}
         />
       )}
       {/* Confirmation Dialogs */}
@@ -732,6 +763,13 @@ export default function SchoolCampaigns() {
         allStudents={allStudents}
         availableClasses={availableClasses}
         isLoading={isDetailLoading}
+      />
+      <ConfirmInvitationDialog
+        isOpen={isConfirmInvitationOpen}
+        onClose={() => setIsConfirmInvitationOpen(false)}
+        onConfirm={handleConfirmInvitationAction}
+        type={invitationAction.type}
+        campaignName={invitationAction.campaign?.name}
       />
     </div>
   );

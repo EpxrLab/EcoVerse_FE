@@ -176,10 +176,20 @@ export function AddQuizModal({ isOpen, onClose, campaign, availableQuizzes, setA
   const [activeTab, setActiveTab] = useState('library');
 
   useEffect(() => {
-    if (isOpen && campaign?.qualifying_rounds) {
+    const rounds = campaign?.qualifying_rounds || campaign?.rounds;
+    if (isOpen && rounds) {
       const initial = {};
-      campaign.qualifying_rounds.forEach(round => {
-        initial[round.round_number] = round.quiz_ids || [];
+      rounds.forEach(round => {
+        const roundId = round.id || round.roundNumber || round.round_number;
+        // Search for existing settings if available in the campaign data
+        const existingQuizzes = round.quizzes || [];
+        const isAlreadyBound = existingQuizzes.length > 0;
+        
+        initial[roundId] = {
+          quiz_ids: round.quiz_ids || existingQuizzes.map(q => q.quizId || q.id) || [],
+          maxAttempts: round.maxAttempts || (isAlreadyBound ? existingQuizzes[0].maxAttempts : 1),
+          isRequired: true
+        };
       });
       setConfigs(initial);
       setAiGeneratedQuizzes([]);
@@ -191,12 +201,28 @@ export function AddQuizModal({ isOpen, onClose, campaign, availableQuizzes, setA
 
   const toggleQuiz = (rnum, quizId) => {
     setConfigs(prev => {
-      const current = prev[rnum] || [];
+      const current = prev[rnum]?.quiz_ids || [];
+      const updatedIds = current.includes(quizId) 
+        ? current.filter(id => id !== quizId) 
+        : [...current, quizId];
       return {
         ...prev,
-        [rnum]: current.includes(quizId) ? current.filter(id => id !== quizId) : [...current, quizId]
+        [rnum]: {
+          ...prev[rnum],
+          quiz_ids: updatedIds
+        }
       };
     });
+  };
+
+  const handleUpdateSetting = (roundId, field, value) => {
+    setConfigs(prev => ({
+      ...prev,
+      [roundId]: {
+        ...prev[roundId],
+        [field]: value
+      }
+    }));
   };
 
   const handleAIGenerated = (quiz) => {
@@ -208,11 +234,19 @@ export function AddQuizModal({ isOpen, onClose, campaign, availableQuizzes, setA
   };
 
   const handleSubmit = () => {
-    const updatedRounds = campaign.qualifying_rounds.map(round => ({
-      ...round,
-      quiz_ids: configs[round.round_number] || []
-    }));
-    onSubmit(campaign.id, updatedRounds);
+    const rounds = campaign?.qualifying_rounds || campaign?.rounds || [];
+    const roundsWithQuizzes = rounds.map(round => {
+      const roundId = round.id || round.roundNumber || round.round_number;
+      const roundConfig = configs[roundId] || {};
+      return {
+        id: round.id,
+        roundNumber: round.roundNumber || round.round_number,
+        quiz_ids: roundConfig.quiz_ids || [],
+        maxAttempts: parseInt(roundConfig.maxAttempts) || 1,
+        isRequired: true
+      };
+    });
+    onSubmit(roundsWithQuizzes);
   };
 
   const totalSelected = Object.values(configs).reduce((sum, ids) => sum + ids.length, 0);
@@ -265,27 +299,46 @@ export function AddQuizModal({ isOpen, onClose, campaign, availableQuizzes, setA
         <div className="flex-1 overflow-y-auto py-4">
           {activeTab === 'library' ? (
             <div className="space-y-5">
-              {campaign?.qualifying_rounds?.map((round) => {
-                const rnum = round.round_number;
-                const currentSelected = configs[rnum] || [];
+              {(campaign?.qualifying_rounds || campaign?.rounds)?.map((round) => {
+                const roundId = round.id || round.roundNumber || round.round_number;
+                const currentSelected = configs[roundId] || [];
                 return (
-                  <div key={rnum} className="border p-4 rounded-xl space-y-3 bg-muted/5">
+                  <div key={roundId} className="border p-4 rounded-xl space-y-3 bg-muted/5">
                     <div className="flex items-center justify-between border-b pb-2">
                       <h3 className="font-bold text-base text-eco-green">
-                        {round.round_name}
-                        <span className="text-xs font-normal text-muted-foreground ml-2">(Sĩ số duyệt: {round.advancement_limit})</span>
+                        {round.roundName || round.round_name}
+                        {(round.advancement_limit !== undefined || round.advanceCount !== undefined) && (
+                          <span className="text-xs font-normal text-muted-foreground ml-2">
+                            (Sĩ số duyệt: {round.advanceCount || round.advancement_limit})
+                          </span>
+                        )}
                       </h3>
                       <Badge variant="secondary" className="text-xs border">
-                        {currentSelected.length} quiz đã chọn
+                        {configs[roundId]?.quiz_ids?.length || 0} quiz đã chọn
                       </Badge>
                     </div>
+
+                    {/* Quiz Settings */}
+                    <div className="grid grid-cols-1 gap-4 pt-1">
+                      <div className="space-y-1.5">
+                        <Label className="text-[11px] font-bold text-muted-foreground uppercase">Số lượt làm tối đa</Label>
+                        <input
+                          type="number"
+                          min="1"
+                          value={configs[roundId]?.maxAttempts || 1}
+                          onChange={(e) => handleUpdateSetting(roundId, 'maxAttempts', e.target.value)}
+                          className="w-full px-3 py-1.5 rounded-lg border bg-background text-sm focus:ring-2 focus:ring-eco-blue/20 outline-none transition-all"
+                        />
+                      </div>
+                    </div>
+
                     <div className="flex flex-col gap-2">
                       {allQuizzes.map((quiz) => {
-                        const isSelected = currentSelected.includes(quiz.id);
+                        const isSelected = configs[roundId]?.quiz_ids?.includes(quiz.id);
                         return (
                           <div
                             key={quiz.id}
-                            onClick={() => toggleQuiz(rnum, quiz.id)}
+                            onClick={() => toggleQuiz(roundId, quiz.id)}
                             className={cn(
                               "flex items-center gap-3 p-2.5 rounded-xl border-2 cursor-pointer transition-all",
                               isSelected ? "bg-orange-50 border-orange-400 shadow-sm" : "border-border hover:border-orange-200 bg-background"
@@ -298,13 +351,13 @@ export function AddQuizModal({ isOpen, onClose, campaign, availableQuizzes, setA
                             </div>
                             <span className={cn("font-medium text-sm flex-1 flex items-center gap-1.5", isSelected ? "text-orange-900" : "text-foreground")}>
                               {quiz.isAI && <Sparkles className="w-3 h-3 text-purple-500 shrink-0" />}
-                              {quiz.title}
+                              {quiz.title || quiz.name}
                             </span>
                             <div className="flex items-center gap-1.5 shrink-0">
                               <Badge className={cn(difficultyConfig[quiz.difficulty]?.color, "border-0 text-[10px]")}>
                                 {difficultyConfig[quiz.difficulty]?.label}
                               </Badge>
-                              <Badge variant="outline" className="text-[10px]">{quiz.question_count} câu</Badge>
+                              <Badge variant="outline" className="text-[10px]">{quiz.question_count || quiz.questions || 0} câu</Badge>
                             </div>
                           </div>
                         );
