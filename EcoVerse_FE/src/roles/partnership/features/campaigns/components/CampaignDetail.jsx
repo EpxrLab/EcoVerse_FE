@@ -9,6 +9,7 @@ export function CampaignDetail({ isOpen, onClose, campaign, availableQuizzes = [
   const getStatusColor = (status) => {
     switch (status) {
       case 'draft': return 'bg-muted text-muted-foreground border-transparent';
+      case 'scheduled': return 'bg-purple-500/15 text-purple-500 border-purple-500/25';
       case 'inviting': return 'bg-eco-orange/10 text-eco-orange border-eco-orange/20';
       case 'on_going': return 'bg-eco-blue/10 text-eco-blue border-eco-blue/20';
       case 'completed': return 'bg-eco-green/10 text-eco-green border-eco-green/20';
@@ -20,6 +21,7 @@ export function CampaignDetail({ isOpen, onClose, campaign, availableQuizzes = [
   const getStatusLabel = (status) => {
     switch (status) {
       case 'draft': return 'Nháp';
+      case 'scheduled': return 'Đã lên lịch';
       case 'inviting': return 'Đang mời';
       case 'on_going': return 'Đang diễn ra';
       case 'completed': return 'Hoàn thành';
