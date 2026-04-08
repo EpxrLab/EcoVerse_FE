@@ -364,13 +364,18 @@ export function AddQuizModal({ isOpen, onClose, campaign, availableQuizzes, setA
                       })}
                       {allQuizzes.length === 0 && (
                         <p className="text-sm text-muted-foreground italic text-center py-3 bg-muted/20 rounded-lg">
-                          Chưa có quiz nào. Hãy tạo bằng AI!
+                          Chưa có quiz nào trong thư viện. Hãy qua tab "Tạo bằng AI" để bắt đầu!
                         </p>
                       )}
                     </div>
                   </div>
                 );
               })}
+              {(!campaign?.qualifying_rounds?.length && !campaign?.rounds?.length) && (
+                <div className="text-center py-12 border-2 border-dashed rounded-2xl">
+                  <p className="text-muted-foreground">Chiến dịch này chưa cấu hình vòng thi nào.</p>
+                </div>
+              )}
             </div>
           ) : (
             <AIGeneratePanel onGenerated={handleAIGenerated} existingCount={aiGeneratedQuizzes.length} />

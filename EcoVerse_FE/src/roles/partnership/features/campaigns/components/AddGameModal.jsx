@@ -135,7 +135,8 @@ export function AddGameModal({ isOpen, onClose, campaign, onSubmit }) {
     (async () => {
       try {
         const res = await partnershipCampaignService.getAvailableSubCategories(roundId, selectedGameTypeId, selectedPresetIds);
-        setSubCategoryData(res.data?.data || []);
+        const rawData = res.data?.data || res.data || [];
+        setSubCategoryData(rawData);
         // If we have pending IDs to restore (from a previous config), apply them now
         if (Object.keys(pendingSubCategoryIdsRef.current).length > 0) {
           setSelectedSubCategoryIds(pendingSubCategoryIdsRef.current);
