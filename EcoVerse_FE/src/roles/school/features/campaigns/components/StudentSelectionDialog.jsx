@@ -56,7 +56,7 @@ export function StudentSelectionDialog({
           <DialogDescription>
             Chiến dịch: <span className="font-semibold">{campaignName}</span>
             <br />
-            Số lượng cho phép: <span className="font-semibold text-primary">{currentCount}/{studentLimit}</span> học sinh
+            Số lượng: <span className="font-semibold text-primary">{currentCount}/{studentLimit}</span> học sinh
           </DialogDescription>
         </DialogHeader>
 

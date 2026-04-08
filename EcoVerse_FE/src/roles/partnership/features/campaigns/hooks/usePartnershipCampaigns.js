@@ -1,192 +1,10 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import { getGameLevelsForPartnership } from '@/shared/data/admin-game-levels.data';
+import { partnershipCampaignService } from '../../../services/partnershipCampaign.service';
+import { quizzesService } from '../../quizzes/services/quizzes.service';
+import { toLocalISO, toUTCISO } from '@/utils/dateUtils';
 
-const mockWasteItems = [
-  { id: 1, image: "🥤", name: "Chai nhựa", category: "plastic", description: "Chai nhựa nước uống" },
-  { id: 2, image: "📄", name: "Giấy A4", category: "paper", description: "Giấy in văn phòng" },
-  { id: 3, image: "🍎", name: "Vỏ táo", category: "organic", description: "Vỏ hoa quả hữu cơ" },
-  { id: 4, image: "🥡", name: "Hộp xốp", category: "others", description: "Hộp đựng thức ăn" },
-  { id: 5, image: "🧃", name: "Hộp sữa", category: "plastic", description: "Hộp sữa nhựa" },
-  { id: 6, image: "📰", name: "Báo cũ", category: "paper", description: "Tờ báo đã đọc" },
-  { id: 7, image: "🍌", name: "Vỏ chuối", category: "organic", description: "Vỏ trái cây" },
-  { id: 8, image: "🔋", name: "Pin", category: "others", description: "Pin điện tử" },
-];
-
-const mockCampaigns = [
-  {
-    id: '1',
-    name: 'Chiến dịch Thu gom rác thải nhựa 2026',
-    description: 'Chiến dịch thu gom và phân loại rác thải nhựa tại các trường học',
-    status: 'active',
-    start_date: '2026-01-15',
-    end_date: '2026-03-15',
-    invitation_send_date: '2026-01-10',
-    schools_count: 12,
-    students_count: 1580,
-    participation_rate: 78,
-    created_at: '2026-01-01',
-    school_participations: [
-      { school_id: 's1', school_name: 'Trường Tiểu học Nguyễn Du', status: 'accepted', student_limit: 150 },
-      { school_id: 's2', school_name: 'Trường Tiểu học Lê Quý Đôn', status: 'accepted', student_limit: 120 },
-    ],
-    qualifying_rounds: [
-      {
-        round_number: 1,
-        round_name: 'Vòng loại 1',
-        start_date: '2026-01-05',
-        end_date: '2026-01-10',
-        quiz_ids: [],
-        selected_game_type: 'collection-sorting',
-        game_level_ids: [],
-        advancement_limit: 100,
-      },
-    ],
-  },
-  {
-    id: '2',
-    name: 'Tuần lễ môi trường xanh 2025',
-    description: 'Các hoạt động nâng cao nhận thức về bảo vệ môi trường',
-    status: 'completed',
-    start_date: '2025-11-01',
-    end_date: '2025-11-07',
-    invitation_send_date: '2025-10-25',
-    schools_count: 8,
-    students_count: 950,
-    participation_rate: 92,
-    created_at: '2025-10-15',
-    qualifying_rounds: [
-      {
-        round_number: 1,
-        round_name: 'Vòng loại 1',
-        start_date: '2025-10-26',
-        end_date: '2025-10-31',
-        quiz_ids: [],
-        selected_game_type: 'run-sorting',
-        game_level_ids: [],
-        advancement_limit: 50,
-      },
-    ],
-  },
-  {
-    id: '3',
-    name: 'Trồng cây xanh - Tương lai xanh',
-    description: 'Chiến dịch trồng cây và chăm sóc cây xanh tại trường học',
-    status: 'draft',
-    start_date: '2026-04-01',
-    end_date: '2026-05-31',
-    invitation_send_date: '2026-03-15',
-    schools_count: 0,
-    students_count: 0,
-    created_at: '2026-02-01',
-    qualifying_rounds: [
-      {
-        round_number: 1,
-        round_name: 'Vòng loại 1',
-        start_date: '',
-        end_date: '',
-        quiz_ids: [],
-        selected_game_type: '',
-        game_level_ids: [],
-        advancement_limit: 10,
-      },
-    ],
-  },
-  {
-    id: '4',
-    name: 'Không khói bụi cho tương lai',
-    description: 'Chiến dịch giảm thiểu khí thải và khói bụi',
-    status: 'inviting',
-    start_date: '2026-02-15',
-    end_date: '2026-03-31',
-    invitation_send_date: '2026-01-25',
-    schools_count: 5,
-    students_count: 500,
-    created_at: '2026-01-25',
-    school_participations: [
-      { school_id: 's1', school_name: 'Trường Tiểu học Nguyễn Du', status: 'accepted', student_limit: 100 },
-      { school_id: 's2', school_name: 'Trường Tiểu học Lê Quý Đôn', status: 'invited', student_limit: 100 },
-      { school_id: 's3', school_name: 'Trường Tiểu học Trần Hưng Đạo', status: 'declined', student_limit: 100 },
-      { school_id: 's4', school_name: 'Trường Tiểu học Võ Thị Sáu', status: 'invited', student_limit: 100 },
-    ],
-    qualifying_rounds: [
-      {
-        round_number: 1,
-        round_name: 'Vòng loại 1',
-        start_date: '2026-02-01',
-        end_date: '2026-02-10',
-        quiz_ids: [],
-        selected_game_type: 'collection-sorting',
-        game_level_ids: [],
-        advancement_limit: 30,
-      },
-    ],
-  },
-  {
-    id: '5',
-    name: 'Giải cứu đại dương',
-    description: 'Chiến dịch làm sạch bãi biển và tìm hiểu về sinh vật biển. Dành cho các trường ven biển.',
-    status: 'scheduled',
-    start_date: '2026-06-01',
-    end_date: '2026-08-31',
-    invitation_send_date: '2026-05-01',
-    schools_count: 3,
-    students_count: 300,
-    created_at: '2026-01-26',
-    school_participations: [
-       { school_id: 's2', school_name: 'Trường Tiểu học Lê Quý Đôn', status: 'accepted', student_limit: 100 },
-    ],
-    qualifying_rounds: [
-      {
-        round_number: 1,
-        round_name: 'Vòng loại 1',
-        start_date: '2026-05-15',
-        end_date: '2026-05-25',
-        quiz_ids: [],
-        selected_game_type: 'run-sorting',
-        game_level_ids: [],
-        advancement_limit: 20,
-      },
-    ],
-  },
-  {
-    id: '6',
-    name: 'Tái chế pin cũ',
-    description: 'Thu gom pin cũ đổi lấy quà tặng xanh. Chương trình thí điểm.',
-    status: 'cancelled',
-    start_date: '2025-12-01',
-    end_date: '2025-12-31',
-    invitation_send_date: '2025-11-15',
-    schools_count: 2,
-    students_count: 400,
-    created_at: '2025-11-01',
-    qualifying_rounds: [
-      {
-        round_number: 1,
-        round_name: 'Vòng loại 1',
-        start_date: '2025-11-20',
-        end_date: '2025-11-25',
-        quiz_ids: [],
-        selected_game_type: 'collection-sorting',
-        game_level_ids: [],
-        advancement_limit: 15,
-      },
-    ],
-  }
-];
-
-const mockSchools = [
-  { id: 's1', school_name: 'Trường Tiểu học Nguyễn Du', address: '123 Nguyễn Du', district: 'Quận 1', city: 'TP. Hồ Chí Minh', student_count: 450 },
-  { id: 's2', school_name: 'Trường Tiểu học Lê Quý Đôn', address: '456 Lê Quý Đôn', district: 'Quận 3', city: 'TP. Hồ Chí Minh', student_count: 380 },
-  { id: 's3', school_name: 'Trường Tiểu học Trần Hưng Đạo', address: '789 Trần Hưng Đạo', district: 'Quận 5', city: 'TP. Hồ Chí Minh', student_count: 520 },
-  { id: 's4', school_name: 'Trường Tiểu học Võ Thị Sáu', address: '321 Võ Thị Sáu', district: 'Quận 3', city: 'TP. Hồ Chí Minh', student_count: 410 },
-];
-
-const mockQuizzes = [
-  { id: 'q1', title: 'Quiz Phân loại rác cơ bản', difficulty: 'easy', question_count: 10 },
-  { id: 'q2', title: 'Quiz Tái chế nhựa', difficulty: 'medium', question_count: 15 },
-  { id: 'q3', title: 'Quiz Bảo vệ môi trường', difficulty: 'hard', question_count: 20 },
-  { id: 'q4', title: 'Quiz Rác thải hữu cơ', difficulty: 'easy', question_count: 8 },
-];
+const mockQuizzes = [];
 
 const adminPartnershipLevels = getGameLevelsForPartnership().map(level => ({
   id: level.id.toString(),
@@ -197,42 +15,146 @@ const adminPartnershipLevels = getGameLevelsForPartnership().map(level => ({
 }));
 
 export function usePartnershipCampaigns() {
-  const [campaigns, setCampaigns] = useState(mockCampaigns);
-  const [availableSchools] = useState(mockSchools);
-  const [availableQuizzes, setAvailableQuizzes] = useState(mockQuizzes);
-  const [availableGameLevels] = useState(adminPartnershipLevels);
-  const [availableWasteItems] = useState(mockWasteItems);
-  const [selectedCampaign, setSelectedCampaign] = useState(null);
-  const [isDetailOpen, setIsDetailOpen] = useState(false);
-  const [isCreateOpen, setIsCreateOpen] = useState(false);
-  
   const [isAddGameOpen, setIsAddGameOpen] = useState(false);
   const [isAddQuizOpen, setIsAddQuizOpen] = useState(false);
   const [selectedCampaignForConfig, setSelectedCampaignForConfig] = useState(null);
+  const [loading, setLoading] = useState(false);
+
+  const [campaigns, setCampaigns] = useState([]);
+  const [availableSchools, setAvailableSchools] = useState([]);
+  const [availableQuizzes, setAvailableQuizzes] = useState([]);
+  const [availableGameLevels] = useState(adminPartnershipLevels);
+  const [selectedCampaign, setSelectedCampaign] = useState(null);
+  const [isDetailOpen, setIsDetailOpen] = useState(false);
+  const [isCreateOpen, setIsCreateOpen] = useState(false);
+  const [editingId, setEditingId] = useState(null);
+  const isEditing = !!editingId;
+
+  const [confirmConfig, setConfirmConfig] = useState({
+    isOpen: false,
+    title: '',
+    description: '',
+    confirmText: 'Xác nhận',
+    onConfirm: () => {},
+    variant: 'default'
+  });
+
+  const fetchCampaigns = async () => {
+    try {
+      setLoading(true);
+      const res = await partnershipCampaignService.getCampaigns();
+      const normalizedData = (res.data?.data || []).map(campaign => ({
+        ...campaign,
+        status: (s => {
+          const status = s?.toLowerCase();
+          if (status === 'active') return 'on_going';
+          if (status === 'joining') return 'inviting';
+          return status || '';
+        })(campaign.status),
+        startDate: toLocalISO(campaign.startDate),
+        endDate: toLocalISO(campaign.endDate),
+        registrationDate: toLocalISO(campaign.registrationDate),
+        registrationDeadline: toLocalISO(campaign.registrationDeadline || campaign.registrationDateDeadline),
+        invitationDate: toLocalISO(campaign.invitationDate),
+        invitationDeadline: toLocalISO(campaign.invitationDeadline),
+        hasGame: campaign.hasGame ?? false,
+        hasQuiz: campaign.hasQuiz ?? false,
+        rounds: (campaign.rounds || campaign.qualifying_rounds || []).map(r => ({
+          ...r,
+          startTime: toLocalISO(r.startTime),
+          endTime: toLocalISO(r.endTime)
+        }))
+      }));
+      setCampaigns(normalizedData);
+    } catch (error) {
+      console.error('Failed to fetch campaigns', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const fetchEligibleSchools = async () => {
+    try {
+      const res = await partnershipCampaignService.getEligibleSchools();
+      setAvailableSchools(res.data?.data || []);
+    } catch (error) {
+      console.error('Failed to fetch eligible schools', error);
+    }
+  };
+
+  const fetchQuizzes = async () => {
+    try {
+      const res = await quizzesService.getQuizzes();
+      const published = (res.data?.data || []).filter(q => q.published);
+      
+      const quizzesWithDetails = await Promise.all(
+        published.map(async (q) => {
+          try {
+            const detailRes = await quizzesService.getQuizDetail(q.id);
+            const detail = detailRes.data?.data;
+            return {
+              ...q,
+              title: detail?.name || q.name || q.title,
+              difficulty: detail?.difficulty?.toLowerCase() || q.difficulty?.toLowerCase() || 'easy',
+              question_count: detail?.questions?.length || detail?.questionsCount || 0
+            };
+          } catch (e) {
+            console.error(`Failed to fetch detail for quiz ${q.id}`, e);
+            return {
+              ...q,
+              title: q.name || q.title,
+              difficulty: q.difficulty?.toLowerCase() || 'easy',
+              question_count: q.questionsCount || 0
+            };
+          }
+        })
+      );
+      
+      setAvailableQuizzes(quizzesWithDetails);
+    } catch (error) {
+      console.error('Failed to fetch quizzes', error);
+    }
+  };
+
+  useEffect(() => {
+    fetchCampaigns();
+    fetchEligibleSchools();
+    fetchQuizzes();
+  }, []);
 
   const [formData, setFormData] = useState({
-    name: '',
+    campaignName: '',
     description: '',
-    start_date: '',
-    end_date: '',
-    invitation_send_date: '',
-    school_participations: [],
-    quiz_ids: [],
-    selected_game_type: '',
-    game_level_ids: [],
-    reward_images: [],
-    status: 'draft',
-    qualifying_rounds: [
+    startDate: '',
+    endDate: '',
+    registrationDate: '',
+    registrationDeadline: '',
+    invitationDate: '',
+    invitationDeadline: '',
+    bannerImageUrl: '',
+    maxStudentsPerSchool: 0,
+    totalStudentQuota: 0,
+    topRankingCount: 0,
+    schoolIds: [],
+    rewards: [
       {
-        round_number: 1,
-        round_name: 'Vòng sơ loại',
-        start_date: '',
-        end_date: '',
-        quiz_ids: [],
-        selected_game_type: '',
-        preset_id: null,
-        advancement_limit: 10,
-      },
+        rankPosition: 1,
+        rewardName: '',
+        description: '',
+        imageUrl: '',
+        sponsorName: ''
+      }
+    ],
+    rounds: [
+      {
+        roundNumber: 1,
+        roundName: 'Vòng sơ loại',
+        startTime: '',
+        endTime: '',
+        maxParticipants: 0,
+        advanceCount: 0,
+        isFinalRound: false
+      }
     ],
   });
 
@@ -240,32 +162,63 @@ export function usePartnershipCampaigns() {
     const draft = campaigns.filter(c => c.status === 'draft').length;
     const scheduled = campaigns.filter(c => c.status === 'scheduled').length;
     const inviting = campaigns.filter(c => c.status === 'inviting').length;
-    const active = campaigns.filter(c => c.status === 'active').length;
+    const on_going = campaigns.filter(c => c.status === 'on_going').length;
     const completed = campaigns.filter(c => c.status === 'completed').length;
     const cancelled = campaigns.filter(c => c.status === 'cancelled').length;
     
     const total_schools = campaigns.reduce((sum, c) => sum + c.schools_count, 0);
     const total_students = campaigns.reduce((sum, c) => sum + c.students_count, 0);
 
-    return { draft, scheduled, inviting, active, completed, cancelled, total_schools, total_students };
+    return { draft, scheduled, inviting, on_going, completed, cancelled, total_schools, total_students };
   }, [campaigns]);
 
-  if (campaigns.some(c => c.status === 'scheduled' && c.invitation_send_date && new Date(c.invitation_send_date) <= new Date())) {
-      setCampaigns(prev => prev.map(c => {
-         if (c.status === 'scheduled' && c.invitation_send_date && new Date(c.invitation_send_date) <= new Date()) {
-           return { ...c, status: 'inviting' };
-         }
-         return c;
-      }));
-  }
 
   const getCampaignsByStatus = (status) => {
     return campaigns.filter(c => c.status === status);
   };
 
-  const handleViewDetail = (campaign) => {
-    setSelectedCampaign(campaign);
-    setIsDetailOpen(true);
+  const handleViewDetail = async (campaign) => {
+    try {
+      setLoading(true);
+      const [detailRes, rewardsRes] = await Promise.all([
+        partnershipCampaignService.getCampaignById(campaign.id),
+        partnershipCampaignService.getCampaignRewards(campaign.id)
+      ]);
+
+      const detailData = detailRes.data?.data;
+      const rewardsData = rewardsRes.data?.data;
+
+      if (detailData) {
+        // Normalize
+        setSelectedCampaign({
+          ...detailData,
+          status: (s => {
+            const status = s?.toLowerCase();
+            if (status === 'active') return 'on_going';
+            if (status === 'joining') return 'inviting';
+            return status || '';
+          })(detailData.status),
+          startDate: toLocalISO(detailData.startDate),
+          endDate: toLocalISO(detailData.endDate),
+          registrationDate: toLocalISO(detailData.registrationDate),
+          registrationDeadline: toLocalISO(detailData.registrationDeadline || detailData.registrationDateDeadline),
+          invitationDate: toLocalISO(detailData.invitationDate),
+          invitationDeadline: toLocalISO(detailData.invitationDeadline),
+          rounds: (detailData.rounds || detailData.qualifying_rounds || []).map(r => ({
+            ...r,
+            startTime: toLocalISO(r.startTime),
+            endTime: toLocalISO(r.endTime)
+          })),
+          schoolParticipations: detailData.invitedSchools || [], // Mapping for UI compatibility
+          rewards: rewardsData || []
+        });
+        setIsDetailOpen(true);
+      }
+    } catch (error) {
+      console.error('Failed to fetch campaign details or rewards', error);
+    } finally {
+      setLoading(false);
+    }
   };
 
   const handleCloseDetail = () => {
@@ -279,6 +232,7 @@ export function usePartnershipCampaigns() {
 
   const handleCloseCreate = () => {
     setIsCreateOpen(false);
+    setEditingId(null);
     resetForm();
   };
 
@@ -288,127 +242,272 @@ export function usePartnershipCampaigns() {
 
   const resetForm = () => {
     setFormData({
-      name: '',
+      campaignName: '',
       description: '',
-      start_date: '',
-      end_date: '',
-      invitation_send_date: '',
-      school_participations: [],
-      quiz_ids: [],
-      selected_game_type: '',
-      game_level_ids: [],
-      reward_images: [],
-      status: 'draft',
-      qualifying_rounds: [
+      startDate: '',
+      endDate: '',
+      registrationDate: '',
+      registrationDeadline: '',
+      invitationDate: '',
+      invitationDeadline: '',
+      maxStudentsPerSchool: 0,
+      totalStudentQuota: 0,
+      topRankingCount: 0,
+      bannerImageUrl: '',
+      schoolIds: [],
+      rewards: [
         {
-          round_number: 1,
-          round_name: 'Vòng sơ loại',
-          start_date: '',
-          end_date: '',
-          quiz_ids: [],
-          selected_game_type: '',
-          preset_id: null,
-          advancement_limit: 10,
-        },
+          rankPosition: 1,
+          rewardName: '',
+          description: '',
+          imageUrl: '',
+          sponsorName: ''
+        }
+      ],
+      rounds: [
+        {
+          roundNumber: 1,
+          roundName: 'Vòng sơ loại',
+          startTime: '',
+          endTime: '',
+          maxParticipants: 0,
+          advanceCount: 0,
+          isFinalRound: false
+        }
       ],
     });
   };
 
-  const handleSubmit = (asDraft) => {
-    const totalStudents = formData.school_participations.reduce((sum, sp) => {
-      const school = availableSchools.find(s => s.id === sp.school_id);
-      if (!school) return sum;
-      return sum + (sp.student_limit || school.student_count);
-    }, 0);
+  const handleSubmit = async () => {
+    try {
+      setLoading(true);
+      
+      // Explicitly construct payload to match schema exactly
+      const payload = {
+        campaignName: formData.campaignName,
+        description: formData.description,
+        startDate: toUTCISO(formData.startDate),
+        endDate: toUTCISO(formData.endDate),
+        registrationDate: toUTCISO(formData.registrationDate),
+        registrationDeadline: toUTCISO(formData.registrationDeadline),
+        invitationDate: toUTCISO(formData.invitationDate),
+        invitationDeadline: toUTCISO(formData.invitationDeadline),
+        maxStudentsPerSchool: parseInt(formData.maxStudentsPerSchool) || 0,
+        totalStudentQuota: parseInt(formData.totalStudentQuota) || 0,
+        topRankingCount: parseInt(formData.topRankingCount) || 0,
+        bannerImageUrl: formData.bannerImageUrl || '',
+        schoolIds: formData.schoolIds,
+        rewards: formData.rewards.map(r => ({
+          rankPosition: parseInt(r.rankPosition) || 1,
+          rewardName: r.rewardName || '',
+          description: r.description || '',
+          imageUrl: r.imageUrl || '',
+          sponsorName: r.sponsorName || ''
+        })),
+        rounds: formData.rounds.map(r => ({
+          roundNumber: parseInt(r.roundNumber),
+          roundName: r.roundName,
+          startTime: toUTCISO(r.startTime),
+          endTime: toUTCISO(r.endTime),
+          maxParticipants: parseInt(r.maxParticipants) || 0,
+          advanceCount: parseInt(r.advanceCount) || 0,
+          isFinalRound: r.isFinalRound
+        }))
+      };
 
-    const rewardImageUrls = formData.reward_images?.map((file) => {
-      return URL.createObjectURL(file);
-    }) || [];
-
-    const newCampaign = {
-      id: Date.now().toString(),
-      name: formData.name,
-      description: formData.description,
-      start_date: formData.start_date,
-      end_date: formData.end_date,
-      invitation_send_date: formData.invitation_send_date,
-      status: asDraft ? 'draft' : 'active',
-      schools_count: formData.school_participations.length,
-      students_count: totalStudents,
-      created_at: new Date().toISOString(),
-      school_participations: formData.school_participations,
-      quiz_ids: formData.quiz_ids,
-      selected_game_type: formData.selected_game_type,
-      game_level_ids: formData.game_level_ids,
-      reward_image_urls: rewardImageUrls,
-      qualifying_rounds: formData.qualifying_rounds,
-    };
-
-    setCampaigns(prev => [newCampaign, ...prev]);
-    handleCloseCreate();
-    
-    console.log('Creating campaign:', newCampaign);
+      if (isEditing) {
+        await partnershipCampaignService.updateCampaign(editingId, payload);
+        console.log('Campaign updated successfully');
+      } else {
+        await partnershipCampaignService.createCampaign(payload);
+        console.log('Campaign created successfully');
+      }
+      await fetchCampaigns();
+      handleCloseCreate();
+    } catch (error) {
+      console.error(`Failed to ${isEditing ? 'update' : 'create'} campaign`, error);
+    } finally {
+      setLoading(false);
+    }
   };
 
-  const handleEdit = (campaign) => {
-    setFormData({
-      name: campaign.name,
-      description: campaign.description,
-      start_date: campaign.start_date,
-      end_date: campaign.end_date,
-      invitation_send_date: campaign.invitation_send_date || '',
-      school_participations: campaign.school_participations || [],
-      quiz_ids: campaign.quiz_ids || [],
-      selected_game_type: campaign.selected_game_type,
-      game_level_ids: campaign.game_level_ids,
-      reward_images: [],
-      status: 'draft',
-      qualifying_rounds: campaign.qualifying_rounds || [],
-    });
-    setIsCreateOpen(true);
-    
-    console.log('Editing campaign:', campaign);
+  const handleEdit = async (campaign) => {
+    try {
+      setLoading(true);
+      const [detailRes, rewardsRes] = await Promise.all([
+        partnershipCampaignService.getCampaignById(campaign.id),
+        partnershipCampaignService.getCampaignRewards(campaign.id)
+      ]);
+
+      const detail = detailRes.data?.data;
+      const rewards = rewardsRes.data?.data || [];
+
+      if (detail) {
+        setFormData({
+          campaignName: detail.campaignName,
+          description: detail.description,
+          startDate: toLocalISO(detail.startDate),
+          endDate: toLocalISO(detail.endDate),
+          registrationDate: toLocalISO(detail.registrationDate || ''),
+          registrationDeadline: toLocalISO(detail.registrationDeadline || detail.registrationDateDeadline || ''),
+          invitationDate: toLocalISO(detail.invitationDate || ''),
+          invitationDeadline: toLocalISO(detail.invitationDeadline || ''),
+          bannerImageUrl: detail.bannerImageUrl || '',
+          maxStudentsPerSchool: detail.maxStudentsPerSchool || 0,
+          totalStudentQuota: detail.totalStudentQuota || 0,
+          topRankingCount: detail.topRankingCount || 0,
+          schoolIds: (detail.invitedSchools || []).map(s => s.schoolId),
+          rewards: rewards.length > 0 ? rewards.map(r => ({
+            rankPosition: r.rankPosition,
+            rewardName: r.rewardName,
+            description: r.description,
+            imageUrl: r.imageUrl,
+            previewUrl: r.imagePresignedUrl,
+            sponsorName: r.sponsorName
+          })) : [
+            {
+              rankPosition: 1,
+              rewardName: '',
+              description: '',
+              imageUrl: '',
+              sponsorName: ''
+            }
+          ],
+          rounds: (detail.rounds || []).map(r => ({
+            id: r.id,
+            roundNumber: r.roundNumber,
+            roundName: r.roundName,
+            startTime: toLocalISO(r.startTime),
+            endTime: toLocalISO(r.endTime),
+            maxParticipants: r.maxParticipants,
+            advanceCount: r.advanceCount,
+            isFinalRound: r.isFinalRound
+          })),
+        });
+        setEditingId(campaign.id);
+        setIsCreateOpen(true);
+      }
+    } catch (error) {
+      console.error('Failed to fetch campaign details for editing', error);
+    } finally {
+      setLoading(false);
+    }
   };
 
   const handleDelete = (campaign) => {
-    if (confirm(`Bạn có chắc chắn muốn xóa chiến dịch "${campaign.name}"?`)) {
-      setCampaigns(prev => prev.filter(c => c.id !== campaign.id));
-      
-      console.log('Deleting campaign:', campaign.id);
-    }
-  };
-
-  const handleActivate = (campaign) => {
-    if (confirm(`Bạn có chắc chắn muốn kích hoạt chiến dịch "${campaign.name}"?`)) {
-      setCampaigns(prev => prev.map(c => {
-        if (c.id === campaign.id) {
-           const now = new Date();
-           const inviteDate = c.invitation_send_date ? new Date(c.invitation_send_date) : now;
-           
-           if (inviteDate > now) {
-             return { ...c, status: 'scheduled' };
-           } else {
-             return { ...c, status: 'inviting', invitation_send_date: (!c.invitation_send_date) ? now.toISOString() : c.invitation_send_date };
-           }
+    setConfirmConfig({
+      isOpen: true,
+      title: 'Xác nhận xóa',
+      description: `Bạn có chắc chắn muốn xóa chiến dịch "${campaign.campaignName}"? Hành động này không thể hoàn tác.`,
+      confirmText: 'Xóa ngay',
+      variant: 'destructive',
+      onConfirm: async () => {
+        try {
+          setLoading(true);
+          await partnershipCampaignService.deleteCampaign(campaign.id);
+          await fetchCampaigns();
+          console.log('Campaign deleted successfully');
+          setConfirmConfig(prev => ({ ...prev, isOpen: false }));
+        } catch (error) {
+          console.error('Failed to delete campaign', error);
+        } finally {
+          setLoading(false);
         }
-        return c;
-      }));
-      
-      console.log('Activating campaign:', campaign.id);
-    }
+      }
+    });
   };
 
-  const handleRevertToDraft = (campaign) => {
-    if (confirm(`Chuyển chiến dịch "${campaign.name}" về nháp để chỉnh sửa?`)) {
-      setCampaigns(prev => prev.map(c => 
-        c.id === campaign.id ? { ...c, status: 'draft' } : c
-      ));
-    }
+  const handleActivate = async (campaign) => {
+    setConfirmConfig({
+      isOpen: true,
+      title: 'Kích hoạt chiến dịch',
+      description: `Bạn có chắc chắn muốn kích hoạt chiến dịch "${campaign.campaignName}"? Chiến dịch sẽ sẵn sàng để mời các trường tham gia.`,
+      confirmText: 'Kích hoạt ngay',
+      variant: 'eco-blue',
+      onConfirm: async () => {
+        try {
+          setLoading(true);
+          await partnershipCampaignService.activateCampaign(campaign.id);
+          await fetchCampaigns();
+          console.log('Campaign activated successfully:', campaign.id);
+          setConfirmConfig(prev => ({ ...prev, isOpen: false }));
+        } catch (error) {
+          console.error('Failed to activate campaign', error);
+        } finally {
+          setLoading(false);
+        }
+      }
+    });
   };
 
-  const handleOpenAddGame = (campaign) => {
-    setSelectedCampaignForConfig(campaign);
-    setIsAddGameOpen(true);
+  const handleRevertToDraft = async (campaign) => {
+    setConfirmConfig({
+      isOpen: true,
+      title: 'Chuyển về bản nháp',
+      description: `Chuyển chiến dịch "${campaign.campaignName}" về nháp để chỉnh sửa?`,
+      confirmText: 'Đồng ý',
+      variant: 'eco-orange',
+      onConfirm: async () => {
+        try {
+          setLoading(true);
+          await partnershipCampaignService.setDraftCampaign(campaign.id);
+          await fetchCampaigns();
+          console.log('Campaign reverted to draft successfully:', campaign.id);
+          setConfirmConfig(prev => ({ ...prev, isOpen: false }));
+        } catch (error) {
+          console.error('Failed to revert campaign to draft', error);
+        } finally {
+          setLoading(false);
+        }
+      }
+    });
+  };
+
+  const handleCancel = async (campaign) => {
+    setConfirmConfig({
+      isOpen: true,
+      title: 'Hủy chiến dịch',
+      description: `Bạn có chắc chắn muốn hủy chiến dịch "${campaign.campaignName}"? Hành động này sẽ dừng toàn bộ hoạt động mời thầu.`,
+      confirmText: 'Hủy chiến dịch',
+      variant: 'destructive',
+      onConfirm: async () => {
+        try {
+          setLoading(true);
+          await partnershipCampaignService.cancelCampaign(campaign.id);
+          await fetchCampaigns();
+          console.log('Campaign cancelled successfully:', campaign.id);
+          setConfirmConfig(prev => ({ ...prev, isOpen: false }));
+        } catch (error) {
+          console.error('Failed to cancel campaign', error);
+        } finally {
+          setLoading(false);
+        }
+      }
+    });
+  };
+
+  const handleOpenAddGame = async (campaign) => {
+    try {
+      if (!campaign.rounds && !campaign.qualifying_rounds) {
+        setLoading(true);
+        const res = await partnershipCampaignService.getCampaignById(campaign.id);
+        const fullDetail = res.data?.data;
+        if (fullDetail) {
+          setSelectedCampaignForConfig(fullDetail);
+        } else {
+          setSelectedCampaignForConfig(campaign);
+        }
+      } else {
+        setSelectedCampaignForConfig(campaign);
+      }
+      setIsAddGameOpen(true);
+    } catch (error) {
+      console.error('Failed to fetch campaign details for game configuration', error);
+      setSelectedCampaignForConfig(campaign);
+      setIsAddGameOpen(true);
+    } finally {
+      setLoading(false);
+    }
   };
   
   const handleCloseAddGame = () => {
@@ -416,9 +515,28 @@ export function usePartnershipCampaigns() {
     setSelectedCampaignForConfig(null);
   };
 
-  const handleOpenAddQuiz = (campaign) => {
-    setSelectedCampaignForConfig(campaign);
-    setIsAddQuizOpen(true);
+  const handleOpenAddQuiz = async (campaign) => {
+    try {
+      if (!campaign.rounds && !campaign.qualifying_rounds) {
+        setLoading(true);
+        const res = await partnershipCampaignService.getCampaignById(campaign.id);
+        const fullDetail = res.data?.data;
+        if (fullDetail) {
+          setSelectedCampaignForConfig(fullDetail);
+        } else {
+          setSelectedCampaignForConfig(campaign);
+        }
+      } else {
+        setSelectedCampaignForConfig(campaign);
+      }
+      setIsAddQuizOpen(true);
+    } catch (error) {
+      console.error('Failed to fetch campaign details for quiz configuration', error);
+      setSelectedCampaignForConfig(campaign);
+      setIsAddQuizOpen(true);
+    } finally {
+      setLoading(false);
+    }
   };
   
   const handleCloseAddQuiz = () => {
@@ -426,18 +544,45 @@ export function usePartnershipCampaigns() {
     setSelectedCampaignForConfig(null);
   };
 
-  const handleAddGameSubmit = (campaignId, updatedRounds) => {
-    setCampaigns(prev => prev.map(c => 
-      c.id === campaignId ? { ...c, qualifying_rounds: updatedRounds } : c
-    ));
-    handleCloseAddGame();
+  const handleAddGameSubmit = async () => {
+    try {
+      setLoading(true);
+      await fetchCampaigns();
+    } catch (e) {
+      console.error(e);
+    } finally {
+      setLoading(false);
+      handleCloseAddGame();
+    }
   };
 
-  const handleAddQuizSubmit = (campaignId, updatedRounds) => {
-    setCampaigns(prev => prev.map(c => 
-      c.id === campaignId ? { ...c, qualifying_rounds: updatedRounds } : c
-    ));
-    handleCloseAddQuiz();
+  const handleAddQuizSubmit = async (roundsWithQuizzes) => {
+    try {
+      setLoading(true);
+      const bindPromises = roundsWithQuizzes
+        .filter(r => r.id) // Only bind rounds that have an ID
+        .map(r => {
+          // Wrapped in an array of objects with user-defined settings
+          const payload = [
+            {
+              quizIds: r.quiz_ids,
+              maxAttempts: r.maxAttempts,
+              isRequired: r.isRequired
+            }
+          ];
+          return partnershipCampaignService.bindQuizzesToRound(r.id, payload);
+        });
+      
+      await Promise.all(bindPromises);
+      console.log('Quizzes bound to rounds successfully');
+      
+      await fetchCampaigns();
+      handleCloseAddQuiz();
+    } catch (error) {
+      console.error('Failed to bind quizzes to rounds', error);
+    } finally {
+      setLoading(false);
+    }
   };
 
   return {
@@ -450,6 +595,7 @@ export function usePartnershipCampaigns() {
     handleCloseDetail,
     handleEdit,
     handleDelete,
+    handleCancel,
     handleActivate,
     handleRevertToDraft,
     
@@ -462,8 +608,10 @@ export function usePartnershipCampaigns() {
     availableQuizzes,
     setAvailableQuizzes,
     availableGameLevels,
-    availableWasteItems,
     handleSubmit,
+
+    confirmConfig,
+    setConfirmConfig,
 
     isAddGameOpen,
     isAddQuizOpen,

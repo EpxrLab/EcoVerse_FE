@@ -40,7 +40,7 @@ export function RewardStats({ stats }) {
             </div>
             <div>
               <p className="text-2xl font-bold text-foreground">{stats.expired}</p>
-              <p className="text-sm text-muted-foreground">Hết hạn</p>
+              <p className="text-sm text-muted-foreground">Đã hủy/Từ chối</p>
             </div>
           </div>
         </CardContent>

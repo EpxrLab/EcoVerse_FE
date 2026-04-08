@@ -1,17 +1,17 @@
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/shared/components/ui/table';
 import { Badge } from '@/shared/components/ui/badge';
 import { Button } from '@/shared/components/ui/button';
-import { Eye, Calendar, School, Users, Send, MoreVertical, Edit, Trash2, RotateCcw, Gamepad2, FileQuestion } from 'lucide-react';
+import { Eye, Calendar, School, Users, Send, MoreVertical, Edit, Trash2, RotateCcw, Gamepad2, FileQuestion, XCircle } from 'lucide-react';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, DropdownMenuSeparator } from '@/shared/components/ui/dropdown-menu';
 import { cn } from '@/shared/lib/utils';
 
-export function CampaignList({ campaigns, onViewDetail, onEdit, onDelete, onActivate, onRevertToDraft, onAddGame, onAddQuiz }) {
+export function CampaignList({ campaigns, onViewDetail, onEdit, onDelete, onActivate, onRevertToDraft, onAddGame, onAddQuiz, onCancel }) {
   const getStatusColor = (status) => {
     switch (status) {
       case 'draft': return 'bg-muted text-muted-foreground';
       case 'scheduled': return 'bg-purple-500/15 text-purple-500 border-purple-500/25';
       case 'inviting': return 'bg-eco-orange/15 text-eco-orange border-eco-orange/25';
-      case 'active': return 'bg-eco-blue/15 text-eco-blue border-eco-blue/25';
+      case 'on_going': return 'bg-eco-blue/15 text-eco-blue border-eco-blue/25';
       case 'completed': return 'bg-eco-green/15 text-eco-green border-eco-green/25';
       case 'cancelled': return 'bg-destructive/15 text-destructive border-destructive/25';
       default: return 'bg-muted text-muted-foreground';
@@ -23,10 +23,18 @@ export function CampaignList({ campaigns, onViewDetail, onEdit, onDelete, onActi
       case 'draft': return 'Nháp';
       case 'scheduled': return 'Đã lên lịch';
       case 'inviting': return 'Đang mời';
-      case 'active': return 'Đang diễn ra';
+      case 'on_going': return 'Đang diễn ra';
       case 'completed': return 'Hoàn thành';
       case 'cancelled': return 'Đã hủy';
       default: return status;
+    }
+  };
+
+  const getCampaignTypeLabel = (type) => {
+    switch (type) {
+      case 'PARTNERSHIP_EVENT': return 'Sự kiện đối tác';
+      case 'SCHOOL_INTERNAL': return 'Nội bộ trường';
+      default: return type;
     }
   };
 
@@ -64,34 +72,16 @@ export function CampaignList({ campaigns, onViewDetail, onEdit, onDelete, onActi
               </div>
             </TableHead>
             <TableHead className="text-center font-bold">
-              <div className="flex items-center justify-center gap-2">
-                <Users className="w-4 h-4" />
-                Học sinh
-              </div>
+              Cấu hình
             </TableHead>
-            <TableHead className="text-center font-bold">Tỷ lệ tham gia</TableHead>
             <TableHead className="text-right font-bold">Thao tác</TableHead>
           </TableRow>
         </TableHeader>
         <TableBody>
-          {campaigns.map((campaign) => {
-            const rounds = campaign.qualifying_rounds || [];
-            const hasRounds = rounds.length > 0;
-            const hasGame = hasRounds && rounds.every(r => r.selected_game_type);
-            const hasQuiz = hasRounds && rounds.every(r => r.quiz_ids && r.quiz_ids.length > 0);
-            
-            return (
+          {campaigns.map((campaign) => (
             <TableRow key={campaign.id} className="hover:bg-muted/30">
               <TableCell>
-                <div className="space-y-1">
-                  <p className="font-semibold text-foreground">{campaign.name}</p>
-                  {campaign.status === 'draft' && (!hasGame || !hasQuiz) && (
-                    <div className="flex gap-1">
-                       {!hasGame && <span className="text-[10px] px-1.5 py-0.5 rounded bg-red-100 text-red-600 font-medium">Chưa có Game</span>}
-                       {!hasQuiz && <span className="text-[10px] px-1.5 py-0.5 rounded bg-orange-100 text-orange-600 font-medium">Chưa có Quiz</span>}
-                    </div>
-                  )}
-                </div>
+                <p className="font-semibold text-foreground">{campaign.campaignName}</p>
               </TableCell>
               <TableCell>
                 <Badge variant="outline" className={cn(getStatusColor(campaign.status))}>
@@ -101,44 +91,36 @@ export function CampaignList({ campaigns, onViewDetail, onEdit, onDelete, onActi
               <TableCell>
                 <div className="text-sm">
                   <p className="text-muted-foreground">
-                    {new Date(campaign.start_date).toLocaleDateString('vi-VN')}
+                    {campaign.startDate ? new Date(campaign.startDate).toLocaleString('vi-VN') : "-"}
                   </p>
                   <p className="text-muted-foreground">
-                    {new Date(campaign.end_date).toLocaleDateString('vi-VN')}
+                    {campaign.endDate ? new Date(campaign.endDate).toLocaleString('vi-VN') : "-"}
                   </p>
                 </div>
               </TableCell>
               <TableCell>
-                {campaign.invitation_send_date ? (
+                {campaign.invitationDate ? (
                   <p className="text-sm text-muted-foreground">
-                    {new Date(campaign.invitation_send_date).toLocaleDateString('vi-VN')}
+                    {new Date(campaign.invitationDate).toLocaleString('vi-VN')}
                   </p>
                 ) : (
                   <span className="text-muted-foreground text-sm">Chưa đặt</span>
                 )}
               </TableCell>
               <TableCell className="text-center">
-                <span className="font-bold text-eco-blue">{campaign.schools_count}</span>
-              </TableCell>
-              <TableCell className="text-center">
-                <span className="font-bold text-eco-green">{campaign.students_count}</span>
+                <span className="font-bold text-eco-blue">{campaign.schoolsCount || 0}</span>
               </TableCell>
               <TableCell>
-                {campaign.participation_rate !== undefined ? (
-                  <div className="space-y-1">
-                    <div className="flex items-center justify-center gap-2">
-                      <span className="text-sm font-bold text-eco-green">{campaign.participation_rate}%</span>
-                    </div>
-                    <div className="h-2 bg-muted rounded-full overflow-hidden max-w-[100px] mx-auto">
-                      <div 
-                        className="h-full bg-eco-green rounded-full transition-all"
-                        style={{ width: `${campaign.participation_rate}%` }}
-                      />
-                    </div>
+                <div className="flex items-center justify-center gap-3">
+                  <div className="flex flex-col items-center gap-1">
+                    <Gamepad2 className={cn("w-5 h-5", campaign.hasGame ? "text-eco-green" : "text-muted-foreground/30")} />
+                    <span className={cn("text-[10px] uppercase font-bold", campaign.hasGame ? "text-eco-green" : "text-muted-foreground/30")}>Game</span>
                   </div>
-                ) : (
-                  <span className="text-muted-foreground text-sm">-</span>
-                )}
+                  <div className="flex flex-col items-center gap-1">
+                    <FileQuestion className={cn("w-5 h-5", campaign.hasQuiz ? "text-eco-green" : "text-muted-foreground/30")} />
+                    <span className={cn("text-[10px] uppercase font-bold", campaign.hasQuiz ? "text-eco-green" : "text-muted-foreground/30")}>Quiz</span>
+                  </div>
+                </div>
               </TableCell>
               <TableCell className="text-right">
                 <DropdownMenu>
@@ -188,20 +170,30 @@ export function CampaignList({ campaigns, onViewDetail, onEdit, onDelete, onActi
                       </DropdownMenuItem>
                     )}
 
-                    <DropdownMenuSeparator />
-                    <DropdownMenuItem 
-                      onClick={() => onDelete(campaign)}
-                      className="text-destructive focus:text-destructive"
-                    >
-                      <Trash2 className="w-4 h-4 mr-2" />
-                      Xóa
-                    </DropdownMenuItem>
+                    {campaign.status === 'inviting' && onCancel && (
+                      <DropdownMenuItem 
+                        onClick={() => onCancel(campaign)}
+                        className="text-destructive focus:text-destructive"
+                      >
+                        <XCircle className="w-4 h-4 mr-2" />
+                        Hủy chiến dịch
+                      </DropdownMenuItem>
+                    )}
+
+                    {(campaign.status === 'draft' || campaign.status === 'cancelled') && onDelete && (
+                      <DropdownMenuItem 
+                        onClick={() => onDelete(campaign)}
+                        className="text-destructive focus:text-destructive"
+                      >
+                        <Trash2 className="w-4 h-4 mr-2" />
+                        Xóa
+                      </DropdownMenuItem>
+                    )}
                   </DropdownMenuContent>
                 </DropdownMenu>
               </TableCell>
             </TableRow>
-            );
-          })}
+          ))}
         </TableBody>
       </Table>
     </div>

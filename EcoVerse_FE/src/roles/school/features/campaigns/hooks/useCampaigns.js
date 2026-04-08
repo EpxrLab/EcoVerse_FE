@@ -10,6 +10,7 @@ import { toLocalISO, toUTCISO } from '@/utils/dateUtils';
 export function useCampaigns() {
   const [campaigns, setCampaigns] = useState([]);
   const [apiQuizzes, setApiQuizzes] = useState([]);
+  const [partnershipInvitations, setPartnershipInvitations] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedCampaign, setSelectedCampaign] = useState(null);
@@ -26,6 +27,15 @@ export function useCampaigns() {
     }
   }, []);
 
+  const fetchPartnershipInvitations = useCallback(async () => {
+    try {
+      const res = await campaignService.getPartnershipInvitations();
+      setPartnershipInvitations(res.data?.data || []);
+    } catch (error) {
+      console.error('Failed to fetch partnership invitations:', error);
+    }
+  }, []);
+
   const fetchQuizzes = useCallback(async () => {
     try {
       const res = await quizzesService.getQuizzes();
@@ -38,7 +48,8 @@ export function useCampaigns() {
   useEffect(() => {
     fetchCampaigns();
     fetchQuizzes();
-  }, [fetchCampaigns, fetchQuizzes]);
+    fetchPartnershipInvitations();
+  }, [fetchCampaigns, fetchQuizzes, fetchPartnershipInvitations]);
 
   // Format and link invitations
   const allFormattedCampaigns = useMemo(() => {
@@ -82,10 +93,33 @@ export function useCampaigns() {
     }).filter(Boolean);
 
     const campaignsList = attachInvitations(mappedCampaigns);
-    const partnershipList = attachInvitations(mockSchoolInvitations);
+    
+    // Map partnership invitations to UI format
+    const partnershipList = attachInvitations(partnershipInvitations.map(inv => ({
+      id: inv.invitationId,
+      campaign_id: inv.campaignId,
+      name: inv.campaignName || 'Chiến dịch đối tác',
+      code: inv.campaignCode || '',
+      description: inv.description || '',
+      start_date: toLocalISO(inv.startDate),
+      end_date: toLocalISO(inv.endDate),
+      invitation_send_date: toLocalISO(inv.invitationDate),
+      invitation_deadline: toLocalISO(inv.invitationDeadline),
+      registration_date: toLocalISO(inv.registrationDate),
+      registration_deadline: toLocalISO(inv.registrationDeadline),
+      status: 'inviting', // Usually invitations are for inviting/on_going
+      invitation_status: inv.status,
+      origin: 'partnership',
+      partnership_name: inv.partnershipName || 'Đối tác chưa xác định',
+      student_limit: inv.maxStudentsPerSchool || 0,
+      total_student_quota: inv.totalStudentQuota || 0,
+      total_rounds: inv.totalRounds || 0,
+      students_enrolled: inv.studentsEnrolled || 0,
+      banner_image_url: inv.bannerImageUrl || '',
+    })));
     
     return [...campaignsList, ...partnershipList];
-  }, [campaigns]);
+  }, [campaigns, partnershipInvitations]);
 
 
   const stats = useMemo(() => {
@@ -97,7 +131,9 @@ export function useCampaigns() {
       invitingCampaigns: list.filter(c => c.status === 'inviting').length,
       completedCampaigns: list.filter(c => c.status === 'completed').length,
       cancelledCampaigns: list.filter(c => c.status === 'cancelled').length,
-      pendingInvitations: list.filter(c => c.origin === 'partnership' && c.invitation_status === 'pending').length,
+      pendingInvitations: list.filter(c => c.origin === 'partnership' && c.invitation_status === 'INVITED').length,
+      rejectedInvitations: list.filter(c => c.origin === 'partnership' && (c.invitation_status === 'REJECTED' || c.invitation_status === 'DECLINED')).length,
+      acceptedInvitations: list.filter(c => c.origin === 'partnership' && c.invitation_status === 'APPROVED').length,
       totalItemsCollected: list.reduce((sum, c) => sum + (c.total_items_collected || 0), 0),
     };
   }, [allFormattedCampaigns]);
@@ -253,41 +289,60 @@ export function useCampaigns() {
     });
   };
 
-  const acceptInvitation = (id, selectedStudentIds) => {
-    setCampaigns(campaigns.map(c => {
-      if (c.id === id) {
-        return {
-          ...c,
-          status: 'inviting',
-          invitation_status: 'accepted',
-          participating_students: selectedStudentIds,
-          invitation_send_date: new Date().toISOString(),
-          updated_at: new Date().toISOString()
-        };
-      }
-      return c;
-    }));
-    toast({
-      title: "Đã chấp nhận lời mời",
-      description: "Chiến dịch đã được thêm vào danh sách hoạt động",
-    });
+  const acceptInvitation = async (id) => {
+    try {
+      await campaignService.acceptPartnershipInvitation(id);
+      toast({
+        title: "Đã chấp nhận lời mời",
+        description: "Chiến dịch đã được chuyển vào mục Đã chấp nhận. Hãy thêm học sinh tham gia.",
+      });
+      fetchPartnershipInvitations();
+      // Optional: also refresh main campaigns list if the backend creates a campaign record immediately
+      fetchCampaigns && fetchCampaigns();
+    } catch (error) {
+      console.error('Failed to accept invitation:', error);
+      toast({
+        title: "Lỗi",
+        description: "Không thể chấp nhận lời mời. Vui lòng thử lại sau.",
+        variant: "destructive",
+      });
+    }
   };
   
-  const declineInvitation = (id) => {
-    setCampaigns(campaigns.map(c => {
-      if (c.id === id) {
-        return {
-          ...c,
-          invitation_status: 'cancelled',
-          updated_at: new Date().toISOString()
-        };
-      }
-      return c;
-    }));
-    toast({
-      title: "Đã từ chối",
-      description: "Đã từ chối lời mời tham gia chiến dịch",
-    });
+  const declineInvitation = async (id) => {
+    try {
+      await campaignService.rejectPartnershipInvitation(id);
+      toast({
+        title: "Đã từ chối",
+        description: "Đã từ chối lời mời tham gia chiến dịch",
+      });
+      fetchPartnershipInvitations();
+    } catch (error) {
+      console.error('Failed to reject invitation:', error);
+      toast({
+        title: "Lỗi",
+        description: "Không thể từ chối lời mời. Vui lòng thử lại sau.",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const assignStudentsToPartnership = async (id, studentIds) => {
+    try {
+      await campaignService.assignStudentsToPartnershipInvitation(id, studentIds);
+      toast({
+        title: "Đã thêm học sinh",
+        description: `Đã thêm ${studentIds.length} học sinh vào chiến dịch đối tác`,
+      });
+      fetchPartnershipInvitations();
+    } catch (error) {
+      console.error('Failed to assign students to partnership invitation:', error);
+      toast({
+        title: "Lỗi",
+        description: "Không thể thêm học sinh vào chiến dịch. Vui lòng thử lại sau.",
+        variant: "destructive",
+      });
+    }
   };
 
   const addStudentsToCampaign = (id, newStudentIds) => {
@@ -490,6 +545,7 @@ export function useCampaigns() {
     addStudentsToCampaign,
     revertToDraft,
     activateCampaign,
+    assignStudentsToPartnership,
     cancelCampaign,
     extendInviting,
     fetchCampaignDetail,

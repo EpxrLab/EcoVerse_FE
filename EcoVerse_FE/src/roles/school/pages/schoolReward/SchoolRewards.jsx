@@ -64,6 +64,14 @@ export default function SchoolRewards() {
   const [rejectionId, setRejectionId] = useState(null);
   const [rejectionReason, setRejectionReason] = useState('');
   const [isRejectDialogOpen, setIsRejectDialogOpen] = useState(false);
+
+  const [deliveryId, setDeliveryId] = useState(null);
+  const [deliveryForm, setDeliveryForm] = useState({
+    imageUrl: '',
+    imagePresignedUrl: ''
+  });
+  const [isDeliverDialogOpen, setIsDeliverDialogOpen] = useState(false);
+  const [isDelivering, setIsDelivering] = useState(false);
   
   const [partnershipFilters, setPartnershipFilters] = useState({
     campaign: 'all',
@@ -113,11 +121,26 @@ export default function SchoolRewards() {
     }
   };
 
-  const handleDeliver = async (id) => {
+  const handleDeliver = (id) => {
+    setDeliveryId(id);
+    setDeliveryForm({ imageUrl: '', imagePresignedUrl: '' });
+    setIsDeliverDialogOpen(true);
+  };
+
+  const handleConfirmDeliver = async () => {
+    if (!deliveryId) return;
     try {
-      await rewards.deliverRewardRequest(id);
+      setIsDelivering(true);
+      await rewards.deliverRewardRequest(deliveryId, {
+        imageUrl: deliveryForm.imageUrl
+      });
+      setIsDeliverDialogOpen(false);
+      setDeliveryId(null);
+      setDeliveryForm({ imageUrl: '', imagePresignedUrl: '' });
     } catch (error) {
       console.error('Failed to deliver request', error);
+    } finally {
+      setIsDelivering(false);
     }
   };
 
@@ -975,6 +998,89 @@ export default function SchoolRewards() {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      <Dialog open={isDeliverDialogOpen} onOpenChange={setIsDeliverDialogOpen}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Package className="w-5 h-5 text-eco-blue" />
+              Xác nhận giao quà
+            </DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4 py-4">
+            <div className="space-y-3">
+              <Label className="text-base font-semibold">Ảnh xác nhận (Bằng chứng giao quà) *</Label>
+              <div className="space-y-4">
+                <div className="flex items-center justify-center w-full">
+                  <label className="flex flex-col items-center justify-center w-full h-64 border-2 border-dashed rounded-xl cursor-pointer bg-muted/5 hover:bg-muted/10 border-muted-foreground/20 transition-all overflow-hidden group">
+                    {deliveryForm.imagePresignedUrl ? (
+                      <div className="relative w-full h-full">
+                        <img 
+                          src={deliveryForm.imagePresignedUrl} 
+                          alt="Delivery confirmation" 
+                          className="w-full h-full object-cover" 
+                        />
+                        <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+                          <p className="text-white font-medium flex items-center gap-2">
+                            <Plus className="w-5 h-5" /> Thay đổi ảnh
+                          </p>
+                        </div>
+                      </div>
+                    ) : (
+                      <div className="flex flex-col items-center justify-center pt-5 pb-6">
+                        <div className="w-12 h-12 rounded-full bg-eco-blue/10 flex items-center justify-center mb-3 group-hover:scale-110 transition-transform">
+                          <Plus className="w-6 h-6 text-eco-blue" />
+                        </div>
+                        <p className="mb-2 text-sm text-foreground font-medium">Click để tải ảnh lên</p>
+                        <p className="text-xs text-muted-foreground">PNG, JPG hoặc JPEG (Tối đa 5MB)</p>
+                      </div>
+                    )}
+                    <input 
+                      type="file" 
+                      className="hidden" 
+                      accept="image/*"
+                      onChange={async (e) => {
+                        const file = e.target.files?.[0];
+                        if (!file) return;
+                        try {
+                          const formData = new FormData();
+                          formData.append('file', file);
+                          const res = await rewardService.uploadImage(formData);
+                          const data = res.data?.data || res.data;
+                          const url = data?.url || (typeof data === 'string' ? data : null);
+                          const presignedUrl = data?.presignedUrl || data?.imagePresignedUrl;
+                          
+                          if (url) {
+                            setDeliveryForm({ 
+                              imageUrl: url, 
+                              imagePresignedUrl: presignedUrl || url 
+                            });
+                          }
+                        } catch (error) {
+                          console.error('Upload failed', error);
+                        }
+                      }}
+                    />
+                  </label>
+                </div>
+                <p className="text-xs text-muted-foreground italic text-center">
+                  Vui lòng tải ảnh chụp khoảnh khắc học sinh nhận quà hoặc hóa đơn giao hàng.
+                </p>
+              </div>
+            </div>
+          </div>
+          <div className="flex justify-end gap-3">
+            <Button variant="outline" onClick={() => setIsDeliverDialogOpen(false)} disabled={isDelivering}>Hủy</Button>
+            <Button 
+              className="bg-eco-blue hover:bg-eco-blue-dark text-white font-semibold"
+              onClick={handleConfirmDeliver}
+              disabled={!deliveryForm.imageUrl || isDelivering}
+            >
+              {isDelivering ? "Đang xử lý..." : "Xác nhận đã giao"}
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
