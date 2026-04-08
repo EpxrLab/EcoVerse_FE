@@ -1,7 +1,6 @@
 import { useState } from 'react';
 import { Badge } from '@/shared/components/ui/badge';
 import { Card, CardContent } from '@/shared/components/ui/card';
-import { Button } from '@/shared/components/ui/button';
 import {
   Table,
   TableBody,
@@ -29,7 +28,6 @@ import {
   Clock,
   Gift,
   Building2,
-  Plus
 } from 'lucide-react';
 import { format } from 'date-fns';
 import { vi } from 'date-fns/locale';
@@ -41,12 +39,6 @@ const statusConfig = {
   inviting: { label: 'Đang mời', color: 'bg-indigo-50 text-indigo-600' },
   completed: { label: 'Hoàn thành', color: 'bg-eco-blue/15 text-eco-blue' },
   cancelled: { label: 'Đã hủy', color: 'bg-destructive/15 text-destructive' },
-};
-
-const difficultyConfig = {
-  easy: { label: 'Dễ', color: 'bg-eco-green/15 text-eco-green' },
-  medium: { label: 'Trung bình', color: 'bg-eco-orange/15 text-eco-orange' },
-  hard: { label: 'Khó', color: 'bg-destructive/15 text-destructive' },
 };
 
 const invitationStatusConfig = {
@@ -70,11 +62,10 @@ export function CampaignDetail({ campaign, gameTypes, isLoading }) {
     );
   }
 
-  const isPendingInvitation = campaign.invitation_status === 'pending';
+  const isPendingInvitation = campaign.invitation_status === 'INVITED';
   const isInvitingStudents = campaign.status === 'inviting';
-  const isCompleted = campaign.status === 'completed';
   
-  const deadline = campaign.invitation_deadline || 
+  const deadline = campaign.registration_deadline || 
     (campaign.start_date ? new Date(new Date(campaign.start_date).getTime() - 5 * 24 * 60 * 60 * 1000).toISOString() : null);
 
   // Student invitations/participants mapping
@@ -119,7 +110,7 @@ export function CampaignDetail({ campaign, gameTypes, isLoading }) {
             ) : deadline && (
                <Badge variant="outline" className="bg-red-50 text-red-700 border-red-200 gap-1">
                  <Clock className="w-3 h-3" />
-                 Hạn nhận: {format(new Date(deadline), 'HH:mm dd/MM/yyyy', { locale: vi })}
+                 Hạn đăng ký của trường: {format(new Date(deadline), 'HH:mm dd/MM/yyyy', { locale: vi })}
                </Badge>
             )}
             <span className="text-sm text-muted-foreground ml-1">
@@ -190,29 +181,54 @@ export function CampaignDetail({ campaign, gameTypes, isLoading }) {
         </div>
       )}
 
-      {/* Invitation Timing */}
-      {/* Invitation Timing */}
-      {(campaign.invitation_send_date || campaign.invitation_deadline) && (
-        <div className="p-4 rounded-lg bg-eco-blue/5 border border-eco-blue/20">
-          <h4 className="font-semibold mb-2 flex items-center gap-2">
-            <Send className="w-4 h-4 text-eco-blue" />
-            Thời gian gửi mời
-          </h4>
-          <div className="space-y-1 text-sm">
-            <p>
-              <span className="text-muted-foreground">Ngày gửi:</span>{' '}
-              <span className="font-medium">{format(new Date(campaign.invitation_send_date), 'HH:mm dd/MM/yyyy', { locale: vi })}</span>
-            </p>
-            <p>
-              <span className="text-muted-foreground">Hạn phản hồi:</span>{' '}
-              <span className="font-medium">{format(new Date(campaign.invitation_deadline), 'HH:mm dd/MM/yyyy', { locale: vi })}</span>
-            </p>
-            <p className="text-xs text-muted-foreground italic">
-              Các lời mời chưa phản hồi sẽ tự động bị từ chối sau hạn phản hồi
-            </p>
+      {/* Registration & Invitation Timing */}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        {/* School Registration Timing */}
+        {campaign.origin === 'partnership' && (campaign.registration_date || campaign.registration_deadline) && (
+          <div className="p-4 rounded-lg bg-eco-green/5 border border-eco-green/20">
+            <h4 className="font-semibold mb-2 flex items-center gap-2">
+              <CheckCircle2 className="w-4 h-4 text-eco-green" />
+              Thời hạn đăng ký của Trường
+            </h4>
+            <div className="space-y-1 text-sm">
+              <p>
+                <span className="text-muted-foreground">Bắt đầu:</span>{' '}
+                <span className="font-medium">{campaign.registration_date ? format(new Date(campaign.registration_date), 'HH:mm dd/MM/yyyy', { locale: vi }) : '---'}</span>
+              </p>
+              <p>
+                <span className="text-muted-foreground">Hạn chót:</span>{' '}
+                <span className="font-medium">{campaign.registration_deadline ? format(new Date(campaign.registration_deadline), 'HH:mm dd/MM/yyyy', { locale: vi }) : '---'}</span>
+              </p>
+              <p className="text-xs text-muted-foreground italic">
+                Thời hạn để trường xác nhận tham gia chiến dịch
+              </p>
+            </div>
           </div>
-        </div>
-      )}
+        )}
+
+        {/* Student Invitation Timing */}
+        {(campaign.invitation_send_date || campaign.invitation_deadline) && (
+          <div className="p-4 rounded-lg bg-eco-blue/5 border border-eco-blue/20">
+            <h4 className="font-semibold mb-2 flex items-center gap-2">
+              <Send className="w-4 h-4 text-eco-blue" />
+              Thời gian mời học sinh
+            </h4>
+            <div className="space-y-1 text-sm">
+              <p>
+                <span className="text-muted-foreground">Bắt đầu mời:</span>{' '}
+                <span className="font-medium">{campaign.invitation_send_date ? format(new Date(campaign.invitation_send_date), 'HH:mm dd/MM/yyyy', { locale: vi }) : '---'}</span>
+              </p>
+              <p>
+                <span className="text-muted-foreground">Hạn phản hồi:</span>{' '}
+                <span className="font-medium">{campaign.invitation_deadline ? format(new Date(campaign.invitation_deadline), 'HH:mm dd/MM/yyyy', { locale: vi }) : '---'}</span>
+              </p>
+              <p className="text-xs text-muted-foreground italic">
+                Thời gian phụ huynh/học sinh nhận và phản hồi lời mời
+              </p>
+            </div>
+          </div>
+        )}
+      </div>
 
       {/* Detailed Rounds - NEW Structure */}
       {campaign.rounds && campaign.rounds.length > 0 && (

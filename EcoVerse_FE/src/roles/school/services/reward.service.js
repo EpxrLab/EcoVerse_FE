@@ -29,7 +29,7 @@ export const rewardService = {
   approveRewardRequest: (id, data) => {
     return axios.put(`/school/rewards/requests/${id}/approve`, data);
   },
-  deliverRewardRequest: (id) => {
-    return axios.put(`/school/rewards/requests/${id}/deliver`);
+  deliverRewardRequest: (id, data) => {
+    return axios.put(`/school/rewards/requests/${id}/deliver`, data);
   }
 };

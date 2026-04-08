@@ -4,11 +4,12 @@ import { Badge } from '@/shared/components/ui/badge';
 import { Check, MoreHorizontal, PackageCheck, XCircle } from 'lucide-react';
 import {
   DropdownMenu,
+  DropdownMenuTrigger,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuLabel,
-  DropdownMenuTrigger,
 } from "@/shared/components/ui/dropdown-menu";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/shared/components/ui/dialog";
 
 export function RewardList({ rewards, status, onMarkDelivered, onConfirm, onApprove, onReject, onDeliver }) {
   if (status === 'pending') {
@@ -31,7 +32,6 @@ export function RewardList({ rewards, status, onMarkDelivered, onConfirm, onAppr
               <TableCell className="font-mono text-sm">{reward.requestCode || reward.id}</TableCell>
               <TableCell>
                 <p className="font-semibold">{reward.student}</p>
-                {reward.studentCode && <p className="text-xs text-muted-foreground">{reward.studentCode}</p>}
               </TableCell>
               <TableCell>
                 <div className="flex items-center gap-3">
@@ -111,6 +111,7 @@ export function RewardList({ rewards, status, onMarkDelivered, onConfirm, onAppr
             <TableHead className="text-center font-bold">Xu</TableHead>
             <TableHead className="font-bold">Ngày giao</TableHead>
             <TableHead className="font-bold">Ngày xác nhận</TableHead>
+            <TableHead className="text-center font-bold">Ảnh xác nhận</TableHead>
             <TableHead className="text-center font-bold">Phụ huynh xác nhận</TableHead>
           </TableRow>
         </TableHeader>
@@ -132,6 +133,27 @@ export function RewardList({ rewards, status, onMarkDelivered, onConfirm, onAppr
               <TableCell className="text-center font-bold text-eco-orange">{reward.coins}</TableCell>
               <TableCell>{reward.deliveredAt}</TableCell>
               <TableCell>{reward.confirmedAt || "-"}</TableCell>
+              <TableCell className="text-center">
+                {reward.deliveryImagePresignedUrl ? (
+                  <Dialog>
+                    <DialogTrigger asChild>
+                      <div className="w-10 h-10 rounded border overflow-hidden mx-auto cursor-pointer hover:opacity-80 transition-opacity">
+                        <img src={reward.deliveryImagePresignedUrl} alt="Delivery" className="w-full h-full object-cover" />
+                      </div>
+                    </DialogTrigger>
+                    <DialogContent className="max-w-xl">
+                      <DialogHeader>
+                        <DialogTitle>Ảnh giao quà</DialogTitle>
+                      </DialogHeader>
+                      <div className="mt-2 rounded-lg overflow-hidden border">
+                        <img src={reward.deliveryImagePresignedUrl} alt="Delivery confirmation" className="w-full h-auto" />
+                      </div>
+                    </DialogContent>
+                  </Dialog>
+                ) : (
+                  <span className="text-muted-foreground text-xs italic">Chưa có</span>
+                )}
+              </TableCell>
               <TableCell className="text-center">
                 {reward.rawStatus === 'CONFIRMED' ? (
                   <Badge className="bg-eco-green hover:bg-eco-green text-white border-0">

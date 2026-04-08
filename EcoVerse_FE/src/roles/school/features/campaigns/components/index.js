@@ -7,4 +7,6 @@ export { InvitationList } from './InvitationList';
 export { ConfirmDeleteDialog } from './ConfirmDeleteDialog';
 export { ConfirmCancelDialog } from './ConfirmCancelDialog';
 export { ExtendInvitingDialog } from './ExtendInvitingDialog';
+export { ConfirmInvitationDialog } from './ConfirmInvitationDialog';
+export { PartnershipStudentAssignmentDialog } from './PartnershipStudentAssignmentDialog';
 

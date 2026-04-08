@@ -102,6 +102,7 @@ export function useRewards() {
           }).replace(',', '') : null,
           reason: req.rejectedReason || req.cancelledReason || 'N/A',
           imagePresignedUrl: req.rewardImagePresignedUrl || req.imagePresignedUrl,
+          deliveryImagePresignedUrl: req.deliveryImagePresignedUrl || req.deliveryImageUrl,
         };
 
         if (req.status === 'PENDING') pending.push(item);
@@ -160,9 +161,9 @@ export function useRewards() {
     }
   };
 
-  const deliverRewardRequest = async (id) => {
+  const deliverRewardRequest = async (id, data) => {
     try {
-      await rewardService.deliverRewardRequest(id);
+      await rewardService.deliverRewardRequest(id, data);
       await fetchRewardRequests();
       return { success: true };
     } catch (e) {

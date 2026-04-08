@@ -33,6 +33,8 @@ export function InvitationList({
   onAccept,
   onDecline,
   onView,
+  onAddStudent,
+  readOnly = false,
 }) {
   if (invitations.length === 0) {
     return (
@@ -58,15 +60,16 @@ export function InvitationList({
             <TableHead className="font-bold w-[300px]">Chiến dịch</TableHead>
             <TableHead className="font-bold">Đối tác</TableHead>
             <TableHead className="font-bold">Thời gian</TableHead>
-            <TableHead className="text-center font-bold">Hạn nhận</TableHead>
+            <TableHead className="text-center font-bold">Hạn đăng ký</TableHead>
             <TableHead className="text-center font-bold">Giới hạn HS</TableHead>
+            {readOnly && <TableHead className="text-center font-bold">Trạng thái</TableHead>}
             <TableHead className="text-right font-bold w-[100px]">Thao tác</TableHead>
           </TableRow>
         </TableHeader>
         <TableBody>
           {invitations.map((invitation) => {
              // Calculate a mock deadline if not present (e.g., 7 days after creation or 5 days before start)
-             const deadline = invitation.invitation_deadline || 
+             const deadline = invitation.registration_deadline || 
                (invitation.start_date ? new Date(new Date(invitation.start_date).getTime() - 5 * 24 * 60 * 60 * 1000).toISOString() : null);
 
              return (
@@ -115,6 +118,20 @@ export function InvitationList({
                     Max: {invitation.student_limit}
                   </Badge>
                 </TableCell>
+                {readOnly && (
+                  <TableCell className="text-center">
+                    <Badge 
+                      variant="secondary" 
+                      className={
+                        invitation.invitation_status === 'APPROVED' 
+                          ? 'bg-eco-green/15 text-eco-green hover:bg-eco-green/15' 
+                          : 'bg-destructive/15 text-destructive hover:bg-destructive/15'
+                      }
+                    >
+                      {invitation.invitation_status === 'APPROVED' ? 'Đã chấp nhận' : 'Đã từ chối'}
+                    </Badge>
+                  </TableCell>
+                )}
                 <TableCell className="text-right">
                   <DropdownMenu>
                     <DropdownMenuTrigger asChild>
@@ -124,7 +141,7 @@ export function InvitationList({
                       </Button>
                     </DropdownMenuTrigger>
                     <DropdownMenuContent align="end">
-                      <DropdownMenuItem onClick={() => onView(invitation)}>
+                       <DropdownMenuItem onClick={() => onView(invitation)}>
                         <div className="flex items-center">
                            {/* Using a standard icon for view detail, maybe Eye or Info. Previous plan mentioned Eye. */}
                            <svg
@@ -145,14 +162,24 @@ export function InvitationList({
                            <span>Chi tiết</span>
                         </div>
                       </DropdownMenuItem>
-                      <DropdownMenuItem onClick={() => onAccept(invitation)} className="text-purple-700 focus:text-purple-800 focus:bg-purple-50">
-                        <Check className="mr-2 h-4 w-4" />
-                        <span>Chấp nhận</span>
-                      </DropdownMenuItem>
-                      <DropdownMenuItem onClick={() => onDecline(invitation)} className="text-destructive focus:text-destructive focus:bg-destructive/10">
-                        <X className="mr-2 h-4 w-4" />
-                        <span>Từ chối</span>
-                      </DropdownMenuItem>
+                      {!readOnly && (
+                        <>
+                          <DropdownMenuItem onClick={() => onAccept(invitation)} className="text-purple-700 focus:text-purple-800 focus:bg-purple-50">
+                            <Check className="mr-2 h-4 w-4" />
+                            <span>Chấp nhận</span>
+                          </DropdownMenuItem>
+                          <DropdownMenuItem onClick={() => onDecline(invitation)} className="text-destructive focus:text-destructive focus:bg-destructive/10">
+                            <X className="mr-2 h-4 w-4" />
+                            <span>Từ chối</span>
+                          </DropdownMenuItem>
+                        </>
+                      )}
+                      {readOnly && invitation.invitation_status === 'APPROVED' && (
+                        <DropdownMenuItem onClick={() => onAddStudent(invitation)} className="text-eco-green focus:text-eco-green focus:bg-eco-green/10">
+                          <Users className="mr-2 h-4 w-4" />
+                          <span>Thêm học sinh</span>
+                        </DropdownMenuItem>
+                      )}
                     </DropdownMenuContent>
                   </DropdownMenu>
                 </TableCell>
