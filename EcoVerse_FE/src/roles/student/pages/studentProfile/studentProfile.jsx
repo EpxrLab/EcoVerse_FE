@@ -1,5 +1,15 @@
 import { useState, lazy, Suspense, useEffect } from "react";
-import { Card, Button, Badge, Skeleton, Tag } from "antd";
+import {
+  Card,
+  Button,
+  Badge,
+  Skeleton,
+  Tag,
+  Modal,
+  Form,
+  Input,
+  message,
+} from "antd";
 import {
   HomeOutlined,
   TrophyOutlined,
@@ -15,10 +25,14 @@ import {
   WomanOutlined,
   EnvironmentOutlined,
   UserOutlined,
+  LockOutlined,
+  KeyOutlined,
 } from "@ant-design/icons";
 import { motion } from "framer-motion";
 import { useNavigate } from "react-router";
 import { getAuthenticatedStudentProfile } from "../../services";
+import toast from "react-hot-toast";
+import { changePassword } from "../../../../features/auth/services";
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
@@ -144,6 +158,9 @@ const itemVariants = {
 export default function StudentProfile() {
   const navigate = useNavigate();
   const [student, setStudent] = useState(null);
+  const [isPasswordModalOpen, setIsPasswordModalOpen] = useState(false);
+  const [passwordForm] = Form.useForm();
+  const [loadingPassword, setLoadingPassword] = useState(false);
 
   const fetchStudentProfile = async () => {
     try {
@@ -157,6 +174,26 @@ export default function StudentProfile() {
   useEffect(() => {
     fetchStudentProfile();
   }, []);
+
+  const handleChangePassword = async (values) => {
+    setLoadingPassword(true);
+    try {
+      const res = await changePassword(values);
+
+      if (res) {
+        toast.success("Đổi mật khẩu thành công!");
+      } else {
+        toast.error("Đổi mật khẩu thất bại!");
+      }
+
+      setIsPasswordModalOpen(false);
+      passwordForm.resetFields();
+    } catch (error) {
+      message.error("Đổi mật khẩu thất bại. Vui lòng kiểm tra lại!");
+    } finally {
+      setLoadingPassword(false);
+    }
+  };
 
   const gender = GENDER_MAP[student?.gender] ?? {
     label: student?.gender ?? "—",
@@ -249,6 +286,16 @@ export default function StudentProfile() {
                       <span className="font-mono font-semibold text-gray-700">
                         {student?.studentCode}
                       </span>
+                    </div>
+
+                    <div className="pt-4 border-t border-gray-200/50">
+                      <Button
+                        icon={<KeyOutlined />}
+                        onClick={() => setIsPasswordModalOpen(true)}
+                        className="rounded-xl border-gray-300 hover:border-blue-500 hover:text-blue-500 shadow-sm"
+                      >
+                        Đổi mật khẩu
+                      </Button>
                     </div>
 
                     {/* Ngày sinh + tuổi */}
@@ -402,6 +449,107 @@ export default function StudentProfile() {
           </motion.div>
         </div>
       </div>
+
+      <Modal
+        title={
+          <div className="flex items-center gap-2 text-lg">
+            <LockOutlined className="text-blue-500" />
+            <span>Thiết lập mật khẩu mới</span>
+          </div>
+        }
+        open={isPasswordModalOpen}
+        onCancel={() => {
+          setIsPasswordModalOpen(false);
+          passwordForm.resetFields();
+        }}
+        footer={null}
+        centered
+        className="rounded-3xl overflow-hidden"
+      >
+        <Form
+          form={passwordForm}
+          layout="vertical"
+          onFinish={handleChangePassword}
+          className="mt-4"
+        >
+          <Form.Item
+            label="Mật khẩu hiện tại"
+            name="oldPassword"
+            rules={[
+              { required: true, message: "Vui lòng nhập mật khẩu hiện tại!" },
+            ]}
+          >
+            <Input.Password
+              prefix={<LockOutlined className="text-gray-400" />}
+              placeholder="••••••••"
+              className="rounded-lg py-2"
+            />
+          </Form.Item>
+
+          <Form.Item
+            label="Mật khẩu mới"
+            name="newPassword"
+            rules={[
+              { required: true, message: "Vui lòng nhập mật khẩu mới!" },
+              {
+                pattern:
+                  /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,}$/,
+                message:
+                  "Mật khẩu phải tối thiểu 8 ký tự, bao gồm chữ hoa, chữ thường, số và ký tự đặc biệt (@$!%*?&)",
+              },
+            ]}
+            hasFeedback // Thêm icon tích xanh khi thỏa mãn điều kiện
+          >
+            <Input.Password
+              prefix={<KeyOutlined className="text-gray-400" />}
+              placeholder="Nhập mật khẩu mới"
+              className="rounded-lg py-2"
+            />
+          </Form.Item>
+
+          <Form.Item
+            label="Xác nhận mật khẩu mới"
+            name="confirmPassword"
+            dependencies={["newPassword"]}
+            rules={[
+              { required: true, message: "Vui lòng xác nhận lại mật khẩu!" },
+              ({ getFieldValue }) => ({
+                validator(_, value) {
+                  if (!value || getFieldValue("newPassword") === value) {
+                    return Promise.resolve();
+                  }
+                  return Promise.reject(
+                    new Error("Mật khẩu xác nhận không khớp!"),
+                  );
+                },
+              }),
+            ]}
+          >
+            <Input.Password
+              prefix={<KeyOutlined className="text-gray-400" />}
+              placeholder="••••••••"
+              className="rounded-lg py-2"
+            />
+          </Form.Item>
+
+          <div className="flex justify-end gap-2 mt-8">
+            <Button
+              onClick={() => setIsPasswordModalOpen(false)}
+              className="rounded-xl px-6"
+            >
+              Hủy
+            </Button>
+            <Button
+              type="primary"
+              htmlType="submit"
+              loading={loadingPassword}
+              className="rounded-xl px-6 bg-gradient-to-r from-blue-500 to-indigo-600 border-none"
+            >
+              Cập nhật mật khẩu
+            </Button>
+          </div>
+        </Form>
+      </Modal>
     </div>
   );
 }

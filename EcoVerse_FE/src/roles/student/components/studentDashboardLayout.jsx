@@ -166,13 +166,14 @@ export default function StudentDashboardLayout() {
       {/* Student Info */}
       <div className="p-4 border-b border-gray-100">
         <div className="flex items-center gap-3 mb-3">
-          <div className="text-4xl">{currentStudent.avatar}</div>
+          <div className="text-4xl">{currentStudent?.imagePresignedUrl}</div>
           <div className="flex-1 min-w-0">
             <p className="font-semibold text-sm text-gray-800 truncate">
-              {currentStudent.name}
+              {currentStudent?.fullName}
             </p>
             <p className="text-xs text-gray-400">
-              Lớp {currentStudent.class} • {currentStudent.school}
+              Lớp {currentStudent?.className} •{" "}
+              {currentStudent?.school.schoolName}
             </p>
           </div>
         </div>
@@ -181,7 +182,7 @@ export default function StudentDashboardLayout() {
             <div className="flex items-center gap-2">
               <CoinIcon />
               <span className="font-bold text-amber-600">
-                {currentStudent.coins}
+                {currentStudent?.totalCoins}
               </span>
             </div>
             <span className="text-xs text-gray-400">xu</span>

@@ -1142,7 +1142,6 @@ const AdminContent = () => {
       toast.error("Không tải được dữ liệu!");
     }
   };
-  console.log(subCategories);
 
   useEffect(() => {
     fetchData();

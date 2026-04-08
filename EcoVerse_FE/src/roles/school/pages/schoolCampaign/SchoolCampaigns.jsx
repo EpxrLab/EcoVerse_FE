@@ -38,10 +38,9 @@ export default function SchoolCampaigns() {
     extendInviting,
     fetchCampaignDetail,
     bindQuizzesToRound,
-    getCampaigns
+    getCampaigns,
   } = useCampaigns();
-  
-  // Use campaign form hook for all form logic
+
   const {
     formData,
     handleFormChange,
@@ -106,33 +105,54 @@ export default function SchoolCampaigns() {
 
   const { allStudents, availableClasses } = useStudents();
 
-
-
   // Filter campaigns by search
-  const filteredCampaigns = allCampaigns.filter(campaign =>
-    campaign.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    campaign.description?.toLowerCase().includes(searchQuery.toLowerCase())
+  const filteredCampaigns = allCampaigns.filter(
+    (campaign) =>
+      campaign.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      campaign.description?.toLowerCase().includes(searchQuery.toLowerCase()),
   );
 
-  const draftCampaigns = filteredCampaigns.filter(c => c.status === 'draft');
-  const scheduledCampaigns = filteredCampaigns.filter(c => c.status === 'scheduled');
-  const activeCampaigns = filteredCampaigns.filter(c => c.status === 'on_going');
-  const activeSchoolCampaigns = activeCampaigns.filter(c => c.origin === 'school');
-  const activePartnershipCampaigns = activeCampaigns.filter(c => c.origin === 'partnership');
-  const sendingInvitesCampaigns = filteredCampaigns.filter(c => c.status === 'inviting' || c.status === 'EXTENDED');
-  const sendingInvitesSchoolCampaigns = sendingInvitesCampaigns.filter(c => c.origin === 'school');
-  const sendingInvitesPartnershipCampaigns = sendingInvitesCampaigns.filter(c => c.origin === 'partnership');
-  const completedCampaigns = filteredCampaigns.filter(c => c.status === 'completed');
-  const completedSchoolCampaigns = completedCampaigns.filter(c => c.origin === 'school');
-  const completedPartnershipCampaigns = completedCampaigns.filter(c => c.origin === 'partnership');
-  const cancelledCampaigns = filteredCampaigns.filter(c => c.status === 'cancelled');
+  const draftCampaigns = filteredCampaigns.filter((c) => c.status === "draft");
+  const scheduledCampaigns = filteredCampaigns.filter(
+    (c) => c.status === "scheduled",
+  );
+  const activeCampaigns = filteredCampaigns.filter(
+    (c) => c.status === "on_going",
+  );
+  const activeSchoolCampaigns = activeCampaigns.filter(
+    (c) => c.origin === "school",
+  );
+  const activePartnershipCampaigns = activeCampaigns.filter(
+    (c) => c.origin === "partnership",
+  );
+  const sendingInvitesCampaigns = filteredCampaigns.filter(
+    (c) => c.status === "inviting" || c.status === "EXTENDED",
+  );
+  const sendingInvitesSchoolCampaigns = sendingInvitesCampaigns.filter(
+    (c) => c.origin === "school",
+  );
+  const sendingInvitesPartnershipCampaigns = sendingInvitesCampaigns.filter(
+    (c) => c.origin === "partnership",
+  );
+  const completedCampaigns = filteredCampaigns.filter(
+    (c) => c.status === "completed",
+  );
+  const completedSchoolCampaigns = completedCampaigns.filter(
+    (c) => c.origin === "school",
+  );
+  const completedPartnershipCampaigns = completedCampaigns.filter(
+    (c) => c.origin === "partnership",
+  );
+  const cancelledCampaigns = filteredCampaigns.filter(
+    (c) => c.status === "cancelled",
+  );
 
   // Handlers
   const handleCreateCampaign = () => {
     addCampaign(formData);
     resetForm();
     setIsCreateOpen(false);
-    toast.success('Đã tạo bản nháp chiến dịch thành công!');
+    toast.success("Đã tạo bản nháp chiến dịch thành công!");
   };
 
   const handleOpenAddGame = async (campaign) => {
@@ -151,7 +171,7 @@ export default function SchoolCampaigns() {
   const handleSubmitGame = () => {
     setIsAddGameOpen(false);
     setGameConfigCampaign(null);
-    toast.success('Đã cập nhật cấu hình Game');
+    toast.success("Đã cập nhật cấu hình Game");
     getCampaigns && getCampaigns();
   };
 
@@ -170,12 +190,17 @@ export default function SchoolCampaigns() {
     } else {
       setQuizConfigCampaign(campaign);
     }
-    
+
     setTargetRoundId(roundId);
     setIsAddQuizOpen(true);
   };
 
-  const handleSubmitQuiz = async (campaignId, quizIds, roundIdFromModal, maxAttempts) => {
+  const handleSubmitQuiz = async (
+    campaignId,
+    quizIds,
+    roundIdFromModal,
+    maxAttempts,
+  ) => {
     let rid = roundIdFromModal || targetRoundId;
 
     // If called from list and no roundId, fetch detail to get the single round
@@ -192,7 +217,7 @@ export default function SchoolCampaigns() {
     } else {
       await updateCampaign(campaignId, { quiz_ids: quizIds });
     }
-    
+
     setIsAddQuizOpen(false);
     setQuizConfigCampaign(null);
     setTargetRoundId(null);
@@ -206,19 +231,26 @@ export default function SchoolCampaigns() {
 
     const target = detail || campaign;
     setEditingCampaign(target);
-    
+
     loadFormData({
       name: target.name,
-      description: target.description || '',
+      description: target.description || "",
       start_date: target.start_date,
       end_date: target.end_date,
-      invitation_send_date: target.invitation_send_date || '',
-      invitation_deadline: target.invitation_deadline || '',
-      class_ids: target.class_ids || target.participating_classes?.map(c => c.class_id) || target.class_ids || [],
+      invitation_send_date: target.invitation_send_date || "",
+      invitation_deadline: target.invitation_deadline || "",
+      class_ids:
+        target.class_ids ||
+        target.participating_classes?.map((c) => c.class_id) ||
+        target.class_ids ||
+        [],
       student_ids: target.student_ids || [],
-      quiz_ids: target.rounds?.[0]?.quizzes?.map(q => q.id) || target.selected_quizzes?.map(q => q.quiz_id) || [],
+      quiz_ids:
+        target.rounds?.[0]?.quizzes?.map((q) => q.id) ||
+        target.selected_quizzes?.map((q) => q.quiz_id) ||
+        [],
       game_types: target.selected_games || [],
-      level_ids: target.selected_levels?.map(l => l.level_id) || [],
+      level_ids: target.selected_levels?.map((l) => l.level_id) || [],
     });
     setIsEditOpen(true);
   };
@@ -229,13 +261,13 @@ export default function SchoolCampaigns() {
     resetForm();
     setEditingCampaign(null);
     setIsEditOpen(false);
-    toast.success('Đã cập nhật chiến dịch thành công');
+    toast.success("Đã cập nhật chiến dịch thành công");
   };
 
   const handleViewDetail = async (campaign) => {
     setSelectedCampaign(campaign);
     setIsDetailOpen(true);
-    
+
     setIsDetailLoading(true);
     try {
       const detail = await fetchCampaignDetail(campaign.id);
@@ -243,14 +275,14 @@ export default function SchoolCampaigns() {
         setSelectedCampaign(detail);
       }
     } catch (error) {
-      console.error('Error fetching campaign detail:', error);
+      console.error("Error fetching campaign detail:", error);
     } finally {
       setIsDetailLoading(false);
     }
   };
 
   const handleConfirmDelete = (id) => {
-    const campaign = allCampaigns.find(c => c.id === id);
+    const campaign = allCampaigns.find((c) => c.id === id);
     if (campaign) {
       setCampaignToDelete(campaign);
       setIsDeleteConfirmOpen(true);
@@ -266,7 +298,7 @@ export default function SchoolCampaigns() {
   };
 
   const handleOpenCancelConfirm = (id) => {
-    const campaign = allCampaigns.find(c => c.id === id);
+    const campaign = allCampaigns.find((c) => c.id === id);
     if (campaign) {
       setCampaignToCancel(campaign);
       setIsCancelConfirmOpen(true);
@@ -287,7 +319,7 @@ export default function SchoolCampaigns() {
       setExtendingCampaign(detail);
       setIsExtendDialogOpen(true);
     } else {
-      const campaign = allCampaigns.find(c => c.id === id);
+      const campaign = allCampaigns.find((c) => c.id === id);
       if (campaign) {
         setExtendingCampaign(campaign);
         setIsExtendDialogOpen(true);
@@ -309,7 +341,7 @@ export default function SchoolCampaigns() {
   };
 
   const handleOpenInviteDialog = (campaign) => {
-    if (campaign.origin === 'partnership') {
+    if (campaign.origin === "partnership") {
       setAddStudentCampaign(campaign);
       setIsAddStudentOpen(true);
     } else {
@@ -327,18 +359,20 @@ export default function SchoolCampaigns() {
 
   const handleSendInvitations = async () => {
     if (!inviteCampaign) return;
-    
+
     // Simulate API call
-    await new Promise(resolve => setTimeout(resolve, 1000));
-    
-    const totalStudents = inviteCampaign.participating_classes?.reduce(
-      (sum, cls) => sum + cls.students_count, 0
-    ) || 0;
-    
+    await new Promise((resolve) => setTimeout(resolve, 1000));
+
+    const totalStudents =
+      inviteCampaign.participating_classes?.reduce(
+        (sum, cls) => sum + cls.students_count,
+        0,
+      ) || 0;
+
     toast.success(`Đã gửi thông báo mời đến ${totalStudents} phụ huynh`, {
       description: `Chiến dịch "${inviteCampaign.name}" - ${inviteCampaign.participating_classes?.length || 0} lớp`,
     });
-    
+
     setIsInviteOpen(false);
     setInviteCampaign(null);
   };
@@ -348,12 +382,17 @@ export default function SchoolCampaigns() {
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <h1 className="text-3xl font-bold text-foreground">Quản lý Chiến dịch</h1>
+          <h1 className="text-3xl font-bold text-foreground">
+            Quản lý Chiến dịch
+          </h1>
           <p className="text-muted-foreground mt-1">
             Tạo và quản lý các chiến dịch thu gom rác tái chế
           </p>
         </div>
-        <Button onClick={() => setIsCreateOpen(true)} className="bg-eco-green hover:bg-eco-green/90">
+        <Button
+          onClick={() => setIsCreateOpen(true)}
+          className="bg-eco-green hover:bg-eco-green/90"
+        >
           <Plus className="w-4 h-4 mr-2" />
           Tạo chiến dịch mới
         </Button>
@@ -380,27 +419,45 @@ export default function SchoolCampaigns() {
       {/* Tabs */}
       <Tabs defaultValue="draft" className="space-y-5">
         <TabsList className="bg-muted/50 p-1 border-2 border-eco-green/15">
-          <TabsTrigger value="draft" className="gap-2 font-medium data-[state=active]:bg-card data-[state=active]:text-muted-foreground">
+          <TabsTrigger
+            value="draft"
+            className="gap-2 font-medium data-[state=active]:bg-card data-[state=active]:text-muted-foreground"
+          >
             <Edit className="w-4 h-4" />
             Nháp ({draftCampaigns.length})
           </TabsTrigger>
-          <TabsTrigger value="scheduled" className="gap-2 font-medium data-[state=active]:bg-card data-[state=active]:text-purple-500">
+          <TabsTrigger
+            value="scheduled"
+            className="gap-2 font-medium data-[state=active]:bg-card data-[state=active]:text-purple-500"
+          >
             <Clock className="w-4 h-4" />
             Đã lên lịch ({scheduledCampaigns.length})
           </TabsTrigger>
-          <TabsTrigger value="sending_invites" className="gap-2 font-medium data-[state=active]:bg-card data-[state=active]:text-indigo-600">
+          <TabsTrigger
+            value="sending_invites"
+            className="gap-2 font-medium data-[state=active]:bg-card data-[state=active]:text-indigo-600"
+          >
             <Send className="w-4 h-4" />
             Đang mời ({sendingInvitesCampaigns.length})
           </TabsTrigger>
-          <TabsTrigger value="active" className="gap-2 font-medium data-[state=active]:bg-card data-[state=active]:text-eco-green">
+          <TabsTrigger
+            value="active"
+            className="gap-2 font-medium data-[state=active]:bg-card data-[state=active]:text-eco-green"
+          >
             <Play className="w-4 h-4" />
             Đang hoạt động ({activeCampaigns.length})
           </TabsTrigger>
-          <TabsTrigger value="completed" className="gap-2 font-medium data-[state=active]:bg-card data-[state=active]:text-eco-blue">
+          <TabsTrigger
+            value="completed"
+            className="gap-2 font-medium data-[state=active]:bg-card data-[state=active]:text-eco-blue"
+          >
             <CheckCircle2 className="w-4 h-4" />
             Hoàn thành ({completedCampaigns.length})
           </TabsTrigger>
-          <TabsTrigger value="cancelled" className="gap-2 font-medium data-[state=active]:bg-card data-[state=active]:text-destructive">
+          <TabsTrigger
+            value="cancelled"
+            className="gap-2 font-medium data-[state=active]:bg-card data-[state=active]:text-destructive"
+          >
             Đã hủy ({cancelledCampaigns.length})
           </TabsTrigger>
           <TabsTrigger value="invitations" className="gap-2 font-medium data-[state=active]:bg-card data-[state=active]:text-purple-600 relative">
@@ -452,10 +509,16 @@ export default function SchoolCampaigns() {
         <TabsContent value="sending_invites">
           <Tabs defaultValue="school" className="space-y-4">
             <TabsList className="bg-muted/50 p-1">
-              <TabsTrigger value="school" className="gap-2 data-[state=active]:bg-card data-[state=active]:text-eco-green">
+              <TabsTrigger
+                value="school"
+                className="gap-2 data-[state=active]:bg-card data-[state=active]:text-eco-green"
+              >
                 Chiến dịch Trường ({sendingInvitesSchoolCampaigns.length})
               </TabsTrigger>
-              <TabsTrigger value="partnership" className="gap-2 data-[state=active]:bg-card data-[state=active]:text-eco-blue">
+              <TabsTrigger
+                value="partnership"
+                className="gap-2 data-[state=active]:bg-card data-[state=active]:text-eco-blue"
+              >
                 Chiến dịch Đối tác ({sendingInvitesPartnershipCampaigns.length})
               </TabsTrigger>
             </TabsList>
@@ -494,10 +557,16 @@ export default function SchoolCampaigns() {
         <TabsContent value="active">
           <Tabs defaultValue="school" className="space-y-4">
             <TabsList className="bg-muted/50 p-1">
-              <TabsTrigger value="school" className="gap-2 data-[state=active]:bg-card data-[state=active]:text-eco-green">
+              <TabsTrigger
+                value="school"
+                className="gap-2 data-[state=active]:bg-card data-[state=active]:text-eco-green"
+              >
                 Chiến dịch Trường ({activeSchoolCampaigns.length})
               </TabsTrigger>
-              <TabsTrigger value="partnership" className="gap-2 data-[state=active]:bg-card data-[state=active]:text-eco-blue">
+              <TabsTrigger
+                value="partnership"
+                className="gap-2 data-[state=active]:bg-card data-[state=active]:text-eco-blue"
+              >
                 Chiến dịch Đối tác ({activePartnershipCampaigns.length})
               </TabsTrigger>
             </TabsList>
@@ -534,10 +603,16 @@ export default function SchoolCampaigns() {
         <TabsContent value="completed">
           <Tabs defaultValue="school" className="space-y-4">
             <TabsList className="bg-muted/50 p-1">
-              <TabsTrigger value="school" className="gap-2 data-[state=active]:bg-card data-[state=active]:text-eco-green">
+              <TabsTrigger
+                value="school"
+                className="gap-2 data-[state=active]:bg-card data-[state=active]:text-eco-green"
+              >
                 Chiến dịch Trường ({completedSchoolCampaigns.length})
               </TabsTrigger>
-              <TabsTrigger value="partnership" className="gap-2 data-[state=active]:bg-card data-[state=active]:text-eco-blue">
+              <TabsTrigger
+                value="partnership"
+                className="gap-2 data-[state=active]:bg-card data-[state=active]:text-eco-blue"
+              >
                 Chiến dịch Đối tác ({completedPartnershipCampaigns.length})
               </TabsTrigger>
             </TabsList>
@@ -689,7 +764,10 @@ export default function SchoolCampaigns() {
       {gameConfigCampaign && (
         <AddGameModal
           isOpen={isAddGameOpen}
-          onClose={() => { setIsAddGameOpen(false); setGameConfigCampaign(null); }}
+          onClose={() => {
+            setIsAddGameOpen(false);
+            setGameConfigCampaign(null);
+          }}
           campaign={gameConfigCampaign}
           onSubmit={handleSubmitGame}
         />
@@ -699,7 +777,11 @@ export default function SchoolCampaigns() {
       {quizConfigCampaign && (
         <AddQuizModal
           isOpen={isAddQuizOpen}
-          onClose={() => { setIsAddQuizOpen(false); setQuizConfigCampaign(null); setTargetRoundId(null); }}
+          onClose={() => {
+            setIsAddQuizOpen(false);
+            setQuizConfigCampaign(null);
+            setTargetRoundId(null);
+          }}
           campaign={quizConfigCampaign}
           roundId={targetRoundId}
           availableQuizzes={availableQuizzes}
@@ -715,10 +797,10 @@ export default function SchoolCampaigns() {
           </DialogHeader>
           <ScrollArea className="flex-1 p-6 pt-0">
             {selectedCampaign && (
-              <CampaignDetail 
-                campaign={selectedCampaign} 
-                gameTypes={GAME_TYPES} 
-                isLoading={isDetailLoading} 
+              <CampaignDetail
+                campaign={selectedCampaign}
+                gameTypes={GAME_TYPES}
+                isLoading={isDetailLoading}
               />
             )}
           </ScrollArea>
@@ -755,7 +837,7 @@ export default function SchoolCampaigns() {
         title={campaignToCancel?.name}
       />
 
-      <ExtendInvitingDialog 
+      <ExtendInvitingDialog
         isOpen={isExtendDialogOpen}
         onClose={() => setIsExtendDialogOpen(false)}
         onConfirm={handleConfirmExtend}

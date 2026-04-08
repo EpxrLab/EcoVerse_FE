@@ -21,7 +21,7 @@ import { logoutFunction } from "../../../../features/auth/services";
 import toast from "react-hot-toast";
 
 const STATUS_CONFIG = {
-  INVITED: {
+  INVITING: {
     label: "Được mời",
     tw: "bg-blue-50 text-blue-600 border-blue-200",
     dot: "bg-blue-500",
@@ -48,7 +48,7 @@ const TYPE_CONFIG = {
 };
 
 const getStatusCfg = (status) =>
-  STATUS_CONFIG[status?.toUpperCase()] ?? STATUS_CONFIG.INVITED;
+  STATUS_CONFIG[status?.toUpperCase()] ?? STATUS_CONFIG.INVITING;
 
 const getTypeCfg = (type) =>
   TYPE_CONFIG[type] ?? { label: type ?? "—", tw: "bg-gray-100 text-gray-600" };
@@ -96,9 +96,8 @@ const CampaignCard = lazy(() =>
       const statusCfg = getStatusCfg(campaign.status);
       const typeCfg = getTypeCfg(campaign.campaignType);
       const active = isActive(campaign.status);
-      const upcoming = campaign.status?.toUpperCase() === "INVITED";
+      const isInvited = campaign.status?.toUpperCase() === "INVITING";
 
-      // Ngày hạn tham gia còn lại
       const deadlineDays = daysUntil(campaign.invitationDeadline);
       const deadlineWarning =
         deadlineDays !== null && deadlineDays >= 0 && deadlineDays <= 3;
@@ -106,13 +105,15 @@ const CampaignCard = lazy(() =>
       return (
         <motion.div
           variants={cardVariants}
-          whileHover={!upcoming ? { y: -6, transition: { duration: 0.2 } } : {}}
+          whileHover={
+            !isInvited ? { y: -6, transition: { duration: 0.2 } } : {}
+          }
           className="h-full"
         >
           <Card
             className={`relative overflow-hidden rounded-2xl border-2 transition-all duration-300 h-full
               ${active ? "border-green-300 hover:shadow-xl" : "border-gray-200 hover:shadow-md"}
-              ${!active && !upcoming ? "opacity-80" : ""}`}
+              ${!active && !isInvited ? "opacity-80" : ""}`}
             bodyStyle={{
               padding: "22px",
               height: "100%",
@@ -209,13 +210,12 @@ const CampaignCard = lazy(() =>
               {/* Spacer */}
               <div className="flex-1" />
 
-              {/* ── CTA ── */}
               <Button
                 block
                 type={active ? "primary" : "default"}
                 size="large"
                 onClick={() => onSelect(campaign)}
-                disabled={upcoming}
+                disabled={isInvited}
                 className={`rounded-xl font-semibold transition-all ${
                   active
                     ? "bg-green-500 border-green-500 hover:bg-green-600 shadow-md shadow-green-200"
@@ -224,8 +224,8 @@ const CampaignCard = lazy(() =>
                 icon={<ArrowRightOutlined />}
                 iconPosition="end"
               >
-                {upcoming
-                  ? "Chờ chiến dịch mở"
+                {isInvited
+                  ? "Chờ phụ huynh xác nhận"
                   : active
                     ? "Vào chiến dịch"
                     : "Xem kết quả"}
@@ -289,7 +289,7 @@ function CampaignGrid({ campaigns, onSelect }) {
 export default function CampaignSelection() {
   const navigate = useNavigate();
   const { campaigns, loading } = useStudentCampaigns();
-  const { setSelectedCampaign } = useCampaignContext();
+  const { setSelectedCampaign, clearCampaign } = useCampaignContext();
 
   const handleLogout = () => {
     try {
@@ -316,17 +316,16 @@ export default function CampaignSelection() {
   };
 
   const handleSelect = (campaign) => {
-    setSelectedCampaign(campaign.id);
+    setSelectedCampaign(campaign);
     navigate(`/student/campaign/${campaign.id}`);
   };
 
-  // Normalize status để filter — BE có thể trả về lowercase/uppercase
   const normalize = (s) => s?.toUpperCase() ?? "";
 
   const { active, upcoming, completed } = useMemo(
     () => ({
       active: campaigns.filter((c) => normalize(c.status) === "ON_GOING"),
-      upcoming: campaigns.filter((c) => normalize(c.status) === "INVITED"),
+      upcoming: campaigns.filter((c) => normalize(c.status) === "INVITING"),
       completed: campaigns.filter((c) => normalize(c.status) === "COMPLETED"),
     }),
     [campaigns],
