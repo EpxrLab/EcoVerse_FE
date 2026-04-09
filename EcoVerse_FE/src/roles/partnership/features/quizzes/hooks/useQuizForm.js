@@ -9,6 +9,7 @@ export function useQuizForm() {
     timeLimit: 30,
     passingScore: 60,
     targetGrade: 1,
+    coinsOnPass: 0,
   });
 
   // Questions state
@@ -26,6 +27,11 @@ export function useQuizForm() {
   const addQuestion = (data) => {
     if (!data) return;
     setQuestions(prev => [...prev, data]);
+  };
+
+  const addMultipleQuestions = (questionsList) => {
+    if (!Array.isArray(questionsList)) return;
+    setQuestions(prev => [...prev, ...questionsList]);
   };
 
   const saveQuestion = (data) => {
@@ -50,6 +56,7 @@ export function useQuizForm() {
       timeLimit: 30,
       passingScore: 60,
       targetGrade: 1,
+      coinsOnPass: 0,
     });
     setQuestions([]);
   };
@@ -62,6 +69,7 @@ export function useQuizForm() {
       timeLimit: data.timeLimit || 30,
       passingScore: data.passingScore || 60,
       targetGrade: data.targetGrade || 1,
+      coinsOnPass: data.coinsOnPass || 0,
     });
     setQuestions(questionsData);
   };
@@ -76,6 +84,7 @@ export function useQuizForm() {
     // Questions
     questions,
     addQuestion,
+    addMultipleQuestions,
     removeQuestion,
 
     // Editing

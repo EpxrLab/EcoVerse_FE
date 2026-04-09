@@ -95,7 +95,19 @@ export function useCampaigns() {
     const campaignsList = attachInvitations(mappedCampaigns);
     
     // Map partnership invitations to UI format
-    const partnershipList = attachInvitations(partnershipInvitations.map(inv => ({
+    const getDynamicStatus = (inv) => {
+      const now = new Date();
+      const invitationDeadline = inv.invitationDeadline ? new Date(inv.invitationDeadline) : null;
+      const endDate = inv.endDate ? new Date(inv.endDate) : null;
+      // If the campaign has ended, it's completed
+      if (endDate && now > endDate) return 'completed';
+      // If invitation deadline has passed but campaign hasn't ended, it's either ongoing or active
+      if (invitationDeadline && now > invitationDeadline) return 'on_going';
+      // Default to inviting if it's within the invitation period
+      return 'inviting';
+    };
+
+    const partnershipList = (partnershipInvitations || []).map(inv => ({
       id: inv.invitationId,
       campaign_id: inv.campaignId,
       name: inv.campaignName || 'Chiến dịch đối tác',
@@ -107,7 +119,7 @@ export function useCampaigns() {
       invitation_deadline: toLocalISO(inv.invitationDeadline),
       registration_date: toLocalISO(inv.registrationDate),
       registration_deadline: toLocalISO(inv.registrationDeadline),
-      status: 'inviting', // Usually invitations are for inviting/on_going
+      status: inv.status === 'APPROVED' ? getDynamicStatus(inv) : 'invitation_pending',
       invitation_status: inv.status,
       origin: 'partnership',
       partnership_name: inv.partnershipName || 'Đối tác chưa xác định',
@@ -116,7 +128,7 @@ export function useCampaigns() {
       total_rounds: inv.totalRounds || 0,
       students_enrolled: inv.studentsEnrolled || 0,
       banner_image_url: inv.bannerImageUrl || '',
-    })));
+    }));
     
     return [...campaignsList, ...partnershipList];
   }, [campaigns, partnershipInvitations]);
@@ -331,17 +343,27 @@ export function useCampaigns() {
     try {
       await campaignService.assignStudentsToPartnershipInvitation(id, studentIds);
       toast({
-        title: "Đã thêm học sinh",
-        description: `Đã thêm ${studentIds.length} học sinh vào chiến dịch đối tác`,
+        title: "Đã cập nhật học sinh",
+        description: `Đã cập nhật ${studentIds.length} học sinh tham gia chiến dịch`,
       });
       fetchPartnershipInvitations();
     } catch (error) {
       console.error('Failed to assign students to partnership invitation:', error);
       toast({
         title: "Lỗi",
-        description: "Không thể thêm học sinh vào chiến dịch. Vui lòng thử lại sau.",
+        description: "Không thể cập nhật danh sách học sinh. Vui lòng thử lại sau.",
         variant: "destructive",
       });
+    }
+  };
+
+  const fetchAssignedStudents = async (id) => {
+    try {
+      const response = await campaignService.getAssignedStudentsForPartnershipInvitation(id);
+      return response.data; // Assuming it returns an array of student objects or IDs
+    } catch (error) {
+      console.error('Failed to fetch assigned students:', error);
+      return [];
     }
   };
 
@@ -438,61 +460,82 @@ export function useCampaigns() {
     }
   };
 
-  const fetchCampaignDetail = async (id) => {
+  const fetchCampaignDetail = async (id, origin = 'school') => {
     try {
-      const res = await campaignService.getCampaignById(id);
+      const res = origin === 'partnership' 
+        ? await campaignService.getPartnershipInvitationDetail(id)
+        : await campaignService.getCampaignById(id);
       const data = res.data?.data;
       if (!data) return null;
 
-      // Map detailed API response to UI format
-      return {
-        id: data.id,
-        name: data.campaignName,
-        code: data.campaignCode,
+      // Common mapping for both origins
+      const mappedDetail = {
+        id: data.id || data.invitationId,
+        campaign_id: data.campaignId,
+        name: data.campaignName || data.name,
+        code: data.campaignCode || data.code,
         description: data.description,
         status: data.status?.toLowerCase() || 'draft',
-        start_date: data.startDate,
-        end_date: data.endDate,
-        invitation_send_date: data.invitationDate,
-        invitation_deadline: data.invitationDeadline,
-        top_ranking_count: data.topRankingCount,
-        origin: 'school',
-        // Map rounds to existing UI format if possible, or new structure
+        start_date: data.startDate || data.start_date,
+        end_date: data.endDate || data.end_date,
+        invitation_send_date: data.invitationDate || data.invitation_send_date,
+        invitation_deadline: data.invitationDeadline || data.invitation_deadline,
+        registration_date: data.registrationDate || data.registration_date,
+        registration_deadline: data.registrationDeadline || data.registration_deadline,
+        top_ranking_count: data.topRankingCount || data.top_ranking_count,
+        origin: origin,
+        partnership_name: data.partnershipName || data.partnership_name,
+        banner_image_url: data.bannerImageUrl || data.banner_image_url,
+        max_students_per_school: data.maxStudentsPerSchool || data.max_students_per_school,
+        total_student_quota: data.totalStudentQuota || data.total_student_quota,
+        total_rounds: data.totalRounds || data.total_rounds,
+        students_enrolled: data.studentsEnrolled || data.students_enrolled || 0,
+        invitation_sent_at: data.invitationSentAt,
+        participation_confirmed_at: data.participationConfirmedAt,
+        // Map rounds
         rounds: data.rounds?.map(r => ({
           id: r.id,
-          number: r.roundNumber,
-          name: r.roundName,
+          number: r.roundNumber || r.number,
+          name: r.roundName || r.name,
           status: r.status,
-          start_time: r.startTime,
-          end_time: r.endTime,
-          game_type_id: r.gameTypeId,
-          game_type_name: r.gameTypeName,
-          difficulty: r.resolvedDifficulty,
-          difficulty_override: r.difficultyOverride,
-          coin_per_session: r.coinPerSession,
-          selected_preset_ids: r.selectedPresetIds || [],
-          preset_sub_category_config: r.presetSubCategoryConfig || {},
+          start_time: r.startTime || r.start_time,
+          end_time: r.endTime || r.end_time,
+          max_participants: r.maxParticipants || r.max_participants,
+          advance_count: r.advanceCount || r.advance_count,
+          is_final_round: r.isFinalRound || r.is_final_round,
+          game_type_id: r.gameTypeId || r.game_type_id,
+          game_type_name: r.gameTypeName || r.game_type_name,
+          difficulty: r.resolvedDifficulty || r.difficulty,
+          coin_per_session: r.coinPerSession || r.coin_per_session,
           quizzes: r.quizzes?.map(q => ({
-            id: q.quizId,
+            id: q.quizId || q.id,
             title: q.title,
             difficulty: q.difficulty,
-            max_attempts: q.maxAttempts,
-            is_required: q.isRequired
           }))
+        })),
+        // Map rewards
+        rewards: data.rewards?.map(rw => ({
+          id: rw.id,
+          name: rw.rewardName || rw.name,
+          description: rw.description,
+          image: rw.imagePresignedUrl || rw.imageUrl || rw.image,
+          quantity: rw.quantity || 1,
+          rank_position: rw.rankPosition || rw.rank_position,
+          sponsor_name: rw.sponsorName || rw.sponsor_name
         })),
         // Map participants
         participants: data.participants?.map(p => ({
-          id: p.studentId,
-          code: p.studentCode,
-          name: p.fullName,
-          grade: p.gradeLevel,
-          class_name: p.className,
-          approval_status: p.parentApprovalStatus
+          id: p.studentId || p.id,
+          code: p.studentCode || p.code,
+          name: p.fullName || p.name,
+          grade: p.gradeLevel || p.grade,
+          class_name: p.className || p.class_name,
+          approval_status: p.parentApprovalStatus || p.approval_status
         })),
-        // Add flattened arrays for form selection
-        student_ids: data.participants?.map(p => p.studentId) || [],
-        class_ids: Array.from(new Set(data.participants?.map(p => `${p.gradeLevel || ''}${p.className || ''}`).filter(Boolean))) || []
+        student_ids: data.participants?.map(p => p.studentId || p.id) || [],
       };
+
+      return mappedDetail;
     } catch (error) {
       console.error('Failed to fetch campaign detail:', error);
       toast({
@@ -546,6 +589,7 @@ export function useCampaigns() {
     revertToDraft,
     activateCampaign,
     assignStudentsToPartnership,
+    fetchAssignedStudents,
     cancelCampaign,
     extendInviting,
     fetchCampaignDetail,

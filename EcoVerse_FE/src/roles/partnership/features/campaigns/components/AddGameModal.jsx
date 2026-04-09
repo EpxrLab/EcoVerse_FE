@@ -21,9 +21,9 @@ const STEPS = [
 ];
 
 const DIFFICULTY_META = {
-  EASY:   { label: 'Easy',   color: 'text-eco-green',    border: 'border-eco-green',     bg: 'bg-eco-green/5' },
-  MEDIUM: { label: 'Medium', color: 'text-eco-green',    border: 'border-eco-green',     bg: 'bg-eco-green/5' },
-  HARD:   { label: 'Hard',   color: 'text-emerald-700',  border: 'border-emerald-700',   bg: 'bg-emerald-700/5' },
+  EASY:   { label: 'Dễ',   color: 'text-eco-green',    border: 'border-eco-green',     bg: 'bg-eco-green/5' },
+  MEDIUM: { label: 'Trung bình', color: 'text-eco-green',    border: 'border-eco-green',     bg: 'bg-eco-green/5' },
+  HARD:   { label: 'Khó',   color: 'text-emerald-700',  border: 'border-emerald-700',   bg: 'bg-emerald-700/5' },
 };
 
 const DEFAULT_COIN = 20;
@@ -135,7 +135,8 @@ export function AddGameModal({ isOpen, onClose, campaign, onSubmit }) {
     (async () => {
       try {
         const res = await partnershipCampaignService.getAvailableSubCategories(roundId, selectedGameTypeId, selectedPresetIds);
-        setSubCategoryData(res.data?.data || []);
+        const rawData = res.data?.data || res.data || [];
+        setSubCategoryData(rawData);
         // If we have pending IDs to restore (from a previous config), apply them now
         if (Object.keys(pendingSubCategoryIdsRef.current).length > 0) {
           setSelectedSubCategoryIds(pendingSubCategoryIdsRef.current);

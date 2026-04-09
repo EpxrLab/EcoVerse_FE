@@ -85,24 +85,28 @@ export function usePartnershipCampaigns() {
   const fetchQuizzes = async () => {
     try {
       const res = await quizzesService.getQuizzes();
-      const published = (res.data?.data || []).filter(q => q.published);
+      // Handle both { data: [...] } and { data: { data: [...] } }
+      const rawData = res.data?.data || res.data || [];
+      const published = (Array.isArray(rawData) ? rawData : []).filter(q => q.published);
       
+      console.log('Fetched Quizzes (published):', published.length);
+
       const quizzesWithDetails = await Promise.all(
         published.map(async (q) => {
           try {
             const detailRes = await quizzesService.getQuizDetail(q.id);
-            const detail = detailRes.data?.data;
+            const detail = detailRes.data?.data || detailRes.data;
             return {
               ...q,
-              title: detail?.name || q.name || q.title,
+              title: detail?.name || q.name || q.title || 'Untitled Quiz',
               difficulty: detail?.difficulty?.toLowerCase() || q.difficulty?.toLowerCase() || 'easy',
-              question_count: detail?.questions?.length || detail?.questionsCount || 0
+              question_count: detail?.questions?.length || detail?.questionsCount || q.questionsCount || 0
             };
           } catch (e) {
             console.error(`Failed to fetch detail for quiz ${q.id}`, e);
             return {
               ...q,
-              title: q.name || q.title,
+              title: q.name || q.title || 'Untitled Quiz',
               difficulty: q.difficulty?.toLowerCase() || 'easy',
               question_count: q.questionsCount || 0
             };
@@ -488,15 +492,25 @@ export function usePartnershipCampaigns() {
 
   const handleOpenAddGame = async (campaign) => {
     try {
-      if (!campaign.rounds && !campaign.qualifying_rounds) {
+      let fullDetail = campaign;
+      if (!campaign.rounds?.length && !campaign.qualifying_rounds?.length) {
         setLoading(true);
         const res = await partnershipCampaignService.getCampaignById(campaign.id);
-        const fullDetail = res.data?.data;
-        if (fullDetail) {
-          setSelectedCampaignForConfig(fullDetail);
-        } else {
-          setSelectedCampaignForConfig(campaign);
-        }
+        fullDetail = res.data?.data;
+      }
+      
+      if (fullDetail) {
+        // Normalize rounds for modal consistency
+        const normalized = {
+          ...fullDetail,
+          rounds: (fullDetail.rounds || fullDetail.qualifying_rounds || []).map(r => ({
+            ...r,
+            id: r.id || r._id, // Ensure id is present
+            startTime: toLocalISO(r.startTime),
+            endTime: toLocalISO(r.endTime)
+          }))
+        };
+        setSelectedCampaignForConfig(normalized);
       } else {
         setSelectedCampaignForConfig(campaign);
       }
@@ -517,15 +531,30 @@ export function usePartnershipCampaigns() {
 
   const handleOpenAddQuiz = async (campaign) => {
     try {
-      if (!campaign.rounds && !campaign.qualifying_rounds) {
+      let fullDetail = campaign;
+      if (!campaign.rounds?.length && !campaign.qualifying_rounds?.length) {
         setLoading(true);
         const res = await partnershipCampaignService.getCampaignById(campaign.id);
-        const fullDetail = res.data?.data;
-        if (fullDetail) {
-          setSelectedCampaignForConfig(fullDetail);
-        } else {
-          setSelectedCampaignForConfig(campaign);
-        }
+        fullDetail = res.data?.data;
+      }
+
+      // Ensure quizzes are fetched
+      if (availableQuizzes.length === 0) {
+        fetchQuizzes();
+      }
+
+      if (fullDetail) {
+        // Normalize rounds for modal consistency
+        const normalized = {
+          ...fullDetail,
+          rounds: (fullDetail.rounds || fullDetail.qualifying_rounds || []).map(r => ({
+            ...r,
+            id: r.id || r._id, // Ensure id is present
+            startTime: toLocalISO(r.startTime),
+            endTime: toLocalISO(r.endTime)
+          }))
+        };
+        setSelectedCampaignForConfig(normalized);
       } else {
         setSelectedCampaignForConfig(campaign);
       }

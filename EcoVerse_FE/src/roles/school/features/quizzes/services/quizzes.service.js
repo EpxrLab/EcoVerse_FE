@@ -41,11 +41,11 @@ export const quizzesService = {
     return axios.delete(`/quiz/${quizId}/questions/${questionId}`);
   },
 
-  importQuizzes: (file, onProgress) => {
+  previewQuestions: (file, onProgress) => {
     const formData = new FormData();
     formData.append('file', file);
 
-    return axios.post('/quiz/import', formData, {
+    return axios.post('/quiz/preview-questions', formData, {
       headers: {
         'Content-Type': 'multipart/form-data',
       },

@@ -41,20 +41,13 @@ export const quizzesService = {
     return axios.delete(`/quiz/${quizId}/questions/${questionId}`);
   },
 
-  importQuizzes: (file, onProgress) => {
+  previewQuestions: (file) => {
     const formData = new FormData();
     formData.append('file', file);
-
-    return axios.post('/quiz/import', formData, {
+    return axios.post('/quiz/preview-questions', formData, {
       headers: {
         'Content-Type': 'multipart/form-data',
       },
-      onUploadProgress: (progressEvent) => {
-        if (onProgress && progressEvent.total) {
-          const percentCompleted = Math.round((progressEvent.loaded * 100) / progressEvent.total);
-          onProgress({ step: 'uploading', done: percentCompleted, total: 100 });
-        }
-      }
     });
   }
 };

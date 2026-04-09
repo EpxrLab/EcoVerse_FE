@@ -1,4 +1,4 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription } from '@/shared/components/ui/dialog';
 import { Button } from '@/shared/components/ui/button';
 import { Badge } from '@/shared/components/ui/badge';
@@ -14,11 +14,35 @@ export function PartnershipStudentAssignmentDialog({
   campaign,
   availableClasses,
   allStudents,
+  initialSelectedIds = [],
   isLoading = false
 }) {
   const [selectedStudentIds, setSelectedStudentIds] = useState([]);
   const [selectedClassIds, setSelectedClassIds] = useState([]);
   const [studentSelectionClass, setStudentSelectionClass] = useState(null);
+
+  // Initialize selected students and classes when dialog opens
+  useEffect(() => {
+    if (isOpen && initialSelectedIds.length > 0) {
+      setSelectedStudentIds(initialSelectedIds);
+      
+      // Calculate which classes are fully selected
+      const classIds = [];
+      availableClasses.forEach(cls => {
+        const classStudentIds = allStudents
+          .filter(s => s.class === cls.name)
+          .map(s => s.id);
+        
+        if (classStudentIds.length > 0 && classStudentIds.every(id => initialSelectedIds.includes(id))) {
+          classIds.push(cls.id);
+        }
+      });
+      setSelectedClassIds(classIds);
+    } else if (isOpen) {
+      setSelectedStudentIds([]);
+      setSelectedClassIds([]);
+    }
+  }, [isOpen, initialSelectedIds, availableClasses, allStudents]);
 
   const studentLimit = campaign?.max_students_per_school || campaign?.student_limit || 0;
 

@@ -80,6 +80,14 @@ export const campaignService = {
   },
 
   assignStudentsToPartnershipInvitation: (id, studentIds) => {
-    return axios.post(`/school/partnership-invitations/${id}/assign-students`, { studentIds });
+    return axios.put(`/school/partnership-invitations/${id}/assigned-students`, { studentIds });
+  },
+  
+  getPartnershipInvitationDetail: (id) => {
+    return axios.get(`/school/partnership-invitations/${id}`);
+  },
+
+  getAssignedStudentsForPartnershipInvitation: (id) => {
+    return axios.get(`/school/partnership-invitations/${id}/assigned-students`);
   }
 };
