@@ -37,6 +37,7 @@ export default function SchoolCampaigns() {
     cancelCampaign,
     extendInviting,
     fetchCampaignDetail,
+    fetchAssignedStudents,
     bindQuizzesToRound,
     getCampaigns,
   } = useCampaigns();
@@ -159,7 +160,7 @@ export default function SchoolCampaigns() {
     // Fetch full detail to ensure rounds are present (needed for roundId in game config)
     if (!campaign.rounds || campaign.rounds.length === 0) {
       setIsDetailLoading(true);
-      const detail = await fetchCampaignDetail(campaign.id);
+      const detail = await fetchCampaignDetail(campaign.id, campaign.origin);
       setGameConfigCampaign(detail || campaign);
       setIsDetailLoading(false);
     } else {
@@ -180,7 +181,7 @@ export default function SchoolCampaigns() {
     // fetch details to get the rounds and currently bound quizzes
     if (!campaign.rounds || campaign.rounds.length === 0) {
       setIsDetailLoading(true);
-      const detail = await fetchCampaignDetail(campaign.id);
+      const detail = await fetchCampaignDetail(campaign.id, campaign.origin);
       if (detail) {
         setQuizConfigCampaign(detail);
       } else {
@@ -205,7 +206,7 @@ export default function SchoolCampaigns() {
 
     // If called from list and no roundId, fetch detail to get the single round
     if (!rid && campaignId) {
-      const detail = await fetchCampaignDetail(campaignId);
+      const detail = await fetchCampaignDetail(campaignId); // Default to school since bind only for school
       if (detail?.rounds?.length > 0) {
         rid = detail.rounds[0].id;
       }
@@ -226,7 +227,7 @@ export default function SchoolCampaigns() {
 
   const handleEditCampaign = async (campaign) => {
     setIsDetailLoading(true);
-    const detail = await fetchCampaignDetail(campaign.id);
+    const detail = await fetchCampaignDetail(campaign.id, campaign.origin);
     setIsDetailLoading(false);
 
     const target = detail || campaign;
@@ -270,7 +271,7 @@ export default function SchoolCampaigns() {
 
     setIsDetailLoading(true);
     try {
-      const detail = await fetchCampaignDetail(campaign.id);
+      const detail = await fetchCampaignDetail(campaign.id, campaign.origin);
       if (detail) {
         setSelectedCampaign(detail);
       }
@@ -314,7 +315,7 @@ export default function SchoolCampaigns() {
   };
   const handleOpenExtendDialog = async (id) => {
     setIsDetailLoading(true);
-    const detail = await fetchCampaignDetail(id);
+    const detail = await fetchCampaignDetail(id); // default to school
     if (detail) {
       setExtendingCampaign(detail);
       setIsExtendDialogOpen(true);
@@ -340,10 +341,26 @@ export default function SchoolCampaigns() {
     }
   };
 
-  const handleOpenInviteDialog = (campaign) => {
+  const [initialAssignedStudentIds, setInitialAssignedStudentIds] = useState([]);
+
+  const handleOpenInviteDialog = async (campaign) => {
     if (campaign.origin === "partnership") {
-      setAddStudentCampaign(campaign);
-      setIsAddStudentOpen(true);
+      setIsDetailLoading(true);
+      try {
+        // Fetch full detail to get the student limit (maxStudentsPerSchool)
+        const [detail, studentIds] = await Promise.all([
+          fetchCampaignDetail(campaign.id, "partnership"),
+          fetchAssignedStudents(campaign.id)
+        ]);
+        
+        setInitialAssignedStudentIds(studentIds || []);
+        setAddStudentCampaign(detail || campaign);
+        setIsAddStudentOpen(true);
+      } catch (error) {
+        console.error("Error preparing student expansion:", error);
+      } finally {
+        setIsDetailLoading(false);
+      }
     } else {
       setInviteCampaign(campaign);
       setIsInviteOpen(true);
@@ -799,7 +816,6 @@ export default function SchoolCampaigns() {
             {selectedCampaign && (
               <CampaignDetail
                 campaign={selectedCampaign}
-                gameTypes={GAME_TYPES}
                 isLoading={isDetailLoading}
               />
             )}
@@ -812,9 +828,11 @@ export default function SchoolCampaigns() {
       {addStudentCampaign && (
         <PartnershipStudentAssignmentDialog 
           isOpen={isAddStudentOpen}
+          initialSelectedIds={initialAssignedStudentIds}
           onClose={() => {
             setIsAddStudentOpen(false);
             setAddStudentCampaign(null);
+            setInitialAssignedStudentIds([]);
           }}
           onConfirm={handleAddStudents}
           campaign={addStudentCampaign}

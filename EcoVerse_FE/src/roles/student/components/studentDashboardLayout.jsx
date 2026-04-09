@@ -17,6 +17,7 @@ import { useCampaignContext, useStudentContext } from "../context";
 import { useStudentCampaigns } from "../hooks/useStudentCampaign";
 import { logoutFunction } from "../../../features/auth/services";
 import toast from "react-hot-toast";
+import { NotificationDropdown } from "@/shared/components/NotificationDropdown";
 
 const { Sider, Header, Content } = Layout;
 
@@ -286,17 +287,7 @@ export default function StudentDashboardLayout() {
             className="lg:hidden"
           />
           <div className="flex-1" />
-          <Dropdown
-            menu={{ items: notificationItems }}
-            placement="bottomRight"
-            trigger={["click"]}
-          >
-            <Button
-              type="text"
-              icon={<BellOutlined />}
-              className="text-gray-500 hover:text-gray-700"
-            />
-          </Dropdown>
+          <NotificationDropdown />
         </Header>
 
         {/* Page Content */}

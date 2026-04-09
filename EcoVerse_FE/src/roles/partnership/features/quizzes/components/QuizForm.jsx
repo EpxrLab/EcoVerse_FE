@@ -7,9 +7,9 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/shared/components/ui
 import { Badge } from '@/shared/components/ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/shared/components/ui/select';
 import { RadioGroup, RadioGroupItem } from '@/shared/components/ui/radio-group';
-import { Plus, Trash2, Check, Leaf, Loader2, Pencil } from 'lucide-react';
+import { Plus, Trash2, Check, Leaf, Loader2, Pencil, FileUp } from 'lucide-react';
 import { cn } from '@/shared/lib/utils';
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef } from 'react';
 
 export function QuizForm({
   isOpen,
@@ -26,7 +26,10 @@ export function QuizForm({
   editingQuestionId = null,
   onSaveQuestion,
   onCancelAddQuestion,
+  onImportQuestions,
+  isImportingQuestions = false,
 }) {
+  const fileInputRef = useRef(null);
   // Local state for new question creation
   const [currentQuestion, setCurrentQuestion] = useState({
     question: '',
@@ -42,6 +45,7 @@ export function QuizForm({
       const q = questions.find(question => question.id === editingQuestionId);
       if (q) {
         const isMultipleChoice = q.type === 'multiple_choice';
+        const isTF = q.type === 'true_false';
         setCurrentQuestion({
           question: q.question,
           type: q.type || 'multiple_choice',
@@ -49,7 +53,7 @@ export function QuizForm({
           correctAnswer: isMultipleChoice 
             ? (q.options?.indexOf(q.correctAnswer) ?? 0)
             : 0,
-          trueFalseAnswer: isMultipleChoice ? 'true' : String(q.correctAnswer),
+          trueFalseAnswer: isTF ? String(q.correctAnswer) : 'true',
         });
       }
     } else {
@@ -190,30 +194,62 @@ export function QuizForm({
               </div>
             </div>
 
-            <div className="grid grid-cols-1 gap-4">
-              <div className="space-y-2">
-                <Label htmlFor="targetGrade" className="font-semibold">Hạng mục lớp *</Label>
-                <Select 
-                  value={String(formData.targetGrade)} 
-                  onValueChange={(val) => onFormChange({ targetGrade: parseInt(val) })}
-                >
-                  <SelectTrigger id="targetGrade" className="border-2 focus:ring-eco-green">
-                    <SelectValue placeholder="Chọn lớp" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {[1, 2, 3, 4, 5].map((grade) => (
-                      <SelectItem key={grade} value={String(grade)}>Lớp {grade}</SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
+            <div className="space-y-2">
+              <Label htmlFor="targetGrade" className="font-semibold">Hạng mục lớp *</Label>
+              <Select 
+                value={String(formData.targetGrade)} 
+                onValueChange={(val) => onFormChange({ targetGrade: parseInt(val) })}
+              >
+                <SelectTrigger id="targetGrade" className="border-2 focus:ring-eco-green">
+                  <SelectValue placeholder="Chọn lớp" />
+                </SelectTrigger>
+                <SelectContent>
+                  {[1, 2, 3, 4, 5].map((grade) => (
+                    <SelectItem key={grade} value={String(grade)}>Lớp {grade}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
             </div>
           </TabsContent>
 
           {/* Tab 2: Questions */}
           <TabsContent value="questions" className="space-y-4">
             <div className="p-4 border-2 rounded-xl space-y-3 bg-muted/30 border-eco-green/20">
-              <h3 className="font-bold text-eco-green-dark">{editingQuestionId ? 'Sửa câu hỏi' : 'Thêm câu hỏi mới'}</h3>
+              <div className="flex items-center justify-between">
+                <h3 className="font-bold text-eco-green-dark">{editingQuestionId ? 'Sửa câu hỏi' : 'Thêm câu hỏi mới'}</h3>
+                {!editingQuestionId && (
+                  <>
+                    <input
+                      type="file"
+                      ref={fileInputRef}
+                      className="hidden"
+                      accept=".xlsx,.xls,.csv"
+                      onChange={(e) => {
+                        const file = e.target.files?.[0];
+                        if (file) {
+                          onImportQuestions?.(file);
+                          e.target.value = '';
+                        }
+                      }}
+                    />
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      className="text-eco-orange border-eco-orange/50 hover:bg-eco-orange/10"
+                      onClick={() => fileInputRef.current?.click()}
+                      disabled={isImportingQuestions}
+                    >
+                      {isImportingQuestions ? (
+                        <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                      ) : (
+                        <FileUp className="w-4 h-4 mr-2" />
+                      )}
+                      Import câu hỏi
+                    </Button>
+                  </>
+                )}
+              </div>
               
               <div className="space-y-2">
                 <Label className="font-semibold">Loại câu hỏi</Label>
@@ -341,15 +377,31 @@ export function QuizForm({
                             {q.options.map((a, i) => (
                                 <div key={i} className="flex items-center gap-2 text-sm bg-muted/30 p-2 rounded-lg border border-transparent hover:border-eco-green/20">
                                 <Badge 
-                                    variant={a === q.correctAnswer ? "default" : "outline"} 
+                                    variant={(a === q.correctAnswer || (q.type === 'true_false' && (
+                                        (a.toLowerCase().startsWith('đ') && q.correctAnswer === 'true') || 
+                                        (a.toLowerCase().startsWith('s') && q.correctAnswer === 'false') ||
+                                        (a.toLowerCase() === q.correctAnswer?.toLowerCase())
+                                    ))) ? "default" : "outline"} 
                                     className={cn(
                                         "w-5 h-5 p-0 flex items-center justify-center shrink-0",
-                                        a === q.correctAnswer ? "bg-eco-green" : ""
+                                        (a === q.correctAnswer || (q.type === 'true_false' && (
+                                            (a.toLowerCase().startsWith('đ') && q.correctAnswer === 'true') || 
+                                            (a.toLowerCase().startsWith('s') && q.correctAnswer === 'false') ||
+                                            (a.toLowerCase() === q.correctAnswer?.toLowerCase())
+                                        ))) ? "bg-eco-green" : ""
                                     )}
                                 >
                                     {String.fromCharCode(65 + i)}
                                 </Badge>
-                                <span className={cn(a === q.correctAnswer ? "font-bold text-eco-green" : "text-muted-foreground")}>{a}</span>
+                                <span className={cn(
+                                    (a === q.correctAnswer || (q.type === 'true_false' && (
+                                        (a.toLowerCase().startsWith('đ') && q.correctAnswer === 'true') || 
+                                        (a.toLowerCase().startsWith('s') && q.correctAnswer === 'false') ||
+                                        (a.toLowerCase() === q.correctAnswer?.toLowerCase())
+                                    ))) 
+                                        ? "font-bold text-eco-green" 
+                                        : "text-muted-foreground"
+                                )}>{a}</span>
                                 </div>
                             ))}
                             </div>

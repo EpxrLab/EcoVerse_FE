@@ -33,6 +33,7 @@ import {
   AvatarImage,
 } from "@/shared/components/ui/avatar";
 import { cn } from "@/shared/lib/utils";
+import { NotificationDropdown } from "@/shared/components/NotificationDropdown";
 import {
   Tooltip,
   TooltipContent,
@@ -329,6 +330,7 @@ export default function PartnershipLayout() {
               </div>
             </div>
             <div className="flex items-center gap-3">
+              <NotificationDropdown />
               <div
                 className="flex items-center gap-3 pl-3 border-l-2 border-border cursor-pointer hover:opacity-80 transition-all group"
                 onClick={() => navigate("/partnership/profile")}

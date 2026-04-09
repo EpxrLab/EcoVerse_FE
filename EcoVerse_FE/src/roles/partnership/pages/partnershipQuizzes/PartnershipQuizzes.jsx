@@ -1,9 +1,9 @@
 import { useState } from 'react';
 import { Button } from "@/shared/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/shared/components/ui/tabs";
-import { Plus, FileQuestion, Globe, Pencil, FileUp } from "lucide-react";
-import { useQuizzes, useQuizForm, useQuizImport } from '../../features/quizzes/hooks';
-import { QuizStats, QuizList, QuizForm, ImportQuizDialog, QuizDetailDialog, ConfirmDeleteDialog } from '../../features/quizzes/components';
+import { Plus, FileQuestion, Globe, Pencil } from "lucide-react";
+import { useQuizzes, useQuizForm } from '../../features/quizzes/hooks';
+import { QuizStats, QuizList, QuizForm, QuizDetailDialog, ConfirmDeleteDialog } from '../../features/quizzes/components';
 import { toast } from 'sonner';
 import { quizzesService } from '../../features/quizzes/services/quizzes.service';
 
@@ -34,6 +34,7 @@ export default function PartnershipQuizzes() {
     loadQuizForm,
     questions,
     addQuestion,
+    addMultipleQuestions,
     removeQuestion,
     isCreateDialogOpen,
     setIsCreateDialogOpen,
@@ -43,13 +44,7 @@ export default function PartnershipQuizzes() {
     cancelAddQuestion,
   } = useQuizForm();
 
-  const {
-    isImporting,
-    importProgress,
-    isImportDialogOpen,
-    setIsImportDialogOpen,
-    handleImport,
-  } = useQuizImport();
+  const [isImportingQuestions, setIsImportingQuestions] = useState(false);
 
   const allQuizzes = [...defaultQuizzes, ...customQuizzes];
   const publishedQuizzes = customQuizzes.filter(q => q.status === 'published');
@@ -85,14 +80,26 @@ export default function PartnershipQuizzes() {
         const response = await quizzesService.getQuizDetail(quiz.id);
         const detailedQuiz = response.data.data;
         
-        const qData = detailedQuiz.questions.map(q => ({
-          id: q.id,
-          question: q.questionText,
-          type: 'multiple_choice', 
-          options: q.answers.map(a => a.answerText),
-          correctAnswer: q.answers.find(a => a.correct)?.answerText,
-          isExisting: true,
-        }));
+        const qData = detailedQuiz.questions.map(q => {
+          const isTF = q.questionType === 'TRUE_FALSE';
+          const correctAns = q.answers.find(a => a.correct);
+          let correctAnswer = correctAns?.answerText;
+          
+          if (isTF && correctAnswer) {
+            const text = correctAnswer.toLowerCase();
+            if (text.startsWith('đ') || text === 'true') correctAnswer = 'true';
+            else if (text.startsWith('s') || text === 'false') correctAnswer = 'false';
+          }
+
+          return {
+            id: q.id,
+            question: q.questionText,
+            type: isTF ? 'true_false' : 'multiple_choice', 
+            options: q.answers.map(a => a.answerText),
+            correctAnswer: correctAnswer,
+            isExisting: true,
+          };
+        });
 
         loadQuizForm({
           title: detailedQuiz.title,
@@ -101,6 +108,7 @@ export default function PartnershipQuizzes() {
           timeLimit: detailedQuiz.timePerQuestion,
           passingScore: detailedQuiz.passScorePercentage,
           targetGrade: detailedQuiz.targetGrade,
+          coinsOnPass: 0,
         }, qData);
         
         setOriginalQuestions(JSON.parse(JSON.stringify(qData)));
@@ -121,9 +129,8 @@ export default function PartnershipQuizzes() {
         title: quizForm.title,
         description: quizForm.description,
         difficulty: quizForm.difficulty.toUpperCase(),
-        quizType: 'MULTIPLE_CHOICE',
         targetGrade: quizForm.targetGrade,
-        coinsOnPass: 0,
+        coinOnPass: quizForm.coinsOnPass,
         timePerQuestion: quizForm.timeLimit,
         passScorePercentage: quizForm.passingScore,
       };
@@ -144,6 +151,7 @@ export default function PartnershipQuizzes() {
           if (original) {
               const updateQData = {
                   questionOrder: newOrder,
+                  questionType: q.type?.toUpperCase() === 'TRUE_FALSE' ? 'TRUE_FALSE' : 'MULTIPLE_CHOICE',
                   questionText: q.question,
                   answers: q.type === 'multiple_choice' 
                     ? q.options.map(opt => ({
@@ -151,8 +159,8 @@ export default function PartnershipQuizzes() {
                         correct: opt === q.correctAnswer
                       }))
                     : [
-                        { answerText: 'Đúng', correct: q.correctAnswer === 'true' },
-                        { answerText: 'Sai', correct: q.correctAnswer === 'false' }
+                        { answerText: 'Đúng', correct: String(q.correctAnswer) === 'true' || q.correctAnswer === 'Đúng' },
+                        { answerText: 'Sai', correct: String(q.correctAnswer) === 'false' || q.correctAnswer === 'Sai' }
                       ]
               };
               await quizzesService.updateQuestion(selectedQuizId, q.id, updateQData);
@@ -164,6 +172,7 @@ export default function PartnershipQuizzes() {
       if (newQuestions.length > 0) {
         const formattedNewQuestions = newQuestions.map((q, index) => ({
           questionOrder: (questions.length - newQuestions.length) + index + 1,
+          questionType: q.type?.toUpperCase() === 'TRUE_FALSE' ? 'TRUE_FALSE' : 'MULTIPLE_CHOICE',
           questionText: q.question,
           answers: q.type === 'multiple_choice' 
             ? q.options.map(opt => ({
@@ -171,8 +180,8 @@ export default function PartnershipQuizzes() {
                 correct: opt === q.correctAnswer
               }))
             : [
-                { answerText: 'Đúng', correct: q.correctAnswer === 'true' },
-                { answerText: 'Sai', correct: q.correctAnswer === 'false' }
+                { answerText: 'Đúng', correct: String(q.correctAnswer) === 'true' || q.correctAnswer === 'Đúng' },
+                { answerText: 'Sai', correct: String(q.correctAnswer) === 'false' || q.correctAnswer === 'Sai' }
               ]
         }));
 
@@ -206,13 +215,13 @@ export default function PartnershipQuizzes() {
         title: quizForm.title,
         description: quizForm.description,
         difficulty: quizForm.difficulty.toUpperCase(),
-        quizType: 'MULTIPLE_CHOICE',
         targetGrade: quizForm.targetGrade,
-        coinsOnPass: 0,
+        coinOnPass: quizForm.coinsOnPass,
         timePerQuestion: quizForm.timeLimit,
         passScorePercentage: quizForm.passingScore,
         questions: questions.map((q, index) => ({
           questionOrder: index + 1,
+          questionType: q.type?.toUpperCase() === 'TRUE_FALSE' ? 'TRUE_FALSE' : 'MULTIPLE_CHOICE',
           questionText: q.question,
           answers: q.type === 'multiple_choice' 
             ? q.options.map(opt => ({
@@ -220,8 +229,8 @@ export default function PartnershipQuizzes() {
                 correct: opt === q.correctAnswer
               }))
             : [
-                { answerText: 'Đúng', correct: q.correctAnswer === 'true' },
-                { answerText: 'Sai', correct: q.correctAnswer === 'false' }
+                { answerText: 'Đúng', correct: String(q.correctAnswer) === 'true' || q.correctAnswer === 'Đúng' },
+                { answerText: 'Sai', correct: String(q.correctAnswer) === 'false' || q.correctAnswer === 'Sai' }
               ]
         }))
       };
@@ -237,6 +246,43 @@ export default function PartnershipQuizzes() {
       toast.error(errorMessage);
     } finally {
       setIsCreating(false);
+    }
+  };
+
+  const handleImportQuestions = async (file) => {
+    setIsImportingQuestions(true);
+    try {
+      const response = await quizzesService.previewQuestions(file);
+      if (response.data && response.data.data) {
+        const importedQuestions = response.data.data.map((q, idx) => {
+          const isTF = q.questionType === 'TRUE_FALSE';
+          const correctAns = q.answers?.find(a => a.correct);
+          let correctAnswer = correctAns?.answerText;
+          
+          if (isTF && correctAnswer) {
+            const text = correctAnswer.toLowerCase();
+            if (text.startsWith('đ') || text === 'true') correctAnswer = 'true';
+            else if (text.startsWith('s') || text === 'false') correctAnswer = 'false';
+          }
+
+          return {
+            id: `imported-${Date.now()}-${idx}`,
+            question: q.questionText,
+            type: isTF ? 'true_false' : 'multiple_choice',
+            options: q.answers?.map(a => a.answerText) || [],
+            correctAnswer: correctAnswer,
+            isExisting: false,
+          };
+        });
+        
+        importedQuestions.forEach(q => addQuestion(q));
+        toast.success(`Đã import thành công ${importedQuestions.length} câu hỏi`);
+      }
+    } catch (error) {
+      console.error('Failed to import questions:', error);
+      toast.error(error.response?.data?.message || 'Có lỗi xảy ra khi import câu hỏi');
+    } finally {
+      setIsImportingQuestions(false);
     }
   };
 
@@ -296,16 +342,6 @@ export default function PartnershipQuizzes() {
         </div>
 
         <div className="flex items-center gap-3">
-          {/* Import Button */}
-          <Button 
-            variant="outline"
-            className="border-eco-orange text-eco-orange hover:bg-eco-orange/10 font-semibold"
-            onClick={() => setIsImportDialogOpen(true)}
-          >
-            <FileUp className="w-4 h-4 mr-2" />
-            Import
-          </Button>
-
           {/* Create Quiz Button & Dialog */}
           <Button 
             className="bg-eco-orange hover:bg-eco-orange/90 text-primary-foreground font-semibold"
@@ -331,15 +367,10 @@ export default function PartnershipQuizzes() {
             editingQuestionId={editingQuestionId}
             onSaveQuestion={saveQuestion}
             onCancelAddQuestion={cancelAddQuestion}
+            onImportQuestions={handleImportQuestions}
+            isImportingQuestions={isImportingQuestions}
         />
 
-        <ImportQuizDialog 
-          isOpen={isImportDialogOpen}
-          onClose={() => setIsImportDialogOpen(false)}
-          onImport={(file) => handleImport(file, refreshQuizzes)}
-          isImporting={isImporting}
-          importProgress={importProgress}
-        />
 
         <QuizDetailDialog
           isOpen={isDetailDialogOpen}

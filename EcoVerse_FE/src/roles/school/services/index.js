@@ -1,6 +1,5 @@
 // School - Services
 export * from './subscription.service';
-export * from './notification.service';
 export * from './campaign.service';
 export * from './student.service';
 

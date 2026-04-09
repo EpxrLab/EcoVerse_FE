@@ -8,38 +8,51 @@ import {
   DropdownMenuContent,
   DropdownMenuTrigger,
 } from '@/shared/components/ui/dropdown-menu';
-import { ScrollArea } from '@/shared/components/ui/scroll-area';
 import { cn } from '@/shared/lib/utils';
-import { notificationService } from './services';
+import { notificationService } from '@/shared/services';
 
-// Helpers remain for icon mapping based on notification type
 const getNotificationIcon = (type) => {
   switch (type) {
     case 'reward':
+    case 'REWARD':
       return <Gift className="w-4 h-4 text-eco-orange" />;
     case 'student':
+    case 'STUDENT':
       return <Users className="w-4 h-4 text-eco-blue" />;
     case 'quiz':
+    case 'QUIZ':
       return <FileQuestion className="w-4 h-4 text-eco-green" />;
+    case 'CAMPAIGN_INVITE':
+      return <Users className="w-4 h-4 text-eco-blue" />;
     case 'system':
+    case 'SYSTEM':
       return <Info className="w-4 h-4 text-muted-foreground" />;
+    default:
+      return <Bell className="w-4 h-4 text-muted-foreground" />;
   }
 };
 
 const getNotificationBg = (type) => {
   switch (type) {
     case 'reward':
+    case 'REWARD':
       return 'bg-eco-orange/10';
     case 'student':
+    case 'STUDENT':
+    case 'CAMPAIGN_INVITE':
       return 'bg-eco-blue/10';
     case 'quiz':
+    case 'QUIZ':
       return 'bg-eco-green/10';
     case 'system':
+    case 'SYSTEM':
+      return 'bg-muted';
+    default:
       return 'bg-muted';
   }
 };
 
-export function SchoolNotificationDropdown() {
+export function NotificationDropdown() {
   const [notifications, setNotifications] = useState([]);
   const [unreadCount, setUnreadCount] = useState(0);
   const [isOpen, setIsOpen] = useState(false);
@@ -53,15 +66,16 @@ export function SchoolNotificationDropdown() {
         notificationService.getUnreadCount()
       ]);
       
-      const notiData = Array.isArray(notiRes.data?.data) 
-        ? notiRes.data.data 
-        : (Array.isArray(notiRes.data) ? notiRes.data : []);
+      const data = notiRes.data?.data;
+      const notiData = data?.content && Array.isArray(data.content)
+        ? data.content
+        : (Array.isArray(data) ? data : (Array.isArray(notiRes.data) ? notiRes.data : []));
       
       setNotifications(notiData);
       
-      const unreadData = countRes.data?.data !== undefined 
-        ? countRes.data.data 
-        : (typeof countRes.data === 'number' ? countRes.data : 0);
+      const unreadData = countRes.data?.data?.unreadCount !== undefined
+        ? countRes.data.data.unreadCount
+        : (countRes.data?.data !== undefined ? countRes.data.data : (typeof countRes.data === 'number' ? countRes.data : 0));
         
       setUnreadCount(unreadData);
     } catch (error) {
@@ -73,33 +87,34 @@ export function SchoolNotificationDropdown() {
 
   useEffect(() => {
     fetchNotifications();
-    // Optional: Set up interval for real-time updates
-    const interval = setInterval(fetchNotifications, 60000); // every minute
-    return () => clearInterval(interval);
+
+    const ws = notificationService.connectWebSocket((notification) => {
+      setNotifications(prev => [notification, ...prev]);
+      setUnreadCount(prev => prev + 1);
+    });
+
+    return () => {
+      if (ws) ws.deactivate();
+    };
   }, [fetchNotifications]);
 
   const markAsRead = async (id) => {
     try {
-      // Optimistic update
       setNotifications(prev =>
-        prev.map(n => n.id === id ? { ...n, read: true } : n)
+        prev.map(n => n.id === id ? { ...n, status: 'READ' } : n)
       );
       setUnreadCount(prev => Math.max(0, prev - 1));
-
       await notificationService.markAsRead(id);
     } catch (error) {
       console.error('Failed to mark notification as read:', error);
-      // Rollback or refetch
       fetchNotifications();
     }
   };
 
   const markAllAsRead = async () => {
     try {
-      // Optimistic update
-      setNotifications(prev => prev.map(n => ({ ...n, read: true })));
+      setNotifications(prev => prev.map(n => ({ ...n, status: 'READ' })));
       setUnreadCount(0);
-
       await notificationService.markAllAsRead();
     } catch (error) {
       console.error('Failed to mark all as read:', error);
@@ -108,8 +123,6 @@ export function SchoolNotificationDropdown() {
   };
 
   const deleteNotification = (id) => {
-    // Note: The user didn't provide a delete API, so I'll keep it local or remove if it's not supported by backend.
-    // For now, I'll just filter it out locally.
     setNotifications(prev => prev.filter(n => n.id !== id));
   };
 
@@ -145,7 +158,7 @@ export function SchoolNotificationDropdown() {
           )}
         </div>
 
-        <ScrollArea className="max-h-[350px]">
+        <div className="max-h-[450px] overflow-y-auto scrollbar-hide">
           {isLoading ? (
             <div className="p-8 flex flex-col items-center justify-center text-muted-foreground">
               <Loader2 className="w-8 h-8 animate-spin mb-2" />
@@ -158,31 +171,31 @@ export function SchoolNotificationDropdown() {
             </div>
           ) : (
             <div className="divide-y divide-border">
-              {Array.isArray(notifications) && notifications.map((notification) => (
+              {notifications.map((notification) => (
                 <div
                   key={notification.id}
                   className={cn(
                     "p-4 hover:bg-muted/50 transition-colors cursor-pointer relative group",
-                    !notification.read && "bg-primary/5"
+                    notification.status === 'UNREAD' && "bg-primary/5"
                   )}
-                  onClick={() => !notification.read && markAsRead(notification.id)}
+                  onClick={() => notification.status === 'UNREAD' && markAsRead(notification.id)}
                 >
                   <div className="flex gap-3">
                     <div className={cn(
                       "w-9 h-9 rounded-xl flex items-center justify-center shrink-0",
-                      getNotificationBg(notification.type)
+                      getNotificationBg(notification.notificationType || notification.type)
                     )}>
-                      {getNotificationIcon(notification.type)}
+                      {getNotificationIcon(notification.notificationType || notification.type)}
                     </div>
                     <div className="flex-1 min-w-0">
                       <div className="flex items-start justify-between gap-2">
                         <p className={cn(
                           "text-sm font-semibold line-clamp-1",
-                          !notification.read ? "text-foreground" : "text-muted-foreground"
+                          notification.status === 'UNREAD' ? "text-foreground" : "text-muted-foreground"
                         )}>
                           {notification.title}
                         </p>
-                        {!notification.read && (
+                        {notification.status === 'UNREAD' && (
                           <span className="w-2 h-2 rounded-full bg-primary shrink-0 mt-1.5" />
                         )}
                       </div>
@@ -210,15 +223,8 @@ export function SchoolNotificationDropdown() {
               ))}
             </div>
           )}
-        </ScrollArea>
+        </div>
 
-        {notifications.length > 0 && (
-          <div className="p-3 border-t border-border bg-muted/20">
-            <Button variant="ghost" className="w-full text-sm text-muted-foreground hover:text-foreground h-9 rounded-lg">
-              Xem tất cả thông báo
-            </Button>
-          </div>
-        )}
       </DropdownMenuContent>
     </DropdownMenu>
   );

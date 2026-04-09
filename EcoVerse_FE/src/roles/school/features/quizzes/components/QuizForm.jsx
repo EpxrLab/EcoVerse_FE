@@ -7,9 +7,9 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/shared/components/ui
 import { Badge } from '@/shared/components/ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/shared/components/ui/select';
 import { RadioGroup, RadioGroupItem } from '@/shared/components/ui/radio-group';
-import { Plus, Trash2, Check, Leaf, Loader2, Pencil, FileQuestion } from 'lucide-react';
+import { Plus, Trash2, Check, Leaf, Loader2, Pencil, FileQuestion, FileUp } from 'lucide-react';
 import { cn } from '@/shared/lib/utils';
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef } from 'react';
 
 export function QuizForm({
   isOpen,
@@ -26,7 +26,10 @@ export function QuizForm({
   editingQuestionId = null,
   onSaveQuestion,
   onCancelAddQuestion,
+  onImportQuestions,
+  isImportingQuestions = false,
 }) {
+  const fileInputRef = useRef(null);
   // Local state for new question creation
   const [currentQuestion, setCurrentQuestion] = useState({
     question: '',
@@ -218,7 +221,41 @@ export function QuizForm({
             {/* Tab 2: Questions */}
             <TabsContent value="questions" className="space-y-4 pt-2">
               <div className="p-4 border-2 rounded-xl space-y-3 bg-muted/30">
-                <h3 className="font-bold">{editingQuestionId ? 'Sửa câu hỏi' : 'Thêm câu hỏi mới'}</h3>
+                <div className="flex items-center justify-between">
+                  <h3 className="font-bold">{editingQuestionId ? 'Sửa câu hỏi' : 'Thêm câu hỏi mới'}</h3>
+                  {!editingQuestionId && (
+                    <>
+                      <input
+                        type="file"
+                        ref={fileInputRef}
+                        className="hidden"
+                        accept=".xlsx,.xls,.csv"
+                        onChange={(e) => {
+                          const file = e.target.files?.[0];
+                          if (file) {
+                            onImportQuestions(file);
+                            e.target.value = ''; // Reset for same file selection
+                          }
+                        }}
+                      />
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        className="text-eco-blue border-eco-blue/50 hover:bg-eco-blue/10"
+                        onClick={() => fileInputRef.current?.click()}
+                        disabled={isImportingQuestions}
+                      >
+                        {isImportingQuestions ? (
+                          <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                        ) : (
+                          <FileUp className="w-4 h-4 mr-2" />
+                        )}
+                        Import câu hỏi
+                      </Button>
+                    </>
+                  )}
+                </div>
                 
                 <div className="space-y-2">
                   <Label>Loại câu hỏi</Label>
@@ -354,11 +391,23 @@ export function QuizForm({
                                 {q.options.map((a, i) => (
                                     <div key={i} className={cn(
                                       "flex items-center gap-2 text-sm p-2 rounded-lg border",
-                                      a === q.correctAnswer ? "bg-eco-green/10 border-eco-green/30 text-eco-green-dark" : "bg-muted/30 border-transparent"
+                                      (a === q.correctAnswer || (q.type === 'true_false' && (
+                                        (a.toLowerCase().startsWith('đ') && q.correctAnswer === 'true') || 
+                                        (a.toLowerCase().startsWith('s') && q.correctAnswer === 'false') ||
+                                        (a.toLowerCase() === q.correctAnswer?.toLowerCase())
+                                      ))) 
+                                        ? "bg-eco-green/10 border-eco-green/30 text-eco-green-dark" 
+                                        : "bg-muted/30 border-transparent"
                                     )}>
                                       <span className={cn(
                                           "w-5 h-5 rounded flex items-center justify-center text-[10px] font-bold shrink-0",
-                                          a === q.correctAnswer ? "bg-eco-green text-white" : "bg-muted-foreground/20 text-muted-foreground"
+                                          (a === q.correctAnswer || (q.type === 'true_false' && (
+                                            (a.toLowerCase().startsWith('đ') && q.correctAnswer === 'true') || 
+                                            (a.toLowerCase().startsWith('s') && q.correctAnswer === 'false') ||
+                                            (a.toLowerCase() === q.correctAnswer?.toLowerCase())
+                                          ))) 
+                                            ? "bg-eco-green text-white" 
+                                            : "bg-muted-foreground/20 text-muted-foreground"
                                       )}>
                                           {String.fromCharCode(65 + i)}
                                       </span>

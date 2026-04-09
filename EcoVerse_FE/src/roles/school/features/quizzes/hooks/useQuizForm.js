@@ -29,6 +29,11 @@ export function useQuizForm() {
     setQuestions(prev => [...prev, data]);
   };
 
+  const addMultipleQuestions = (questionsList) => {
+    if (!Array.isArray(questionsList)) return;
+    setQuestions(prev => [...prev, ...questionsList]);
+  };
+
   const saveQuestion = (data) => {
     if (!data) return;
     setQuestions(prev => prev.map(q => q.id == data.id ? { ...q, ...data } : q));
@@ -79,6 +84,7 @@ export function useQuizForm() {
     // Questions
     questions,
     addQuestion,
+    addMultipleQuestions,
     removeQuestion,
 
     // Editing
