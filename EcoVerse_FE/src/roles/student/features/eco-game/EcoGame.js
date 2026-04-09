@@ -105,6 +105,7 @@ export default class EcoGame {
         this.camera,
         this.stateManager,
         this.levelConfig.searescue ?? {},
+        this.levelConfig.wasteItems ?? [],
       );
     } else {
       this.stage1Game = new EcoGameRunner(
@@ -112,6 +113,8 @@ export default class EcoGame {
         this.camera,
         this.stateManager,
         this.levelConfig.runner,
+        this.levelConfig.wasteItems ?? [],
+        this.levelConfig.itemCount ?? 0,
       );
     }
 

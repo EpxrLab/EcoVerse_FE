@@ -11,7 +11,7 @@ import * as THREE from "three";
 import { GLTFLoader } from "three/examples/jsm/loaders/GLTFLoader";
 import EcoGame from "../../features/eco-game/EcoGame";
 import EcoGameHUD from "../../features/eco-game/EcoGameHUD";
-import { startGame } from "../../services";
+import { startGame, submitGame } from "../../services";
 
 export default function EcoGamePage() {
   const containerRef = useRef(null);
@@ -21,12 +21,28 @@ export default function EcoGamePage() {
   const [loadingProgress, setLoadingProgress] = useState(0);
   const [loadingText, setLoadingText] = useState("");
   const [levelConfig, setLevelConfig] = useState(null);
+  const gameStartTimeRef = useRef(null);
+  const deadTimeRef = useRef(0);
+  const pauseStartTimeRef = useRef(null);
   const navigate = useNavigate();
   const { campaignId, roundId, roundGameConfigId } = useParams();
   const [searchParams] = useSearchParams();
   const location = useLocation();
   const levelNumber = location.state?.levelNumber;
   const typeCode = location.state?.typeCode;
+
+  // Cảnh báo người dùng khi họ cố gắng tải lại trang hoặc đóng tab
+  useEffect(() => {
+    const handleBeforeUnload = (e) => {
+      e.preventDefault();
+      e.returnValue =
+        "Nếu bạn thoát game giữa chừng, toàn bộ dữ liệu của phiên chơi này sẽ bị mất.";
+      return e.returnValue;
+    };
+
+    window.addEventListener("beforeunload", handleBeforeUnload);
+    return () => window.removeEventListener("beforeunload", handleBeforeUnload);
+  }, []);
 
   useEffect(() => {
     let cancelled = false;
@@ -101,24 +117,27 @@ export default function EcoGamePage() {
         const isCollectGame = typeCode === "COLLECT_SORTING";
         const finalConfig = {
           id: apiData.roundGameConfigId,
+          sessionId: apiData.sessionId,
           name: apiData.gameTypeName || "",
           difficulty: apiData.resolvedDifficulty?.toLowerCase() || "medium",
           stage1Game: isCollectGame ? "searescue" : "runner",
+          scorePerCorrect: apiData.scorePerCorrect || 0,
           runner: {
-            // we can override default runner props here if needed
+            // runner defaults come from difficulty preset via mergeLevelConfig
           },
           searescue: {
             gameTime:
               apiData.timeLimitSeconds > 0 ? apiData.timeLimitSeconds : 60,
-            totalTrash: apiData.itemCount,
+            totalTrash: apiData.itemCount || 12,
             maxHp: apiData.lives || 10,
           },
           sorter: {
             timeLimit: apiData.timeLimitSeconds || 0,
           },
           wasteItems: preloadedItems,
-          itemCount: apiData.itemCount, // store root level info for runner game
+          itemCount: apiData.itemCount,
           lives: apiData.lives,
+          wasteCategories: apiData.wasteCategories || [],
         };
 
         setLevelConfig(finalConfig);
@@ -130,6 +149,7 @@ export default function EcoGamePage() {
           const game = new EcoGame();
           game.init(containerRef.current, finalConfig);
           gameRef.current = game;
+          gameStartTimeRef.current = Date.now();
           setGameInstance(game);
         });
       } catch (err) {
@@ -153,7 +173,55 @@ export default function EcoGamePage() {
 
   const handleBack = useCallback(() => {
     navigate(-1);
-  }, [navigate, campaignId]);
+  }, [navigate]);
+
+  const handlePauseChange = useCallback((isPaused) => {
+    if (isPaused) {
+      pauseStartTimeRef.current = Date.now();
+    } else {
+      if (pauseStartTimeRef.current) {
+        deadTimeRef.current += Date.now() - pauseStartTimeRef.current;
+        pauseStartTimeRef.current = null;
+      }
+    }
+  }, []);
+
+  // Submit game result to API
+  const handleGameResult = useCallback(
+    async (result) => {
+      const sessionId = levelConfig?.sessionId;
+      if (!sessionId) {
+        console.warn("[EcoGamePage] No sessionId, skipping submit");
+        return;
+      }
+
+      const timeTaken = gameStartTimeRef.current
+        ? Math.max(0, Math.round((Date.now() - gameStartTimeRef.current - deadTimeRef.current) / 1000))
+        : 0;
+
+      const totalItems =
+        (result.sortingScore?.correct || 0) + (result.sortingScore?.wrong || 0);
+
+      const payload = {
+        totalItems,
+        correctItems: result.sortingScore?.correct || 0,
+        incorrectItems: result.sortingScore?.wrong || 0,
+        timeTakenSeconds: timeTaken,
+      };
+
+      console.log("[EcoGamePage] Submitting game result:", payload);
+
+      try {
+        const res = await submitGame(sessionId, payload);
+        console.log("[EcoGamePage] Submit result:", res);
+        return res?.data; // Return API response back to HUD
+      } catch (err) {
+        console.error("[EcoGamePage] Failed to submit game result:", err);
+        return null;
+      }
+    },
+    [levelConfig],
+  );
 
   return (
     <div
@@ -230,6 +298,8 @@ export default function EcoGamePage() {
               onBack={handleBack}
               levelConfig={levelConfig}
               gameType={typeCode}
+              onGameResult={handleGameResult}
+              onPauseChange={handlePauseChange}
             />
           </div>
         </div>

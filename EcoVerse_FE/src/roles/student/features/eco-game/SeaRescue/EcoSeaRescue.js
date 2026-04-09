@@ -18,7 +18,7 @@ import {
 } from "./RecycleGameLogic";
 
 export default class EcoSeaRescue {
-  constructor(scene, camera, stateManager, config = {}) {
+  constructor(scene, camera, stateManager, config = {}, wasteItems = []) {
     this.scene = scene;
     this.camera = camera;
     this.stateManager = stateManager;
@@ -28,6 +28,9 @@ export default class EcoSeaRescue {
       totalTrash: config.totalTrash ?? TOTAL_TRASH,
       maxHp: config.maxHp ?? PLAYER_MAX_HP,
     };
+
+    // API wasteItems with preloaded 3D models
+    this.wasteItems = wasteItems;
 
     this._gameState = null;
     this._player = null;
@@ -93,7 +96,7 @@ export default class EcoSeaRescue {
         this.bgm.setBuffer(buffer);
         this.bgm.setLoop(true);
         this.bgm.setVolume(0.4);
-        
+
         // Start playing as soon as context is ready and user has interacted
         const tryPlay = () => {
           if (this._stopped || !this.bgm || this.bgm.isPlaying) return;
@@ -103,7 +106,7 @@ export default class EcoSeaRescue {
             }
           });
         };
-        
+
         tryPlay();
         // Also listen for first interaction if context was suspended
         window.addEventListener("pointerdown", tryPlay, { once: true });
@@ -189,7 +192,11 @@ export default class EcoSeaRescue {
 
     const storage = initStorage(this.scene);
     const { player, playerState } = initPlayer(this.scene);
-    const trash = initTrash(this.scene);
+    const trash = initTrash(
+      this.scene,
+      this.wasteItems,
+      this.config.totalTrash,
+    );
     const obstacles = initObstacles(this.scene);
     const { speedZones, slowZones } = initZones(this.scene, obstacles);
 
@@ -222,6 +229,7 @@ export default class EcoSeaRescue {
       fallingItems: [],
       scatteredItems: [],
       recycledInStorage: 0,
+      totalTrashCount: this.config.totalTrash || trash.length,
       speedMultiplier: 1,
       lastInventoryFullWarning: 0,
     };

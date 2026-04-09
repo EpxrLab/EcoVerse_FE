@@ -75,6 +75,11 @@ const stagger = {
 // ─── LevelCard ────────────────────────────────────────────────────────────────
 
 function LevelCard({ item, isUnlocked, isCompleted, onPlay, campaignId }) {
+  const hasDailyLimit = item.maxDailyAttempts > 0;
+  const isOutOfAttempts =
+    hasDailyLimit && item.todayAttempts >= item.maxDailyAttempts;
+  const canPlay = isUnlocked && !isCompleted && !isOutOfAttempts;
+
   return (
     <motion.div variants={fadeUp}>
       <div
@@ -83,14 +88,16 @@ function LevelCard({ item, isUnlocked, isCompleted, onPlay, campaignId }) {
           isCompleted
             ? "border-green-300 bg-green-50/40"
             : isUnlocked
-              ? "border-gray-200 bg-white hover:border-blue-300 hover:shadow-md"
+              ? isOutOfAttempts
+                ? "border-orange-200 bg-orange-50/30"
+                : "border-gray-200 bg-white hover:border-blue-300 hover:shadow-md"
               : "border-gray-100 bg-gray-50/60 opacity-60"
         }`}
       >
         {/* Left accent bar */}
         <div
           className={`absolute inset-y-0 left-0 w-1.5
-          ${isCompleted ? "bg-green-500" : isUnlocked ? "bg-blue-400" : "bg-gray-300"}`}
+          ${isCompleted ? "bg-green-500" : isUnlocked ? (isOutOfAttempts ? "bg-orange-400" : "bg-blue-400") : "bg-gray-300"}`}
         />
 
         <div className="pl-5 pr-4 py-4">
@@ -104,7 +111,9 @@ function LevelCard({ item, isUnlocked, isCompleted, onPlay, campaignId }) {
                   isCompleted
                     ? "bg-green-500 text-white shadow-sm shadow-green-200"
                     : isUnlocked
-                      ? "bg-blue-500 text-white shadow-sm shadow-blue-200"
+                      ? isOutOfAttempts
+                        ? "bg-orange-500 text-white"
+                        : "bg-blue-500 text-white shadow-sm shadow-blue-200"
                       : "bg-gray-200 text-gray-400"
                 }`}
               >
@@ -127,6 +136,11 @@ function LevelCard({ item, isUnlocked, isCompleted, onPlay, campaignId }) {
                       ✓ Hoàn thành
                     </span>
                   )}
+                  {isUnlocked && isOutOfAttempts && !isCompleted && (
+                    <span className="text-[11px] bg-orange-100 text-orange-700 px-2 py-0.5 rounded-full font-semibold">
+                      Hết lượt hôm nay
+                    </span>
+                  )}
                   {!isUnlocked && !isCompleted && (
                     <span className="text-[11px] bg-gray-100 text-gray-500 px-2 py-0.5 rounded-full font-semibold">
                       Chưa mở khóa
@@ -135,7 +149,7 @@ function LevelCard({ item, isUnlocked, isCompleted, onPlay, campaignId }) {
                 </div>
 
                 {/* Stats row */}
-                <div className="flex flex-wrap gap-2.5 text-xs text-gray-500">
+                <div className="flex flex-wrap gap-x-3 gap-y-1.5 text-xs text-gray-500">
                   <span className="flex items-center gap-1">
                     <HeartOutlined className="text-red-400" />
                     {item.lives} mạng
@@ -144,18 +158,25 @@ function LevelCard({ item, isUnlocked, isCompleted, onPlay, campaignId }) {
                     <ClockCircleOutlined className="text-blue-400" />
                     {fmtTime(item.timeLimitSeconds)}
                   </span>
-                  <span className="flex items-center gap-1">
-                    <ThunderboltOutlined className="text-amber-400" />
-                    {item.itemCount} vật phẩm
-                  </span>
-                  <span className="flex items-center gap-1 font-semibold text-blue-600">
-                    +{item.scorePerCorrect} điểm/đúng
+                  {/* HIỂN THỊ BIẾN MỚI TẠI ĐÂY */}
+                  <span
+                    className={`flex items-center gap-1 font-medium ${isOutOfAttempts ? "text-orange-600" : "text-gray-500"}`}
+                  >
+                    <TrophyOutlined
+                      className={
+                        isOutOfAttempts ? "text-orange-500" : "text-gray-400"
+                      }
+                    />
+                    Lượt chơi:{" "}
+                    <b className="ml-0.5">
+                      {item.todayAttempts ?? 0}/{item.maxDailyAttempts}
+                    </b>
                   </span>
                 </div>
 
                 {/* Waste categories */}
                 {item.wasteCategories?.length > 0 && (
-                  <div className="flex gap-1.5 flex-wrap mt-1.5">
+                  <div className="flex gap-1.5 flex-wrap mt-2">
                     {item.wasteCategories.map((cat) => (
                       <Tag
                         key={cat}
@@ -184,15 +205,28 @@ function LevelCard({ item, isUnlocked, isCompleted, onPlay, campaignId }) {
                   </Button>
                 </Tooltip>
               ) : isUnlocked ? (
-                <Button
-                  type="primary"
-                  size="small"
-                  onClick={() => onPlay(item.levelNumber)}
-                  className="rounded-xl bg-blue-500 border-blue-500 hover:bg-blue-600 font-semibold px-4"
-                  icon={<PlayCircleOutlined />}
-                >
-                  Chơi
-                </Button>
+                isOutOfAttempts ? (
+                  <Tooltip title="Bạn đã hết lượt chơi cho màn này trong hôm nay. Hãy quay lại vào ngày mai!">
+                    <Button
+                      size="small"
+                      disabled
+                      className="rounded-xl border-orange-200 text-orange-400 bg-orange-50"
+                      icon={<ClockCircleOutlined />}
+                    >
+                      Hết lượt
+                    </Button>
+                  </Tooltip>
+                ) : (
+                  <Button
+                    type="primary"
+                    size="small"
+                    onClick={() => onPlay(item.levelNumber)}
+                    className="rounded-xl bg-blue-500 border-blue-500 hover:bg-blue-600 font-semibold px-4"
+                    icon={<PlayCircleOutlined />}
+                  >
+                    Chơi
+                  </Button>
+                )
               ) : (
                 <Tooltip title={`Hoàn thành màn ${item.levelNumber - 1} trước`}>
                   <Button

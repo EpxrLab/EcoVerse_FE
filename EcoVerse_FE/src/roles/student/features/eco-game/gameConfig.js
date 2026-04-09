@@ -15,6 +15,13 @@ export const DEFAULT_LEVEL_CONFIG = {
   name: "Mặc định",
   difficulty: "medium",
 
+  // API session data
+  sessionId: null,
+  scorePerCorrect: 0,
+  wasteItems: [], // Array of { wasteItemId, itemName, wasteCategory, subCategoryCode, imageUrl, preloadedModel }
+  itemCount: 0,
+  lives: 0,
+
   // Stage 1 - Runner or Sea Rescue configuration
   runner: {
     baseSpeed: 12, // Starting speed (units/second)
@@ -132,6 +139,8 @@ export function mergeLevelConfig(apiConfig = {}) {
     ...DEFAULT_LEVEL_CONFIG,
     ...preset,
     ...apiConfig,
+    // Preserve wasteItems from API as-is (contains preloaded THREE.js objects)
+    wasteItems: apiConfig.wasteItems || DEFAULT_LEVEL_CONFIG.wasteItems,
     runner: {
       ...DEFAULT_LEVEL_CONFIG.runner,
       ...preset.runner,

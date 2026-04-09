@@ -2,55 +2,72 @@ import { motion, AnimatePresence } from "framer-motion";
 export function ResultScreen({ result, onReplay, onBack }) {
   if (!result) return null;
 
-  const { distance, trashCollected, sortingScore, collectedTrash } = result;
-  const total = sortingScore.correct + sortingScore.wrong;
-  const accuracy =
-    total > 0 ? Math.round((sortingScore.correct / total) * 100) : 0;
+  const { distance, trashCollected, sortingScore, collectedTrash, apiResult } = result;
+  
+  // Choose which values to display based on whether we have API result
+  const totalItems = apiResult ? apiResult.totalItems : (sortingScore.correct + sortingScore.wrong);
+  const correct = apiResult ? apiResult.correctItems : sortingScore.correct;
+  const accuracy = apiResult ? apiResult.accuracyPercentage : (totalItems > 0 ? Math.round((correct / totalItems) * 100) : 0);
+  const coins = apiResult ? apiResult.coinAwarded : 0;
+  const timeTaken = apiResult ? apiResult.timeTakenSeconds : 0;
+  const feedbackMessage = apiResult?.feedbackMessage;
 
   return (
     <motion.div
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
-      className="absolute inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-10"
+      className="absolute inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-10 p-4"
     >
       <motion.div
         initial={{ scale: 0.8, opacity: 0 }}
         animate={{ scale: 1, opacity: 1 }}
         transition={{ delay: 0.2, type: "spring", stiffness: 200 }}
-        className="bg-white rounded-3xl p-8 max-w-md w-full mx-4 shadow-2xl"
+        className="bg-white rounded-3xl p-6 max-w-lg w-full shadow-2xl"
       >
-        <h2 className="text-3xl font-bold text-center mb-2 text-gray-800">
-          🎉 Kết quả
+        <h2 className="text-3xl flex items-center justify-center font-bold text-center mb-2 text-gray-800">
+          <span className="mr-2">🎉</span> Kết quả <span className="ml-2">🎉</span>
         </h2>
-        <p className="text-center text-gray-500 mb-6">
-          Bạn đã hoàn thành mini-game!
-        </p>
+        {feedbackMessage && (
+           <p className="text-center font-medium text-emerald-600 mb-6 bg-emerald-50 py-2 rounded-lg">
+             {feedbackMessage}
+           </p>
+        )}
 
         {/* Stats Grid */}
-        <div className="grid grid-cols-2 gap-3 mb-6">
+        <div className="grid grid-cols-2 md:grid-cols-3 gap-3 mb-6">
           <div className="bg-blue-50 rounded-2xl p-4 text-center">
-            <div className="text-sm text-blue-600 mb-1">🏃 Quãng đường</div>
-            <div className="text-2xl font-bold text-blue-700">
-              {Math.floor(distance)}m
+            <div className="text-xs font-semibold text-blue-600 mb-1 uppercase tracking-wider">🏃 Quãng đường</div>
+            <div className="text-xl font-bold text-blue-700">
+              {Math.floor(distance || 0)}m
             </div>
           </div>
           <div className="bg-green-50 rounded-2xl p-4 text-center">
-            <div className="text-sm text-green-600 mb-1">🗑️ Rác thu gom</div>
-            <div className="text-2xl font-bold text-green-700">
-              {trashCollected}
+            <div className="text-xs font-semibold text-green-600 mb-1 uppercase tracking-wider">🗑️ Thu gom</div>
+            <div className="text-xl font-bold text-green-700">
+              {trashCollected || 0}
+            </div>
+          </div>
+          <div className="bg-purple-50 rounded-2xl p-4 text-center">
+            <div className="text-xs font-semibold text-purple-600 mb-1 uppercase tracking-wider">⏱️ Thời gian</div>
+            <div className="text-xl font-bold text-purple-700">
+              {timeTaken}s
             </div>
           </div>
           <div className="bg-emerald-50 rounded-2xl p-4 text-center">
-            <div className="text-sm text-emerald-600 mb-1">
-              ✅ Phân loại đúng
+            <div className="text-xs font-semibold text-emerald-600 mb-1 uppercase tracking-wider">
+              ✅ Đúng
             </div>
-            <div className="text-2xl font-bold text-emerald-700">
-              {sortingScore.correct}
+            <div className="text-xl font-bold text-emerald-700">
+              {correct} / {totalItems}
             </div>
           </div>
           <div className="bg-amber-50 rounded-2xl p-4 text-center">
-            <div className="text-sm text-amber-600 mb-1">🎯 Chính xác</div>
-            <div className="text-2xl font-bold text-amber-700">{accuracy}%</div>
+            <div className="text-xs font-semibold text-amber-600 mb-1 uppercase tracking-wider">🎯 Chính xác</div>
+            <div className="text-xl font-bold text-amber-700">{accuracy}%</div>
+          </div>
+          <div className="bg-yellow-50 rounded-2xl p-4 text-center">
+            <div className="text-xs font-semibold text-yellow-600 mb-1 uppercase tracking-wider">💰 Thưởng</div>
+            <div className="text-xl font-bold text-yellow-700">+{coins} Coin</div>
           </div>
         </div>
 

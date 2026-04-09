@@ -791,7 +791,7 @@ function SubCategoriesTab({ subCategories, onRefresh }) {
       displayOrder: item.displayOrder,
       isActive: item.isActive,
     });
-    setEditImageUrl(item.iconPresignedUrl ?? null);
+    setEditImageUrl(item.iconUrl ?? null);
     setEditUploadedUrl(item.iconUrl ?? null);
     setIsEditOpen(true);
   };
@@ -804,12 +804,11 @@ function SubCategoriesTab({ subCategories, onRefresh }) {
         subCategoryCode: (vals.subCategoryCode ?? "").toUpperCase(),
         displayName: vals.displayName,
         description: vals.description ?? "",
-        iconUrl:
-          editUploadedUrl?.split("%")[0] ?? editingItem.iconUrl?.split("%")[0],
+        iconUrl: editUploadedUrl?.data?.url,
         displayOrder: vals.displayOrder ?? 1,
         isActive: vals.isActive ?? true,
       };
-      console.log(editingItem);
+
       const res = await updateSubWasteCategory(editingItem.id, payload);
       if (res) {
         toast.success("Cập nhật phân loại phụ thành công!");
@@ -844,9 +843,9 @@ function SubCategoriesTab({ subCategories, onRefresh }) {
       key: "icon",
       width: 70,
       render: (_, row) =>
-        row.iconPresignedUrl ? (
+        row.iconUrl ? (
           <img
-            src={row.iconPresignedUrl}
+            src={row.iconUrl}
             alt={row.displayName}
             className="w-10 h-10 rounded-lg object-cover"
           />

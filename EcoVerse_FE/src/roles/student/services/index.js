@@ -111,8 +111,20 @@ const getAttemptResult = async (attemptId) => {
 const startGame = async (campaignId, roundId, configId, level) => {
   try {
     const res = await axios.post(
-      `/student/games/campaigns/${campaignId}/rounds/${roundId}/configs/${configId}/start`,
+      `/student/game/campaigns/${campaignId}/rounds/${roundId}/configs/${configId}/start`,
       { level },
+    );
+    return res.data;
+  } catch (error) {
+    console.log(error);
+  }
+};
+
+const submitGame = async (sessionId, payload) => {
+  try {
+    const res = await axios.post(
+      `/student/game/sessions/${sessionId}/submit`,
+      payload,
     );
     return res.data;
   } catch (error) {
@@ -133,4 +145,5 @@ export {
   submitQuiz,
   getAttemptResult,
   startGame,
+  submitGame,
 };

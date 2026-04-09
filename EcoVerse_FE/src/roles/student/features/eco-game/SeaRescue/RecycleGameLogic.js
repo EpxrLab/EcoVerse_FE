@@ -14,10 +14,10 @@ export const OBSTACLE_COLLISION_RADIUS = 1.0;
 
 export const SPEED_ZONE_COUNT = 3;
 export const SLOW_ZONE_COUNT = 3;
-export const ZONE_RADIUS = 5;
+export const ZONE_RADIUS = 3;
 
 export const TOTAL_TRASH = 12;
-export const OBSTACLE_COUNT = 5;
+export const OBSTACLE_COUNT = 6;
 export const OBSTACLE_DAMAGE_COOLDOWN = 1000;
 
 export const AUTO_PICKUP_DISTANCE = 1.2;
@@ -25,8 +25,6 @@ export const STORAGE_ZONE_RADIUS = 4;
 
 export const GAME_TIME = 60;
 export const REQUIRED_PERCENTAGE = 80;
-
-export const WORLD_SAFE_RADIUS = 55;
 
 /* ===================== UTILS ===================== */
 export const isMobileDevice = () =>
@@ -71,7 +69,7 @@ export function initScene(container) {
   const scene = new THREE.Scene();
   scene.background = new THREE.Color(0x7dd3fc);
 
-  const camera = new THREE.PerspectiveCamera(75, width / height, 0.1, 5000);
+  const camera = new THREE.PerspectiveCamera(75, width / height, 0.1, 1000);
 
   const renderer = new THREE.WebGLRenderer({ antialias: true });
   renderer.setSize(width, height);
@@ -87,111 +85,105 @@ export function initScene(container) {
   return { scene, camera, renderer };
 }
 
-function createBuoyMesh(isRed) {
-  const group = new THREE.Group();
-  const color = isRed ? 0xef4444 : 0xffffff;
-  const sphere = makeMesh(new THREE.SphereGeometry(0.5, 12, 12), color);
-  sphere.castShadow = true;
-  group.add(sphere);
-  const stick = makeMesh(new THREE.CylinderGeometry(0.05, 0.05, 0.8), 0x333333);
-  stick.position.y = 0.6;
-  group.add(stick);
-  const light = makeMesh(new THREE.SphereGeometry(0.12, 8, 8), isRed ? 0xff0000 : 0xffff00);
-  light.position.y = 1.0;
-  group.add(light);
-  return group;
-}
-
 /* ===================== INIT WORLD ===================== */
+// state: object mà gameTick đọc state.oceanMixer mỗi frame.
+// Phải truyền vào để async callback gán thẳng vào state (giống RecycleGame.jsx).
+// KHÔNG dùng return rồi spread — spread copy null tại thời điểm gọi,
+// callback gán vào object gốc nhưng state đã có bản copy null → biển đứng yên.
 export function initWorld(scene, state) {
-  // Set sea background
+  // Giữ màu fallback sky trong khi skybox.glb chưa load xong
   scene.background = new THREE.Color(0x7dd3fc);
 
-  // Ocean ground with Circular Clipping
-  const gltfLoaderGround = new GLTFLoader();
-  gltfLoaderGround.load(
-    "/assets/ocean__water_perfect_loop.glb",
+  // ── Skybox — load skybox.glb và bao quanh toàn bộ scene ──────────────────
+  // Kỹ thuật: load model → scale rất lớn → lật mặt vào trong (side: BackSide)
+  // để texture hiện bên trong khối hình cầu/hộp bao quanh camera.
+  const skyLoader = new GLTFLoader();
+  skyLoader.load(
+    "/assets/skybox.glb",
     (gltf) => {
-      const oceanModel = gltf.scene;
-      oceanModel.scale.set(0.8, 0.8, 0.8);
-      oceanModel.position.set(0, -0.3, 0);
-      oceanModel.traverse((child) => {
+      const skyMesh = gltf.scene;
+
+      // Scale đủ lớn để bao trùm toàn bộ game world (radius ~500)
+      skyMesh.scale.setScalar(500);
+
+      // Lật mặt vào trong để camera thấy texture từ bên trong
+      skyMesh.traverse((child) => {
         if (child.isMesh) {
-          child.receiveShadow = true;
-          // Apply circular clip shader
-          child.material.onBeforeCompile = (shader) => {
-            shader.uniforms.uWorldRadius = { value: WORLD_SAFE_RADIUS };
-            shader.vertexShader = shader.vertexShader.replace(
-              '#include <common>',
-              `#include <common>\nvarying vec3 vWorldPos;`
-            );
-            shader.vertexShader = shader.vertexShader.replace(
-              '#include <worldpos_vertex>',
-              `#include <worldpos_vertex>\nvWorldPos = (modelMatrix * vec4(transformed, 1.0)).xyz;`
-            );
-            shader.fragmentShader = shader.fragmentShader.replace(
-              '#include <common>',
-              `#include <common>\nvarying vec3 vWorldPos;\nuniform float uWorldRadius;`
-            );
-            shader.fragmentShader = shader.fragmentShader.replace(
-              '#include <dithering_fragment>',
-              `#include <dithering_fragment>\nif (length(vWorldPos.xz) > uWorldRadius) discard;`
-            );
-          };
+          // BackSide: render mặt trong của mesh thay vì mặt ngoài
+          if (Array.isArray(child.material)) {
+            child.material.forEach((m) => {
+              m.side = THREE.BackSide;
+              m.depthWrite = false; // skybox không ghi depth buffer
+            });
+          } else if (child.material) {
+            child.material.side = THREE.BackSide;
+            child.material.depthWrite = false;
+          }
+          child.renderOrder = -1; // render trước mọi object khác
         }
       });
+
+      scene.add(skyMesh);
+      state.skybox = skyMesh;
+
+      // Khi skybox load xong, bỏ màu nền solid (skybox thay thế)
+      scene.background = null;
+    },
+    undefined,
+    (err) => {
+      // Fallback: giữ màu trời xanh nếu skybox.glb không load được
+      console.warn("skybox.glb not found, using solid sky color:", err);
+      scene.background = new THREE.Color(0x7dd3fc);
+    },
+  );
+
+  // ── Ocean ground ──────────────────────────────────────────────────────────
+  const gltfLoaderGround = new GLTFLoader();
+
+  gltfLoaderGround.load(
+    "/asset/ocean__water_perfect_loop.glb",
+    (gltf) => {
+      const oceanModel = gltf.scene;
+      oceanModel.scale.set(0.5, 0.5, 0.5);
+      oceanModel.position.set(0, -0.3, 0);
+      oceanModel.traverse((child) => {
+        if (child.isMesh) child.receiveShadow = true;
+      });
       scene.add(oceanModel);
+
+      // ✅ Gán thẳng vào state — giống RecycleGame.jsx: state.oceanModel = oceanModel
       state.oceanModel = oceanModel;
 
       if (gltf.animations?.length > 0) {
         const mixer = new THREE.AnimationMixer(oceanModel);
         gltf.animations.forEach((clip) => mixer.clipAction(clip).play());
+        // ✅ Gán thẳng vào state — gameTick đọc state.oceanMixer ngay frame tiếp theo
         state.oceanMixer = mixer;
       }
     },
     undefined,
     () => {
-      // Fallback
-      const fallback = makeMesh(new THREE.CircleGeometry(WORLD_SAFE_RADIUS, 64), 0x0ea5e9);
+      // Fallback nếu model fail
+      const fallback = makeMesh(new THREE.PlaneGeometry(100, 100), 0x0ea5e9);
       fallback.rotation.x = -Math.PI / 2;
       scene.add(fallback);
       state.fallbackPlane = fallback;
     },
   );
 
-  // Deeper water layer
-  const depthGeo = new THREE.CircleGeometry(WORLD_SAFE_RADIUS - 0.5, 64);
-  const depthMat = new THREE.MeshStandardMaterial({
-    color: 0x0c4a6e,
-    transparent: true,
-    opacity: 0.9,
-    side: THREE.DoubleSide,
-  });
-  const depthDisc = new THREE.Mesh(depthGeo, depthMat);
-  depthDisc.rotation.x = -Math.PI / 2;
-  depthDisc.position.y = -0.5;
-  scene.add(depthDisc);
-  state.depthDisc = depthDisc;
-
-  // Buoy Perimeter (Physical indicator)
-  const buoyCount = 36;
-  const buoys = [];
-  for (let i = 0; i < buoyCount; i++) {
-    const angle = (i / buoyCount) * Math.PI * 2;
-    const isRed = i % 2 === 0;
-    const buoy = createBuoyMesh(isRed);
-    buoy.position.set(
-      Math.cos(angle) * WORLD_SAFE_RADIUS,
-      0.1,
-      Math.sin(angle) * WORLD_SAFE_RADIUS
-    );
-    buoy.lookAt(0, 0, 0);
-    scene.add(buoy);
-    buoys.push(buoy);
-  }
-
-  // Track for disposal
-  state.buoys = buoys;
+  // Underwater depth plane
+  const underwaterPlane = new THREE.Mesh(
+    new THREE.PlaneGeometry(200, 200),
+    new THREE.MeshStandardMaterial({
+      color: 0x0c4a6e,
+      transparent: true,
+      opacity: 0.8,
+    }),
+  );
+  underwaterPlane.rotation.x = -Math.PI / 2;
+  underwaterPlane.position.y = -2;
+  scene.add(underwaterPlane);
+  state.underwaterPlane = underwaterPlane;
 }
 
 /* ===================== INIT STORAGE (LIGHTHOUSE) ===================== */
@@ -200,7 +192,7 @@ export function initStorage(scene) {
   storage.position.set(0, 0, -15);
   scene.add(storage);
 
-  loadModel("/assets/the_lighthouse.glb")
+  loadModel("/models/the_lighthouse.glb")
     .then((model) => {
       const box = new THREE.Box3().setFromObject(model);
       const size = new THREE.Vector3();
@@ -235,7 +227,7 @@ export function initPlayer(scene) {
 
   const playerState = { mixer: null, actions: {}, activeAction: null };
 
-  loadModel("/assets/boat.glb").then((model) => {
+  loadModel("/models/boat.glb").then((model) => {
     const box = new THREE.Box3().setFromObject(model);
     const size = new THREE.Vector3();
     box.getSize(size);
@@ -260,31 +252,127 @@ export function initPlayer(scene) {
 }
 
 /* ===================== INIT TRASH (Simple geometry — no model) ===================== */
-export function initTrash(scene) {
+export function initTrash(
+  scene,
+  wasteItems = [],
+  totalTrashCount = TOTAL_TRASH,
+) {
+  // QUAN TRỌNG: trả về array NGAY LẬP TỨC (có thể rỗng khi dùng async model load).
+  // gameTick giữ reference đến array này — items được push vào sau khi load xong.
+  // Caller KHÔNG được reassign biến trash, chỉ giữ reference đến array gốc.
   const trash = [];
+  const count = totalTrashCount > 0 ? totalTrashCount : TOTAL_TRASH;
 
-  for (let i = 0; i < TOTAL_TRASH; i++) {
-    const t = createTrashMesh();
-    t.position.set((Math.random() - 0.5) * 45, 0.3, (Math.random() - 0.5) * 45);
-    scene.add(t);
-    trash.push(t);
+  // Lọc items có imagePresignedUrl (file .glb)
+  const apiItems = wasteItems.filter((w) => w.imagePresignedUrl);
+
+  if (apiItems.length > 0) {
+    // ── Load từ API: mỗi item có model .glb riêng ──────────────────────────
+    // Preload tất cả URL duy nhất trước, rồi clone để spawn đủ `count` items
+    const loader = new GLTFLoader();
+    const uniqueUrls = [...new Set(apiItems.map((w) => w.imagePresignedUrl))];
+    const urlToScene = new Map(); // url → gltf.scene (đã normalize)
+    let loadedCount = 0;
+
+    const trySpawnAll = () => {
+      // Chỉ spawn khi tất cả URL đã load xong
+      if (loadedCount < uniqueUrls.length) return;
+
+      for (let i = 0; i < count; i++) {
+        const apiItem = apiItems[i % apiItems.length];
+        const cachedScene = urlToScene.get(apiItem.imagePresignedUrl);
+
+        let t;
+        if (cachedScene) {
+          t = cachedScene.clone(true);
+          t.scale.multiplyScalar(0.8); // scale thêm cho dễ nhìn trong game
+        } else {
+          // URL load thất bại → fallback geometry
+          t = createTrashMesh();
+        }
+
+        // Gán metadata để gameTick và sorter stage dùng
+        t.userData.pickupRadius = 0.6;
+        t.userData.wasteItemId = apiItem.wasteItemId;
+        t.userData.wasteCategory = apiItem.wasteCategory;
+        t.userData.itemName = apiItem.itemName;
+        t.userData.subCategoryCode = apiItem.subCategoryCode;
+
+        t.position.set(
+          (Math.random() - 0.5) * 45,
+          0.3,
+          (Math.random() - 0.5) * 45,
+        );
+        scene.add(t);
+        trash.push(t); // push vào array gốc → gameTick tự động thấy
+      }
+    };
+
+    uniqueUrls.forEach((url) => {
+      loader.load(
+        url,
+        (gltf) => {
+          const scene3d = gltf.scene;
+
+          // Normalize scale → fit 1×1×1
+          const box = new THREE.Box3().setFromObject(scene3d);
+          const size = box.getSize(new THREE.Vector3());
+          const maxDim = Math.max(size.x, size.y, size.z);
+          if (maxDim > 0) scene3d.scale.multiplyScalar(1.0 / maxDim);
+
+          // Center tại gốc
+          const center = new THREE.Box3()
+            .setFromObject(scene3d)
+            .getCenter(new THREE.Vector3());
+          scene3d.position.sub(center);
+
+          scene3d.traverse((child) => {
+            if (child.isMesh) {
+              child.castShadow = true;
+              child.receiveShadow = true;
+            }
+          });
+
+          urlToScene.set(url, scene3d);
+          loadedCount++;
+          trySpawnAll();
+        },
+        undefined,
+        (err) => {
+          console.warn(`[initTrash] Failed to load: ${url}`, err);
+          urlToScene.set(url, null); // null = dùng fallback khi spawn
+          loadedCount++;
+          trySpawnAll();
+        },
+      );
+    });
+  } else {
+    // ── Fallback: không có API items → dùng geometry cứng ─────────────────
+    for (let i = 0; i < count; i++) {
+      const t = createTrashMesh();
+      t.position.set(
+        (Math.random() - 0.5) * 45,
+        0.3,
+        (Math.random() - 0.5) * 45,
+      );
+      scene.add(t);
+      trash.push(t);
+    }
   }
 
   return trash;
 }
-
-/* ===================== INIT OBSTACLES (ROCKS) ===================== */
 export function initObstacles(scene) {
   const obstacles = [];
-  const minDistFromPlayer = 8;
-  const minDistBetweenObstacles = 8;
+  const minDistFromPlayer = 5;
+  const minDistBetweenObstacles = 4;
 
   const spawnObstacle = (mesh) => {
     let placed = false;
     let attempts = 0;
-    while (!placed && attempts < 100) {
-      const x = (Math.random() - 0.5) * 45;
-      const z = (Math.random() - 0.5) * 45;
+    while (!placed && attempts < 50) {
+      const x = (Math.random() - 0.5) * 25;
+      const z = (Math.random() - 0.5) * 25;
       const distFromPlayer = Math.sqrt(x * x + z * z);
       const distFromStorage = Math.sqrt(x * x + (z + 15) * (z + 15));
       if (distFromPlayer > minDistFromPlayer && distFromStorage > 6) {
@@ -306,19 +394,19 @@ export function initObstacles(scene) {
     }
     if (!placed)
       mesh.position.set(
-        (Math.random() - 0.5) * 45,
+        (Math.random() - 0.5) * 25,
         0,
-        (Math.random() - 0.5) * 45,
+        (Math.random() - 0.5) * 25,
       );
     obstacles.push(mesh);
     scene.add(mesh);
   };
 
-  loadModel("/assets/rock.glb")
+  loadModel("/models/rock.glb")
     .then((rockModel) => {
       for (let i = 0; i < OBSTACLE_COUNT; i++) {
         const rock = rockModel.clone(true);
-        const scale = 0.1 + Math.random() * 0.4;
+        const scale = 0.08 + Math.random() * 0.4;
         rock.scale.setScalar(scale);
         rock.rotation.y = Math.random() * Math.PI * 2;
         rock.traverse((child) => {
@@ -487,15 +575,9 @@ export function gameTick({
   setDamageFlash,
   setScreenShake,
   endGame,
-  onPickup,
-  onDamage,
   clock,
 }) {
   if (state.stopped) return;
-
-  if (state.skybox) {
-    state.skybox.position.copy(player.position);
-  }
 
   const delta = clock.getDelta();
 
@@ -588,19 +670,6 @@ export function gameTick({
 
   const nextPosition = player.position.clone().add(state.velocity);
 
-  const distFromCenter = Math.sqrt(nextPosition.x ** 2 + nextPosition.z ** 2);
-  if (distFromCenter > WORLD_SAFE_RADIUS) {
-    const boundaryDir = nextPosition.clone().normalize();
-    boundaryDir.y = 0;
-
-    nextPosition.copy(boundaryDir.multiplyScalar(WORLD_SAFE_RADIUS));
-
-    const velocityDot = state.velocity.dot(boundaryDir);
-    if (velocityDot > 0) {
-      state.velocity.sub(boundaryDir.multiplyScalar(velocityDot));
-    }
-  }
-
   // Collision
   const combinedRadius = PLAYER_COLLISION_RADIUS + OBSTACLE_COLLISION_RADIUS;
   for (const o of state.obstacles) {
@@ -629,7 +698,7 @@ export function gameTick({
 
         droppedItems.forEach((item) => {
           scene.attach(item);
-          item.scale.set(1, 1, 1); // reset to group scale (no model scaling needed)
+          item.scale.set(0.01, 0.01, 0.01); // restore trash_bag.glb model scale
           item.rotation.set(0, 0, 0);
           item.updateMatrix();
           item.updateMatrixWorld(true);
@@ -653,7 +722,6 @@ export function gameTick({
       // Damage
       if (now - state.lastDamageTime > OBSTACLE_DAMAGE_COOLDOWN) {
         state.lastDamageTime = now;
-        if (onDamage) onDamage();
         state.hitTime = now;
 
         setDamageFlash(true);
@@ -729,9 +797,8 @@ export function gameTick({
       state.inventory.push(t);
       scene.remove(t);
       player.add(t);
-      if (onPickup) onPickup();
       t.position.set(0, 0.8 + state.inventory.length * 0.25, -0.4);
-      t.scale.set(1, 1, 1);
+      t.scale.set(0.01, 0.01, 0.01); // keep trash_bag.glb model scale
       setInventoryCount(state.inventory.length);
       setInventoryFull(false);
       setHudPulse(true);
@@ -766,7 +833,9 @@ export function gameTick({
     setInventoryCount(0);
     state.recycledInStorage += count;
     setRecycledCount(state.recycledInStorage);
-    if (state.recycledInStorage >= TOTAL_TRASH)
+    // Dùng state.totalTrashCount (set bởi EcoSeaRescue) thay vì TOTAL_TRASH cứng
+    const _winTarget = state.totalTrashCount || TOTAL_TRASH;
+    if (state.recycledInStorage >= _winTarget)
       setTimeout(() => endGame("win"), 800);
     setHudPulse(true);
     setTimeout(() => setHudPulse(false), 200);
