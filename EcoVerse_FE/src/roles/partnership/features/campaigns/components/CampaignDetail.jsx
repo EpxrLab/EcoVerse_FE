@@ -1,6 +1,6 @@
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/shared/components/ui/dialog';
 import { Badge } from '@/shared/components/ui/badge';
-import { Calendar, School, Send, FileQuestion, Gamepad2, Package } from 'lucide-react';
+import { Calendar, School, Send, FileQuestion, Package } from 'lucide-react';
 import { cn } from '@/shared/lib/utils';
 
 export function CampaignDetail({ isOpen, onClose, campaign, availableQuizzes = [], availableGameLevels = [] }) {
@@ -31,11 +31,18 @@ export function CampaignDetail({ isOpen, onClose, campaign, availableQuizzes = [
   };
 
   const schoolStats = {
-    total: campaign.schoolParticipations?.length || 0,
-    accepted: campaign.schoolParticipations?.filter(s => s.status === 'accepted').length || 0,
-    declined: campaign.schoolParticipations?.filter(s => s.status === 'declined').length || 0,
-    invited: campaign.schoolParticipations?.filter(s => !s.status || s.status === 'invited').length || 0,
+    total: campaign.invitedSchools?.length || 0,
+    accepted: campaign.invitedSchools?.filter(s => s.status === 'APPROVED').length || 0,
+    declined: campaign.invitedSchools?.filter(s => s.status === 'REJECTED').length || 0,
+    invited: campaign.invitedSchools?.filter(s => s.status === 'PENDING_SCHOOL_APPROVAL' || s.status === 'PREPARED' || !s.status).length || 0,
   };
+
+  const approvedSchoolsCount = campaign.invitedSchools?.filter(s => s.status === 'APPROVED').length || 0;
+  const approvedStudentsCount = campaign.participants?.filter(p => p.parentApprovalStatus === 'APPROVED' || p.status === 'APPROVED').length || 0;
+
+  const participationRate = campaign.totalStudentQuota > 0 
+    ? ((approvedStudentsCount / campaign.totalStudentQuota) * 100).toFixed(1) 
+    : 0;
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
@@ -73,18 +80,18 @@ export function CampaignDetail({ isOpen, onClose, campaign, availableQuizzes = [
           <div className="grid grid-cols-3 gap-4">
             <div className="bg-white rounded-xl p-4 border shadow-sm flex flex-col items-center justify-center text-center">
               <span className="text-sm font-medium text-muted-foreground mb-1">Trường tham gia</span>
-              <span className="text-3xl font-bold text-eco-blue">{campaign.schoolsCount || 0}</span>
+              <span className="text-3xl font-bold text-eco-blue">{approvedSchoolsCount}</span>
             </div>
             
             <div className="bg-white rounded-xl p-4 border shadow-sm flex flex-col items-center justify-center text-center">
               <span className="text-sm font-medium text-muted-foreground mb-1">Tổng học sinh</span>
-              <span className="text-3xl font-bold text-eco-green">{campaign.studentsCount || 0}</span>
+              <span className="text-3xl font-bold text-eco-green">{approvedStudentsCount}</span>
             </div>
 
             <div className="bg-white rounded-xl p-4 border shadow-sm flex flex-col items-center justify-center text-center">
               <span className="text-sm font-medium text-muted-foreground mb-1">Tỷ lệ tham gia</span>
                <span className="text-3xl font-bold text-eco-orange">
-                {campaign.participationRate !== undefined ? `${campaign.participationRate}%` : '-'}
+                {participationRate}%
               </span>
             </div>
           </div>
@@ -105,7 +112,7 @@ export function CampaignDetail({ isOpen, onClose, campaign, availableQuizzes = [
               </div>
 
               {/* Participating Schools Section */}
-              {campaign.schoolParticipations && campaign.schoolParticipations.length > 0 && (
+              {campaign.invitedSchools && campaign.invitedSchools.length > 0 && (
                 <div className="space-y-4">
                   <h3 className="text-base font-semibold text-foreground flex items-center gap-2">
                     <School className="w-4 h-4 text-primary" />
@@ -121,23 +128,23 @@ export function CampaignDetail({ isOpen, onClose, campaign, availableQuizzes = [
                         </tr>
                       </thead>
                       <tbody className="divide-y bg-card">
-                        {campaign.schoolParticipations.map((school) => (
+                        {campaign.invitedSchools.map((school) => (
                           <tr key={school.schoolId} className="hover:bg-muted/20 transition-colors">
                             <td className="px-4 py-3 align-middle font-medium text-foreground">
                               {school.schoolName || school.schoolId}
                             </td>
                             <td className="px-4 py-3 text-right align-middle">
-                              {school.status === 'APPROVED' || school.status === 'approved' ? (
+                              {school.status === 'APPROVED' ? (
                                 <Badge variant="outline" className="bg-eco-green/10 text-eco-green border-eco-green/20">
                                   Đã tham gia
                                 </Badge>
-                              ) : school.status === 'REJECTED' || school.status === 'rejected' ? (
+                              ) : school.status === 'REJECTED' ? (
                                 <Badge variant="outline" className="bg-destructive/10 text-destructive border-destructive/20">
                                   Từ chối
                                 </Badge>
-                              ) : school.status === 'PENDING_SCHOOL_APPROVAL' ? (
+                              ) : school.status === 'PREPARED' ? (
                                 <Badge variant="outline" className="bg-eco-blue/10 text-eco-blue border-eco-blue/20">
-                                  Chờ xác nhận
+                                  Chuẩn bị
                                 </Badge>
                               ) : (
                                 <Badge variant="outline" className="bg-eco-orange/10 text-eco-orange border-eco-orange/20">

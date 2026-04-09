@@ -28,11 +28,14 @@ import {
   Clock,
   Gift,
   Building2,
+  TrendingUp,
+  Trophy,
 } from 'lucide-react';
 import { format } from 'date-fns';
 import { vi } from 'date-fns/locale';
 
 const statusConfig = {
+  prepared: { label: 'Chuẩn bị', color: 'bg-blue-500/15 text-blue-500' },
   draft: { label: 'Nháp', color: 'bg-muted text-muted-foreground' },
   scheduled: { label: 'Đã lên lịch', color: 'bg-purple-500/15 text-purple-500' },
   on_going: { label: 'Đang hoạt động', color: 'bg-eco-green/15 text-eco-green' },
@@ -42,15 +45,13 @@ const statusConfig = {
 };
 
 const invitationStatusConfig = {
+  prepared: { label: 'Chưa gửi mời', color: 'bg-muted text-muted-foreground', icon: Clock },
   invited: { label: 'Đã mời', color: 'bg-eco-orange/15 text-eco-orange', icon: Clock },
   approved: { label: 'Đã chấp nhận', color: 'bg-eco-green/15 text-eco-green', icon: CheckCircle2 },
-  declined: { label: 'Đã từ chối', color: 'bg-destructive/15 text-destructive', icon: XCircle },
   rejected: { label: 'Đã từ chối', color: 'bg-destructive/15 text-destructive', icon: XCircle },
-  pending: { label: 'Chờ phản hồi', color: 'bg-eco-orange/15 text-eco-orange', icon: Clock },
-  pending_parent_approval: { label: 'Chờ PH duyệt', color: 'bg-eco-orange/15 text-eco-orange', icon: Clock },
 };
 
-export function CampaignDetail({ campaign, gameTypes, isLoading }) {
+export function CampaignDetail({ campaign, isLoading }) {
   const [selectedClassFilter, setSelectedClassFilter] = useState('all');
 
   if (isLoading && !campaign?.rounds) {
@@ -61,6 +62,13 @@ export function CampaignDetail({ campaign, gameTypes, isLoading }) {
       </div>
     );
   }
+
+  const safeDateFormat = (dateStr, formatStr = 'HH:mm dd/MM/yyyy') => {
+    if (!dateStr) return '---';
+    const date = new Date(dateStr);
+    if (isNaN(date.getTime())) return '---';
+    return format(date, formatStr, { locale: vi });
+  };
 
   const isPendingInvitation = campaign.invitation_status === 'INVITED';
   const isInvitingStudents = campaign.status === 'inviting';
@@ -79,7 +87,7 @@ export function CampaignDetail({ campaign, gameTypes, isLoading }) {
   // Calculate stats from participants
   const participantStats = {
     total: participants.length,
-    invited: participants.filter(p => p.approval_status === 'INVITED' || p.approval_status === 'PENDING_PARENT_APPROVAL').length,
+    invited: participants.filter(p => p.approval_status === 'INVITED' || p.approval_status === 'PENDING_PARENT_APPROVAL' || p.approval_status === 'PREPARED').length,
     approved: participants.filter(p => p.approval_status === 'APPROVED').length,
     declined: participants.filter(p => p.approval_status === 'DECLINED' || p.approval_status === 'REJECTED').length,
   };
@@ -104,18 +112,18 @@ export function CampaignDetail({ campaign, gameTypes, isLoading }) {
           )}
           <div className="flex items-center gap-2 mt-1">
             {!isPendingInvitation ? (
-              <Badge className={statusConfig[campaign.status].color} variant="secondary">
-                {statusConfig[campaign.status].label}
+              <Badge className={statusConfig[campaign.status]?.color || 'bg-muted'} variant="secondary">
+                {statusConfig[campaign.status]?.label || campaign.status}
               </Badge>
             ) : deadline && (
                <Badge variant="outline" className="bg-red-50 text-red-700 border-red-200 gap-1">
                  <Clock className="w-3 h-3" />
-                 Hạn đăng ký của trường: {format(new Date(deadline), 'HH:mm dd/MM/yyyy', { locale: vi })}
+                  Hạn đăng ký của trường: {safeDateFormat(deadline)}
                </Badge>
             )}
             <span className="text-sm text-muted-foreground ml-1">
-              Thời gian: {format(new Date(campaign.start_date), 'HH:mm dd/MM/yyyy', { locale: vi })} -{' '}
-              {format(new Date(campaign.end_date), 'HH:mm dd/MM/yyyy', { locale: vi })}
+              Thời gian: {safeDateFormat(campaign.start_date)} -{' '}
+              {safeDateFormat(campaign.end_date)}
             </span>
           </div>
         </div>
@@ -127,23 +135,6 @@ export function CampaignDetail({ campaign, gameTypes, isLoading }) {
         <p className="text-muted-foreground">{campaign.description}</p>
       )}
 
-      {/* Stats Grid */}
-      {!isPendingInvitation && !isInvitingStudents && (
-        <div className="grid grid-cols-2 gap-4">
-          <div className="text-center p-3 rounded-xl bg-muted/50">
-            <p className="text-2xl font-bold text-eco-green">
-              {participantStats.total}
-            </p>
-            <p className="text-xs text-muted-foreground">Học sinh đăng ký</p>
-          </div>
-          <div className="text-center p-3 rounded-xl bg-muted/50">
-            <p className="text-2xl font-bold text-eco-blue">
-              {campaign.rounds?.length || 0}
-            </p>
-            <p className="text-xs text-muted-foreground">Vòng chơi</p>
-          </div>
-        </div>
-      )}
 
       {/* Rewards Section - Hide for inviting phase */}
       {campaign.rewards && campaign.rewards.length > 0 && !isInvitingStudents && (
@@ -153,8 +144,8 @@ export function CampaignDetail({ campaign, gameTypes, isLoading }) {
             Phần thưởng
           </h4>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-            {campaign.rewards.map((reward) => (
-              <Card key={reward.id} className="p-3 border-pink-100 bg-pink-50/30">
+            {campaign.rewards.map((reward, index) => (
+              <Card key={reward.id || `reward-${index}`} className="p-3 border-pink-100 bg-pink-50/30">
                 <div className="flex gap-3">
                   {reward.image && (
                     <img 
@@ -164,7 +155,14 @@ export function CampaignDetail({ campaign, gameTypes, isLoading }) {
                     />
                   )}
                   <div>
-                    <h5 className="font-medium text-sm text-pink-900">{reward.name}</h5>
+                    <div className="flex items-center gap-2">
+                      <h5 className="font-medium text-sm text-pink-900">{reward.name}</h5>
+                      {reward.rank_position && (
+                        <Badge className="bg-amber-100 text-amber-700 hover:bg-amber-100 border-amber-200 text-[10px] h-4 px-1">
+                          Hạng {reward.rank_position}
+                        </Badge>
+                      )}
+                    </div>
                     {reward.description && (
                       <p className="text-xs text-muted-foreground line-clamp-1">{reward.description}</p>
                     )}
@@ -193,11 +191,11 @@ export function CampaignDetail({ campaign, gameTypes, isLoading }) {
             <div className="space-y-1 text-sm">
               <p>
                 <span className="text-muted-foreground">Bắt đầu:</span>{' '}
-                <span className="font-medium">{campaign.registration_date ? format(new Date(campaign.registration_date), 'HH:mm dd/MM/yyyy', { locale: vi }) : '---'}</span>
+                <span className="font-medium">{safeDateFormat(campaign.registration_date)}</span>
               </p>
               <p>
                 <span className="text-muted-foreground">Hạn chót:</span>{' '}
-                <span className="font-medium">{campaign.registration_deadline ? format(new Date(campaign.registration_deadline), 'HH:mm dd/MM/yyyy', { locale: vi }) : '---'}</span>
+                <span className="font-medium">{safeDateFormat(campaign.registration_deadline)}</span>
               </p>
               <p className="text-xs text-muted-foreground italic">
                 Thời hạn để trường xác nhận tham gia chiến dịch
@@ -211,16 +209,16 @@ export function CampaignDetail({ campaign, gameTypes, isLoading }) {
           <div className="p-4 rounded-lg bg-eco-blue/5 border border-eco-blue/20">
             <h4 className="font-semibold mb-2 flex items-center gap-2">
               <Send className="w-4 h-4 text-eco-blue" />
-              Thời gian mời học sinh
+              Thời gian mời học học sinh
             </h4>
             <div className="space-y-1 text-sm">
               <p>
                 <span className="text-muted-foreground">Bắt đầu mời:</span>{' '}
-                <span className="font-medium">{campaign.invitation_send_date ? format(new Date(campaign.invitation_send_date), 'HH:mm dd/MM/yyyy', { locale: vi }) : '---'}</span>
+                <span className="font-medium">{safeDateFormat(campaign.invitation_send_date)}</span>
               </p>
               <p>
                 <span className="text-muted-foreground">Hạn phản hồi:</span>{' '}
-                <span className="font-medium">{campaign.invitation_deadline ? format(new Date(campaign.invitation_deadline), 'HH:mm dd/MM/yyyy', { locale: vi }) : '---'}</span>
+                <span className="font-medium">{safeDateFormat(campaign.invitation_deadline)}</span>
               </p>
               <p className="text-xs text-muted-foreground italic">
                 Thời gian phụ huynh/học sinh nhận và phản hồi lời mời
@@ -230,16 +228,55 @@ export function CampaignDetail({ campaign, gameTypes, isLoading }) {
         )}
       </div>
 
+      {/* Quotas and Rankings - NEW Section */}
+      {(campaign.max_students_per_school || campaign.total_student_quota || campaign.top_ranking_count) && (
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
+          {campaign.max_students_per_school > 0 && (
+            <div className="p-3 rounded-xl bg-purple-50 border border-purple-100 flex items-center gap-3">
+              <div className="w-10 h-10 rounded-lg bg-purple-100 flex items-center justify-center text-purple-600">
+                <Users className="w-5 h-5" />
+              </div>
+              <div>
+                <p className="text-[10px] text-purple-500 uppercase font-bold tracking-wider">Giới hạn của trường</p>
+                <p className="text-sm font-bold text-purple-900">{campaign.max_students_per_school} học sinh</p>
+              </div>
+            </div>
+          )}
+          {campaign.total_student_quota > 0 && (
+            <div className="p-3 rounded-xl bg-indigo-50 border border-indigo-100 flex items-center gap-3">
+              <div className="w-10 h-10 rounded-lg bg-indigo-100 flex items-center justify-center text-indigo-600">
+                <Building2 className="w-5 h-5" />
+              </div>
+              <div>
+                <p className="text-[10px] text-indigo-500 uppercase font-bold tracking-wider">Tổng chỉ tiêu toàn đoàn</p>
+                <p className="text-sm font-bold text-indigo-900">{campaign.total_student_quota} học sinh</p>
+              </div>
+            </div>
+          )}
+          {campaign.top_ranking_count > 0 && (
+            <div className="p-3 rounded-xl bg-amber-50 border border-amber-100 flex items-center gap-3">
+              <div className="w-10 h-10 rounded-lg bg-amber-100 flex items-center justify-center text-amber-600">
+                <Trophy className="w-5 h-5" />
+              </div>
+              <div>
+                <p className="text-[10px] text-amber-500 uppercase font-bold tracking-wider">Số lượng giải thưởng</p>
+                <p className="text-sm font-bold text-amber-900">Top {campaign.top_ranking_count} học sinh</p>
+              </div>
+            </div>
+          )}
+        </div>
+      )}
+
       {/* Detailed Rounds - NEW Structure */}
       {campaign.rounds && campaign.rounds.length > 0 && (
         <div className="space-y-6">
           <h4 className="font-bold text-lg flex items-center gap-2 border-l-4 border-eco-green pl-3">
             <Layers className="w-5 h-5 text-eco-green" />
-            Cấu trúc vòng chơi
+            Cấu trúc vòng chơi ({campaign.rounds.length})
           </h4>
           <div className="space-y-4">
-            {campaign.rounds.map((round) => (
-              <Card key={round.id} className="overflow-hidden border-2 border-muted/20">
+            {campaign.rounds.map((round, index) => (
+              <Card key={round.id || `round-${index}`} className="overflow-hidden border-2 border-muted/20">
                 <div className="bg-muted/10 px-4 py-3 border-b flex items-center justify-between">
                   <div className="flex items-center gap-2">
                     <div className="w-7 h-7 rounded-full bg-eco-green text-white flex items-center justify-center text-xs font-bold">
@@ -254,15 +291,29 @@ export function CampaignDetail({ campaign, gameTypes, isLoading }) {
                   <div className="flex flex-wrap gap-4 text-sm">
                     <div className="flex items-center gap-1.5 text-muted-foreground">
                       <Clock className="w-4 h-4" />
-                      <span>{format(new Date(round.start_time), 'HH:mm dd/MM')} - {format(new Date(round.end_time), 'HH:mm dd/MM')}</span>
+                      <span>{safeDateFormat(round.start_time, 'HH:mm dd/MM')} - {safeDateFormat(round.end_time, 'HH:mm dd/MM')}</span>
                     </div>
                     <div className="flex items-center gap-1.5 font-medium">
                       <Gamepad2 className="w-4 h-4 text-eco-orange" />
-                      <span>{round.game_type_name}</span>
-                      <Badge variant="secondary" className="ml-1 text-[10px] h-4">
-                        {round.difficulty}
-                      </Badge>
+                      <span>{round.game_type_name || 'Chưa cấu hình Game'}</span>
+                      {round.difficulty && (
+                        <Badge variant="secondary" className="ml-1 text-[10px] h-4">
+                          {round.difficulty}
+                        </Badge>
+                      )}
                     </div>
+                    {round.max_participants > 0 && (
+                      <div className="flex items-center gap-1.5 text-muted-foreground">
+                        <Users className="w-4 h-4" />
+                        <span>Tối đa: {round.max_participants} HS</span>
+                      </div>
+                    )}
+                    {round.advance_count > 0 && (
+                      <div className="flex items-center gap-1.5 text-muted-foreground">
+                        <TrendingUp className="w-4 h-4" />
+                        <span>Lấy top: {round.advance_count} HS</span>
+                      </div>
+                    )}
                   </div>
 
                   {round.quizzes && round.quizzes.length > 0 && (
@@ -272,8 +323,8 @@ export function CampaignDetail({ campaign, gameTypes, isLoading }) {
                         Danh sách Quiz ({round.quizzes.length})
                       </p>
                       <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                        {round.quizzes.map((quiz) => (
-                          <div key={quiz.id} className="flex items-center justify-between p-2 rounded-lg bg-eco-blue/5 border border-eco-blue/10">
+                        {round.quizzes.map((quiz, qIndex) => (
+                          <div key={quiz.id || `quiz-${qIndex}`} className="flex items-center justify-between p-2 rounded-lg bg-eco-blue/5 border border-eco-blue/10">
                             <span className="text-xs font-medium truncate max-w-[150px]">{quiz.title}</span>
                             <div className="flex items-center gap-1">
                               <Badge variant="outline" className="text-[9px] h-4 px-1 capitalize">
@@ -348,13 +399,13 @@ export function CampaignDetail({ campaign, gameTypes, isLoading }) {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {filteredParticipants?.map((participant) => {
+                {filteredParticipants?.map((participant, index) => {
                   const status = participant.approval_status || 'INVITED';
                   const config = invitationStatusConfig[status.toLowerCase()] || invitationStatusConfig.pending;
                   const StatusIcon = config.icon;
                   
                   return (
-                    <TableRow key={participant.id}>
+                    <TableRow key={participant.id || `participant-${index}`}>
                       <TableCell className="font-medium">{participant.name}</TableCell>
                       <TableCell>{participant.grade}{participant.class_name}</TableCell>
                       <TableCell className="text-center">

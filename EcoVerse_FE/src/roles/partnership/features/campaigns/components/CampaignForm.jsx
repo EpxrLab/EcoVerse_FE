@@ -267,7 +267,7 @@ export function CampaignForm({
                 <div>
                   <h3 className="text-sm font-semibold flex items-center gap-2">
                     <Users className="w-4 h-4 text-eco-green" />
-                    Mời trường & Chỉ tiêu
+                    Mời học sinh & Chỉ tiêu
                   </h3>
                 </div>
                 <div className="grid grid-cols-2 gap-4">

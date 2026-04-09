@@ -49,6 +49,7 @@ import { vi } from 'date-fns/locale';
 import { cn } from '@/shared/lib/utils';
 
 const statusConfig = {
+  prepared: { label: 'Chuẩn bị', color: 'bg-blue-500/15 text-blue-500', icon: Clock },
   draft: { label: 'Nháp', color: 'bg-muted text-muted-foreground', icon: Edit },
   scheduled: { label: 'Đã lên lịch', color: 'bg-purple-500/15 text-purple-500', icon: Clock },
   on_going: { label: 'Đang hoạt động', color: 'bg-eco-green/15 text-eco-green', icon: Play },
@@ -116,16 +117,16 @@ export function CampaignList({
         </TableHeader>
         <TableBody>
           {paginatedCampaigns.map((campaign) => {
-            const StatusIcon = statusConfig[campaign.status].icon;
+            const StatusIcon = statusConfig[campaign.status]?.icon || AlertCircle;
             return (
               <TableRow key={campaign.id} className={rowHoverBg}>
                 <TableCell>
                   <div className="space-y-1">
                     <div className="flex items-center gap-2 flex-wrap">
                       <p className="font-semibold">{campaign.name}</p>
-                      <Badge className={statusConfig[campaign.status].color} variant="secondary">
+                      <Badge className={statusConfig[campaign.status]?.color || 'bg-muted'} variant="secondary">
                         <StatusIcon className="w-3 h-3 mr-1" />
-                        {statusConfig[campaign.status].label}
+                        {statusConfig[campaign.status]?.label || campaign.status}
                       </Badge>
                       {campaign.origin === 'partnership' ? (
                         <Badge variant="outline" className="bg-eco-blue/10 text-eco-blue border-eco-blue/20">
@@ -206,13 +207,19 @@ export function CampaignList({
                         {campaign.invitation_send_date && (
                           <span className="flex items-center gap-1 text-eco-blue bg-eco-blue/5 px-1.5 py-0.5 rounded border border-eco-blue/10">
                             <Send className="w-2.5 h-2.5" />
-                            {format(new Date(campaign.invitation_send_date), 'HH:mm dd/MM', { locale: vi })}
+                             {(() => {
+                               const d = new Date(campaign.invitation_send_date);
+                               return !isNaN(d.getTime()) ? format(d, 'HH:mm dd/MM', { locale: vi }) : '---';
+                             })()}
                           </span>
                         )}
                         {campaign.invitation_deadline && (
                           <span className="flex items-center gap-1 text-eco-orange bg-eco-orange/5 px-1.5 py-0.5 rounded border border-eco-orange/10">
                             <Clock className="w-2.5 h-2.5" />
-                            Hạn: {format(new Date(campaign.invitation_deadline), 'HH:mm dd/MM', { locale: vi })}
+                             Hạn: {(() => {
+                               const d = new Date(campaign.invitation_deadline);
+                               return !isNaN(d.getTime()) ? format(d, 'HH:mm dd/MM', { locale: vi }) : '---';
+                             })()}
                           </span>
                         )}
                       </div>

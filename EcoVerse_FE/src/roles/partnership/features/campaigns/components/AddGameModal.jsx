@@ -21,9 +21,9 @@ const STEPS = [
 ];
 
 const DIFFICULTY_META = {
-  EASY:   { label: 'Easy',   color: 'text-eco-green',    border: 'border-eco-green',     bg: 'bg-eco-green/5' },
-  MEDIUM: { label: 'Medium', color: 'text-eco-green',    border: 'border-eco-green',     bg: 'bg-eco-green/5' },
-  HARD:   { label: 'Hard',   color: 'text-emerald-700',  border: 'border-emerald-700',   bg: 'bg-emerald-700/5' },
+  EASY:   { label: 'Dễ',   color: 'text-eco-green',    border: 'border-eco-green',     bg: 'bg-eco-green/5' },
+  MEDIUM: { label: 'Trung bình', color: 'text-eco-green',    border: 'border-eco-green',     bg: 'bg-eco-green/5' },
+  HARD:   { label: 'Khó',   color: 'text-emerald-700',  border: 'border-emerald-700',   bg: 'bg-emerald-700/5' },
 };
 
 const DEFAULT_COIN = 20;
