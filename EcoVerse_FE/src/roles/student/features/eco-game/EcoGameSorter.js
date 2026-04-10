@@ -134,7 +134,7 @@ export default class EcoGameSorter {
       TABLE_SIZE.d,
     );
     const tableMat = new THREE.MeshStandardMaterial({
-      color: 0x8d6e63,
+      color: 0xd1d1d1,
       roughness: 0.7,
     });
     this._table = new THREE.Mesh(tableGeo, tableMat);
@@ -332,7 +332,7 @@ export default class EcoGameSorter {
           const box2 = new THREE.Box3().setFromObject(model);
           const center = box2.getCenter(new THREE.Vector3());
           model.position.sub(center);
-          
+
           wrapper.add(model);
 
           wrapper.traverse((child) => {
@@ -348,8 +348,11 @@ export default class EcoGameSorter {
           setupMesh(this._createBoxItem(item.color || 0x2196f3));
         }
       };
-      
-      const modelUrl = typeof item.preloadedModel === "string" ? item.preloadedModel : item.imageUrl;
+
+      const modelUrl =
+        typeof item.preloadedModel === "string"
+          ? item.preloadedModel
+          : item.imageUrl;
 
       if (item.preloadedModel && typeof item.preloadedModel !== "string") {
         normalizeAndSetup(item.preloadedModel);
@@ -357,10 +360,15 @@ export default class EcoGameSorter {
         if (!gltfPromiseCache[modelUrl]) {
           const loader = new GLTFLoader();
           gltfPromiseCache[modelUrl] = new Promise((resolve, reject) => {
-            loader.load(modelUrl, (gltf) => resolve(gltf.scene), undefined, reject);
+            loader.load(
+              modelUrl,
+              (gltf) => resolve(gltf.scene),
+              undefined,
+              reject,
+            );
           });
         }
-        
+
         gltfPromiseCache[modelUrl]
           .then((model) => normalizeAndSetup(model))
           .catch((err) => {

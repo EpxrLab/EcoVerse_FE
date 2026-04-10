@@ -47,7 +47,7 @@ export default class EcoGameRunner {
 
     // API wasteItems with preloaded 3D models
     this.wasteItems = wasteItems;
-    this.maxTrashToSpawn = itemCount > 0 ? itemCount : 20; // fallback
+    this.maxTrashToSpawn = config.itemCount > 0 ? config.itemCount : (itemCount > 0 ? itemCount : 20);
     this.totalTrashSpawned = 0;
 
     this.player = null;
@@ -508,7 +508,6 @@ export default class EcoGameRunner {
 
     // Use API wasteItems with valid imagePresignedUrl
     const apiItems = this.wasteItems.filter((w) => w.imagePresignedUrl);
-    console.log(apiItems);
     if (apiItems.length > 0) {
       this.totalTrashSpawned++;
       // Pick a random item from API wasteItems
@@ -545,6 +544,41 @@ export default class EcoGameRunner {
         const center = box.getCenter(new THREE.Vector3());
         mesh.children.forEach((child) => {
           child.position.sub(center);
+        });
+
+        // Tăng cường độ sáng của model (emissive) để chống bị tối nát
+        mesh.traverse((child) => {
+          if (child.isMesh && child.material && child.material.emissive) {
+            child.material.emissive.setHex(0x555555); // Tự phát sáng một chút
+            child.material.emissiveIntensity = 0.5;
+          }
+        });
+
+        // Tạo vầng sáng (Aura) bao quanh
+        const catColors = {
+          RECYCLABLE: 0x2196f3,
+          ORGANIC: 0x4caf50,
+          HAZARDOUS: 0xf44336,
+          GENERAL: 0xeeeeee,
+        };
+        const auraGeo = new THREE.CylinderGeometry(0.7, 0.7, 3, 16, 1, true);
+        const auraMat = new THREE.MeshBasicMaterial({
+          color: catColors[apiItem.wasteCategory] || 0xffffff,
+          transparent: true,
+          opacity: 0.2, // Will pulse to higher opacity
+          side: THREE.DoubleSide,
+          depthWrite: false,
+          blending: THREE.AdditiveBlending,
+        });
+        const aura = new THREE.Mesh(auraGeo, auraMat);
+        mesh.add(aura);
+
+        gsap.to(auraMat, {
+          opacity: 0.65,
+          duration: 0.8,
+          yoyo: true,
+          repeat: -1,
+          ease: "sine.inOut",
         });
 
         mesh.position.set(LANES[lane], 0.6, -60);
@@ -887,11 +921,16 @@ export default class EcoGameRunner {
         Math.random() *
           (this.config.spawnIntervalMax - this.config.spawnIntervalMin);
 
-      // obstacleRatio determines chance of obstacle vs trash
-      // Only spawn trash if we haven't reached the limit
+      // prioritized trash spawning if we haven't reached the limit
+      const remainingTrash = this.maxTrashToSpawn - this.totalTrashSpawned;
+      const remainingDistance = this.config.maxDistance - this.distance;
+      
+      // If we are getting close to the end, force trash spawns
+      const forceTrash = remainingTrash > 0 && remainingDistance < remainingTrash * 15;
+
       if (
-        this.totalTrashSpawned < this.maxTrashToSpawn &&
-        Math.random() >= this.config.obstacleRatio
+        remainingTrash > 0 && 
+        (forceTrash || Math.random() >= this.config.obstacleRatio)
       ) {
         this._spawnTrash();
       } else {

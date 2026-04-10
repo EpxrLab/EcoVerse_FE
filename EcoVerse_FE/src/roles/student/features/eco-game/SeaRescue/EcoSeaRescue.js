@@ -1,6 +1,3 @@
-/**
- * EcoSeaRescue - Stage 1 alternative: TPS boat sea rescue game
- */
 import * as THREE from "three";
 import {
   TOTAL_TRASH,
@@ -18,7 +15,7 @@ import {
 } from "./RecycleGameLogic";
 
 export default class EcoSeaRescue {
-  constructor(scene, camera, stateManager, config = {}, wasteItems = []) {
+  constructor(scene, camera, stateManager, config = {}) {
     this.scene = scene;
     this.camera = camera;
     this.stateManager = stateManager;
@@ -28,9 +25,6 @@ export default class EcoSeaRescue {
       totalTrash: config.totalTrash ?? TOTAL_TRASH,
       maxHp: config.maxHp ?? PLAYER_MAX_HP,
     };
-
-    // API wasteItems with preloaded 3D models
-    this.wasteItems = wasteItems;
 
     this._gameState = null;
     this._player = null;
@@ -192,11 +186,7 @@ export default class EcoSeaRescue {
 
     const storage = initStorage(this.scene);
     const { player, playerState } = initPlayer(this.scene);
-    const trash = initTrash(
-      this.scene,
-      this.wasteItems,
-      this.config.totalTrash,
-    );
+    const trash = initTrash(this.scene);
     const obstacles = initObstacles(this.scene);
     const { speedZones, slowZones } = initZones(this.scene, obstacles);
 
@@ -229,7 +219,6 @@ export default class EcoSeaRescue {
       fallingItems: [],
       scatteredItems: [],
       recycledInStorage: 0,
-      totalTrashCount: this.config.totalTrash || trash.length,
       speedMultiplier: 1,
       lastInventoryFullWarning: 0,
     };
@@ -298,11 +287,6 @@ export default class EcoSeaRescue {
       // Đã có OBSTACLE_DAMAGE_COOLDOWN=1000ms trong gameTick nên không cần cooldown thêm.
       onDamage: () => {
         this._playOneShot(this.warningSound);
-      },
-
-      // Called when an item is deposited into the storage lighthouse
-      onItemDeposited: (trashType) => {
-        this.stateManager.addTrash(trashType);
       },
 
       setScreenShake: h.setScreenShake,

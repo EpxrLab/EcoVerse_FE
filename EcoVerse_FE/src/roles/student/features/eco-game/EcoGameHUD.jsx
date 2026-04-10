@@ -250,6 +250,7 @@ export default function EcoGameHUD({
               distance={distance}
               speed={speed}
               trashCount={trashCount}
+              totalTrash={levelConfig?.runner?.itemCount || 0}
             />
           ))}
 

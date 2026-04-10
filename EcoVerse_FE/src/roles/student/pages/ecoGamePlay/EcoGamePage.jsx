@@ -123,7 +123,8 @@ export default function EcoGamePage() {
           stage1Game: isCollectGame ? "searescue" : "runner",
           scorePerCorrect: apiData.scorePerCorrect || 0,
           runner: {
-            // runner defaults come from difficulty preset via mergeLevelConfig
+            itemCount: apiData.itemCount,
+            lives: apiData.lives,
           },
           searescue: {
             gameTime:
@@ -196,7 +197,13 @@ export default function EcoGamePage() {
       }
 
       const timeTaken = gameStartTimeRef.current
-        ? Math.max(0, Math.round((Date.now() - gameStartTimeRef.current - deadTimeRef.current) / 1000))
+        ? Math.max(
+            0,
+            Math.round(
+              (Date.now() - gameStartTimeRef.current - deadTimeRef.current) /
+                1000,
+            ),
+          )
         : 0;
 
       const totalItems =

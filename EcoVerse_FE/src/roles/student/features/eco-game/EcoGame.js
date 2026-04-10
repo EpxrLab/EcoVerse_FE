@@ -114,7 +114,7 @@ export default class EcoGame {
         this.stateManager,
         this.levelConfig.runner,
         this.levelConfig.wasteItems ?? [],
-        this.levelConfig.itemCount ?? 0,
+        this.levelConfig.runner.itemCount || 20,
       );
     }
 
@@ -168,7 +168,7 @@ export default class EcoGame {
       this.stateManager,
       this.renderer,
       this.levelConfig.sorter,
-      this.levelConfig
+      this.levelConfig,
     );
     this.sorter.init();
     this.activeStage = this.sorter;
