@@ -1,5 +1,5 @@
 import { motion, AnimatePresence } from "framer-motion";
-export function RunnerHUD({ distance, speed, trashCount }) {
+export function RunnerHUD({ distance, speed, trashCount, totalTrash }) {
   return (
     <motion.div
       initial={{ opacity: 0, y: -20 }}
@@ -23,7 +23,15 @@ export function RunnerHUD({ distance, speed, trashCount }) {
           <div className="text-xs opacity-90 uppercase tracking-wider">
             🗑️ Rác thu gom
           </div>
-          <div className="text-2xl font-bold tabular-nums">{trashCount}</div>
+          <div className="text-2xl font-bold tabular-nums">
+            {trashCount}
+            {totalTrash > 0 && (
+              <span className="text-sm opacity-70 font-normal">
+                {" "}
+                / {totalTrash}
+              </span>
+            )}
+          </div>
         </div>
 
         {/* Speed */}

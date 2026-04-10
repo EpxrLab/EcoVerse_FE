@@ -1,6 +1,3 @@
-/**
- * EcoSeaRescue - Stage 1 alternative: TPS boat sea rescue game
- */
 import * as THREE from "three";
 import {
   TOTAL_TRASH,
@@ -93,7 +90,7 @@ export default class EcoSeaRescue {
         this.bgm.setBuffer(buffer);
         this.bgm.setLoop(true);
         this.bgm.setVolume(0.4);
-        
+
         // Start playing as soon as context is ready and user has interacted
         const tryPlay = () => {
           if (this._stopped || !this.bgm || this.bgm.isPlaying) return;
@@ -103,7 +100,7 @@ export default class EcoSeaRescue {
             }
           });
         };
-        
+
         tryPlay();
         // Also listen for first interaction if context was suspended
         window.addEventListener("pointerdown", tryPlay, { once: true });

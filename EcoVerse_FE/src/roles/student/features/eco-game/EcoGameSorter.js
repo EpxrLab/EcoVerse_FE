@@ -4,18 +4,17 @@
  * 3D drag-and-drop sorting game using THREE.Raycaster.
  * Players sort collected trash into the correct bins.
  */
-import * as THREE from 'three';
-import gsap from 'gsap';
-import { BinType, SPAWNABLE_TRASH } from './EcoGameStateManager';
-import { DEFAULT_LEVEL_CONFIG } from './gameConfig';
+import * as THREE from "three";
+import gsap from "gsap";
+import { GLTFLoader } from "three/examples/jsm/loaders/GLTFLoader";
+import {
+  BinType,
+  SPAWNABLE_TRASH,
+  DynamicBinTypes,
+} from "./EcoGameStateManager";
+import { DEFAULT_LEVEL_CONFIG } from "./gameConfig";
 
 // ─── Constants ───────────────────────────────────────────────────────────────
-
-const BIN_POSITIONS = [
-  { binType: BinType.ORGANIC, x: -3.5, z: -4 },
-  { binType: BinType.INORGANIC, x: 0, z: -4 },
-  { binType: BinType.RECYCLE, x: 3.5, z: -4 },
-];
 
 const TABLE_SIZE = { w: 8, h: 0.2, d: 3 };
 const TABLE_Y = 0;
@@ -30,7 +29,14 @@ export default class EcoGameSorter {
    * @param {THREE.WebGLRenderer} renderer
    * @param {object} config - Sorter config from API (sorter sub-object of GameLevelConfig)
    */
-  constructor(scene, camera, stateManager, renderer, config = {}) {
+  constructor(
+    scene,
+    camera,
+    stateManager,
+    renderer,
+    config = {},
+    levelConfig = {},
+  ) {
     this.scene = scene;
     this.camera = camera;
     this.stateManager = stateManager;
@@ -39,6 +45,14 @@ export default class EcoGameSorter {
     // Merge provided config with defaults
     const defaults = DEFAULT_LEVEL_CONFIG.sorter;
     this.config = { ...defaults, ...config };
+
+    // Categories for bins
+    this.wasteCategories = levelConfig.wasteCategories || [
+      "RECYCLABLE",
+      "ORGANIC",
+      "HAZARDOUS",
+      "GENERAL",
+    ];
 
     this.raycaster = new THREE.Raycaster();
     this.mouse = new THREE.Vector2();
@@ -114,9 +128,13 @@ export default class EcoGameSorter {
 
   _createTable() {
     // Table surface
-    const tableGeo = new THREE.BoxGeometry(TABLE_SIZE.w, TABLE_SIZE.h, TABLE_SIZE.d);
+    const tableGeo = new THREE.BoxGeometry(
+      TABLE_SIZE.w,
+      TABLE_SIZE.h,
+      TABLE_SIZE.d,
+    );
     const tableMat = new THREE.MeshStandardMaterial({
-      color: 0x8d6e63,
+      color: 0xd1d1d1,
       roughness: 0.7,
     });
     this._table = new THREE.Mesh(tableGeo, tableMat);
@@ -145,7 +163,23 @@ export default class EcoGameSorter {
   }
 
   _createBins() {
-    BIN_POSITIONS.forEach(({ binType, x, z }) => {
+    const numBins = this.wasteCategories.length;
+    const totalWidth = 10; // Spread bins across this width
+    let spacing, startX;
+
+    if (numBins === 1) {
+      startX = 0;
+      spacing = 0;
+    } else {
+      spacing = totalWidth / (numBins - 1);
+      startX = -totalWidth / 2;
+    }
+
+    this.wasteCategories.forEach((catCode, index) => {
+      const binType = DynamicBinTypes[catCode] || DynamicBinTypes.GENERAL;
+      const x = startX + spacing * index;
+      const z = -4;
+
       const group = new THREE.Group();
 
       // Bin body
@@ -162,7 +196,9 @@ export default class EcoGameSorter {
 
       // Bin bottom
       const bottomGeo = new THREE.CircleGeometry(0.6, 16);
-      const bottomMat = new THREE.MeshStandardMaterial({ color: binType.color });
+      const bottomMat = new THREE.MeshStandardMaterial({
+        color: binType.color,
+      });
       const bottom = new THREE.Mesh(bottomGeo, bottomMat);
       bottom.rotation.x = -Math.PI / 2;
       bottom.position.y = -0.7;
@@ -185,7 +221,7 @@ export default class EcoGameSorter {
       group.add(label);
 
       group.position.set(x, 0, z);
-      group.userData = { type: 'bin', binId: binType.id };
+      group.userData = { type: "bin", binId: binType.id };
 
       this.scene.add(group);
       this.binMeshes.push(group);
@@ -197,28 +233,28 @@ export default class EcoGameSorter {
         y: 1,
         z: 1,
         duration: 0.5,
-        ease: 'back.out(1.7)',
+        ease: "back.out(1.7)",
         delay: 0.3,
       });
     });
   }
 
   _createBinLabel(text, bgColor) {
-    const canvas = document.createElement('canvas');
+    const canvas = document.createElement("canvas");
     canvas.width = 256;
     canvas.height = 96;
-    const ctx = canvas.getContext('2d');
+    const ctx = canvas.getContext("2d");
 
     // Background
-    ctx.fillStyle = '#ffffff';
+    ctx.fillStyle = "#ffffff";
     ctx.roundRect(4, 4, 248, 88, 12);
     ctx.fill();
 
     // Text
-    ctx.fillStyle = '#333333';
-    ctx.font = 'bold 36px Arial, sans-serif';
-    ctx.textAlign = 'center';
-    ctx.textBaseline = 'middle';
+    ctx.fillStyle = "#333333";
+    ctx.font = "bold 36px Arial, sans-serif";
+    ctx.textAlign = "center";
+    ctx.textBaseline = "middle";
     ctx.fillText(text, 128, 48);
 
     const texture = new THREE.CanvasTexture(canvas);
@@ -247,47 +283,113 @@ export default class EcoGameSorter {
     const cols = Math.ceil(Math.sqrt(items.length));
     const spacing = TABLE_SIZE.w / (cols + 1);
 
+    // Dùng cache để tránh XHR dồn dập khiến 1 vài file GLTF bị browser drop ngầm
+    const gltfPromiseCache = {};
+
     items.forEach((item, index) => {
       const col = index % cols;
       const row = Math.floor(index / cols);
 
-      let mesh;
-      switch (item.id) {
-        case 'plastic_bottle':
-          mesh = this._createBottle(item.color);
-          break;
-        case 'can':
-          mesh = this._createCan(item.color);
-          break;
-        default:
-          mesh = this._createBoxItem(item.color);
-          break;
-      }
-
       const x = -TABLE_SIZE.w / 2 + spacing * (col + 1);
       const z = 1 - TABLE_SIZE.d / 2 + 0.5 + row * 0.8;
 
-      mesh.position.set(x, ITEM_Y, z);
-      mesh.userData = {
-        type: 'sortable',
-        trashInfo: item,
-        correctBin: item.bin,
-        originalPos: new THREE.Vector3(x, ITEM_Y, z),
+      const setupMesh = (mesh) => {
+        mesh.position.set(x, ITEM_Y, z);
+        mesh.userData = {
+          type: "sortable",
+          trashInfo: item,
+          correctBin: item.bin,
+          originalPos: new THREE.Vector3(x, ITEM_Y, z),
+          baseScale: mesh.scale.clone(),
+        };
+
+        this.scene.add(mesh);
+        this.trashMeshes.push(mesh);
+
+        // Entrance animation
+        const s = mesh.scale.clone();
+        mesh.scale.set(0, 0, 0);
+        gsap.to(mesh.scale, {
+          x: s.x,
+          y: s.y,
+          z: s.z,
+          duration: 0.4,
+          ease: "back.out(1.7)",
+          delay: 0.5 + index * 0.08,
+        });
       };
 
-      this.scene.add(mesh);
-      this.trashMeshes.push(mesh);
+      const normalizeAndSetup = (originalModel) => {
+        try {
+          const model = originalModel.clone(true);
+          const wrapper = new THREE.Group();
 
-      // Entrance animation
-      mesh.scale.set(0, 0, 0);
-      gsap.to(mesh.scale, {
-        x: 1,
-        y: 1,
-        z: 1,
-        duration: 0.4,
-        ease: 'back.out(1.7)',
-        delay: 0.5 + index * 0.08,
-      });
+          const box = new THREE.Box3().setFromObject(model);
+          const size = box.getSize(new THREE.Vector3());
+          const maxDim = Math.max(size.x, size.y, size.z);
+          if (maxDim > 0) model.scale.multiplyScalar(0.4 / maxDim);
+
+          const box2 = new THREE.Box3().setFromObject(model);
+          const center = box2.getCenter(new THREE.Vector3());
+          model.position.sub(center);
+
+          wrapper.add(model);
+
+          wrapper.traverse((child) => {
+            if (child.isMesh) {
+              child.castShadow = true;
+              child.receiveShadow = true;
+            }
+          });
+
+          setupMesh(wrapper);
+        } catch (e) {
+          console.error("normalizeAndSetup error:", e);
+          setupMesh(this._createBoxItem(item.color || 0x2196f3));
+        }
+      };
+
+      const modelUrl =
+        typeof item.preloadedModel === "string"
+          ? item.preloadedModel
+          : item.imageUrl;
+
+      if (item.preloadedModel && typeof item.preloadedModel !== "string") {
+        normalizeAndSetup(item.preloadedModel);
+      } else if (modelUrl) {
+        if (!gltfPromiseCache[modelUrl]) {
+          const loader = new GLTFLoader();
+          gltfPromiseCache[modelUrl] = new Promise((resolve, reject) => {
+            loader.load(
+              modelUrl,
+              (gltf) => resolve(gltf.scene),
+              undefined,
+              reject,
+            );
+          });
+        }
+
+        gltfPromiseCache[modelUrl]
+          .then((model) => normalizeAndSetup(model))
+          .catch((err) => {
+            console.error("Sorter GLTF Load Error:", err);
+            setupMesh(this._createBoxItem(item.color || 0x2196f3));
+          });
+      } else {
+        let mesh;
+        switch (item.id) {
+          case "plastic_bottle":
+            mesh = this._createBottle(item.color || 0xffffff);
+            break;
+          case "can":
+            mesh = this._createCan(item.color || 0xffffff);
+            break;
+          default:
+            mesh = this._createBoxItem(item.color || 0xffffff);
+            break;
+        }
+        setupMesh(mesh);
+      }
     });
   }
 
@@ -315,7 +417,11 @@ export default class EcoGameSorter {
 
   _createCan(color) {
     const geo = new THREE.CylinderGeometry(0.14, 0.14, 0.4, 12);
-    const mat = new THREE.MeshStandardMaterial({ color, metalness: 0.6, roughness: 0.3 });
+    const mat = new THREE.MeshStandardMaterial({
+      color,
+      metalness: 0.6,
+      roughness: 0.3,
+    });
     const mesh = new THREE.Mesh(geo, mat);
     mesh.castShadow = true;
     return mesh;
@@ -335,14 +441,14 @@ export default class EcoGameSorter {
       y: 7,
       z: 7,
       duration: 1,
-      ease: 'power2.inOut',
+      ease: "power2.inOut",
     });
     gsap.to(this.camera.rotation, {
       x: -Math.PI / 4,
       y: 0,
       z: 0,
       duration: 1,
-      ease: 'power2.inOut',
+      ease: "power2.inOut",
     });
   }
 
@@ -350,16 +456,16 @@ export default class EcoGameSorter {
 
   _addEventListeners() {
     const domElement = this.renderer.domElement;
-    domElement.addEventListener('pointerdown', this._onPointerDown);
-    domElement.addEventListener('pointermove', this._onPointerMove);
-    domElement.addEventListener('pointerup', this._onPointerUp);
+    domElement.addEventListener("pointerdown", this._onPointerDown);
+    domElement.addEventListener("pointermove", this._onPointerMove);
+    domElement.addEventListener("pointerup", this._onPointerUp);
   }
 
   _removeEventListeners() {
     const domElement = this.renderer.domElement;
-    domElement.removeEventListener('pointerdown', this._onPointerDown);
-    domElement.removeEventListener('pointermove', this._onPointerMove);
-    domElement.removeEventListener('pointerup', this._onPointerUp);
+    domElement.removeEventListener("pointerdown", this._onPointerDown);
+    domElement.removeEventListener("pointermove", this._onPointerMove);
+    domElement.removeEventListener("pointerup", this._onPointerUp);
   }
 
   _getPointerPosition(event) {
@@ -375,7 +481,7 @@ export default class EcoGameSorter {
     // Get all sortable meshes and their children
     const sortableMeshes = [];
     this.trashMeshes.forEach((mesh) => {
-      if (mesh.userData.type === 'sortable') {
+      if (mesh.userData.type === "sortable") {
         sortableMeshes.push(mesh);
         // Also check children for groups
         mesh.traverse((child) => {
@@ -389,27 +495,28 @@ export default class EcoGameSorter {
     if (intersects.length > 0) {
       // Find the top-level sortable parent
       let target = intersects[0].object;
-      while (target.parent && target.userData.type !== 'sortable') {
+      while (target.parent && target.userData.type !== "sortable") {
         target = target.parent;
       }
 
-      if (target.userData.type === 'sortable') {
+      if (target.userData.type === "sortable") {
         this.selectedObject = target;
         this.isDragging = true;
         this.originalPosition.copy(target.userData.originalPos);
+        const baseScale = target.userData.baseScale;
 
         // Lift animation
         gsap.to(target.position, {
           y: ITEM_Y + 0.8,
           duration: 0.2,
-          ease: 'power2.out',
+          ease: "power2.out",
         });
         gsap.to(target.scale, {
-          x: 1.2,
-          y: 1.2,
-          z: 1.2,
+          x: baseScale.x * 1.2,
+          y: baseScale.y * 1.2,
+          z: baseScale.z * 1.2,
           duration: 0.2,
-          ease: 'power2.out',
+          ease: "power2.out",
         });
       }
     }
@@ -501,7 +608,7 @@ export default class EcoGameSorter {
       y: bin.position.y + 1.5,
       z: bin.position.z,
       duration: 0.3,
-      ease: 'power2.in',
+      ease: "power2.in",
     });
     tl.to(
       item.scale,
@@ -510,9 +617,9 @@ export default class EcoGameSorter {
         y: 0,
         z: 0,
         duration: 0.2,
-        ease: 'power2.in',
+        ease: "power2.in",
       },
-      '-=0.1'
+      "-=0.1",
     );
 
     // Bin pulse effect
@@ -523,7 +630,7 @@ export default class EcoGameSorter {
       duration: 0.15,
       yoyo: true,
       repeat: 1,
-      ease: 'power2.out',
+      ease: "power2.out",
     });
   }
 
@@ -533,34 +640,32 @@ export default class EcoGameSorter {
 
     // Red flash (temporarily change color)
     tl.to(item.position, {
-      x: '+=0.2',
+      x: "+=0.2",
       duration: 0.05,
       repeat: 5,
       yoyo: true,
-      ease: 'none',
+      ease: "none",
     });
 
-    tl.to(
-      item.position,
-      {
-        x: item.userData.originalPos.x,
-        y: ITEM_Y,
-        z: item.userData.originalPos.z,
-        duration: 0.4,
-        ease: 'back.out(1.7)',
-      }
-    );
+    tl.to(item.position, {
+      x: item.userData.originalPos.x,
+      y: ITEM_Y,
+      z: item.userData.originalPos.z,
+      duration: 0.4,
+      ease: "back.out(1.7)",
+    });
 
+    const baseScale = item.userData.baseScale;
     tl.to(
       item.scale,
       {
-        x: 1,
-        y: 1,
-        z: 1,
+        x: baseScale.x,
+        y: baseScale.y,
+        z: baseScale.z,
         duration: 0.3,
-        ease: 'power2.out',
+        ease: "power2.out",
       },
-      '<'
+      "<",
     );
   }
 
@@ -570,14 +675,16 @@ export default class EcoGameSorter {
       y: ITEM_Y,
       z: item.userData.originalPos.z,
       duration: 0.4,
-      ease: 'back.out(1.7)',
+      ease: "back.out(1.7)",
     });
+
+    const baseScale = item.userData.baseScale;
     gsap.to(item.scale, {
-      x: 1,
-      y: 1,
-      z: 1,
+      x: baseScale.x,
+      y: baseScale.y,
+      z: baseScale.z,
       duration: 0.3,
-      ease: 'power2.out',
+      ease: "power2.out",
     });
   }
 
