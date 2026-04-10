@@ -297,6 +297,16 @@ export function initTrash(
         t.userData.wasteCategory = apiItem.wasteCategory;
         t.userData.itemName = apiItem.itemName;
         t.userData.subCategoryCode = apiItem.subCategoryCode;
+        
+        // Ensure trashType structure exists for EcoGameStateManager and Stage 2
+        t.userData.trashType = {
+          id: apiItem.wasteItemId,
+          name: apiItem.itemName,
+          bin: apiItem.wasteCategory?.toLowerCase() || "recycle",
+          color: 0x2196f3,
+          imageUrl: apiItem.imageUrl || apiItem.imagePresignedUrl,
+          preloadedModel: apiItem.preloadedModel
+        };
 
         t.position.set(
           (Math.random() - 0.5) * 45,
@@ -575,6 +585,9 @@ export function gameTick({
   setDamageFlash,
   setScreenShake,
   endGame,
+  onPickup,
+  onDamage,
+  onItemDeposited,
   clock,
 }) {
   if (state.stopped) return;
@@ -815,6 +828,9 @@ export function gameTick({
   ) {
     const count = state.inventory.length;
     state.inventory.forEach((t, idx) => {
+      if (onItemDeposited && t.userData.trashType) {
+        onItemDeposited(t.userData.trashType);
+      }
       player.remove(t);
       scene.add(t);
       const worldPos = new THREE.Vector3();

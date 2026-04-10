@@ -300,6 +300,11 @@ export default class EcoSeaRescue {
         this._playOneShot(this.warningSound);
       },
 
+      // Called when an item is deposited into the storage lighthouse
+      onItemDeposited: (trashType) => {
+        this.stateManager.addTrash(trashType);
+      },
+
       setScreenShake: h.setScreenShake,
       setCurrentZone: h.setCurrentZone,
 

@@ -168,6 +168,7 @@ export default class EcoGame {
       this.stateManager,
       this.renderer,
       this.levelConfig.sorter,
+      this.levelConfig
     );
     this.sorter.init();
     this.activeStage = this.sorter;

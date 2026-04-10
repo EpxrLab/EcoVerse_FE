@@ -28,6 +28,13 @@ export const BinType = {
   RECYCLE: { id: 'recycle', name: 'Tái chế', color: 0x2196f3 },
 };
 
+export const DynamicBinTypes = {
+  RECYCLABLE: { id: 'recyclable', name: 'Tái chế', color: 0x2196f3 },
+  ORGANIC: { id: 'organic', name: 'Hữu cơ', color: 0x4caf50 },
+  HAZARDOUS: { id: 'hazardous', name: 'Nguy hại', color: 0xf44336 },
+  GENERAL: { id: 'general', name: 'Còn lại', color: 0x757575 },
+};
+
 // All spawnable trash types in the runner stage
 export const SPAWNABLE_TRASH = [
   TrashType.PLASTIC_BOTTLE,

@@ -508,6 +508,7 @@ export default class EcoGameRunner {
 
     // Use API wasteItems with valid imagePresignedUrl
     const apiItems = this.wasteItems.filter((w) => w.imagePresignedUrl);
+    console.log(apiItems);
     if (apiItems.length > 0) {
       this.totalTrashSpawned++;
       // Pick a random item from API wasteItems
@@ -520,6 +521,8 @@ export default class EcoGameRunner {
           name: apiItem.itemName,
           bin: apiItem.wasteCategory?.toLowerCase() || "recycle",
           color: 0x2196f3,
+          imageUrl: apiItem.imageUrl || apiItem.imagePresignedUrl,
+          preloadedModel: apiItem.imagePresignedUrl,
         },
         wasteItemId: apiItem.wasteItemId,
         wasteCategory: apiItem.wasteCategory,
