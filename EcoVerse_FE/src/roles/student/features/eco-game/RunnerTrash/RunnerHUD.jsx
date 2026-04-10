@@ -26,7 +26,10 @@ export function RunnerHUD({ distance, speed, trashCount, totalTrash }) {
           <div className="text-2xl font-bold tabular-nums">
             {trashCount}
             {totalTrash > 0 && (
-              <span className="text-sm opacity-70 font-normal"> / {totalTrash}</span>
+              <span className="text-sm opacity-70 font-normal">
+                {" "}
+                / {totalTrash}
+              </span>
             )}
           </div>
         </div>

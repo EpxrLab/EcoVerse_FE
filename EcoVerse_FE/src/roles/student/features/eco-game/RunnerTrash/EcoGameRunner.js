@@ -47,7 +47,8 @@ export default class EcoGameRunner {
 
     // API wasteItems with preloaded 3D models
     this.wasteItems = wasteItems;
-    this.maxTrashToSpawn = config.itemCount > 0 ? config.itemCount : (itemCount > 0 ? itemCount : 20);
+    this.maxTrashToSpawn =
+      config.itemCount > 0 ? config.itemCount : itemCount > 0 ? itemCount : 10;
     this.totalTrashSpawned = 0;
 
     this.player = null;
@@ -924,12 +925,13 @@ export default class EcoGameRunner {
       // prioritized trash spawning if we haven't reached the limit
       const remainingTrash = this.maxTrashToSpawn - this.totalTrashSpawned;
       const remainingDistance = this.config.maxDistance - this.distance;
-      
+
       // If we are getting close to the end, force trash spawns
-      const forceTrash = remainingTrash > 0 && remainingDistance < remainingTrash * 15;
+      const forceTrash =
+        remainingTrash > 0 && remainingDistance < remainingTrash * 15;
 
       if (
-        remainingTrash > 0 && 
+        remainingTrash > 0 &&
         (forceTrash || Math.random() >= this.config.obstacleRatio)
       ) {
         this._spawnTrash();

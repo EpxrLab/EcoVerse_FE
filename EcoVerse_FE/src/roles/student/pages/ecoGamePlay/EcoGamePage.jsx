@@ -52,7 +52,6 @@ export default function EcoGamePage() {
         setLoading(true);
         setLoadingText("Đang tải thông tin màn chơi...");
 
-        // Call the real API
         const response = await startGame(
           campaignId,
           roundId,
@@ -142,6 +141,7 @@ export default function EcoGamePage() {
         };
 
         setLevelConfig(finalConfig);
+        console.log(apiData);
         setLoading(false);
 
         requestAnimationFrame(() => {

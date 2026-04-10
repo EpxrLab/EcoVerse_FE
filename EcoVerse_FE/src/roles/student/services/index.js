@@ -108,12 +108,12 @@ const getAttemptResult = async (attemptId) => {
   }
 };
 
-const startGame = async (campaignId, roundId, configId, level) => {
+const startGame = async (campaignId, roundId, configId, levelNumber) => {
   try {
     const res = await axios.post(
-      `/student/game/campaigns/${campaignId}/rounds/${roundId}/configs/${configId}/start`,
-      { level },
+      `/student/game/campaigns/${campaignId}/rounds/${roundId}/configs/${configId}/start?levelNumber=${levelNumber}`,
     );
+    console.log(res.data);
     return res.data;
   } catch (error) {
     console.log(error);
