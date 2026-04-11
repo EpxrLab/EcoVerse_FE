@@ -551,7 +551,7 @@ export default class EcoGameRunner {
         mesh.traverse((child) => {
           if (child.isMesh && child.material && child.material.emissive) {
             child.material.emissive.setHex(0x555555); // Tự phát sáng một chút
-            child.material.emissiveIntensity = 0.5;
+            child.material.emissiveIntensity = 0.2;
           }
         });
 
@@ -562,21 +562,22 @@ export default class EcoGameRunner {
           HAZARDOUS: 0xf44336,
           GENERAL: 0xeeeeee,
         };
-        const auraGeo = new THREE.CylinderGeometry(0.7, 0.7, 3, 16, 1, true);
+        const auraGeo = new THREE.CylinderGeometry(0.8, 0.9, 0.4, 16, 1, true);
         const auraMat = new THREE.MeshBasicMaterial({
           color: catColors[apiItem.wasteCategory] || 0xffffff,
           transparent: true,
-          opacity: 0.2, // Will pulse to higher opacity
+          opacity: 0.3,
           side: THREE.DoubleSide,
           depthWrite: false,
           blending: THREE.AdditiveBlending,
         });
         const aura = new THREE.Mesh(auraGeo, auraMat);
+        aura.position.y = -0.2;
         mesh.add(aura);
 
         gsap.to(auraMat, {
-          opacity: 0.65,
-          duration: 0.8,
+          opacity: 0.5,
+          duration: 1.2,
           yoyo: true,
           repeat: -1,
           ease: "sine.inOut",
