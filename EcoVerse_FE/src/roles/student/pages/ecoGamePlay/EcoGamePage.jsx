@@ -12,6 +12,7 @@ import { GLTFLoader } from "three/examples/jsm/loaders/GLTFLoader";
 import EcoGame from "../../features/eco-game/EcoGame";
 import EcoGameHUD from "../../features/eco-game/EcoGameHUD";
 import { startGame, submitGame } from "../../services";
+import toast from "react-hot-toast";
 
 export default function EcoGamePage() {
   const containerRef = useRef(null);
@@ -155,8 +156,16 @@ export default function EcoGamePage() {
           setGameInstance(game);
         });
       } catch (err) {
-        console.error("[EcoGamePage] Failed to load level config:", err);
-        if (!cancelled) setLoading(false);
+        const serverMessage =
+          err.response?.data?.message || err?.message || "Lỗi không xác định";
+        toast.error(serverMessage);
+        console.log("Error Message to user:", serverMessage);
+        if (!cancelled) {
+          setLoading(false);
+          setTimeout(() => {
+            navigate(-1);
+          }, 1500);
+        }
       }
     }
 

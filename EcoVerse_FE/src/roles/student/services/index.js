@@ -117,6 +117,7 @@ const startGame = async (campaignId, roundId, configId, levelNumber) => {
     return res.data;
   } catch (error) {
     console.log(error);
+    throw error;
   }
 };
 

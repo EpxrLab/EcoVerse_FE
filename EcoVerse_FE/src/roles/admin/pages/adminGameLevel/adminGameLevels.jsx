@@ -479,7 +479,6 @@ function PresetTab({ gameTypes }) {
           levelNumber: 1,
           itemCount: 10,
           timeLimitSeconds: 0,
-          scorePerCorrect: 1,
           lives: 3,
           wasteCategories: ["RECYCLABLE"],
         },
@@ -511,11 +510,18 @@ function PresetTab({ gameTypes }) {
   const handleSubmit = async () => {
     try {
       const values = await form.validateFields();
+      const payload = {
+        ...values,
+        items: values.items?.map((item) => ({
+          ...item,
+          scorePerCorrect: 10,
+        })),
+      };
       if (editingItem) {
         const res = await updateGameLevel(
           selectedGameId,
           editingItem.id,
-          values,
+          payload,
         );
         if (res) {
           toast.success("Cập nhật preset mới thành công!");
@@ -524,7 +530,7 @@ function PresetTab({ gameTypes }) {
           toast.error("Cập nhật preset mới thất bại!");
         }
       } else {
-        const res = await addNewGameLevel(selectedGameId, values);
+        const res = await addNewGameLevel(selectedGameId, payload);
         if (res) {
           toast.success("Tạo preset mới thành công!");
           fetchData();
@@ -765,7 +771,7 @@ function PresetTab({ gameTypes }) {
                         </span>
                       </div>
 
-                      <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+                      <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
                         <Form.Item
                           {...restField}
                           label="Cấp độ"
@@ -786,13 +792,6 @@ function PresetTab({ gameTypes }) {
                           {...restField}
                           label="Thời gian (giây)"
                           name={[name, "timeLimitSeconds"]}
-                        >
-                          <InputNumber min={0} className="w-full" />
-                        </Form.Item>
-                        <Form.Item
-                          {...restField}
-                          label="Điểm/đúng"
-                          name={[name, "scorePerCorrect"]}
                         >
                           <InputNumber min={0} className="w-full" />
                         </Form.Item>
@@ -855,7 +854,6 @@ function PresetTab({ gameTypes }) {
                         levelNumber: fields.length + 1,
                         itemCount: 10,
                         timeLimitSeconds: 0,
-                        scorePerCorrect: 1,
                         lives: 3,
                         wasteCategories: ["RECYCLABLE"],
                       });
