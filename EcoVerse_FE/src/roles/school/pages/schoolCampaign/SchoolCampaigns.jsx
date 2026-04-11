@@ -41,8 +41,6 @@ export default function SchoolCampaigns() {
     isLoading
   } = useCampaigns();
 
-  const { students } = useStudents();
-
   const {
     formData,
     handleFormChange,
