@@ -1,66 +1,69 @@
-// import * as THREE from "three";
-// import { GLTFLoader } from "three/examples/jsm/loaders/GLTFLoader";
-// import gsap from "gsap";
+import * as THREE from "three";
+import { GLTFLoader } from "three/examples/jsm/loaders/GLTFLoader";
+import gsap from "gsap";
+import { SPAWNABLE_TRASH } from "../EcoGameStateManager";
 
-// /* ===================== CONSTANTS ===================== */
-// export const PLAYER_CAPACITY = 5;
-// export const PLAYER_MAX_HP = 10;
-// export const PLAYER_MAX_SPEED = 0.2;
-// export const PLAYER_ACCELERATION = 0.008;
-// export const PLAYER_FRICTION = 0.92;
-// export const PLAYER_TURN_SPEED = 0.045;
-// export const PLAYER_TURN_FRICTION = 0.77;
-// export const PLAYER_COLLISION_RADIUS = 1.5;
-// export const OBSTACLE_COLLISION_RADIUS = 1.0;
+/* ===================== CONSTANTS ===================== */
+export const PLAYER_CAPACITY = 5;
+export const PLAYER_MAX_HP = 5;
+export const PLAYER_MAX_SPEED = 0.2;
+export const PLAYER_ACCELERATION = 0.008;
+export const PLAYER_FRICTION = 0.92;
+export const PLAYER_TURN_SPEED = 0.045;
+export const PLAYER_TURN_FRICTION = 0.77;
+export const PLAYER_COLLISION_RADIUS = 1.5;
+export const OBSTACLE_COLLISION_RADIUS = 1.0;
 
-// export const SPEED_ZONE_COUNT = 3;
-// export const SLOW_ZONE_COUNT = 3;
-// export const ZONE_RADIUS = 3;
+export const SPEED_ZONE_COUNT = 3;
+export const SLOW_ZONE_COUNT = 3;
+export const ZONE_RADIUS = 3;
 
-// export const TOTAL_TRASH = 12;
-// export const OBSTACLE_COUNT = 6;
-// export const OBSTACLE_DAMAGE_COOLDOWN = 1000;
+export const TOTAL_TRASH = 12;
+export const OBSTACLE_COUNT = 6;
+export const OBSTACLE_DAMAGE_COOLDOWN = 1000;
 
-// export const AUTO_PICKUP_DISTANCE = 1.2;
-// export const STORAGE_ZONE_RADIUS = 4;
+export const AUTO_PICKUP_DISTANCE = 1.2;
+export const STORAGE_ZONE_RADIUS = 4;
 
-// export const GAME_TIME = 60;
-// export const REQUIRED_PERCENTAGE = 80;
+export const GAME_TIME = 60;
+export const REQUIRED_PERCENTAGE = 80;
 
-// /* ===================== UTILS ===================== */
-// export const isMobileDevice = () =>
-//   /Android|iPhone|iPad|iPod|Opera Mini|IEMobile/i.test(navigator.userAgent);
+export const WORLD_SAFE_RADIUS = 55;
 
-// const loadModel = (url) =>
-//   new Promise((resolve, reject) => {
-//     const loader = new GLTFLoader();
-//     loader.load(url, (gltf) => resolve(gltf.scene), undefined, reject);
-//   });
+/* ===================== UTILS ===================== */
+export const isMobileDevice = () =>
+  /Android|iPhone|iPad|iPod|Opera Mini|IEMobile/i.test(navigator.userAgent);
 
-// const makeMesh = (geo, color) =>
-//   new THREE.Mesh(geo, new THREE.MeshStandardMaterial({ color }));
+const loadModel = (url) =>
+  new Promise((resolve, reject) => {
+    const loader = new GLTFLoader();
+    loader.load(url, (gltf) => resolve(gltf.scene), undefined, reject);
+  });
 
-// /* ===================== TRASH (Simple Geometry — no model) ===================== */
-// const TRASH_COLORS = [0x22c55e, 0xeab308, 0x3b82f6, 0xef4444, 0xa855f7];
+const makeMesh = (geo, color) =>
+  new THREE.Mesh(geo, new THREE.MeshStandardMaterial({ color }));
 
-// function createTrashMesh() {
-//   const color = TRASH_COLORS[Math.floor(Math.random() * TRASH_COLORS.length)];
-//   const group = new THREE.Group();
+/* ===================== TRASH (Simple Geometry — no model) ===================== */
+const TRASH_COLORS = [0x22c55e, 0xeab308, 0x3b82f6, 0xef4444, 0xa855f7];
 
-//   // Bag body
-//   const body = makeMesh(new THREE.SphereGeometry(0.35, 8, 8), color);
-//   body.scale.set(1, 1.2, 1);
-//   body.position.y = 0.35;
-//   body.castShadow = true;
+function createTrashMesh() {
+  const color = TRASH_COLORS[Math.floor(Math.random() * TRASH_COLORS.length)];
+  const group = new THREE.Group();
 
-//   // Bag tie (top knot)
-//   const knot = makeMesh(new THREE.SphereGeometry(0.1, 6, 6), 0x1a1a1a);
-//   knot.position.y = 0.8;
+  // Bag body
+  const body = makeMesh(new THREE.SphereGeometry(0.35, 8, 8), color);
+  body.scale.set(1, 1.2, 1);
+  body.position.y = 0.35;
+  body.castShadow = true;
 
-//   group.add(body, knot);
-//   group.userData.pickupRadius = 0.5;
-//   return group;
-// }
+  // Bag tie (top knot)
+  const knot = makeMesh(new THREE.SphereGeometry(0.1, 6, 6), 0x1a1a1a);
+  knot.position.y = 0.8;
+
+  group.add(body, knot);
+  group.userData.pickupRadius = 0.5;
+  return group;
+}
 
 // /* ===================== INIT SCENE ===================== */
 // export function initScene(container) {
@@ -948,70 +951,6 @@
 //   renderer?.render(scene, camera);
 // }
 
-import * as THREE from "three";
-import { GLTFLoader } from "three/examples/jsm/loaders/GLTFLoader";
-
-/* ===================== CONSTANTS ===================== */
-export const PLAYER_CAPACITY = 5;
-export const PLAYER_MAX_HP = 10;
-export const PLAYER_MAX_SPEED = 0.2;
-export const PLAYER_ACCELERATION = 0.008;
-export const PLAYER_FRICTION = 0.92;
-export const PLAYER_TURN_SPEED = 0.045;
-export const PLAYER_TURN_FRICTION = 0.77;
-export const PLAYER_COLLISION_RADIUS = 1.5;
-export const OBSTACLE_COLLISION_RADIUS = 1.0;
-
-export const SPEED_ZONE_COUNT = 3;
-export const SLOW_ZONE_COUNT = 3;
-export const ZONE_RADIUS = 5;
-
-export const TOTAL_TRASH = 12;
-export const OBSTACLE_COUNT = 5;
-export const OBSTACLE_DAMAGE_COOLDOWN = 1000;
-
-export const AUTO_PICKUP_DISTANCE = 1.2;
-export const STORAGE_ZONE_RADIUS = 4;
-
-export const GAME_TIME = 60;
-export const REQUIRED_PERCENTAGE = 80;
-
-export const WORLD_SAFE_RADIUS = 55;
-
-/* ===================== UTILS ===================== */
-export const isMobileDevice = () =>
-  /Android|iPhone|iPad|iPod|Opera Mini|IEMobile/i.test(navigator.userAgent);
-
-const loadModel = (url) =>
-  new Promise((resolve, reject) => {
-    const loader = new GLTFLoader();
-    loader.load(url, (gltf) => resolve(gltf.scene), undefined, reject);
-  });
-
-const makeMesh = (geo, color) =>
-  new THREE.Mesh(geo, new THREE.MeshStandardMaterial({ color }));
-
-/* ===================== TRASH (Simple Geometry — no model) ===================== */
-const TRASH_COLORS = [0x22c55e, 0xeab308, 0x3b82f6, 0xef4444, 0xa855f7];
-
-function createTrashMesh() {
-  const color = TRASH_COLORS[Math.floor(Math.random() * TRASH_COLORS.length)];
-  const group = new THREE.Group();
-
-  // Bag body
-  const body = makeMesh(new THREE.SphereGeometry(0.35, 8, 8), color);
-  body.scale.set(1, 1.2, 1);
-  body.position.y = 0.35;
-  body.castShadow = true;
-
-  // Bag tie (top knot)
-  const knot = makeMesh(new THREE.SphereGeometry(0.1, 6, 6), 0x1a1a1a);
-  knot.position.y = 0.8;
-
-  group.add(body, knot);
-  group.userData.pickupRadius = 0.5;
-  return group;
-}
 
 /* ===================== INIT SCENE ===================== */
 export function initScene(container) {
@@ -1023,9 +962,10 @@ export function initScene(container) {
 
   const camera = new THREE.PerspectiveCamera(75, width / height, 0.1, 5000);
 
-  const renderer = new THREE.WebGLRenderer({ antialias: true });
+  const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
   renderer.setSize(width, height);
   renderer.shadowMap.enabled = true;
+  renderer.setClearColor(0x000000, 0); // Transparent for HUD usage
   container.innerHTML = "";
   container.appendChild(renderer.domElement);
 
@@ -1060,7 +1000,7 @@ export function initWorld(scene, state) {
   // Set sea background
   scene.background = new THREE.Color(0x7dd3fc);
 
-  // Ocean ground with Circular Clipping
+  // Ocean ground 
   const gltfLoaderGround = new GLTFLoader();
   gltfLoaderGround.load(
     "/assets/ocean__water_perfect_loop.glb",
@@ -1071,26 +1011,6 @@ export function initWorld(scene, state) {
       oceanModel.traverse((child) => {
         if (child.isMesh) {
           child.receiveShadow = true;
-          // Apply circular clip shader
-          child.material.onBeforeCompile = (shader) => {
-            shader.uniforms.uWorldRadius = { value: WORLD_SAFE_RADIUS };
-            shader.vertexShader = shader.vertexShader.replace(
-              "#include <common>",
-              `#include <common>\nvarying vec3 vWorldPos;`,
-            );
-            shader.vertexShader = shader.vertexShader.replace(
-              "#include <worldpos_vertex>",
-              `#include <worldpos_vertex>\nvWorldPos = (modelMatrix * vec4(transformed, 1.0)).xyz;`,
-            );
-            shader.fragmentShader = shader.fragmentShader.replace(
-              "#include <common>",
-              `#include <common>\nvarying vec3 vWorldPos;\nuniform float uWorldRadius;`,
-            );
-            shader.fragmentShader = shader.fragmentShader.replace(
-              "#include <dithering_fragment>",
-              `#include <dithering_fragment>\nif (length(vWorldPos.xz) > uWorldRadius) discard;`,
-            );
-          };
         }
       });
       scene.add(oceanModel);
@@ -1168,6 +1088,7 @@ export function initStorage(scene) {
         if (child.isMesh) {
           child.castShadow = true;
           child.receiveShadow = true;
+          child.castShadow = true;
         }
       });
       storage.add(model);
@@ -1200,6 +1121,13 @@ export function initPlayer(scene) {
     model.position.y -= box.min.y * scale;
     player.add(model);
 
+    model.traverse((child) => {
+      if (child.isMesh) {
+        child.castShadow = true;
+        child.receiveShadow = true;
+      }
+    });
+
     playerState.mixer = new THREE.AnimationMixer(model);
     model.animations.forEach((clip) => {
       playerState.actions[clip.name.toLowerCase()] =
@@ -1216,14 +1144,208 @@ export function initPlayer(scene) {
 }
 
 /* ===================== INIT TRASH (Simple geometry — no model) ===================== */
-export function initTrash(scene) {
-  const trash = [];
+/* ===================== PROCEDURAL MESH HELPERS ===================== */
+function createBottleMesh(color = 0xffffff) {
+  const group = new THREE.Group();
+  const bodyGeo = new THREE.CylinderGeometry(0.12, 0.15, 0.6, 8);
+  const bodyMat = new THREE.MeshStandardMaterial({
+    color,
+    transparent: true,
+    opacity: 0.8,
+    roughness: 0.3,
+  });
+  const body = new THREE.Mesh(bodyGeo, bodyMat);
+  group.add(body);
 
-  for (let i = 0; i < TOTAL_TRASH; i++) {
-    const t = createTrashMesh();
-    t.position.set((Math.random() - 0.5) * 45, 0.3, (Math.random() - 0.5) * 45);
-    scene.add(t);
-    trash.push(t);
+  const capGeo = new THREE.CylinderGeometry(0.06, 0.08, 0.1, 8);
+  const capMat = new THREE.MeshStandardMaterial({ color: 0xffffff });
+  const cap = new THREE.Mesh(capGeo, capMat);
+  cap.position.y = 0.35;
+  group.add(cap);
+  return group;
+}
+
+function createCanMesh(color = 0x9e9e9e) {
+  const geo = new THREE.CylinderGeometry(0.16, 0.16, 0.45, 12);
+  const mat = new THREE.MeshStandardMaterial({
+    color,
+    metalness: 0.6,
+    roughness: 0.3,
+  });
+  const mesh = new THREE.Mesh(geo, mat);
+  return mesh;
+}
+
+function createBoxTrashMesh(color = 0xffffff) {
+  const geo = new THREE.BoxGeometry(0.4, 0.4, 0.4);
+  const mat = new THREE.MeshStandardMaterial({ color, roughness: 0.6 });
+  const mesh = new THREE.Mesh(geo, mat);
+  return mesh;
+}
+
+/* ===================== INIT TRASH ===================== */
+export function initTrash(
+  scene,
+  wasteItems = [],
+  totalTrashCount = TOTAL_TRASH,
+) {
+  const trash = [];
+  const count = totalTrashCount > 0 ? totalTrashCount : TOTAL_TRASH;
+
+  // Debug rác từ API
+  console.log("[SeaRescue] initTrash wasteItems:", wasteItems);
+  if (wasteItems.length > 0) {
+    console.log("[SeaRescue] First item Sample:", {
+      id: wasteItems[0].wasteItemId || wasteItems[0].id,
+      hasModel: !!wasteItems[0].preloadedModel,
+      modelType: typeof wasteItems[0].preloadedModel,
+      url: wasteItems[0].imageUrl || wasteItems[0].imagePresignedUrl
+    });
+  }
+
+  let sourceItems = wasteItems;
+  if (!sourceItems || sourceItems.length === 0) {
+    console.warn("[SeaRescue] No wasteItems from API. Falling back to SPAWNABLE_TRASH.");
+    sourceItems = SPAWNABLE_TRASH;
+  }
+
+  const loader = new GLTFLoader();
+
+  const catColors = {
+    RECYCLABLE: 0x2196f3,
+    ORGANIC: 0x4caf50,
+    HAZARDOUS: 0xf44336,
+    GENERAL: 0xeeeeee,
+    recycle: 0x2196f3,
+    organic: 0x4caf50,
+    inorganic: 0xf44336,
+  };
+
+  for (let i = 0; i < count; i++) {
+    const apiItem = sourceItems[i % sourceItems.length];
+
+    const finalizeMesh = (mesh) => {
+      if (!mesh) return;
+
+      // Container to keep model scale separate from aura scale
+      const trashGroup = new THREE.Group();
+      trashGroup.position.set(
+        (Math.random() - 0.5) * 45,
+        0.3,
+        (Math.random() - 0.5) * 45,
+      );
+
+      const box = new THREE.Box3().setFromObject(mesh);
+      const size = box.getSize(new THREE.Vector3());
+      const maxDim = Math.max(size.x, size.y, size.z);
+      
+      // Normalize model ONLY
+      if (maxDim > 0) mesh.scale.multiplyScalar(1.5 / maxDim);
+
+      mesh.updateMatrixWorld(true);
+
+      // Re-calculate box after scaling for accurate alignment
+      const finalBox = new THREE.Box3().setFromObject(mesh);
+      const center = finalBox.getCenter(new THREE.Vector3());
+
+      // Center the whole mesh on X and Z, and lift it so bottom is at y=0 relative to trashGroup
+      mesh.position.x = -center.x;
+      mesh.position.z = -center.z;
+      mesh.position.y = -finalBox.min.y;
+
+      mesh.traverse((child) => {
+        if (child.isMesh) {
+          // Clone material to avoid shared state visibility issues
+          if (child.material) {
+            child.material = child.material.clone();
+            
+            // Store original state for hit-flash restoration
+            child.userData.originalTransparent = child.material.transparent;
+            child.userData.originalOpacity = child.material.opacity;
+
+            if (child.material.emissive) {
+              child.material.emissive.setHex(0x444444);
+              child.material.emissiveIntensity = 0.4;
+            }
+          }
+          
+          child.castShadow = true;
+          child.receiveShadow = true;
+        }
+      });
+
+      trashGroup.add(mesh);
+
+      trashGroup.userData.pickupRadius = 1.0;
+      trashGroup.userData.wasteItemId = apiItem.wasteItemId || apiItem.id;
+      trashGroup.userData.wasteCategory = apiItem.wasteCategory || apiItem.bin?.toUpperCase() || "GENERAL";
+      trashGroup.userData.itemName = apiItem.itemName || apiItem.name;
+      trashGroup.userData.trashType = {
+        id: trashGroup.userData.wasteItemId,
+        name: trashGroup.userData.itemName,
+        bin: trashGroup.userData.wasteCategory.toLowerCase(),
+        imageUrl: apiItem.imageUrl || apiItem.imagePresignedUrl,
+        preloadedModel: apiItem.preloadedModel,
+        modelUrl: (typeof apiItem.preloadedModel === 'string' && apiItem.preloadedModel) || apiItem.imagePresignedUrl || apiItem.imageUrl,
+      };
+
+      const auraColor = catColors[trashGroup.userData.wasteCategory] || 0xffffff;
+      // Fixed size aura (not affected by mesh scale)
+      const auraGeo = new THREE.CylinderGeometry(0.4, 0.4, 1.2, 16, 1, true);
+      const auraMat = new THREE.MeshStandardMaterial({
+        color: auraColor,
+        transparent: true,
+        opacity: 0.25,
+        side: THREE.DoubleSide,
+        depthWrite: false,
+        blending: THREE.AdditiveBlending,
+        emissive: auraColor,
+        emissiveIntensity: 0.5,
+      });
+      const aura = new THREE.Mesh(auraGeo, auraMat);
+      aura.position.y = 0.3; 
+      trashGroup.add(aura);
+      trashGroup.userData.aura = aura;
+
+      scene.add(trashGroup);
+      trash.push(trashGroup);
+    };
+
+    const spawnFallback = () => {
+      let m;
+      const itemId = apiItem.wasteItemId || apiItem.id;
+      switch (itemId) {
+        case "plastic_bottle": m = createBottleMesh(apiItem.color || 0xffffff); break;
+        case "can": m = createCanMesh(apiItem.color || 0x9e9e9e); break;
+        default: m = createBoxTrashMesh(apiItem.color || 0x22c55e); break;
+      }
+      finalizeMesh(m);
+    }
+
+    // Ưu tiên 1: Model đã được clone từ GLTF preloaded (Stage 1 đã load)
+    if (apiItem.preloadedModel && typeof apiItem.preloadedModel !== "string") {
+      finalizeMesh(apiItem.preloadedModel.clone(true));
+    }
+    // Ưu tiên 2: URL từ presignedUrl hoặc preloadedModel (nếu là string)
+    else {
+      const modelUrl = (typeof apiItem.preloadedModel === 'string' && apiItem.preloadedModel) 
+        || apiItem.imagePresignedUrl 
+        || apiItem.imageUrl;
+
+      if (modelUrl) {
+        loader.load(
+          modelUrl,
+          (gltf) => finalizeMesh(gltf.scene.clone(true)),
+          undefined,
+          (err) => {
+            console.error(`[SeaRescue] Failed to load trash model: ${modelUrl}`, err);
+            spawnFallback();
+          }
+        );
+      } else {
+        spawnFallback();
+      }
+    }
   }
 
   return trash;
@@ -1378,50 +1500,20 @@ export function initZones(scene, obstacles) {
       }),
     );
     ring.rotation.x = -Math.PI / 2;
-    ring.position.set(x, 0.06, z);
-    scene.add(ring);
+    ring.position.set(0, 0.01, 0); // Relative to zone
+    zone.add(ring);
 
     const arrow = new THREE.Mesh(
       new THREE.ConeGeometry(0.3, 0.6, 4),
       new THREE.MeshStandardMaterial({ color: 0x06b6d4 }),
     );
-    arrow.position.set(x, 0.5, z);
+    arrow.position.set(0, 0.45, 0); // Relative to zone
     arrow.rotation.z = Math.PI;
     zone.userData.arrow = arrow;
-    scene.add(arrow);
+    zone.add(arrow);
   }
 
-  // Slow zones (lightning model)
-  loadModel("/models/lightning.glb")
-    .then((lightningPrototype) => {
-      lightningPrototype.traverse((c) => {
-        if (c.isMesh) c.castShadow = true;
-      });
-
-      for (let i = 0; i < SLOW_ZONE_COUNT; i++) {
-        const pos = findValidZonePosition();
-        if (!pos) continue;
-        allZonePositions.push(pos);
-        const { x, z } = pos;
-
-        const zone = new THREE.Object3D();
-        zone.position.set(x, 0, z);
-        zone.userData.type = "slow";
-        zone.userData.multiplier = 0.4;
-
-        const lightning = lightningPrototype.clone(true);
-        lightning.scale.set(0.9, 0.9, 0.9);
-        lightning.position.y = 0.2;
-        lightning.rotation.y = Math.random() * Math.PI * 2;
-        zone.add(lightning);
-        zone.userData.lightning = lightning;
-
-        slowZones.push(zone);
-        scene.add(zone);
-      }
-    })
-    .catch((err) => console.error("Failed to load lightning.glb", err));
-
+  // Slow zones removed per user request
   return { speedZones, slowZones };
 }
 
@@ -1445,6 +1537,7 @@ export function gameTick({
   endGame,
   onPickup,
   onDamage,
+  onItemDeposited,
   clock,
 }) {
   if (state.stopped) return;
@@ -1483,9 +1576,23 @@ export function gameTick({
 
   setCurrentZone(inZone);
 
-  // Animate lightning zones
+  // Animate trash items (Aura pulse and rotation)
+  state.trash.forEach((t) => {
+    if (!t) return;
+    // Rotation of the model inside the group
+    const model = t.children.find(c => c.type === "Group" || c.isMesh);
+    if (model) model.rotation.y += delta * 1.5;
+
+    // Aura pulse
+    if (t.userData.aura && t.userData.aura.material) {
+      const pulse = Math.sin(Date.now() * 0.003) * 0.15 + 0.35;
+      t.userData.aura.material.opacity = pulse;
+    }
+  });
+
+  // Animate lightning zones (Legacy guard, slowZones is now empty)
   for (const zone of state.allZones) {
-    if (zone.userData.lightning) {
+    if (zone?.userData.lightning) {
       zone.userData.lightning.rotation.y += 0.04;
       const flicker = 1 + Math.sin(Date.now() * 0.02) * 0.08;
       zone.userData.lightning.scale.set(
@@ -1584,14 +1691,25 @@ export function gameTick({
         setInventoryCount(0);
 
         droppedItems.forEach((item) => {
-          scene.attach(item);
-          item.scale.set(1, 1, 1); // reset to group scale (no model scaling needed)
+          if (!item) return;
+
+          // Get world position before removing from player
+          const worldPos = new THREE.Vector3();
+          item.getWorldPosition(worldPos);
+
+          // Return to scene safely
+          scene.add(item);
+          item.position.copy(worldPos);
+          item.position.y = 0.3; // Floating height
+          
+          // Reset local transforms
+          item.scale.set(1, 1, 1);
           item.rotation.set(0, 0, 0);
-          item.updateMatrix();
           item.updateMatrixWorld(true);
 
           const scatterAngle = Math.random() * Math.PI * 2;
           const scatterSpeed = 0.15 + Math.random() * 0.1;
+          
           state.scatteredItems.push({
             mesh: item,
             velocity: new THREE.Vector3(
@@ -1599,9 +1717,10 @@ export function gameTick({
               0.08 + Math.random() * 0.05,
               Math.sin(scatterAngle) * scatterSpeed,
             ),
-            startTime: now,
+            startTime: Date.now(),
             bounces: 0,
           });
+          item.userData.scatteredAt = Date.now();
           state.trash.push(item);
         });
       }
@@ -1629,13 +1748,15 @@ export function gameTick({
         setHudPulse(true);
         setTimeout(() => setHudPulse(false), 150);
 
-        setHp((hp) => {
-          if (hp <= 1) {
-            endGame("death");
-            return 0;
-          }
-          return hp - 1;
-        });
+        if (setHp) {
+          setHp((hp) => {
+            const nextHp = hp - 1;
+            if (nextHp <= 0) {
+              if (endGame) endGame("death");
+            }
+            return nextHp;
+          });
+        }
       }
     }
   }
@@ -1643,22 +1764,28 @@ export function gameTick({
   player.position.copy(nextPosition);
   player.position.y = 0.3;
 
-  // Hit flash
+  // Hit flash - ONLY apply to boat mesh, not collected trash
   const isHit = Date.now() - state.hitTime < 200;
-  player.traverse((o) => {
-    if (o.isMesh && o.material) {
-      if (isHit) {
-        o.material.transparent = true;
-        o.material.opacity = 0.5;
-        if (o.material.color) {
-          o.material.emissive = new THREE.Color(0xff0000);
-          o.material.emissiveIntensity = 0.5;
+  player.children.forEach(child => {
+    // Only traverse the actual boat model, not collected trashGroups
+    if (child.userData.type !== "trashGroup") {
+      child.traverse((o) => {
+        if (o.isMesh && o.material) {
+          if (isHit) {
+            o.material.transparent = true;
+            o.material.opacity = 0.5;
+            if (o.material.color) {
+              o.material.emissive = new THREE.Color(0xff0000);
+              o.material.emissiveIntensity = 0.5;
+            }
+          } else {
+            // Restore native transparency if it was there before
+            o.material.transparent = o.userData.originalTransparent ?? false;
+            o.material.opacity = o.userData.originalOpacity ?? 1;
+            if (o.material.emissive) o.material.emissiveIntensity = 0;
+          }
         }
-      } else {
-        o.material.transparent = false;
-        o.material.opacity = 1;
-        if (o.material.emissive) o.material.emissiveIntensity = 0;
-      }
+      });
     }
   });
 
@@ -1673,12 +1800,18 @@ export function gameTick({
     const pickupDist = PLAYER_COLLISION_RADIUS + trashRadius;
 
     if (dist < pickupDist) {
+      // Cooldown for scattered items
+      const now = Date.now();
+      if (t.userData.scatteredAt && now - t.userData.scatteredAt < 2000) {
+        return true;
+      }
+
       if (state.inventory.length >= PLAYER_CAPACITY) {
         const now = Date.now();
         if (now - state.lastInventoryFullWarning > 500) {
           state.lastInventoryFullWarning = now;
-          setInventoryFull(true);
-          setTimeout(() => setInventoryFull(false), 800);
+          if (setInventoryFull) setInventoryFull(true);
+          setTimeout(() => setInventoryFull && setInventoryFull(false), 800);
         }
         return true;
       }
@@ -1688,10 +1821,10 @@ export function gameTick({
       if (onPickup) onPickup();
       t.position.set(0, 0.8 + state.inventory.length * 0.25, -0.4);
       t.scale.set(1, 1, 1);
-      setInventoryCount(state.inventory.length);
-      setInventoryFull(false);
-      setHudPulse(true);
-      setTimeout(() => setHudPulse(false), 150);
+      if (setInventoryCount) setInventoryCount(state.inventory.length);
+      if (setInventoryFull) setInventoryFull(false);
+      if (setHudPulse) setHudPulse(true);
+      setTimeout(() => setHudPulse && setHudPulse(false), 150);
       return false;
     }
     return true;
@@ -1704,6 +1837,9 @@ export function gameTick({
   ) {
     const count = state.inventory.length;
     state.inventory.forEach((t, idx) => {
+      if (onItemDeposited && t.userData.trashType) {
+        onItemDeposited(t.userData.trashType);
+      }
       player.remove(t);
       scene.add(t);
       const worldPos = new THREE.Vector3();
@@ -1719,13 +1855,16 @@ export function gameTick({
       });
     });
     state.inventory = [];
-    setInventoryCount(0);
+    if (setInventoryCount) setInventoryCount(0);
     state.recycledInStorage += count;
-    setRecycledCount(state.recycledInStorage);
-    if (state.recycledInStorage >= TOTAL_TRASH)
-      setTimeout(() => endGame("win"), 800);
-    setHudPulse(true);
-    setTimeout(() => setHudPulse(false), 200);
+    if (setRecycledCount) setRecycledCount(state.recycledInStorage);
+    
+    // Dùng totalTrashCount từ state nếu có
+    const _winTarget = state.totalTrashCount || TOTAL_TRASH;
+    if (state.recycledInStorage >= _winTarget)
+      setTimeout(() => endGame && endGame("win"), 800);
+    if (setHudPulse) setHudPulse(true);
+    setTimeout(() => setHudPulse && setHudPulse(false), 200);
   }
 
   // Falling items

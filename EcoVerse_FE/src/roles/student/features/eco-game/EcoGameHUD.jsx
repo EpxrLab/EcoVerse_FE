@@ -17,7 +17,8 @@ function GameOverOverlay({ show }) {
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       exit={{ opacity: 0 }}
-      className="absolute inset-0 flex items-center justify-center pointer-events-none z-5"
+      style={{ zIndex: 999990 }}
+      className="absolute inset-0 flex items-center justify-center pointer-events-none"
     >
       <motion.div
         initial={{ scale: 2, opacity: 0 }}
@@ -40,7 +41,8 @@ function ExitConfirmOverlay({ show, onConfirm, onCancel }) {
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       exit={{ opacity: 0 }}
-      className="absolute inset-0 flex items-center justify-center bg-black/60 backdrop-blur-sm z-50 px-4"
+      style={{ zIndex: 1000000 }}
+      className="absolute inset-0 flex items-center justify-center bg-black/60 backdrop-blur-sm px-4"
     >
       <motion.div
         initial={{ scale: 0.9, y: 20 }}
@@ -83,7 +85,8 @@ function StageTransition({ stage }) {
       animate={{ opacity: 1 }}
       exit={{ opacity: 0 }}
       transition={{ duration: 0.5 }}
-      className="absolute inset-0 flex items-center justify-center bg-black/50 backdrop-blur-sm pointer-events-none z-5"
+      style={{ zIndex: 999990 }}
+      className="absolute inset-0 flex items-center justify-center bg-black/50 backdrop-blur-sm pointer-events-none"
     >
       <motion.div
         initial={{ scale: 0.5, opacity: 0 }}
@@ -116,6 +119,7 @@ export default function EcoGameHUD({
   onGameResult,
   onPauseChange,
 }) {
+  console.log("[EcoGameHUD] Rendering. gameType:", gameType, "isSeaRescue:", levelConfig?.stage1Game === "searescue");
   const [stage, setStage] = useState("STAGE_1");
   const [distance, setDistance] = useState(0);
   const [speed, setSpeed] = useState(levelConfig?.runner?.baseSpeed || 12);
@@ -224,36 +228,37 @@ export default function EcoGameHUD({
       {/* Back button */}
       <button
         onClick={() => setShowExitConfirm(true)}
-        className="absolute top-4 right-4 z-20 bg-black/40 backdrop-blur-md text-white rounded-full w-10 h-10 flex items-center justify-center hover:bg-black/60 transition-colors"
+        className="absolute top-4 right-4 text-white rounded-full w-10 h-10 flex items-center justify-center hover:bg-black/60 transition-colors"
+        style={{ zIndex: 999999, background: "rgba(0,0,0,0.4)", backdropFilter: "blur(4px)" }}
         title="Quay về"
       >
         ✕
       </button>
 
-      <AnimatePresence mode="wait">
-        {/* ── Stage 1 HUD ── */}
-        {stage === "STAGE_1" &&
-          !showGameOver &&
-          !showTransition &&
-          (isSeaRescue ? (
-            // EcoSeaRescueHUD wires itself directly into game.stage1Game
-            // — it does NOT run its own loop, only shows reactive UI
+      {/* ── Stage 1 HUD ── */}
+      {stage === "STAGE_1" &&
+        !showGameOver &&
+        !showTransition &&
+        (isSeaRescue ? (
+          <div key="searescue" style={{ position: "absolute", inset: 0, zIndex: 1000, pointerEvents: "none" }}>
             <EcoSeaRescueHUD
-              key="searescue"
               game={game}
               levelConfig={levelConfig}
               onComplete={() => game?.triggerStage2()}
             />
-          ) : (
+          </div>
+        ) : (
+          <div key="runner" style={{ position: "absolute", inset: 0, zIndex: 1000, pointerEvents: "none" }}>
             <RunnerHUD
-              key="runner"
               distance={distance}
               speed={speed}
               trashCount={trashCount}
               totalTrash={levelConfig?.runner?.itemCount || 0}
             />
-          ))}
+          </div>
+        ))}
 
+      <AnimatePresence>
         {/* ── Stage 2 HUD ── */}
         {stage === "STAGE_2" && !result && (
           <SorterHUD

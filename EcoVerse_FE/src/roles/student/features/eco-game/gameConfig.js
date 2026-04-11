@@ -38,7 +38,7 @@ export const DEFAULT_LEVEL_CONFIG = {
   searescue: {
     gameTime: 60,
     totalTrash: 12,
-    maxHp: 10,
+    maxHp: 5,
   },
 
   // Stage 2 - Sorter configuration

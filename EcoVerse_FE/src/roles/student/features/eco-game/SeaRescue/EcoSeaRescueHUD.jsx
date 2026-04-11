@@ -87,7 +87,7 @@ function HUD({
   recycledCount,
   hudPulse,
 }) {
-  const progressPercent = (recycledCount / TOTAL_TRASH) * 100;
+  const progressPercent = (recycledCount / (TOTAL_TRASH || 12)) * 100;
 
   return (
     <div
@@ -111,6 +111,8 @@ function HUD({
           : "3px solid rgba(255,255,255,0.3)",
         minWidth: 320,
         textAlign: "center",
+        zIndex: 99999,
+        pointerEvents: "auto",
       }}
     >
       <div
@@ -123,15 +125,15 @@ function HUD({
         }}
       >
         <div>
-          ❤️ {hp}/{PLAYER_MAX_HP}
+          ❤️ {hp}/{(PLAYER_MAX_HP || 5)}
         </div>
         <div style={{ color: inventoryFull ? "#fca5a5" : "white" }}>
-          {inventoryFull ? "🎒❌" : "🎒"} {inventoryCount}/{PLAYER_CAPACITY}
+          {inventoryFull ? "🎒❌" : "🎒"} {inventoryCount}/{(PLAYER_CAPACITY || 5)}
           {inventoryFull && (
             <span style={{ fontSize: 12, marginLeft: 4 }}>ĐẦY!</span>
           )}
         </div>
-        <div>⏱️ {timeLeft}s</div>
+        <div>⏱️ {timeLeft || 0}s</div>
       </div>
 
       <div style={{ marginTop: 8 }}>
@@ -205,7 +207,7 @@ function MobileJoystick({ onTouchStart, onTouchMove, onTouchEnd }) {
 }
 
 function GameOverScreen({ message, recycledCount, onAction }) {
-  const requiredTrash = Math.ceil((REQUIRED_PERCENTAGE / 100) * TOTAL_TRASH);
+  const requiredTrash = Math.ceil(((REQUIRED_PERCENTAGE || 80) / 100) * (TOTAL_TRASH || 12));
   const canProceed = recycledCount >= requiredTrash;
   const isWin = message.includes("Hoàn thành") || canProceed;
 
@@ -295,19 +297,8 @@ function GameOverScreen({ message, recycledCount, onAction }) {
 }
 
 /* ===================== MAIN COMPONENT ===================== */
-export function EcoSeaRescueHUD({ onComplete }) {
+export function EcoSeaRescueHUD({ game, onComplete }) {
   const navigate = useNavigate();
-  const containerRef = useRef();
-  const gameRef = useRef({});
-  const audioRef = useRef({
-    listener: null,
-    bgm: null,
-    collect: null,
-    warning: null,
-    gameover: null,
-    stopped: false
-  });
-
   const [inventoryCount, setInventoryCount] = useState(0);
   const [recycledCount, setRecycledCount] = useState(0);
   const [hp, setHp] = useState(PLAYER_MAX_HP);
@@ -321,252 +312,70 @@ export function EcoSeaRescueHUD({ onComplete }) {
   const [inventoryFull, setInventoryFull] = useState(false);
   const [currentZone, setCurrentZone] = useState(null);
 
-  const loadAudio = (camera) => {
-    if (audioRef.current.listener) return;
-    const listener = new THREE.AudioListener();
-    camera.add(listener);
-    audioRef.current.listener = listener;
-
-    const loader = new THREE.AudioLoader();
-    const bgm = new THREE.Audio(listener);
-    audioRef.current.bgm = bgm;
-
-    loader.load("/assets/audio/music_game.mp3", (buffer) => {
-      if (audioRef.current.stopped) return;
-      bgm.setBuffer(buffer);
-      bgm.setLoop(true);
-      bgm.setVolume(0.4);
-      
-      const tryPlay = () => {
-        if (audioRef.current.stopped || !bgm || bgm.isPlaying) return;
-        const ctx = listener.context;
-        if (ctx.state === "suspended") {
-          ctx.resume().then(() => {
-            if (!audioRef.current.stopped && !bgm.isPlaying) bgm.play();
-          });
-        } else {
-          if (!bgm.isPlaying) bgm.play();
-        }
-      };
-      
-      tryPlay();
-      window.addEventListener("pointerdown", tryPlay, { once: true });
-      window.addEventListener("keydown", tryPlay, { once: true });
-    });
-
-    const makeSfx = (url, vol) => {
-      const sfx = new THREE.Audio(listener);
-      loader.load(url, (buffer) => {
-        sfx.setBuffer(buffer);
-        sfx.setVolume(vol);
-      });
-      return sfx;
-    };
-
-    audioRef.current.collect = makeSfx("/assets/audio/collect.mp3", 0.75);
-    audioRef.current.warning = makeSfx("/assets/audio/warning.mp3", 0.85);
-    audioRef.current.gameover = makeSfx("/assets/audio/gameover.mp3", 0.9);
-  };
-
-  const playOneShot = (sfx) => {
-    if (!sfx || !sfx.buffer) return;
-    const ctx = audioRef.current.listener?.context;
-    if (ctx?.state === "suspended") {
-      ctx.resume().then(() => {
-        if (sfx.isPlaying) sfx.stop();
-        sfx.play();
-      });
-    } else {
-      if (sfx.isPlaying) sfx.stop();
-      sfx.play();
-    }
-  };
-
+  // Sync state from the logic layer (EcoSeaRescue.js)
   useEffect(() => {
     setIsMobile(isMobileDevice());
+    
+    // stage1Game is our EcoSeaRescue instance
+    const logic = game?.stage1Game;
+    if (!logic) return;
 
-    const { scene, camera, renderer } = initScene(containerRef.current);
-    loadAudio(camera);
-    const storage = initStorage(scene);
-    const { player, playerState } = initPlayer(scene);
-    const trash = initTrash(scene);
-    const obstacles = initObstacles(scene);
-    const { speedZones, slowZones } = initZones(scene, obstacles);
+    console.log("[EcoSeaRescueHUD] Wiring HUD callbacks for logic instance:", logic);
 
-    const state = {
-      oceanModel: null,
-      oceanMixer: null,
-      underwaterPlane: null,
-      fallbackPlane: null,
-      player,
-      storage,
-      trash,
-      obstacles,
-      allZones: [...speedZones, ...slowZones],
-      speedZones,
-      slowZones,
-      inventory: [],
-      velocity: new THREE.Vector3(),
-      angularVelocity: 0,
-      keys: {},
-      joystick: { x: 0, y: 0 },
-      lastDamageTime: 0,
-      lastDropTime: 0,
-      hitTime: 0,
-      animationId: null,
-      timerId: null,
-      stopped: false,
-      fallingItems: [],
-      scatteredItems: [],
-      recycledInStorage: 0,
-      speedMultiplier: 1,
-      lastInventoryFullWarning: 0,
-    };
+    logic.setHudCallbacks({
+      setInventoryCount: (count) => {
+        setInventoryCount(count);
+      },
+      setRecycledCount: (count) => {
+        setRecycledCount(count);
+      },
+      setHp: (newHp) => {
+        setHp(newHp);
+      },
+      setTimeLeft: (time) => {
+        setTimeLeft(time);
+      },
+      setCurrentZone,
+      setInventoryFull,
+      setHudPulse,
+      setDamageFlash,
+      setScreenShake,
+    });
 
-    initWorld(scene, state);
-
-    gameRef.current = state;
-
-    const endGame = (reason) => {
-      state.stopped = true;
-      audioRef.current.stopped = true;
-      
-      if (audioRef.current.bgm?.isPlaying) audioRef.current.bgm.stop();
-      if (reason === "death" || reason === "timeout") {
-        playOneShot(audioRef.current.gameover);
-      }
-
-      cancelAnimationFrame(state.animationId);
-      clearInterval(state.timerId);
+    logic.setEndGameCallback((reason, count) => {
+      console.log("[EcoSeaRescueHUD] Game ended:", reason, count);
       setGameOver(true);
       if (reason === "win") setMessage("🎉 Hoàn thành! Đã thu gom hết rác!");
       else if (reason === "timeout")
-        setMessage(
-          `⏰ Hết giờ! Đã gom được ${state.recycledInStorage}/${TOTAL_TRASH} rác vào kho`,
-        );
+        setMessage(`⏰ Hết giờ! Đã gom được ${count}/${TOTAL_TRASH} rác vào kho`);
       else setMessage("💀 Va chạm vật cản – Hết mạng!");
-    };
-
-    const resumeAudio = () => {
-      if (audioRef.current.listener?.context?.state === "suspended") {
-        audioRef.current.listener.context.resume();
-      }
-    };
-
-    const down = (e) => {
-      resumeAudio();
-      state.keys[e.key.toLowerCase()] = true;
-    };
-    const up = (e) => (state.keys[e.key.toLowerCase()] = false);
-    window.addEventListener("keydown", down);
-    window.addEventListener("keyup", up);
-    window.addEventListener("pointerdown", resumeAudio);
-
-    state.timerId = setInterval(() => {
-      setTimeLeft((t) => {
-        if (t <= 1) {
-          endGame("timeout");
-          return 0;
-        }
-        return t - 1;
-      });
-    }, 1000);
-
-    const clock = new THREE.Clock();
-
-    const loop = () => {
-      gameTick({
-        state,
-        scene,
-        camera,
-        renderer,
-        player,
-        playerState,
-        storage,
-        setInventoryCount,
-        setRecycledCount,
-        setHp,
-        setCurrentZone,
-        setInventoryFull,
-        setHudPulse,
-        setDamageFlash,
-        setScreenShake,
-        endGame,
-        onPickup: () => {
-          playOneShot(audioRef.current.collect);
-        },
-        onDamage: () => {
-          playOneShot(audioRef.current.warning);
-        },
-        clock,
-      });
-      state.animationId = requestAnimationFrame(loop);
-    };
-
-    loop();
+    });
 
     return () => {
-      window.removeEventListener("keydown", down);
-      window.removeEventListener("keyup", up);
-      window.removeEventListener("pointerdown", resumeAudio);
-      if (audioRef.current.bgm?.isPlaying) audioRef.current.bgm.stop();
-      if (audioRef.current.collect?.isPlaying) audioRef.current.collect.stop();
-      if (audioRef.current.warning?.isPlaying) audioRef.current.warning.stop();
-      audioRef.current.stopped = true;
-      clearInterval(state.timerId);
-      cancelAnimationFrame(state.animationId);
-
-      if (renderer) {
-        renderer.dispose();
-        if (containerRef.current && renderer.domElement.parentNode === containerRef.current) {
-          containerRef.current.removeChild(renderer.domElement);
-        }
-      }
-
-      const itemsToRemove = [
-        state.player,
-        state.storage,
-        state.skybox,
-        state.oceanModel,
-        state.depthDisc,
-        state.fallbackPlane,
-        ...(state.buoys ?? []),
-        ...(state.trash ?? []),
-        ...(state.obstacles ?? []),
-        ...(state.allZones ?? []),
-      ].filter(Boolean);
-
-      itemsToRemove.forEach((obj) => {
-        scene.remove(obj);
-        obj.traverse?.((child) => {
-          if (child.geometry) child.geometry.dispose();
-          if (child.material) {
-            if (Array.isArray(child.material))
-              child.material.forEach((m) => m.dispose());
-            else child.material.dispose();
-          }
-        });
-      });
+      console.log("[EcoSeaRescueHUD] Cleaning up HUD callbacks");
+      logic.setHudCallbacks({});
     };
-  }, []);
+  }, [game, game?.stage1Game]);
 
   /* ===================== JOYSTICK ===================== */
   const handleJoystick = (e, isStart) => {
-    const joy = gameRef.current.joystick;
     if (!e.touches) return;
     const t = e.touches[0];
+    const logic = game?.stage1Game;
+    if (!logic) return;
+
     if (isStart) {
-      joy.startX = t.clientX;
-      joy.startY = t.clientY;
+      logic._joyStartX = t.clientX;
+      logic._joyStartY = t.clientY;
     } else {
-      joy.x = THREE.MathUtils.clamp((t.clientX - joy.startX) / 50, -1, 1);
-      joy.y = THREE.MathUtils.clamp((t.clientY - joy.startY) / 50, -1, 1);
+      const x = THREE.MathUtils.clamp((t.clientX - (logic._joyStartX || 0)) / 50, -1, 1);
+      const y = THREE.MathUtils.clamp((t.clientY - (logic._joyStartY || 0)) / 50, -1, 1);
+      logic.setJoystick(x, y);
     }
   };
 
   const resetJoystick = () => {
-    gameRef.current.joystick.x = 0;
-    gameRef.current.joystick.y = 0;
+    game?.stage1Game?.resetJoystick();
   };
 
   const handleGameOverAction = () => {
@@ -574,7 +383,9 @@ export function EcoSeaRescueHUD({ onComplete }) {
     if (message.includes("Hoàn thành") || recycledCount >= requiredTrash) {
       onComplete?.();
     } else {
-      window.location.reload();
+      // Replay is handled by the orchestrator
+      game?.restart();
+      setGameOver(false);
     }
   };
 
@@ -583,50 +394,41 @@ export function EcoSeaRescueHUD({ onComplete }) {
     <div
       style={{
         width: "100%",
-        height: "100vh",
+        height: "100%",
         position: "relative",
         overflow: "hidden",
+        pointerEvents: "none", // HUD background transparent to clicks
       }}
     >
-      {damageFlash && <DamageFlash />}
+      <div style={{ pointerEvents: "auto", width: "100%", height: "100%" }}>
+        {damageFlash && <DamageFlash />}
+        <ZoneIndicator currentZone={currentZone} />
 
-      <ZoneIndicator currentZone={currentZone} />
-
-      {/* Three.js canvas */}
-      <div
-        ref={containerRef}
-        style={{
-          width: "100%",
-          height: "100%",
-          transform: `translate(${screenShake.x}px, ${screenShake.y}px)`,
-          transition: screenShake.x === 0 ? "transform 0.1s ease-out" : "none",
-        }}
-      />
-
-      <HUD
-        hp={hp}
-        inventoryCount={inventoryCount}
-        inventoryFull={inventoryFull}
-        timeLeft={timeLeft}
-        recycledCount={recycledCount}
-        hudPulse={hudPulse}
-      />
-
-      {isMobile && (
-        <MobileJoystick
-          onTouchStart={(e) => handleJoystick(e, true)}
-          onTouchMove={(e) => handleJoystick(e, false)}
-          onTouchEnd={resetJoystick}
-        />
-      )}
-
-      {gameOver && (
-        <GameOverScreen
-          message={message}
+        <HUD
+          hp={hp}
+          inventoryCount={inventoryCount}
+          inventoryFull={inventoryFull}
+          timeLeft={timeLeft}
           recycledCount={recycledCount}
-          onAction={handleGameOverAction}
+          hudPulse={hudPulse}
         />
-      )}
+
+        {isMobile && (
+          <MobileJoystick
+            onTouchStart={(e) => handleJoystick(e, true)}
+            onTouchMove={(e) => handleJoystick(e, false)}
+            onTouchEnd={resetJoystick}
+          />
+        )}
+
+        {gameOver && (
+          <GameOverScreen
+            message={message}
+            recycledCount={recycledCount}
+            onAction={handleGameOverAction}
+          />
+        )}
+      </div>
     </div>
   );
 }
