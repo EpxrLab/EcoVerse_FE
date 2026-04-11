@@ -13,19 +13,20 @@ export const GameState = {
 
 // Trash types and their sorting categories
 export const TrashType = {
-  PLASTIC_BOTTLE: { id: 'plastic_bottle', name: 'Chai nhựa', bin: 'recycle', color: 0x2196f3 },
-  PAPER: { id: 'paper', name: 'Giấy', bin: 'recycle', color: 0xffffff },
-  CAN: { id: 'can', name: 'Vỏ lon', bin: 'recycle', color: 0x9e9e9e },
+  PLASTIC_BOTTLE: { id: 'plastic_bottle', name: 'Chai nhựa', bin: 'recyclable', color: 0x2196f3 },
+  PAPER: { id: 'paper', name: 'Giấy', bin: 'recyclable', color: 0xffffff },
+  CAN: { id: 'can', name: 'Vỏ lon', bin: 'recyclable', color: 0x9e9e9e },
   BANANA_PEEL: { id: 'banana_peel', name: 'Vỏ chuối', bin: 'organic', color: 0xffeb3b },
   FOOD_WASTE: { id: 'food_waste', name: 'Thức ăn thừa', bin: 'organic', color: 0x8d6e63 },
-  BROKEN_GLASS: { id: 'broken_glass', name: 'Mảnh kính', bin: 'inorganic', color: 0x80cbc4 },
-  STYROFOAM: { id: 'styrofoam', name: 'Xốp', bin: 'inorganic', color: 0xeceff1 },
+  BROKEN_GLASS: { id: 'broken_glass', name: 'Mảnh kính', bin: 'general', color: 0x80cbc4 },
+  STYROFOAM: { id: 'styrofoam', name: 'Xốp', bin: 'general', color: 0xeceff1 },
 };
 
 export const BinType = {
   ORGANIC: { id: 'organic', name: 'Hữu cơ', color: 0x4caf50 },
-  INORGANIC: { id: 'inorganic', name: 'Vô cơ', color: 0x757575 },
-  RECYCLE: { id: 'recycle', name: 'Tái chế', color: 0x2196f3 },
+  RECYCLABLE: { id: 'recyclable', name: 'Tái chế', color: 0x2196f3 },
+  HAZARDOUS: { id: 'hazardous', name: 'Nguy hại', color: 0xf44336 },
+  GENERAL: { id: 'general', name: 'Còn lại', color: 0x757575 },
 };
 
 export const DynamicBinTypes = {
