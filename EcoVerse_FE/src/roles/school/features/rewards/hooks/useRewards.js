@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { rewardService } from '../../../services/reward.service';
 import { campaignService } from '../../../services/campaign.service';
-import { 
+import {
   rewardStats,
   topRewardsData,
 } from '../../../data/reward.data';
@@ -10,7 +10,7 @@ export function useRewards() {
   const [partnershipInvitations, setPartnershipInvitations] = useState([]);
   const [partnershipRewards, setPartnershipRewards] = useState([]);
   const [marketplaceItems, setMarketplaceItems] = useState([]);
-  
+
   const [pendingRewards, setPendingRewards] = useState([]);
   const [approvedRewards, setApprovedRewards] = useState([]);
   const [deliveredRewards, setDeliveredRewards] = useState([]);
@@ -45,7 +45,7 @@ export function useRewards() {
     try {
       const res = await rewardService.getRewardRequests();
       const requests = res.data?.data || [];
-      
+
       const pending = [];
       const approved = [];
       const delivered = [];
@@ -167,7 +167,7 @@ export function useRewards() {
       return [];
     }
     try {
-      const res = await campaignService.getRewardDeliveries(campaignId);
+      const res = await rewardService.getRewardDeliveries(campaignId);
       const data = res.data?.data || [];
       const mapped = data.map(r => ({
         ...r,
@@ -233,9 +233,9 @@ export function useRewards() {
   const confirmPartnershipReward = async (id, status, payload = {}) => {
     try {
       if (status === 'shipping') {
-        await campaignService.markRewardArrived(id);
+        await rewardService.markRewardArrived(id);
       } else if (status === 'at_school') {
-        await campaignService.markRewardDelivered(id, payload);
+        await rewardService.markRewardDelivered(id, payload);
       }
       return { success: true };
     } catch (error) {
