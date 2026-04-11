@@ -62,7 +62,7 @@ export const campaignService = {
   extendInviting: (id, payload) => {
     return axios.post(`/school/campaigns/${id}/extend-inviting`, payload);
   },
-  
+
   deleteCampaign: (id) => {
     return axios.delete(`/school/campaigns/${id}`);
   },
@@ -82,7 +82,7 @@ export const campaignService = {
   assignStudentsToPartnershipInvitation: (id, studentIds) => {
     return axios.put(`/school/partnership-invitations/${id}/assigned-students`, { studentIds });
   },
-  
+
   getPartnershipInvitationDetail: (id) => {
     return axios.get(`/school/partnership-invitations/${id}`);
   },
@@ -91,16 +91,4 @@ export const campaignService = {
     return axios.get(`/school/partnership-invitations/${id}/assigned-students`);
   },
 
-  // Reward Deliveries
-  getRewardDeliveries: (campaignId) => {
-    return axios.get(`/school/campaigns/${campaignId}/reward-deliveries`);
-  },
-
-  markRewardArrived: (deliveryId) => {
-    return axios.put(`/school/reward-deliveries/${deliveryId}/arrived`);
-  },
-
-  markRewardDelivered: (deliveryId, payload) => {
-    return axios.put(`/school/reward-deliveries/${deliveryId}/deliver`, payload);
-  }
 };
