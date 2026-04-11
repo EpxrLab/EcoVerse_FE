@@ -16,6 +16,7 @@ import {
 } from "@ant-design/icons";
 import { motion, AnimatePresence } from "framer-motion";
 import { getCurrentRoundContent } from "../../services";
+import { ClippingGroup } from "three/webgpu";
 
 // ─── Constants ────────────────────────────────────────────────────────────────
 
@@ -74,6 +75,11 @@ const stagger = {
 // ─── LevelCard ────────────────────────────────────────────────────────────────
 
 function LevelCard({ item, isUnlocked, isCompleted, onPlay, campaignId }) {
+  const hasDailyLimit = item.maxDailyAttempts > 0;
+  const isOutOfAttempts =
+    hasDailyLimit && item.todayAttempts >= item.maxDailyAttempts;
+  const canPlay = isUnlocked && !isCompleted && !isOutOfAttempts;
+
   return (
     <motion.div variants={fadeUp}>
       <div
@@ -82,14 +88,16 @@ function LevelCard({ item, isUnlocked, isCompleted, onPlay, campaignId }) {
           isCompleted
             ? "border-green-300 bg-green-50/40"
             : isUnlocked
-              ? "border-gray-200 bg-white hover:border-blue-300 hover:shadow-md"
+              ? isOutOfAttempts
+                ? "border-orange-200 bg-orange-50/30"
+                : "border-gray-200 bg-white hover:border-blue-300 hover:shadow-md"
               : "border-gray-100 bg-gray-50/60 opacity-60"
         }`}
       >
         {/* Left accent bar */}
         <div
           className={`absolute inset-y-0 left-0 w-1.5
-          ${isCompleted ? "bg-green-500" : isUnlocked ? "bg-blue-400" : "bg-gray-300"}`}
+          ${isCompleted ? "bg-green-500" : isUnlocked ? (isOutOfAttempts ? "bg-orange-400" : "bg-blue-400") : "bg-gray-300"}`}
         />
 
         <div className="pl-5 pr-4 py-4">
@@ -103,7 +111,9 @@ function LevelCard({ item, isUnlocked, isCompleted, onPlay, campaignId }) {
                   isCompleted
                     ? "bg-green-500 text-white shadow-sm shadow-green-200"
                     : isUnlocked
-                      ? "bg-blue-500 text-white shadow-sm shadow-blue-200"
+                      ? isOutOfAttempts
+                        ? "bg-orange-500 text-white"
+                        : "bg-blue-500 text-white shadow-sm shadow-blue-200"
                       : "bg-gray-200 text-gray-400"
                 }`}
               >
@@ -126,6 +136,11 @@ function LevelCard({ item, isUnlocked, isCompleted, onPlay, campaignId }) {
                       ✓ Hoàn thành
                     </span>
                   )}
+                  {isUnlocked && isOutOfAttempts && !isCompleted && (
+                    <span className="text-[11px] bg-orange-100 text-orange-700 px-2 py-0.5 rounded-full font-semibold">
+                      Hết lượt hôm nay
+                    </span>
+                  )}
                   {!isUnlocked && !isCompleted && (
                     <span className="text-[11px] bg-gray-100 text-gray-500 px-2 py-0.5 rounded-full font-semibold">
                       Chưa mở khóa
@@ -134,7 +149,7 @@ function LevelCard({ item, isUnlocked, isCompleted, onPlay, campaignId }) {
                 </div>
 
                 {/* Stats row */}
-                <div className="flex flex-wrap gap-2.5 text-xs text-gray-500">
+                <div className="flex flex-wrap gap-x-3 gap-y-1.5 text-xs text-gray-500">
                   <span className="flex items-center gap-1">
                     <HeartOutlined className="text-red-400" />
                     {item.lives} mạng
@@ -143,18 +158,25 @@ function LevelCard({ item, isUnlocked, isCompleted, onPlay, campaignId }) {
                     <ClockCircleOutlined className="text-blue-400" />
                     {fmtTime(item.timeLimitSeconds)}
                   </span>
-                  <span className="flex items-center gap-1">
-                    <ThunderboltOutlined className="text-amber-400" />
-                    {item.itemCount} vật phẩm
-                  </span>
-                  <span className="flex items-center gap-1 font-semibold text-blue-600">
-                    +{item.scorePerCorrect} điểm/đúng
+                  {/* HIỂN THỊ BIẾN MỚI TẠI ĐÂY */}
+                  <span
+                    className={`flex items-center gap-1 font-medium ${isOutOfAttempts ? "text-orange-600" : "text-gray-500"}`}
+                  >
+                    <TrophyOutlined
+                      className={
+                        isOutOfAttempts ? "text-orange-500" : "text-gray-400"
+                      }
+                    />
+                    Lượt chơi:{" "}
+                    <b className="ml-0.5">
+                      {item.todayAttempts ?? 0}/{item.maxDailyAttempts}
+                    </b>
                   </span>
                 </div>
 
                 {/* Waste categories */}
                 {item.wasteCategories?.length > 0 && (
-                  <div className="flex gap-1.5 flex-wrap mt-1.5">
+                  <div className="flex gap-1.5 flex-wrap mt-2">
                     {item.wasteCategories.map((cat) => (
                       <Tag
                         key={cat}
@@ -183,15 +205,28 @@ function LevelCard({ item, isUnlocked, isCompleted, onPlay, campaignId }) {
                   </Button>
                 </Tooltip>
               ) : isUnlocked ? (
-                <Button
-                  type="primary"
-                  size="small"
-                  onClick={() => onPlay(item.levelNumber)}
-                  className="rounded-xl bg-blue-500 border-blue-500 hover:bg-blue-600 font-semibold px-4"
-                  icon={<PlayCircleOutlined />}
-                >
-                  Chơi
-                </Button>
+                isOutOfAttempts ? (
+                  <Tooltip title="Bạn đã hết lượt chơi cho màn này trong hôm nay. Hãy quay lại vào ngày mai!">
+                    <Button
+                      size="small"
+                      disabled
+                      className="rounded-xl border-orange-200 text-orange-400 bg-orange-50"
+                      icon={<ClockCircleOutlined />}
+                    >
+                      Hết lượt
+                    </Button>
+                  </Tooltip>
+                ) : (
+                  <Button
+                    type="primary"
+                    size="small"
+                    onClick={() => onPlay(item.levelNumber)}
+                    className="rounded-xl bg-blue-500 border-blue-500 hover:bg-blue-600 font-semibold px-4"
+                    icon={<PlayCircleOutlined />}
+                  >
+                    Chơi
+                  </Button>
+                )
               ) : (
                 <Tooltip title={`Hoàn thành màn ${item.levelNumber - 1} trước`}>
                   <Button
@@ -287,6 +322,7 @@ export default function StudentRoundDetails() {
   const { campaignId, roundId } = useParams();
   const navigate = useNavigate();
   const [roundData, setRoundData] = useState(null);
+  const [roundGameConfigId, setRoundGameConfigId] = useState("");
 
   useEffect(() => {
     if (!campaignId) return;
@@ -294,6 +330,11 @@ export default function StudentRoundDetails() {
       .then((res) => setRoundData(res?.data ?? null))
       .catch(console.error);
   }, [campaignId, roundId]);
+
+  useEffect(() => {
+    if (!roundData) return;
+    setRoundGameConfigId(roundData.games?.[0].roundGameConfigId);
+  }, [roundData]);
 
   if (!roundData)
     return (
@@ -303,12 +344,17 @@ export default function StudentRoundDetails() {
       />
     );
 
-  const game = roundData.games?.[0]; // hiện tại chỉ xử lý game đầu
-
-  const handlePlay = (levelNumber) => {
-    navigate(`/student/campaign/${campaignId}/game`, {
-      state: { levelNumber },
-    });
+  const game = roundData.games?.[0];
+  const handlePlay = (levelNumber, typeCode) => {
+    navigate(
+      `/student/campaign/${campaignId}/round/${roundId}/game/${roundGameConfigId}/play`,
+      {
+        state: {
+          levelNumber,
+          typeCode,
+        },
+      },
+    );
   };
 
   // Build Tabs từ presets — sort theo thứ tự EASY→MEDIUM→HARD
@@ -340,7 +386,7 @@ export default function StudentRoundDetails() {
       children: (
         <PresetTabContent
           preset={preset}
-          onPlay={handlePlay}
+          onPlay={(levelNum) => handlePlay(levelNum, game.typeCode)}
           campaignId={campaignId}
         />
       ),
@@ -496,59 +542,91 @@ export default function StudentRoundDetails() {
 
             <div className="p-4 space-y-3">
               <motion.div variants={stagger} initial="hidden" animate="visible">
-                {roundData.quizzes.map((quiz, idx) => (
-                  <motion.div key={quiz.quizId ?? idx} variants={fadeUp}>
-                    <div
-                      className={`rounded-2xl border-2 p-4 flex items-center justify-between gap-4 transition-all hover:shadow-sm
-                      ${quiz.isRequired ? "border-blue-100 bg-blue-50/30 hover:border-blue-300" : "border-gray-100 bg-white hover:border-gray-300"}`}
-                    >
-                      <div className="flex items-center gap-3 flex-1 min-w-0">
-                        <div
-                          className={`w-9 h-9 rounded-xl flex items-center justify-center flex-shrink-0 text-sm font-bold
-                          ${quiz.isRequired ? "bg-blue-500 text-white" : "bg-gray-100 text-gray-500"}`}
-                        >
-                          {idx + 1}
-                        </div>
-                        <div className="flex-1 min-w-0">
-                          <p className="font-bold text-gray-800 text-sm truncate">
-                            {quiz.title}
-                          </p>
-                          <div className="flex items-center gap-2 mt-0.5 flex-wrap">
-                            {quiz.isRequired && (
-                              <span className="text-[11px] text-red-600 bg-red-50 px-2 py-0.5 rounded-full font-bold">
-                                Bắt buộc
+                {roundData.quizzes.map((quiz, idx) => {
+                  const attemptUsed =
+                    quiz.attemptUsed ?? quiz.attemptsUsed ?? 0;
+                  const maxAttempts = quiz.maxAttempts ?? 0;
+                  const isPassed = quiz.isPassed;
+                  const isMaxAttemptsReached =
+                    maxAttempts > 0 && attemptUsed >= maxAttempts;
+                  const isDisabled = isMaxAttemptsReached;
+
+                  return (
+                    <motion.div key={quiz.quizId ?? idx} variants={fadeUp}>
+                      <div
+                        className={`rounded-2xl border-2 p-4 flex items-center justify-between gap-4 transition-all hover:shadow-sm
+                        ${quiz.isRequired && !isDisabled ? "border-blue-100 bg-blue-50/30 hover:border-blue-300" : "border-gray-100 bg-white hover:border-gray-300"}
+                        ${isDisabled ? "opacity-75 grayscale-[0.3]" : ""}`}
+                      >
+                        <div className="flex items-center gap-3 flex-1 min-w-0">
+                          <div
+                            className={`w-9 h-9 rounded-xl flex items-center justify-center flex-shrink-0 text-sm font-bold
+                            ${quiz.isRequired && !isDisabled ? "bg-blue-500 text-white" : "bg-gray-100 text-gray-500"}`}
+                          >
+                            {idx + 1}
+                          </div>
+                          <div className="flex-1 min-w-0">
+                            <p className="font-bold text-gray-800 text-sm truncate">
+                              {quiz.title}
+                            </p>
+                            <div className="flex items-center gap-2 mt-0.5 flex-wrap">
+                              {quiz.isRequired && (
+                                <span className="text-[11px] text-red-600 bg-red-50 px-2 py-0.5 rounded-full font-bold">
+                                  Bắt buộc
+                                </span>
+                              )}
+                              <span
+                                className={`text-[11px] px-2 py-0.5 rounded-full font-semibold ${DIFFICULTY_CFG[quiz.difficulty]?.badge ?? "bg-gray-100 text-gray-500"}`}
+                              >
+                                {DIFFICULTY_CFG[quiz.difficulty]?.label ??
+                                  quiz.difficulty}
                               </span>
+                              <span className="text-[11px] text-gray-400 flex items-center gap-1">
+                                <TrophyOutlined />
+                                Đã làm: {attemptUsed}{" "}
+                                {maxAttempts > 0 ? `/ ${maxAttempts}` : ""} lần
+                              </span>
+                            </div>
+                            {isPassed && (
+                              <p className="text-xs text-green-600 font-semibold mt-1.5 flex items-center gap-1">
+                                <CheckCircleOutlined /> Đã hoàn thành (Làm lại
+                                sẽ không nhận thêm xu)
+                              </p>
                             )}
-                            <span
-                              className={`text-[11px] px-2 py-0.5 rounded-full font-semibold ${DIFFICULTY_CFG[quiz.difficulty]?.badge ?? "bg-gray-100 text-gray-500"}`}
-                            >
-                              {DIFFICULTY_CFG[quiz.difficulty]?.label ??
-                                quiz.difficulty}
-                            </span>
-                            <span className="text-[11px] text-gray-400 flex items-center gap-1">
-                              <TrophyOutlined />
-                              Max {quiz.maxAttempts} lần
-                            </span>
+                            {isDisabled && !isPassed && (
+                              <p className="text-xs text-red-500 font-semibold mt-1.5 flex items-center gap-1">
+                                <LockOutlined /> Đã hết số lượt làm bài
+                              </p>
+                            )}
                           </div>
                         </div>
+                        <Button
+                          type={
+                            quiz.isRequired && !isDisabled
+                              ? "primary"
+                              : "default"
+                          }
+                          size="small"
+                          disabled={isDisabled}
+                          className={`rounded-xl font-semibold flex-shrink-0 ${quiz.isRequired && !isDisabled ? "bg-blue-500 border-blue-500 hover:bg-blue-600 text-white" : ""}`}
+                          icon={<RightOutlined />}
+                          iconPosition="end"
+                          onClick={() =>
+                            navigate(
+                              `/student/campaign/${campaignId}/round/${roundId}/quiz/${quiz.quizId}`,
+                            )
+                          }
+                        >
+                          {isDisabled
+                            ? "Hết lượt"
+                            : isPassed
+                              ? "Làm lại Quiz"
+                              : "Làm Quiz"}
+                        </Button>
                       </div>
-                      <Button
-                        type={quiz.isRequired ? "primary" : "default"}
-                        size="small"
-                        className={`rounded-xl font-semibold flex-shrink-0 ${quiz.isRequired ? "bg-blue-500 border-blue-500 hover:bg-blue-600" : ""}`}
-                        icon={<RightOutlined />}
-                        iconPosition="end"
-                        onClick={() =>
-                          navigate(
-                            `/student/campaign/${campaignId}/round/${roundId}/quiz/${quiz.quizId}`,
-                          )
-                        }
-                      >
-                        Làm Quiz
-                      </Button>
-                    </div>
-                  </motion.div>
-                ))}
+                    </motion.div>
+                  );
+                })}
               </motion.div>
             </div>
           </Card>

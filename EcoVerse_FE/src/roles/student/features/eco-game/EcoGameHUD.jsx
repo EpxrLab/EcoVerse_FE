@@ -31,6 +31,49 @@ function GameOverOverlay({ show }) {
   );
 }
 
+// ─── Exit Confirm Overlay ─────────────────────────────────────────────────────
+
+function ExitConfirmOverlay({ show, onConfirm, onCancel }) {
+  if (!show) return null;
+  return (
+    <motion.div
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      exit={{ opacity: 0 }}
+      className="absolute inset-0 flex items-center justify-center bg-black/60 backdrop-blur-sm z-50 px-4"
+    >
+      <motion.div
+        initial={{ scale: 0.9, y: 20 }}
+        animate={{ scale: 1, y: 0 }}
+        exit={{ scale: 0.9, y: 20 }}
+        className="bg-white rounded-3xl p-6 md:p-8 max-w-md w-full shadow-2xl text-center"
+      >
+        <div className="text-5xl mb-4">⚠️</div>
+        <h3 className="text-2xl font-bold text-gray-800 mb-2">
+          Bạn có chắc chắn muốn thoát?
+        </h3>
+        <p className="text-gray-600 mb-8">
+          Nếu bạn thoát game giữa chừng, toàn bộ dữ liệu của phiên chơi này sẽ bị mất.
+        </p>
+        <div className="flex gap-4 justify-center">
+          <button
+            onClick={onCancel}
+            className="flex-1 px-4 py-3 rounded-xl font-bold text-gray-700 bg-gray-100 hover:bg-gray-200 transition-colors"
+          >
+            Tiếp tục chơi
+          </button>
+          <button
+            onClick={onConfirm}
+            className="flex-1 px-4 py-3 rounded-xl font-bold text-white bg-red-500 hover:bg-red-600 transition-colors shadow-lg shadow-red-500/30"
+          >
+            Thoát game
+          </button>
+        </div>
+      </motion.div>
+    </motion.div>
+  );
+}
+
 // ─── Stage Transition Overlay ─────────────────────────────────────────────────
 
 function StageTransition({ stage }) {
@@ -65,7 +108,14 @@ function StageTransition({ stage }) {
 
 // ─── Main HUD Component ───────────────────────────────────────────────────────
 
-export default function EcoGameHUD({ game, onBack, levelConfig }) {
+export default function EcoGameHUD({
+  game,
+  onBack,
+  levelConfig,
+  gameType,
+  onGameResult,
+  onPauseChange,
+}) {
   const [stage, setStage] = useState("STAGE_1");
   const [distance, setDistance] = useState(0);
   const [speed, setSpeed] = useState(levelConfig?.runner?.baseSpeed || 12);
@@ -76,12 +126,26 @@ export default function EcoGameHUD({ game, onBack, levelConfig }) {
   const [result, setResult] = useState(null);
   const [showTransition, setShowTransition] = useState(false);
   const [showGameOver, setShowGameOver] = useState(false);
+  const [showExitConfirm, setShowExitConfirm] = useState(false);
 
   const fetchData = async () => {};
 
   useEffect(() => {
     fetchData();
   }, []);
+
+  useEffect(() => {
+    if (onPauseChange) {
+      onPauseChange(showExitConfirm);
+    }
+    if (game && typeof game.pause === "function" && typeof game.resume === "function") {
+      if (showExitConfirm) {
+        game.pause();
+      } else {
+        game.resume();
+      }
+    }
+  }, [showExitConfirm, onPauseChange, game]);
 
   const isSeaRescue = levelConfig?.stage1Game === "searescue";
 
@@ -128,8 +192,16 @@ export default function EcoGameHUD({ game, onBack, levelConfig }) {
       }
     });
 
-    game.onResult((res) => {
-      setResult(res);
+    game.onResult(async (res) => {
+      let finalResult = res;
+      // Submit game result to API
+      if (onGameResult) {
+        const apiResult = await onGameResult(res);
+        if (apiResult) {
+          finalResult = { ...res, apiResult }; // Merge the API result
+        }
+      }
+      setResult(finalResult);
     });
   }, [game, levelConfig]);
 
@@ -151,7 +223,7 @@ export default function EcoGameHUD({ game, onBack, levelConfig }) {
     <>
       {/* Back button */}
       <button
-        onClick={onBack}
+        onClick={() => setShowExitConfirm(true)}
         className="absolute top-4 right-4 z-20 bg-black/40 backdrop-blur-md text-white rounded-full w-10 h-10 flex items-center justify-center hover:bg-black/60 transition-colors"
         title="Quay về"
       >
@@ -178,6 +250,7 @@ export default function EcoGameHUD({ game, onBack, levelConfig }) {
               distance={distance}
               speed={speed}
               trashCount={trashCount}
+              totalTrash={levelConfig?.runner?.itemCount || 0}
             />
           ))}
 
@@ -196,6 +269,15 @@ export default function EcoGameHUD({ game, onBack, levelConfig }) {
       <AnimatePresence>
         {showGameOver && <GameOverOverlay key="gameover" show />}
         {showTransition && <StageTransition key="transition" stage="STAGE_2" />}
+        <ExitConfirmOverlay
+          key="exitconfirm"
+          show={showExitConfirm}
+          onConfirm={() => {
+            setShowExitConfirm(false);
+            onBack();
+          }}
+          onCancel={() => setShowExitConfirm(false)}
+        />
       </AnimatePresence>
 
       {stage === "RESULT" && result && (
