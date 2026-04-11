@@ -1,107 +1,60 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Button } from '@/shared/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/shared/components/ui/select';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/shared/components/ui/table';
 import { Badge } from '@/shared/components/ui/badge';
 import { Avatar, AvatarFallback } from '@/shared/components/ui/avatar';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/shared/components/ui/tabs';
-import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/shared/components/ui/dialog';
+import { Dialog, DialogContent, DialogDescription, DialogFooter , DialogTitle } from '@/shared/components/ui/dialog';
 import { Input } from '@/shared/components/ui/input';
 import { Label } from '@/shared/components/ui/label';
 import { Textarea } from '@/shared/components/ui/textarea';
-import { Gift, Flag, Trophy, Package, Truck, CheckCircle, Clock, MapPin, Upload, Image as ImageIcon, MoreHorizontal } from 'lucide-react';
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/shared/components/ui/dropdown-menu';
+import { Gift, Flag, Trophy, Package, Truck, CheckCircle, Clock, MapPin, Loader2 } from 'lucide-react';
 import { cn } from '@/shared/lib/utils';
-
-// Mock data
-const mockCampaigns = [
-  { id: '1', name: 'Chiến dịch Thu gom rác thải nhựa 2024' },
-  { id: '2', name: 'Tuần lễ môi trường xanh' },
-];
-
-const mockTop5Students = [
-  { 
-    id: '1', 
-    rank: 1, 
-    studentName: 'Nguyễn Văn An', 
-    schoolId: 's1',
-    schoolName: 'Trường Tiểu học Nguyễn Du',
-    schoolAddress: '123 Nguyễn Du, Quận 1, TP. Hồ Chí Minh',
-    totalPoints: 1250,
-    rewardStatus: 'delivered',
-    rewardImage: 'https://via.placeholder.com/400x300',
-    shippingDate: '2024-01-18',
-    deliveryDate: '2024-01-20'
-  },
-  { 
-    id: '2', 
-    rank: 2, 
-    studentName: 'Trần Thị Bình', 
-    schoolId: 's2',
-    schoolName: 'Trường Tiểu học Lê Quý Đôn',
-    schoolAddress: '456 Lê Quý Đôn, Quận 3, TP. Hồ Chí Minh',
-    totalPoints: 1180,
-    rewardStatus: 'shipping',
-    rewardImage: 'https://via.placeholder.com/400x300',
-    shippingDate: '2024-01-19',
-    deliveryDate: null
-  },
-  { 
-    id: '3', 
-    rank: 3, 
-    studentName: 'Lê Hoàng Cường', 
-    schoolId: 's1',
-    schoolName: 'Trường Tiểu học Nguyễn Du',
-    schoolAddress: '123 Nguyễn Du, Quận 1, TP. Hồ Chí Minh',
-    totalPoints: 1050,
-    rewardStatus: 'delivered',
-    rewardImage: 'https://via.placeholder.com/400x300',
-    shippingDate: '2024-01-18',
-    deliveryDate: '2024-01-20'
-  },
-  { 
-    id: '4', 
-    rank: 4, 
-    studentName: 'Phạm Thị Dung', 
-    schoolId: 's3',
-    schoolName: 'Trường Tiểu học Võ Thị Sáu',
-    schoolAddress: '321 Võ Thị Sáu, Quận 3, TP. Hồ Chí Minh',
-    totalPoints: 980,
-    rewardStatus: 'pending',
-    rewardImage: null,
-    shippingDate: null,
-    deliveryDate: null
-  },
-  { 
-    id: '5', 
-    rank: 5, 
-    studentName: 'Hoàng Văn Em', 
-    schoolId: 's4',
-    schoolName: 'Trường Tiểu học Trần Hưng Đạo',
-    schoolAddress: '789 Trần Hưng Đạo, Quận 5, TP. Hồ Chí Minh',
-    totalPoints: 920,
-    rewardStatus: 'pending',
-    rewardImage: null,
-    shippingDate: null,
-    deliveryDate: null
-  },
-];
+import { usePartnershipCampaigns } from '../../features/campaigns/hooks/usePartnershipCampaigns';
+import { toast } from 'sonner';
 
 export default function PartnershipRewards() {
-  const [selectedCampaign, setSelectedCampaign] = useState('1');
+  const { campaigns, fetchRewardDeliveries, markRewardShipped, loading: campaignLoading } = usePartnershipCampaigns();
+  const [selectedCampaignId, setSelectedCampaignId] = useState('');
+  const [rewardDeliveries, setRewardDeliveries] = useState([]);
+  const [loading, setLoading] = useState(false);
+  
   const [isShippingDialogOpen, setIsShippingDialogOpen] = useState(false);
-  const [selectedStudent, setSelectedStudent] = useState(null);
+  const [selectedDelivery, setSelectedDelivery] = useState(null);
   const [shippingNotes, setShippingNotes] = useState('');
-  const [rewardImageFile, setRewardImageFile] = useState(null);
-  const [rewardImagePreview, setRewardImagePreview] = useState(null);
+  const [trackingCode, setTrackingCode] = useState('');
+
+  // Local Campaigns list for the selector
+  const activeAndCompletedCampaigns = campaigns.filter(c => c.status === 'on_going' || c.status === 'completed');
+
+  useEffect(() => {
+    if (activeAndCompletedCampaigns.length > 0 && !selectedCampaignId) {
+      setSelectedCampaignId(activeAndCompletedCampaigns[0].id);
+    }
+  }, [activeAndCompletedCampaigns, selectedCampaignId]);
+
+  useEffect(() => {
+    const loadDeliveries = async () => {
+      if (selectedCampaignId) {
+        setLoading(true);
+        const data = await fetchRewardDeliveries(selectedCampaignId);
+        setRewardDeliveries(data);
+        setLoading(false);
+      }
+    };
+    loadDeliveries();
+  }, [selectedCampaignId]);
 
   const getStatusColor = (status) => {
     switch (status) {
-      case 'pending':
+      case 'PREPARING':
         return 'bg-yellow-500/15 text-yellow-700 border-yellow-500/25';
-      case 'shipping':
+      case 'SHIPPING':
         return 'bg-eco-blue/15 text-eco-blue border-eco-blue/25';
-      case 'delivered':
+      case 'ARRIVED':
+      case 'DELIVERED':
+      case 'CONFIRMED':
         return 'bg-eco-green/15 text-eco-green border-eco-green/25';
       default:
         return 'bg-muted text-muted-foreground';
@@ -110,12 +63,16 @@ export default function PartnershipRewards() {
 
   const getStatusLabel = (status) => {
     switch (status) {
-      case 'pending':
+      case 'PREPARING':
         return 'Chờ gửi';
-      case 'shipping':
+      case 'SHIPPING':
         return 'Đang gửi';
-      case 'delivered':
-        return 'Đã giao';
+      case 'ARRIVED':
+        return 'Đã đến trường';
+      case 'DELIVERED':
+        return 'Trường đã giao';
+      case 'CONFIRMED':
+        return 'Đã nhận';
       default:
         return status;
     }
@@ -123,176 +80,240 @@ export default function PartnershipRewards() {
 
   const getStatusIcon = (status) => {
     switch (status) {
-      case 'pending':
+      case 'PREPARING':
         return <Clock className="w-4 h-4" />;
-      case 'shipping':
+      case 'SHIPPING':
         return <Truck className="w-4 h-4" />;
-      case 'delivered':
+      case 'ARRIVED':
+      case 'DELIVERED':
+      case 'CONFIRMED':
         return <CheckCircle className="w-4 h-4" />;
+      default:
+        return null;
     }
   };
 
   const getInitials = (name) => {
+    if (!name) return '?';
     const parts = name.split(' ');
     return parts[parts.length - 1].charAt(0).toUpperCase();
   };
 
   const getRankIcon = (rank) => {
     const colors = ['text-yellow-500', 'text-gray-400', 'text-orange-600', 'text-eco-blue', 'text-eco-green'];
-    return <Trophy className={cn('w-5 h-5', colors[rank - 1])} />;
+    return <Trophy className={cn('w-5 h-5', colors[rank - 1] || 'text-muted-foreground')} />;
   };
 
-  const handleImageChange = (e) => {
-    const file = e.target.files?.[0];
-    if (file) {
-      setRewardImageFile(file);
-      const reader = new FileReader();
-      reader.onloadend = () => {
-        setRewardImagePreview(reader.result);
-      };
-      reader.readAsDataURL(file);
-    }
+  const getTableColSpan = (tab) => {
+    let cols = 6; // Hạng, Học sinh, Trường, Tổng điểm, Trạng thái, Hình ảnh quà
+    if (tab === 'pending') cols += 1; // Thao tác
+    if (tab !== 'pending') cols += 3; // Ngày gửi, Ngày nhận, Ảnh xác nhận
+    return cols;
   };
 
-  const handleSendReward = (student) => {
-    setSelectedStudent(student);
+  const handleSendReward = (delivery) => {
+    setSelectedDelivery(delivery);
     setIsShippingDialogOpen(true);
   };
 
-  const handleConfirmShipping = () => {
-    console.log('Shipping reward:', {
-      student: selectedStudent,
-      rewardImage: rewardImageFile,
-      shippingNotes
+  const handleConfirmShipping = async () => {
+    if (!selectedDelivery) return;
+    
+    setLoading(true);
+    const success = await markRewardShipped(selectedDelivery.id, {
+      shippingTrackingCode: trackingCode,
+      notes: shippingNotes
     });
-    setIsShippingDialogOpen(false);
-    setShippingNotes('');
-    setRewardImageFile(null);
-    setRewardImagePreview(null);
-    setSelectedStudent(null);
+
+    if (success) {
+      toast.success('Đã cập nhật trạng thái đang gửi quà');
+      // Refresh list
+      const data = await fetchRewardDeliveries(selectedCampaignId);
+      setRewardDeliveries(data);
+      setIsShippingDialogOpen(false);
+      setShippingNotes('');
+      setTrackingCode('');
+      setSelectedDelivery(null);
+    } else {
+      toast.error('Cập nhật thất bại');
+    }
+    setLoading(false);
   };
 
-  const getStudentsByStatus = (status) => {
-    return mockTop5Students.filter(s => s.rewardStatus === status);
+  const getDeliveriesByStatus = (tab) => {
+    if (tab === 'pending') {
+      return rewardDeliveries.filter(d => d.status === 'PREPARING');
+    }
+    if (tab === 'shipping') {
+      return rewardDeliveries.filter(d => d.status === 'SHIPPING');
+    }
+    if (tab === 'arrived') {
+      return rewardDeliveries.filter(d => d.status === 'ARRIVED');
+    }
+    if (tab === 'delivered') {
+      return rewardDeliveries.filter(d => d.status === 'DELIVERED');
+    }
+    if (tab === 'confirmed') {
+      return rewardDeliveries.filter(d => d.status === 'CONFIRMED');
+    }
+    return [];
   };
 
-  const renderStudentTable = (students, currentTab) => (
-    <div className="border-2 rounded-xl overflow-hidden">
+  const renderStudentTable = (deliveries, currentTab) => (
+    <div className="border-2 rounded-xl overflow-hidden bg-card">
       <Table>
         <TableHeader>
           <TableRow className="bg-muted/50 hover:bg-muted/50">
-            <TableHead className="font-bold w-20">Hạng</TableHead>
+            <TableHead className="font-bold w-20 text-center">Hạng</TableHead>
             <TableHead className="font-bold">Học sinh</TableHead>
             <TableHead className="font-bold">Trường</TableHead>
             <TableHead className="text-center font-bold">Tổng điểm</TableHead>
             <TableHead className="text-center font-bold">Trạng thái</TableHead>
             {currentTab !== 'pending' && (
-              <TableHead className="text-center font-bold">Ngày gửi</TableHead>
-            )}
-            {currentTab === 'delivered' && (
-              <TableHead className="text-center font-bold">Ngày nhận</TableHead>
+              <>
+                <TableHead className="text-center font-bold">Ngày gửi</TableHead>
+                <TableHead className="text-center font-bold">Xác nhận tại trường</TableHead>
+                <TableHead className="text-center font-bold">Ảnh xác nhận</TableHead>
+              </>
             )}
             <TableHead className="text-center font-bold">Hình ảnh quà</TableHead>
             {currentTab === 'pending' && (
-              <TableHead className="text-right font-bold">Thao tác</TableHead>
+              <TableHead className="text-right font-bold w-32">Thao tác</TableHead>
             )}
           </TableRow>
         </TableHeader>
         <TableBody>
-          {students.length === 0 ? (
+          {loading ? (
             <TableRow>
-              <TableCell colSpan={currentTab === 'delivered' ? 9 : (currentTab === 'shipping' ? 8 : 8)} className="text-center py-8 text-muted-foreground">
-                Không có học sinh nào
+              <TableCell colSpan={getTableColSpan(currentTab)} className="text-center py-20">
+                <div className="flex flex-col items-center gap-3">
+                  <Loader2 className="w-8 h-8 animate-spin text-eco-blue" />
+                  <p className="text-muted-foreground animate-pulse font-medium">Đang tải dữ liệu...</p>
+                </div>
+              </TableCell>
+            </TableRow>
+          ) : deliveries.length === 0 ? (
+            <TableRow>
+              <TableCell colSpan={getTableColSpan(currentTab)} className="text-center py-24">
+                <div className="flex flex-col items-center gap-4 max-w-xs mx-auto">
+                  <div className="w-16 h-16 rounded-full bg-muted/30 flex items-center justify-center">
+                    <Package className="w-8 h-8 text-muted-foreground/40" />
+                  </div>
+                  <p className="text-muted-foreground font-semibold">
+                    {selectedCampaignId ? "Không có dữ liệu trong danh sách này" : "Vui lòng chọn chiến dịch để xem dữ liệu"}
+                  </p>
+                </div>
               </TableCell>
             </TableRow>
           ) : (
-            students.map((student) => (
-              <TableRow key={student.id} className="hover:bg-muted/30">
+            deliveries.map((delivery) => (
+              <TableRow key={delivery.id} className="hover:bg-muted/30">
                 <TableCell>
                   <div className="flex items-center justify-center">
-                    {getRankIcon(student.rank)}
+                    {getRankIcon(delivery.rankPosition)}
                   </div>
                 </TableCell>
                 <TableCell>
                   <div className="flex items-center gap-3">
-                    <Avatar>
-                      <AvatarFallback>{getInitials(student.studentName)}</AvatarFallback>
+                    <Avatar className="h-9 w-9 border-2 border-eco-blue/10">
+                      <AvatarFallback className="bg-eco-blue/5 text-eco-blue">{getInitials(delivery.studentName)}</AvatarFallback>
                     </Avatar>
-                    <span className="font-semibold">{student.studentName}</span>
+                    <div className="flex flex-col">
+                      <span className="font-bold text-sm">{delivery.studentName}</span>
+                      <span className="text-[10px] text-muted-foreground font-mono">{delivery.studentCode}</span>
+                    </div>
                   </div>
                 </TableCell>
                 <TableCell>
-                  <div>
-                    <p className="font-medium">{student.schoolName}</p>
-                    <p className="text-xs text-muted-foreground flex items-center gap-1 mt-0.5">
+                  <div className="flex flex-col">
+                    <p className="font-semibold text-sm">{delivery.schoolName}</p>
+                    <p className="text-[10px] text-muted-foreground flex items-center gap-1 mt-0.5">
                       <MapPin className="w-3 h-3" />
-                      {student.schoolAddress}
+                      ID: {delivery.schoolId.substring(0, 8)}...
                     </p>
                   </div>
                 </TableCell>
                 <TableCell className="text-center">
-                  <span className="text-lg font-bold text-eco-green">{student.totalPoints}</span>
+                  <span className="text-lg font-bold text-eco-green leading-none">{delivery.totalScore}</span>
                 </TableCell>
                 <TableCell className="text-center">
-                  <Badge variant="outline" className={getStatusColor(student.rewardStatus)}>
-                    <span className="flex items-center gap-1">
-                      {getStatusIcon(student.rewardStatus)}
-                      {getStatusLabel(student.rewardStatus)}
+                  <Badge variant="outline" className={cn("px-2 py-0.5", getStatusColor(delivery.status))}>
+                    <span className="flex items-center gap-1.5 text-[11px] font-bold">
+                      {getStatusIcon(delivery.status)}
+                      {getStatusLabel(delivery.status)}
                     </span>
                   </Badge>
                 </TableCell>
                 {currentTab !== 'pending' && (
-                  <TableCell className="text-center">
-                    {student.shippingDate ? (
-                      <span className="text-sm">
-                        {new Date(student.shippingDate).toLocaleDateString('vi-VN')}
-                      </span>
-                    ) : (
-                      <span className="text-muted-foreground text-sm">-</span>
-                    )}
-                  </TableCell>
-                )}
-                {currentTab === 'delivered' && (
-                  <TableCell className="text-center">
-                    {student.deliveryDate ? (
-                      <span className="text-sm">
-                        {new Date(student.deliveryDate).toLocaleDateString('vi-VN')}
-                      </span>
-                    ) : (
-                      <span className="text-muted-foreground text-sm">-</span>
-                    )}
-                  </TableCell>
+                  <>
+                    <TableCell className="text-center">
+                      <div className="flex flex-col gap-1">
+                        <span className="text-xs font-bold whitespace-nowrap">
+                          {delivery.shippedAt ? new Date(delivery.shippedAt).toLocaleDateString('vi-VN') : '-'}
+                        </span>
+                        {delivery.shippingTrackingCode && (
+                          <Badge variant="outline" className="text-[9px] py-0 border-eco-blue/20 text-eco-blue bg-eco-blue/5">
+                            {delivery.shippingTrackingCode}
+                          </Badge>
+                        )}
+                      </div>
+                    </TableCell>
+
+                    <TableCell className="text-center">
+                      <div className="flex flex-col gap-1 min-w-[120px]">
+                        {delivery.arrivedAt && (
+                          <div className="flex flex-col">
+                            <span className="text-[10px] text-muted-foreground">Trường nhận:</span>
+                            <span className="text-xs font-semibold">{new Date(delivery.arrivedAt).toLocaleDateString('vi-VN')}</span>
+                            {delivery.arrivedConfirmedByName && <span className="text-[9px] italic text-muted-foreground">Bởi: {delivery.arrivedConfirmedByName}</span>}
+                          </div>
+                        )}
+                        {!delivery.arrivedAt && (
+                          <span className="text-muted-foreground text-xs italic">-</span>
+                        )}
+                      </div>
+                    </TableCell>
+
+                    <TableCell className="text-center">
+                      {delivery.deliveryImagePresignedUrl || delivery.deliveryImageUrl ? (
+                        <div className="flex justify-center">
+                          <img 
+                            src={delivery.deliveryImagePresignedUrl || delivery.deliveryImageUrl} 
+                            alt="Delivery proof"
+                            className="w-10 h-10 object-cover rounded border cursor-pointer hover:border-eco-blue transition-all"
+                            onClick={() => window.open(delivery.deliveryImagePresignedUrl || delivery.deliveryImageUrl, '_blank')}
+                          />
+                        </div>
+                      ) : (
+                        <span className="text-muted-foreground text-[11px] italic">Chưa có</span>
+                      )}
+                    </TableCell>
+                  </>
                 )}
                 <TableCell className="text-center">
-                  {student.rewardImage ? (
-                    <div className="flex justify-center">
+                  {delivery.rewardImagePresignedUrl || delivery.rewardImageUrl ? (
+                    <div className="flex justify-center group relative">
                       <img 
-                        src={student.rewardImage} 
-                        alt="Phần thưởng"
-                        className="w-16 h-16 object-cover rounded-lg border-2 cursor-pointer hover:scale-105 transition-transform"
-                        onClick={() => window.open(student.rewardImage, '_blank')}
+                        src={delivery.rewardImagePresignedUrl || delivery.rewardImageUrl} 
+                        alt={delivery.rewardName}
+                        className="w-12 h-12 object-cover rounded-md border-2 border-muted cursor-pointer hover:border-eco-blue transition-all"
+                        onClick={() => window.open(delivery.rewardImagePresignedUrl || delivery.rewardImageUrl, '_blank')}
                       />
                     </div>
                   ) : (
-                    <span className="text-muted-foreground text-sm">Chưa có</span>
+                    <span className="text-muted-foreground text-[11px] italic">Chưa có ảnh</span>
                   )}
                 </TableCell>
                 {currentTab === 'pending' && (
                   <TableCell className="text-right">
-                    <DropdownMenu>
-                      <DropdownMenuTrigger asChild>
-                        <Button variant="ghost" className="h-8 w-8 p-0">
-                          <span className="sr-only">Open menu</span>
-                          <MoreHorizontal className="h-4 w-4" />
-                        </Button>
-                      </DropdownMenuTrigger>
-                      <DropdownMenuContent align="end">
-                        <DropdownMenuItem onClick={() => handleSendReward(student)}>
-                          <Package className="w-4 h-4 mr-2" />
-                          Gửi quà
-                        </DropdownMenuItem>
-                      </DropdownMenuContent>
-                    </DropdownMenu>
+                    <Button 
+                      size="sm" 
+                      onClick={() => handleSendReward(delivery)}
+                      className="bg-eco-blue hover:bg-eco-blue/90 text-[11px] h-8 px-3 font-bold gap-2"
+                    >
+                      <Truck className="w-3 h-3" />
+                      Gửi quà
+                    </Button>
                   </TableCell>
                 )}
               </TableRow>
@@ -303,159 +324,231 @@ export default function PartnershipRewards() {
     </div>
   );
 
-  const pendingCount = getStudentsByStatus('pending').length;
-  const shippingCount = getStudentsByStatus('shipping').length;
-  const deliveredCount = getStudentsByStatus('delivered').length;
-
   return (
-    <div className="space-y-6 animate-fade-in">
+    <div className="space-y-6 animate-fade-in p-6">
       {/* Header */}
-      <div className="flex items-center justify-between">
-        <div className="flex items-center gap-4">
-          <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-eco-orange to-yellow-500 flex items-center justify-center">
-            <Gift className="w-7 h-7 text-white" />
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+        <div className="flex items-center gap-5">
+          <div className="w-16 h-16 rounded-[24px] bg-gradient-to-br from-eco-blue/20 to-eco-blue/5 flex items-center justify-center border-2 border-eco-blue/10 shadow-sm">
+            <Gift className="w-8 h-8 text-eco-blue" />
           </div>
           <div>
-            <h1 className="text-2xl font-bold text-foreground">Quản lý phần thưởng</h1>
-            <p className="text-muted-foreground">Gửi quà cho top 5 học sinh xuất sắc</p>
+            <h1 className="text-3xl font-extrabold text-foreground tracking-tight">Quản lý phần thưởng</h1>
+            <p className="text-muted-foreground text-sm font-medium">Trao thưởng cho những nỗ lực bảo vệ môi trường</p>
           </div>
         </div>
       </div>
 
-      {/* Campaign Selector */}
-      <div className="flex items-center gap-4 p-4 bg-muted/30 rounded-xl border-2">
-        <Flag className="w-5 h-5 text-eco-blue" />
-        <div className="flex-1">
-          <p className="text-sm font-semibold text-muted-foreground mb-1">Chọn chiến dịch</p>
-          <Select value={selectedCampaign} onValueChange={setSelectedCampaign}>
-            <SelectTrigger className="w-full max-w-md">
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              {mockCampaigns.map((campaign) => (
-                <SelectItem key={campaign.id} value={campaign.id}>
-                  {campaign.name}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
+      <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
+        {/* Campaign Selection */}
+        <div className="lg:col-span-3">
+          <div className="bg-card p-6 rounded-3xl border-2 border-eco-blue/5 shadow-sm transition-all hover:shadow-md h-full flex flex-col justify-center">
+            <div className="flex items-center gap-3 mb-5">
+              <div className="p-2.5 rounded-xl bg-eco-blue/10">
+                <Flag className="w-5 h-5 text-eco-blue" />
+              </div>
+              <h3 className="font-bold text-lg text-foreground/90 tracking-tight">Chiến dịch đang thực hiện</h3>
+            </div>
+            <Select value={selectedCampaignId} onValueChange={setSelectedCampaignId}>
+              <SelectTrigger className="w-full bg-muted/20 border-2 border-muted-foreground/10 font-bold h-14 rounded-2xl focus:ring-2 focus:ring-eco-blue/20 transition-all text-base px-6">
+                <SelectValue placeholder="Chọn một chiến dịch để quản lý phần thưởng" />
+              </SelectTrigger>
+              <SelectContent className="rounded-2xl border-2 shadow-xl overflow-hidden">
+                {activeAndCompletedCampaigns.map((campaign) => (
+                  <SelectItem key={campaign.id} value={campaign.id} className="rounded-xl my-1 focus:bg-eco-blue/5 focus:text-eco-blue cursor-pointer px-4">
+                    <div className="flex flex-row items-center justify-between gap-4 py-2 w-full">
+                      <span className="text-base font-bold leading-tight">{campaign.campaignName}</span>
+                      <Badge variant="secondary" className={cn("whitespace-nowrap text-[10px] uppercase font-bold px-2 py-0.5 rounded-lg", 
+                        campaign.status === 'on_going' ? "bg-eco-blue/10 text-eco-blue" : "bg-eco-green/10 text-eco-green")}>
+                        {campaign.status === 'on_going' ? 'Đang diễn ra' : 'Đã kết thúc'}
+                      </Badge>
+                    </div>
+                  </SelectItem>
+                ))}
+                {activeAndCompletedCampaigns.length === 0 && (
+                  <div className="p-6 text-center text-muted-foreground text-sm flex flex-col items-center gap-2">
+                    <Loader2 className="w-5 h-5 animate-spin text-eco-blue/40" />
+                    <p className="italic font-medium">Đang tải danh sách chiến dịch...</p>
+                  </div>
+                )}
+              </SelectContent>
+            </Select>
+          </div>
+        </div>
+        
+        {/* Quick Stats Summary */}
+        <div className="bg-gradient-to-br from-eco-green to-eco-blue p-6 rounded-3xl text-white shadow-xl relative overflow-hidden flex flex-col justify-center min-h-[140px] group transition-all hover:scale-[1.02]">
+            <div className="absolute -top-10 -right-10 w-40 h-40 bg-white/10 rounded-full blur-3xl group-hover:bg-white/20 transition-all" />
+            <div className="relative z-10 flex items-center gap-5">
+                <div className="p-4 bg-white/20 backdrop-blur-md rounded-2xl shadow-inner border border-white/20">
+                    <Trophy className="w-8 h-8 text-white drop-shadow-md" />
+                </div>
+                <div className="flex flex-col gap-1">
+                    <p className="text-[11px] font-black text-white/90 uppercase tracking-[0.2em]">Tổng học sinh</p>
+                    <div className="flex items-baseline gap-1.5">
+                        <span className="text-5xl font-black tracking-tighter">{rewardDeliveries.length}</span>
+                        <span className="text-xs font-bold text-white/70">đạt giải</span>
+                    </div>
+                </div>
+            </div>
         </div>
       </div>
 
       {/* Status Tabs */}
-      <Tabs defaultValue="pending" className="space-y-4">
-        <TabsList className="grid w-full grid-cols-3">
-          <TabsTrigger value="pending" className="gap-2">
-            <Clock className="w-4 h-4" />
-            Chờ gửi ({pendingCount})
+      <Tabs defaultValue="pending" className="space-y-8">
+        <TabsList className="bg-muted/30 p-1.5 grid w-full grid-cols-5 rounded-[20px] border-2 border-muted/20 min-h-[64px] shadow-inner">
+          <TabsTrigger 
+            value="pending" 
+            className="rounded-[16px] font-black py-3 data-[state=active]:bg-card data-[state=active]:text-eco-blue data-[state=active]:shadow-md transition-all flex flex-col sm:flex-row items-center justify-center gap-1 sm:gap-3 text-xs sm:text-sm tracking-tight group"
+          >
+            <div className="p-1.5 rounded-lg bg-yellow-500/10 text-yellow-600 group-data-[state=active]:bg-eco-blue/10 group-data-[state=active]:text-eco-blue transition-colors">
+              <Clock className="w-3 h-3 sm:w-4 sm:h-4" />
+            </div>
+            <span>Chờ gửi</span>
+            <Badge variant="secondary" className="ml-0.5 bg-muted/50 group-data-[state=active]:bg-eco-blue/10 group-data-[state=active]:text-eco-blue rounded-full px-1.5 py-0 min-w-[20px] text-[10px]">
+              {rewardDeliveries.filter(d => d.status === 'PREPARING').length}
+            </Badge>
           </TabsTrigger>
-          <TabsTrigger value="shipping" className="gap-2">
-            <Truck className="w-4 h-4" />
-            Đang gửi ({shippingCount})
+          <TabsTrigger 
+            value="shipping" 
+            className="rounded-[16px] font-black py-3 data-[state=active]:bg-card data-[state=active]:text-eco-blue data-[state=active]:shadow-md transition-all flex flex-col sm:flex-row items-center justify-center gap-1 sm:gap-3 text-xs sm:text-sm tracking-tight group"
+          >
+            <div className="p-1.5 rounded-lg bg-eco-blue/10 text-eco-blue transition-colors">
+              <Truck className="w-3 h-3 sm:w-4 sm:h-4" />
+            </div>
+            <span>Đang gửi</span>
+            <Badge variant="secondary" className="ml-0.5 bg-muted/50 group-data-[state=active]:bg-eco-blue/10 group-data-[state=active]:text-eco-blue rounded-full px-1.5 py-0 min-w-[20px] text-[10px]">
+              {rewardDeliveries.filter(d => d.status === 'SHIPPING').length}
+            </Badge>
           </TabsTrigger>
-          <TabsTrigger value="delivered" className="gap-2">
-            <CheckCircle className="w-4 h-4" />
-            Đã giao ({deliveredCount})
+          <TabsTrigger 
+            value="arrived" 
+            className="rounded-[16px] font-black py-3 data-[state=active]:bg-card data-[state=active]:text-eco-blue data-[state=active]:shadow-md transition-all flex flex-col sm:flex-row items-center justify-center gap-1 sm:gap-3 text-xs sm:text-sm tracking-tight group"
+          >
+            <div className="p-1.5 rounded-lg bg-purple-500/10 text-purple-600 group-data-[state=active]:bg-eco-blue/10 group-data-[state=active]:text-eco-blue transition-colors">
+              <MapPin className="w-3 h-3 sm:w-4 sm:h-4" />
+            </div>
+            <span>Tại trường</span>
+            <Badge variant="secondary" className="ml-0.5 bg-muted/50 group-data-[state=active]:bg-eco-blue/10 group-data-[state=active]:text-eco-blue rounded-full px-1.5 py-0 min-w-[20px] text-[10px]">
+              {rewardDeliveries.filter(d => d.status === 'ARRIVED').length}
+            </Badge>
+          </TabsTrigger>
+          <TabsTrigger 
+            value="delivered" 
+            className="rounded-[16px] font-black py-3 data-[state=active]:bg-card data-[state=active]:text-eco-blue data-[state=active]:shadow-md transition-all flex flex-col sm:flex-row items-center justify-center gap-1 sm:gap-3 text-xs sm:text-sm tracking-tight group"
+          >
+            <div className="p-1.5 rounded-lg bg-eco-green/10 text-eco-green group-data-[state=active]:bg-eco-blue/10 group-data-[state=active]:text-eco-blue transition-colors">
+              <CheckCircle className="w-3 h-3 sm:w-4 sm:h-4" />
+            </div>
+            <span>Đã trao HS</span>
+            <Badge variant="secondary" className="ml-0.5 bg-muted/50 group-data-[state=active]:bg-eco-blue/10 group-data-[state=active]:text-eco-blue rounded-full px-1.5 py-0 min-w-[20px] text-[10px]">
+              {rewardDeliveries.filter(d => d.status === 'DELIVERED').length}
+            </Badge>
+          </TabsTrigger>
+          <TabsTrigger 
+            value="confirmed" 
+            className="rounded-[16px] font-black py-3 data-[state=active]:bg-card data-[state=active]:text-eco-blue data-[state=active]:shadow-md transition-all flex flex-col sm:flex-row items-center justify-center gap-1 sm:gap-3 text-xs sm:text-sm tracking-tight group"
+          >
+            <div className="p-1.5 rounded-lg bg-blue-600/10 text-blue-600 group-data-[state=active]:bg-eco-blue/10 group-data-[state=active]:text-eco-blue transition-colors">
+              <Gift className="w-3 h-3 sm:w-4 sm:h-4" />
+            </div>
+            <span>Xác nhận</span>
+            <Badge variant="secondary" className="ml-0.5 bg-muted/50 group-data-[state=active]:bg-eco-blue/10 group-data-[state=active]:text-eco-blue rounded-full px-1.5 py-0 min-w-[20px] text-[10px]">
+              {rewardDeliveries.filter(d => d.status === 'CONFIRMED').length}
+            </Badge>
           </TabsTrigger>
         </TabsList>
 
-        <TabsContent value="pending">
-          {renderStudentTable(getStudentsByStatus('pending'), 'pending')}
+        <TabsContent value="pending" className="mt-0 focus-visible:outline-none">
+          {renderStudentTable(getDeliveriesByStatus('pending'), 'pending')}
         </TabsContent>
 
-        <TabsContent value="shipping">
-          {renderStudentTable(getStudentsByStatus('shipping'), 'shipping')}
+        <TabsContent value="shipping" className="mt-0 focus-visible:outline-none">
+          {renderStudentTable(getDeliveriesByStatus('shipping'), 'shipping')}
         </TabsContent>
 
-        <TabsContent value="delivered">
-          {renderStudentTable(getStudentsByStatus('delivered'), 'delivered')}
+        <TabsContent value="arrived" className="mt-0 focus-visible:outline-none">
+          {renderStudentTable(getDeliveriesByStatus('arrived'), 'arrived')}
+        </TabsContent>
+
+        <TabsContent value="delivered" className="mt-0 focus-visible:outline-none">
+          {renderStudentTable(getDeliveriesByStatus('delivered'), 'delivered')}
+        </TabsContent>
+
+        <TabsContent value="confirmed" className="mt-0 focus-visible:outline-none">
+          {renderStudentTable(getDeliveriesByStatus('confirmed'), 'confirmed')}
         </TabsContent>
       </Tabs>
 
       {/* Shipping Dialog */}
       <Dialog open={isShippingDialogOpen} onOpenChange={setIsShippingDialogOpen}>
-        <DialogContent className="max-w-2xl">
-          <DialogHeader>
-            <DialogTitle>Gửi phần thưởng</DialogTitle>
-            <DialogDescription>
-              Tải lên hình ảnh phần thưởng cho học sinh {selectedStudent?.studentName}
+        <DialogContent className="max-w-xl rounded-3xl p-0 overflow-hidden border-none shadow-2xl">
+          <div className="bg-gradient-to-r from-eco-blue to-eco-blue/80 p-6 text-white">
+            <DialogTitle className="text-2xl font-extrabold flex items-center gap-3">
+              <div className="p-2 bg-white/20 rounded-lg">
+                <Truck className="w-6 h-6" />
+              </div>
+              Cập nhật vận chuyển
+            </DialogTitle>
+            <DialogDescription className="text-white/80 font-medium mt-2">
+              Xác nhận bắt đầu gửi phần thưởng cho học sinh <span className="text-white font-black underline">{selectedDelivery?.studentName}</span>
             </DialogDescription>
-          </DialogHeader>
+          </div>
 
-          <div className="space-y-4">
-            <div className="p-3 bg-muted/30 rounded-lg">
-              <p className="text-sm font-semibold mb-1">Địa chỉ gửi</p>
-              <p className="text-sm text-muted-foreground flex items-start gap-2">
-                <MapPin className="w-4 h-4 mt-0.5 flex-shrink-0" />
-                {selectedStudent?.schoolAddress}
-              </p>
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="reward-image">Hình ảnh phần thưởng *</Label>
-              <div className="border-2 border-dashed rounded-lg p-6 text-center">
-                {rewardImagePreview ? (
-                  <div className="space-y-3">
-                    <img 
-                      src={rewardImagePreview} 
-                      alt="Preview" 
-                      className="max-h-64 mx-auto rounded-lg"
-                    />
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => {
-                        setRewardImageFile(null);
-                        setRewardImagePreview(null);
-                      }}
-                    >
-                      Chọn ảnh khác
-                    </Button>
-                  </div>
-                ) : (
-                  <div className="space-y-3">
-                    <div className="w-16 h-16 mx-auto rounded-full bg-muted flex items-center justify-center">
-                      <ImageIcon className="w-8 h-8 text-muted-foreground" />
-                    </div>
-                    <div>
-                      <p className="text-sm font-medium">Tải lên hình ảnh phần thưởng</p>
-                      <p className="text-xs text-muted-foreground mt-1">PNG, JPG tối đa 5MB</p>
-                    </div>
-                    <Input
-                      id="reward-image"
-                      type="file"
-                      accept="image/*"
-                      onChange={handleImageChange}
-                      className="max-w-xs mx-auto"
-                    />
-                  </div>
-                )}
+          <div className="p-8 space-y-6">
+            <div className="p-5 bg-muted/40 rounded-2xl border-2 border-eco-blue/5">
+              <p className="text-[10px] font-black text-muted-foreground uppercase tracking-[0.2em] mb-2 px-1">Địa chỉ nhận (Trường)</p>
+              <div className="flex items-start gap-4">
+                <div className="mt-1 p-2 bg-eco-blue/10 rounded-full">
+                    <MapPin className="w-5 h-5 text-eco-blue" />
+                </div>
+                <div className="flex flex-col">
+                    <p className="font-bold text-foreground leading-tight">{selectedDelivery?.schoolName}</p>
+                    <p className="text-sm text-muted-foreground mt-1.5 font-medium italic">ID trường: {selectedDelivery?.schoolId}</p>
+                </div>
               </div>
             </div>
 
-            <div className="space-y-2">
-              <Label htmlFor="notes">Ghi chú</Label>
-              <Textarea
-                id="notes"
-                placeholder="Thông tin bổ sung về phần thưởng..."
-                value={shippingNotes}
-                onChange={(e) => setShippingNotes(e.target.value)}
-                rows={3}
-              />
+            <div className="space-y-5">
+              <div className="space-y-2.5">
+                <Label htmlFor="tracking" className="text-xs font-black uppercase tracking-widest px-1">Mã vận đơn (nếu có)</Label>
+                <div className="relative">
+                    <Package className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                    <Input
+                        id="tracking"
+                        placeholder="VD: GHN-123456789"
+                        value={trackingCode}
+                        onChange={(e) => setTrackingCode(e.target.value)}
+                        className="h-12 pl-12 rounded-xl focus:ring-eco-blue border-2 font-medium"
+                    />
+                </div>
+              </div>
+
+              <div className="space-y-2.5">
+                <Label htmlFor="notes" className="text-xs font-black uppercase tracking-widest px-1 text-muted-foreground">Ghi chú gửi hàng</Label>
+                <Textarea
+                  id="notes"
+                  placeholder="Nhập thông tin ghi chú..."
+                  value={shippingNotes}
+                  onChange={(e) => setShippingNotes(e.target.value)}
+                  rows={4}
+                  className="rounded-xl border-2 focus:ring-eco-blue font-medium p-4"
+                />
+              </div>
             </div>
           </div>
 
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setIsShippingDialogOpen(false)}>
-              Hủy
+          <DialogFooter className="p-6 bg-muted/20 border-t flex items-center justify-end gap-3 px-8">
+            <Button variant="ghost" className="font-bold px-6 rounded-xl h-12" onClick={() => setIsShippingDialogOpen(false)}>
+              Hủy bỏ
             </Button>
             <Button 
               onClick={handleConfirmShipping}
-              disabled={!rewardImageFile}
-              className="bg-eco-orange hover:bg-eco-orange/90"
+              disabled={loading}
+              className="bg-eco-blue hover:bg-eco-blue/90 font-black px-8 rounded-xl h-12 gap-2 shadow-lg shadow-eco-blue/20"
             >
-              <Package className="w-4 h-4 mr-2" />
-              Xác nhận gửi
+              {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Package className="w-4 h-4" />}
+              Xác nhận bắt đầu gửi
             </Button>
           </DialogFooter>
         </DialogContent>

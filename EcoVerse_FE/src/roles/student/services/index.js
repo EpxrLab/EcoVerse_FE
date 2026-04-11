@@ -132,6 +132,15 @@ const submitGame = async (sessionId, payload) => {
   }
 };
 
+const getMyRewardDeliveries = async () => {
+  try {
+    const res = await axios.get("/rewards/deliveries/my");
+    return res.data;
+  } catch (error) {
+    console.log(error);
+  }
+};
+
 export {
   getAuthenticatedStudentProfile,
   getAllRewards,
@@ -146,4 +155,5 @@ export {
   getAttemptResult,
   startGame,
   submitGame,
+  getMyRewardDeliveries,
 };
