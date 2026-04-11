@@ -223,6 +223,7 @@ export function RewardList({ rewards, status, onMarkDelivered, onConfirm, onAppr
           <TableHead className="font-bold">Phần thưởng</TableHead>
           <TableHead className="font-bold text-center">Ngày nhận </TableHead>
           <TableHead className="font-bold text-center">Ngày trao </TableHead>
+          <TableHead className="text-center font-bold">Ảnh xác nhận</TableHead>
           <TableHead className="text-center font-bold">Trạng thái</TableHead>
           <TableHead className="text-right font-bold w-[100px]">Thao tác</TableHead>
         </TableRow>
@@ -233,18 +234,56 @@ export function RewardList({ rewards, status, onMarkDelivered, onConfirm, onAppr
             <TableCell className="font-mono text-sm">{reward.requestCode || reward.id}</TableCell>
             <TableCell>
               <p className="font-semibold">{reward.student}</p>
-              <p className="text-xs text-muted-foreground">Lớp {reward.class}</p>
             </TableCell>
             <TableCell>
               <Badge variant="outline" className="bg-eco-green/10 text-eco-green border-eco-green/25">
                 {reward.campaignName}
               </Badge>
             </TableCell>
-            <TableCell><span className="font-medium">{reward.rewardName}</span></TableCell>
+            <TableCell>
+              <div className="flex items-center gap-3">
+                {reward.rewardImagePresignedUrl || reward.rewardImageUrl ? (
+                  <div className="w-10 h-10 rounded-md border overflow-hidden flex-shrink-0">
+                    <img 
+                      src={reward.rewardImagePresignedUrl || reward.rewardImageUrl} 
+                      alt={reward.rewardName} 
+                      className="w-full h-full object-cover" 
+                    />
+                  </div>
+                ) : (
+                  <div className="w-10 h-10 rounded-md border flex items-center justify-center bg-muted/20 flex-shrink-0">
+                    <Gift className="w-5 h-5 text-muted-foreground/40" />
+                  </div>
+                )}
+                <span className="font-medium">{reward.rewardName}</span>
+              </div>
+            </TableCell>
 
             <TableCell className="text-center text-muted-foreground"> {reward.receivedAt || "-"} </TableCell>
             <TableCell className="text-center font-medium"> {reward.collectedAt || reward.givenAt || "-"} </TableCell>
             
+            <TableCell className="text-center">
+              {reward.deliveryImagePresignedUrl || reward.deliveryImageUrl ? (
+                <Dialog>
+                  <DialogTrigger asChild>
+                    <div className="w-10 h-10 rounded border overflow-hidden mx-auto cursor-pointer hover:opacity-80 transition-opacity flex items-center justify-center bg-muted/20">
+                      <img src={reward.deliveryImagePresignedUrl || reward.deliveryImageUrl} alt="Delivery" className="w-full h-full object-cover" />
+                    </div>
+                  </DialogTrigger>
+                  <DialogContent className="max-w-xl">
+                    <DialogHeader>
+                      <DialogTitle>Ảnh xác nhận trao quà</DialogTitle>
+                    </DialogHeader>
+                    <div className="mt-2 rounded-xl overflow-hidden border-2 shadow-sm bg-muted/10">
+                      <img src={reward.deliveryImagePresignedUrl || reward.deliveryImageUrl} alt="Delivery confirmation" className="w-full h-auto" />
+                    </div>
+                  </DialogContent>
+                </Dialog>
+              ) : (
+                <span className="text-muted-foreground text-xs italic">Chưa có</span>
+              )}
+            </TableCell>
+
             <TableCell className="text-center">
                {reward.status === 'collected' ? (
                   <Badge variant="outline" className="bg-eco-green/10 text-eco-green border-eco-green/25">
@@ -258,9 +297,13 @@ export function RewardList({ rewards, status, onMarkDelivered, onConfirm, onAppr
                   <Badge variant="outline" className="bg-eco-blue/10 text-eco-blue border-eco-blue/25">
                     Đã về trường
                   </Badge>
+                ) : reward.status === 'shipping' ? (
+                  <Badge variant="outline" className="bg-blue-400/10 text-blue-500 border-blue-400/25">
+                    Đang vận chuyển
+                  </Badge>
                 ) : (
                   <Badge variant="outline" className="bg-eco-orange/10 text-eco-orange border-eco-orange/25">
-                    Đang vận chuyển
+                    Chờ đối tác gửi
                   </Badge>
                 )}
             </TableCell>
@@ -278,14 +321,14 @@ export function RewardList({ rewards, status, onMarkDelivered, onConfirm, onAppr
                     <DropdownMenuLabel>Thao tác</DropdownMenuLabel>
                     
                     {reward.status === 'shipping' && (
-                      <DropdownMenuItem onClick={() => onConfirm(reward.id)} className="text-eco-blue font-medium cursor-pointer">
+                      <DropdownMenuItem onClick={() => onConfirm(reward.id, 'shipping')} className="text-eco-blue font-medium cursor-pointer">
                         <PackageCheck className="mr-2 h-4 w-4" />
                         Đã nhận về trường
                       </DropdownMenuItem>
                     )}
 
                     {reward.status === 'at_school' && (
-                      <DropdownMenuItem onClick={() => onConfirm(reward.id)} className="text-eco-green font-medium cursor-pointer">
+                      <DropdownMenuItem onClick={() => onConfirm(reward.id, 'at_school')} className="text-eco-green font-medium cursor-pointer">
                         <Check className="mr-2 h-4 w-4" />
                         Xác nhận đã trao
                       </DropdownMenuItem>

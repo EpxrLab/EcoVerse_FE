@@ -180,7 +180,9 @@ export function InvitationList({
                           </DropdownMenuItem>
                         </>
                       )}
-                      {readOnly && invitation.invitation_status === 'APPROVED' && (
+                      {readOnly && 
+                       invitation.invitation_status === 'APPROVED' && 
+                       invitation.campaignCampaignStatus === 'JOINING' && (
                         <DropdownMenuItem onClick={() => onAddStudent(invitation)} className="text-eco-green focus:text-eco-green focus:bg-eco-green/10">
                           <Users className="mr-2 h-4 w-4" />
                           <span>Thêm học sinh</span>

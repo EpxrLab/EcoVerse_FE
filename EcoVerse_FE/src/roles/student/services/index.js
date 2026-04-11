@@ -142,6 +142,15 @@ const getCampaignLeaderboard = async (campaignId) => {
   }
 };
 
+const getMyRewardDeliveries = async () => {
+  try {
+    const res = await axios.get("/rewards/deliveries/my");
+    return res.data;
+  } catch (error) {
+    console.log(error);
+  }
+};
+
 export {
   getAuthenticatedStudentProfile,
   getAllRewards,
@@ -157,4 +166,5 @@ export {
   startGame,
   submitGame,
   getCampaignLeaderboard,
+  getMyRewardDeliveries,
 };

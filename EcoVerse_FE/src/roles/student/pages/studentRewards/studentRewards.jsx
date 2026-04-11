@@ -9,7 +9,6 @@ import {
   CheckCircleOutlined,
   CloseCircleOutlined,
   WarningOutlined,
-  BgColorsOutlined,
   TagOutlined,
   InboxOutlined,
   StopOutlined,
@@ -22,7 +21,9 @@ import {
   getAllMyRequests,
   getAllRewards,
   getAuthenticatedStudentProfile,
+  getMyRewardDeliveries,
 } from "../../services";
+import { cn } from "@/shared/lib/utils";
 
 const TYPE_CONFIG = {
   PHYSICAL: {
@@ -74,6 +75,44 @@ const STATUS_CONFIG = {
     tw: "bg-red-50 text-red-600 border-red-200",
     stripe: "bg-red-500",
   },
+};
+
+const DELIVERY_STATUS_CONFIG = {
+  PREPARING: {
+    text: "Chuẩn bị",
+    color: "default",
+    icon: <ClockCircleOutlined />,
+    stripe: "bg-gray-400",
+    description: "Đối tác đang chuẩn bị phần quà của bạn."
+  },
+  SHIPPING: {
+    text: "Vận chuyển",
+    color: "blue",
+    icon: <ClockCircleOutlined />,
+    stripe: "bg-blue-500",
+    description: "Phần quà đang trên đường tới trường."
+  },
+  ARRIVED: {
+    text: "Tại trường",
+    color: "purple",
+    icon: <HomeOutlined />,
+    stripe: "bg-purple-500",
+    description: "Phần quà đã sẵn sàng tại văn phòng trường."
+  },
+  DELIVERED: {
+    text: "Đã trao",
+    color: "green",
+    icon: <CheckCircleOutlined />,
+    stripe: "bg-green-500",
+    description: "Bạn đã nhận được phần quà này."
+  },
+  CONFIRMED: {
+    text: "Đã xác nhận",
+    color: "success",
+    icon: <CheckCircleOutlined />,
+    stripe: "bg-emerald-600",
+    description: "Phụ huynh đã xác nhận nhận quà thành công."
+  }
 };
 
 const containerVariants = {
@@ -333,7 +372,6 @@ function RequestCard({ request, onCancel }) {
                   <span className="flex items-center gap-1 font-semibold text-amber-600 bg-amber-50 px-2 py-0.5 rounded border border-amber-100">
                     <CoinIcon className="w-3 h-3" />
                     {request.totalCoins}{" "}
-                    {/* Sửa từ coinCost thành totalCoins */}
                   </span>
                   <span className="flex items-center gap-1">
                     <ClockCircleOutlined />
@@ -390,13 +428,11 @@ function RequestCard({ request, onCancel }) {
 
             {request.status === "REJECTED" && (
               <div className="mt-3">
-                {/* Label trạng thái */}
                 <div className="flex items-center gap-1.5 text-xs text-red-600 font-bold mb-2">
                   <CloseCircleOutlined />
                   <span>YÊU CẦU BỊ TỪ CHỐI</span>
                 </div>
 
-                {/* Box hiển thị lý do - Hiển thị luôn field rejectedReason */}
                 <div className="bg-red-50 border border-red-100 rounded-xl p-3">
                   <div className="text-[11px] uppercase tracking-wider text-red-400 font-semibold mb-1">
                     Lý do từ chối:
@@ -442,6 +478,119 @@ function RequestCard({ request, onCancel }) {
   );
 }
 
+// ─── PartnershipRewardCard ──────────────────────────────────────────────────
+
+function PartnershipRewardCard({ delivery }) {
+  const dc = DELIVERY_STATUS_CONFIG[delivery.status] ?? DELIVERY_STATUS_CONFIG.PREPARING;
+
+  const formatDate = (dateStr) => {
+    if (!dateStr) return "—";
+    return new Date(dateStr).toLocaleString("vi-VN", {
+      hour: "2-digit",
+      minute: "2-digit",
+      day: "2-digit",
+      month: "2-digit",
+      year: "numeric",
+    });
+  };
+
+  return (
+    <Card
+      className="rounded-2xl border-2 hover:shadow-lg transition-all"
+      bodyStyle={{ padding: 0 }}
+    >
+      <div className="flex">
+        <div className={`w-2 rounded-l-2xl flex-shrink-0 ${dc.stripe}`} />
+        <div className="flex-1 p-4">
+          <div className="flex items-start justify-between gap-4 mb-3">
+            <div className="flex items-center gap-4">
+              <div className="w-12 h-12 rounded-xl flex items-center justify-center text-2xl border overflow-hidden bg-blue-50/50">
+                {delivery.rewardImagePresignedUrl || delivery.rewardImageUrl ? (
+                  <img
+                    src={delivery.rewardImagePresignedUrl || delivery.rewardImageUrl}
+                    alt={delivery.rewardName}
+                    className="w-full h-full object-cover"
+                  />
+                ) : (
+                  <GiftOutlined className="text-blue-300" />
+                )}
+              </div>
+              <div>
+                <h3 className="font-bold text-gray-800 mb-0.5">
+                  {delivery.rewardName}
+                </h3>
+                <div className="flex flex-col gap-1">
+                  <span className="text-[11px] text-gray-400 font-medium">
+                    Chiến dịch: {delivery.campaignName}
+                  </span>
+                  {delivery.shippingTrackingCode && (
+                    <Tag color="blue" className="w-fit text-[10px] m-0">
+                      Mã: {delivery.shippingTrackingCode}
+                    </Tag>
+                  )}
+                </div>
+              </div>
+            </div>
+            <Tag color={dc.color} icon={dc.icon} className="rounded-full font-bold m-0 h-fit py-0.5 px-3">
+              {dc.text}
+            </Tag>
+          </div>
+
+          <div className="pt-2 border-t border-dashed border-gray-200">
+            <p className="text-[11px] text-gray-400 mb-3 italic">
+              {dc.description}
+            </p>
+            
+            <div className="grid grid-cols-2 gap-x-4 gap-y-2 text-[10px] bg-gray-50/80 p-3 rounded-xl border border-gray-100">
+              <div className="flex flex-col">
+                <span className="text-gray-400 font-bold uppercase tracking-wider mb-0.5">Ngày đạt giải</span>
+                <span className="text-gray-600">{formatDate(delivery.createdAt)}</span>
+              </div>
+              {delivery.shippedAt && (
+                <div className="flex flex-col">
+                  <span className="text-gray-400 font-bold uppercase tracking-wider mb-0.5">Ngày gửi quà</span>
+                  <span className="text-gray-600">{formatDate(delivery.shippedAt)}</span>
+                </div>
+              )}
+              {delivery.arrivedAt && (
+                <div className="flex flex-col">
+                  <span className="text-gray-400 font-bold uppercase tracking-wider mb-0.5">Quà về trường</span>
+                  <span className="text-gray-600">{formatDate(delivery.arrivedAt)}</span>
+                </div>
+              )}
+              {delivery.deliveredAt && (
+                <div className="flex flex-col">
+                  <span className="text-gray-400 font-bold uppercase tracking-wider mb-0.5">Đã nhận quà</span>
+                  <span className="text-gray-600">{formatDate(delivery.deliveredAt)}</span>
+                </div>
+              )}
+            </div>
+
+            {(delivery.status === 'ARRIVED' || delivery.status === 'DELIVERED' || delivery.status === 'CONFIRMED') && 
+             (delivery.deliveryImagePresignedUrl || delivery.deliveryImageUrl) && (
+              <div className="mt-3 flex items-center gap-3 p-2 bg-blue-50/30 rounded-xl border border-blue-100/50">
+                <div className="w-10 h-10 rounded-lg overflow-hidden border border-white shadow-sm flex-shrink-0">
+                  <img 
+                    src={delivery.deliveryImagePresignedUrl || delivery.deliveryImageUrl} 
+                    className="w-full h-full object-cover cursor-pointer hover:opacity-80 transition-opacity" 
+                    alt="Proof"
+                    onClick={() => window.open(delivery.deliveryImagePresignedUrl || delivery.deliveryImageUrl, '_blank')}
+                  />
+                </div>
+                <div className="flex flex-col">
+                  <span className="text-[10px] font-bold text-blue-600">Ảnh minh chứng</span>
+                  <span className="text-[9px] text-gray-400">Trường đã xác nhận trao quà</span>
+                </div>
+              </div>
+            )}
+          </div>
+        </div>
+      </div>
+    </Card>
+  );
+}
+
+
 // ─── RewardGrid ───────────────────────────────────────────────────────────────
 
 function RewardGrid({ rewards, coins, type, onRedeem }) {
@@ -479,19 +628,29 @@ export default function StudentRewards() {
   const [student, setStudent] = useState(null);
   const [rewards, setRewards] = useState([]);
   const [requests, setRequests] = useState([]);
+  const [partnershipRewards, setPartnershipRewards] = useState([]);
+  const [loading, setLoading] = useState(false);
   const [shopTab, setShopTab] = useState("PHYSICAL");
   const [reqTab, setReqTab] = useState("PENDING");
+  const [delTab, setDelTab] = useState("ALL");
 
   const fetchData = async () => {
     try {
-      const res1 = await getAuthenticatedStudentProfile();
+      setLoading(true);
+      const [res1, res2, res3, res4] = await Promise.all([
+        getAuthenticatedStudentProfile(),
+        getAllRewards(),
+        getAllMyRequests(),
+        getMyRewardDeliveries()
+      ]);
       setStudent(res1.data);
-      const res2 = await getAllRewards();
       setRewards(res2.data);
-      const res3 = await getAllMyRequests();
       setRequests(res3.data);
+      setPartnershipRewards(res4.data || []);
     } catch (error) {
       console.log(error);
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -754,6 +913,77 @@ export default function StudentRewards() {
                 ),
               }))}
             />
+          </Card>
+        </motion.div>
+
+        {/* ── Partnership Rewards ── */}
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.2 }}
+        >
+          <Card
+            className="rounded-3xl border-2 shadow-sm overflow-hidden"
+            title={
+              <div className="flex items-center justify-between flex-wrap gap-2">
+                <div className="flex items-center gap-2">
+                  <GiftOutlined className="text-blue-500 text-xl" />
+                  <span className="text-lg font-extrabold text-gray-800 tracking-tight">Lịch sử nhận thưởng từ đối tác</span>
+                </div>
+                <Tag color="cyan" className="rounded-full font-bold px-3 m-0">
+                  {partnershipRewards.length} quà tặng
+                </Tag>
+              </div>
+            }
+            bodyStyle={{ padding: "0 24px 24px" }}
+          >
+            {loading ? (
+              <div className="py-20 flex flex-col items-center justify-center gap-3">
+                <Spin size="large" />
+                <p className="text-gray-400 font-medium">Đang tải dữ liệu...</p>
+              </div>
+            ) : partnershipRewards.length === 0 ? (
+              <div className="flex flex-col items-center gap-4 py-16 text-gray-400 bg-gray-50/50 rounded-2xl border border-dashed border-gray-200 mt-4">
+                <InboxOutlined className="text-6xl opacity-10" />
+                <div className="text-center">
+                  <p className="font-bold text-gray-500 text-base">Bạn chưa có quà tặng đối tác nào</p>
+                  <p className="text-xs text-gray-400 mt-1">Hãy tham gia nhiều chiến dịch môi trường hơn nhé!</p>
+                </div>
+              </div>
+            ) : (
+              <div className="mt-6">
+                 <div className="flex gap-2 mb-6 overflow-x-auto pb-2 scrollbar-hide">
+                    {[
+                      { key: "ALL", label: "Tất cả" },
+                      { key: "PREPARING", label: "Chuẩn bị" },
+                      { key: "SHIPPING", label: "Vận chuyển" },
+                      { key: "ARRIVED", label: "Tại trường" },
+                      { key: "COMPLETED", label: "Hoàn thành" }
+                    ].map(tab => (
+                      <button
+                        key={tab.key}
+                        onClick={() => setDelTab(tab.key)}
+                        className={cn(
+                          "px-4 py-2 rounded-xl text-xs font-bold transition-all whitespace-nowrap",
+                          delTab === tab.key 
+                            ? "bg-blue-600 text-white shadow-md shadow-blue-200" 
+                            : "bg-gray-100 text-gray-500 hover:bg-gray-200"
+                        )}
+                      >
+                        {tab.label}
+                      </button>
+                    ))}
+                 </div>
+                 
+                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                   {partnershipRewards
+                    .filter(d => delTab === "ALL" || (delTab === "COMPLETED" ? (d.status === "DELIVERED" || d.status === "CONFIRMED") : d.status === delTab))
+                    .map(delivery => (
+                      <PartnershipRewardCard key={delivery.id} delivery={delivery} />
+                    ))}
+                 </div>
+              </div>
+            )}
           </Card>
         </motion.div>
 

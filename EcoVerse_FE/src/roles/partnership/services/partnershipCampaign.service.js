@@ -61,5 +61,14 @@ export const partnershipCampaignService = {
   },
   cancelCampaign: (id) => {
     return axios.put(`/partnership/campaigns/${id}/cancel`);
+  },
+
+  // Reward Deliveries
+  getRewardDeliveries: (campaignId) => {
+    return axios.get(`/partnership/campaigns/${campaignId}/reward-deliveries`);
+  },
+
+  markRewardShipped: (deliveryId, payload) => {
+    return axios.put(`/partnership/reward-deliveries/${deliveryId}/ship`, payload);
   }
 };

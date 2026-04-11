@@ -43,6 +43,7 @@ import {
   RotateCcw,
   Gamepad2,
   AlertCircle,
+  Gift,
 } from 'lucide-react';
 import { format } from 'date-fns';
 import { vi } from 'date-fns/locale';
@@ -74,6 +75,7 @@ export function CampaignList({
   onExtend,
   onAddGame,
   onAddQuiz,
+  onManageRewards,
 }) {
   const [currentPage, setCurrentPage] = React.useState(1);
   const itemsPerPage = 5;
@@ -276,7 +278,23 @@ export function CampaignList({
                         )}
                         {campaign.status === 'on_going' && (
                           <>
-                            {/* Actions removed as requested */}
+                            {campaign.origin === 'partnership' && onManageRewards && (
+                              <DropdownMenuItem onClick={() => onManageRewards(campaign)}>
+                                <Gift className="w-4 h-4 mr-2" />
+                                Quản lý quà tặng
+                              </DropdownMenuItem>
+                            )}
+                          </>
+                        )}
+                        
+                        {campaign.status === 'completed' && (
+                          <>
+                            {campaign.origin === 'partnership' && onManageRewards && (
+                              <DropdownMenuItem onClick={() => onManageRewards(campaign)}>
+                                <Gift className="w-4 h-4 mr-2" />
+                                Quản lý quà tặng
+                              </DropdownMenuItem>
+                            )}
                           </>
                         )}
                         
