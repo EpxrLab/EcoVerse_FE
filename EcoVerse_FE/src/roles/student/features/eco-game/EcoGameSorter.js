@@ -350,13 +350,13 @@ export default class EcoGameSorter {
       };
 
       const modelUrl =
-        typeof item.preloadedModel === "string"
-          ? item.preloadedModel
-          : item.imageUrl;
+        (typeof item.preloadedModel === "string" && item.preloadedModel) ||
+        item.modelUrl ||
+        item.imageUrl;
 
       if (item.preloadedModel && typeof item.preloadedModel !== "string") {
         normalizeAndSetup(item.preloadedModel);
-      } else if (modelUrl) {
+      } else if (modelUrl && !modelUrl.match(/\.(png|jpg|jpeg|webp)$/i)) {
         if (!gltfPromiseCache[modelUrl]) {
           const loader = new GLTFLoader();
           gltfPromiseCache[modelUrl] = new Promise((resolve, reject) => {

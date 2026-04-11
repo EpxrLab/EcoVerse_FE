@@ -73,7 +73,8 @@ export default function EcoGamePage() {
         const preloadedItems = await Promise.all(
           wasteItems.map((item) => {
             return new Promise((resolve) => {
-              if (!item.imageUrl) {
+              const modelUrl = item.imagePresignedUrl || item.imageUrl;
+              if (!modelUrl) {
                 loadedCount++;
                 setLoadingProgress(
                   Math.round((loadedCount / wasteItems.length) * 100),
@@ -82,7 +83,7 @@ export default function EcoGamePage() {
                 return;
               }
               loader.load(
-                item.imageUrl,
+                modelUrl,
                 (gltf) => {
                   loadedCount++;
                   setLoadingProgress(
@@ -297,6 +298,7 @@ export default function EcoGamePage() {
             width: "100%",
             height: "100%",
             pointerEvents: "none",
+            zIndex: 9999,
           }}
         >
           <div style={{ pointerEvents: "auto" }}>

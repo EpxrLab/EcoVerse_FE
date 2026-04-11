@@ -15,10 +15,11 @@ import {
 } from "./RecycleGameLogic";
 
 export default class EcoSeaRescue {
-  constructor(scene, camera, stateManager, config = {}) {
+  constructor(scene, camera, stateManager, config = {}, wasteItems = []) {
     this.scene = scene;
     this.camera = camera;
     this.stateManager = stateManager;
+    this._wasteItems = wasteItems;
 
     this.config = {
       gameTime: config.gameTime ?? GAME_TIME,
@@ -184,9 +185,22 @@ export default class EcoSeaRescue {
     }
     this._loadAudio();
 
+    // ── Lighting ──
+    const ambient = new THREE.AmbientLight(0xffffff, 0.6);
+    this.scene.add(ambient);
+
+    const hemi = new THREE.HemisphereLight(0xffffff, 0x444444, 0.7);
+    this.scene.add(hemi);
+
+    const dirLight = new THREE.DirectionalLight(0xffffff, 0.8);
+    dirLight.position.set(10, 20, 10);
+    dirLight.castShadow = true;
+    dirLight.shadow.mapSize.set(1024, 1024);
+    this.scene.add(dirLight);
+
     const storage = initStorage(this.scene);
     const { player, playerState } = initPlayer(this.scene);
-    const trash = initTrash(this.scene);
+    const trash = initTrash(this.scene, this._wasteItems, this.config.totalTrash);
     const obstacles = initObstacles(this.scene);
     const { speedZones, slowZones } = initZones(this.scene, obstacles);
 
@@ -221,6 +235,7 @@ export default class EcoSeaRescue {
       recycledInStorage: 0,
       speedMultiplier: 1,
       lastInventoryFullWarning: 0,
+      totalTrashCount: this.config.totalTrash,
     };
 
     initWorld(this.scene, this._gameState);
@@ -294,7 +309,11 @@ export default class EcoSeaRescue {
 
       setRecycledCount: (count) => {
         h.setRecycledCount(count);
-        if (this._onTrashCollected) this._onTrashCollected(count);
+        // if (this._onTrashCollected) this._onTrashCollected(count);
+      },
+
+      onItemDeposited: (trashType) => {
+        if (this._onTrashCollected) this._onTrashCollected(trashType);
       },
 
       setHp: (updaterFn) => {
@@ -340,7 +359,9 @@ export default class EcoSeaRescue {
 
     const delay = reason === "win" ? 500 : 1500;
     setTimeout(() => {
-      if (this._onStageComplete) this._onStageComplete();
+      if (this._onStageComplete) {
+        this._onStageComplete(reason, this._gameState?.recycledInStorage ?? 0);
+      }
     }, delay);
   }
 
@@ -401,10 +422,13 @@ export default class EcoSeaRescue {
     this.scene.fog = null;
 
     const toRemove = [
+      this._gameState?.skybox,
       this._gameState?.oceanModel,
       this._gameState?.depthDisc,
       this._gameState?.fallbackPlane,
       this._gameState?.mapRing,
+      this._gameState?.storage,
+      this._player,
       ...(this._gameState?.buoys ?? []),
       ...(this._gameState?.trash ?? []),
       ...(this._gameState?.obstacles ?? []),

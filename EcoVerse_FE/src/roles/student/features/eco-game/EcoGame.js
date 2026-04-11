@@ -122,9 +122,13 @@ export default class EcoGame {
     this.activeStage = this.stage1Game;
 
     // Register callbacks — Both Stage 1 games share the same interface
-    this.stage1Game.onTrashCollected((count) => {
+    this.stage1Game.onTrashCollected((trashInfo) => {
+      // trashInfo is the full object from RecycleGameLogic.js
+      this.stateManager.addTrash(trashInfo);
+
       if (this._hudCallbacks.onTrashCollected) {
-        this._hudCallbacks.onTrashCollected(count);
+        // Many HUDs expect the total count
+        this._hudCallbacks.onTrashCollected(this.stateManager.getTotalTrashCount());
       }
     });
 
@@ -134,8 +138,31 @@ export default class EcoGame {
       }
     });
 
-    this.stage1Game.onStageComplete(() => {
-      this.switchToStage2();
+    this.stage1Game.onStageComplete((reason, recycledCount) => {
+      const totalTrash = this.levelConfig.itemCount || 12;
+      const percentage = (recycledCount / totalTrash) * 100;
+
+      // SUCCESS: Hit the win target OR collected >= 80%
+      const isWin = reason === "win" || percentage >= 80;
+
+      if (isWin) {
+        this.switchToStage2();
+      } else {
+        // FAILURE: Show result screen with failure message
+        const failMessage = reason === "death" 
+          ? "Thuyền bị hỏng! Bạn cần thu thập ít nhất 80% rác." 
+          : `Bạn mới thu gom được ${Math.round(percentage)}%, cần đạt 80% để tiếp tục!`;
+
+        this._showResult({ correct: 0, wrong: 0 }, {
+          success: false,
+          apiResult: {
+            feedbackMessage: failMessage,
+            totalItems: totalTrash,
+            correctItems: recycledCount,
+            accuracyPercentage: Math.round(percentage)
+          }
+        });
+      }
     });
   }
 
@@ -191,10 +218,7 @@ export default class EcoGame {
     });
   }
 
-  /**
-   * Show result screen
-   */
-  _showResult(score) {
+  _showResult(score, extra = {}) {
     this.stateManager.setState(GameState.RESULT);
     this.activeStage = null;
 
@@ -204,6 +228,7 @@ export default class EcoGame {
         trashCollected: this.stateManager.getTotalTrashCount(),
         collectedTrash: this.stateManager.collectedTrash,
         sortingScore: score,
+        ...extra
       });
     }
 
