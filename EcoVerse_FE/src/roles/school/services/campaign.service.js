@@ -89,5 +89,18 @@ export const campaignService = {
 
   getAssignedStudentsForPartnershipInvitation: (id) => {
     return axios.get(`/school/partnership-invitations/${id}/assigned-students`);
+  },
+
+  // Reward Deliveries
+  getRewardDeliveries: (campaignId) => {
+    return axios.get(`/school/campaigns/${campaignId}/reward-deliveries`);
+  },
+
+  markRewardArrived: (deliveryId) => {
+    return axios.put(`/school/reward-deliveries/${deliveryId}/arrived`);
+  },
+
+  markRewardDelivered: (deliveryId, payload) => {
+    return axios.put(`/school/reward-deliveries/${deliveryId}/deliver`, payload);
   }
 };

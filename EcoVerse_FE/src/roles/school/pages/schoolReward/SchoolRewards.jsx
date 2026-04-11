@@ -1,4 +1,4 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from "@/shared/components/ui/card";
 import { Button } from "@/shared/components/ui/button";
 import { Input } from "@/shared/components/ui/input";
@@ -14,6 +14,8 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { Label } from "@/shared/components/ui/label";
 import { Checkbox } from "@/shared/components/ui/checkbox";
 import { Textarea } from "@/shared/components/ui/textarea";
+import { Badge } from "@/shared/components/ui/badge";
+import { cn } from "@/shared/lib/utils";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -72,6 +74,7 @@ export default function SchoolRewards() {
   });
   const [isDeliverDialogOpen, setIsDeliverDialogOpen] = useState(false);
   const [isDelivering, setIsDelivering] = useState(false);
+  const [deliveryType, setDeliveryType] = useState('mission'); // 'mission' or 'partnership'
   
   const [partnershipFilters, setPartnershipFilters] = useState({
     campaign: 'all',
@@ -79,13 +82,18 @@ export default function SchoolRewards() {
   });
 
   const uniqueCampaigns = useMemo(() => {
-    const campaigns = (rewards.partnershipRewards || []).map(r => r.campaignName);
-    return [...new Set(campaigns)];
-  }, [rewards.partnershipRewards]);
+    return rewards.partnershipInvitations || [];
+  }, [rewards.partnershipInvitations]);
+
+  useEffect(() => {
+    if (partnershipFilters.campaign !== 'all') {
+      rewards.fetchPartnershipRewards(partnershipFilters.campaign);
+    }
+  }, [partnershipFilters.campaign]);
 
   const filteredPartnershipRewards = useMemo(() => {
     return (rewards.partnershipRewards || []).filter(reward => {
-      const matchCampaign = partnershipFilters.campaign === 'all' || reward.campaignName === partnershipFilters.campaign;
+      const matchCampaign = partnershipFilters.campaign === 'all' || reward.campaignId === partnershipFilters.campaign;
       const matchStatus = partnershipFilters.status === 'all' || reward.status === partnershipFilters.status;
       return matchCampaign && matchStatus;
     });
@@ -123,6 +131,7 @@ export default function SchoolRewards() {
 
   const handleDeliver = (id) => {
     setDeliveryId(id);
+    setDeliveryType('mission');
     setDeliveryForm({ imageUrl: '', imagePresignedUrl: '' });
     setIsDeliverDialogOpen(true);
   };
@@ -131,9 +140,16 @@ export default function SchoolRewards() {
     if (!deliveryId) return;
     try {
       setIsDelivering(true);
-      await rewards.deliverRewardRequest(deliveryId, {
-        imageUrl: deliveryForm.imageUrl
-      });
+      if (deliveryType === 'partnership') {
+        await rewards.confirmPartnershipReward(deliveryId, 'at_school', {
+          deliveryImageUrl: deliveryForm.imageUrl
+        });
+        rewards.fetchPartnershipRewards(partnershipFilters.campaign);
+      } else {
+        await rewards.deliverRewardRequest(deliveryId, {
+          imageUrl: deliveryForm.imageUrl
+        });
+      }
       setIsDeliverDialogOpen(false);
       setDeliveryId(null);
       setDeliveryForm({ imageUrl: '', imagePresignedUrl: '' });
@@ -568,10 +584,24 @@ export default function SchoolRewards() {
                         <SelectTrigger>
                           <SelectValue placeholder="Chiến dịch" />
                         </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="all">Tất cả chiến dịch</SelectItem>
-                          {uniqueCampaigns.map(c => (
-                            <SelectItem key={c} value={c}>{c}</SelectItem>
+                        <SelectContent className="rounded-2xl border-2 shadow-xl overflow-hidden p-1">
+                          <SelectItem value="all" className="rounded-xl my-1 cursor-pointer">
+                            <span className="font-bold">Tất cả chiến dịch</span>
+                          </SelectItem>
+                          {uniqueCampaigns.map(invitation => (
+                            <SelectItem key={invitation.campaignId} value={invitation.campaignId} className="rounded-xl my-1 cursor-pointer">
+                              <div className="flex items-center justify-between gap-4 w-full min-w-[300px]">
+                                <span className="font-bold text-sm truncate max-w-[200px]">{invitation.campaignName}</span>
+                                {invitation.campaignStatus === 'on_going' && (
+                                  <Badge variant="outline" className={cn(
+                                    "whitespace-nowrap text-[9px] uppercase font-black px-2 py-0.5 rounded-lg border-0",
+                                    "bg-blue-100 text-blue-700"
+                                  )}>
+                                    Đang diễn ra
+                                  </Badge>
+                                )}
+                              </div>
+                            </SelectItem>
                           ))}
                         </SelectContent>
                       </Select>
@@ -595,9 +625,21 @@ export default function SchoolRewards() {
             </CardHeader>
             <CardContent>
               <RewardList 
-                rewards={paged.partnership} 
+                rewards={filteredPartnershipRewards} 
                 status="partnership" 
-                onConfirm={rewards.confirmPartnershipReward}
+                onConfirm={async (id, rewardStatus) => {
+                  if (rewardStatus === 'at_school') {
+                    setDeliveryId(id);
+                    setDeliveryType('partnership');
+                    setDeliveryForm({ imageUrl: '', imagePresignedUrl: '' });
+                    setIsDeliverDialogOpen(true);
+                  } else {
+                    const success = await rewards.confirmPartnershipReward(id, rewardStatus);
+                    if (success) {
+                      rewards.fetchPartnershipRewards(partnershipFilters.campaign);
+                    }
+                  }
+                }}
               />
               {filtered.partnership.length > PAGE_SIZE && (
                 <div className="mt-4">

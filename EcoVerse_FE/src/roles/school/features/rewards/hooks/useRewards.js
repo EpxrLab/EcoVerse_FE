@@ -1,15 +1,14 @@
 import { useState, useEffect } from 'react';
 import { rewardService } from '../../../services/reward.service';
+import { campaignService } from '../../../services/campaign.service';
 import { 
   rewardStats,
   topRewardsData,
-  statusDistributionData,
-  partnershipRewardsData
 } from '../../../data/reward.data';
 
 export function useRewards() {
-
-  const [partnershipRewards, setPartnershipRewards] = useState(partnershipRewardsData);
+  const [partnershipInvitations, setPartnershipInvitations] = useState([]);
+  const [partnershipRewards, setPartnershipRewards] = useState([]);
   const [marketplaceItems, setMarketplaceItems] = useState([]);
   
   const [pendingRewards, setPendingRewards] = useState([]);
@@ -148,6 +147,59 @@ export function useRewards() {
     }
   };
 
+  const fetchPartnershipInvitations = async () => {
+    try {
+      const res = await campaignService.getPartnershipInvitations();
+      const invitations = res.data?.data || [];
+      // Only keep approved invitations
+      const approved = invitations.filter(inv => inv.status === 'APPROVED' || inv.invitationStatus === 'APPROVED');
+      setPartnershipInvitations(approved);
+      return approved;
+    } catch (error) {
+      console.error('Failed to fetch partnership invitations', error);
+      return [];
+    }
+  };
+
+  const fetchPartnershipRewards = async (campaignId) => {
+    if (!campaignId || campaignId === 'all') {
+      setPartnershipRewards([]);
+      return [];
+    }
+    try {
+      const res = await campaignService.getRewardDeliveries(campaignId);
+      const data = res.data?.data || [];
+      const mapped = data.map(r => ({
+        ...r,
+        student: r.studentName,
+        class: r.className || 'N/A', // Assuming className might be there or derived
+        campaignName: r.campaignName,
+        rewardName: r.rewardName,
+        status: mapPartnershipStatus(r.status),
+        receivedAt: r.arrivedAt ? new Date(r.arrivedAt).toLocaleDateString('vi-VN') : null,
+        givenAt: r.deliveredAt ? new Date(r.deliveredAt).toLocaleDateString('vi-VN') : null,
+        collectedAt: r.confirmedAt ? new Date(r.confirmedAt).toLocaleDateString('vi-VN') : null,
+      }));
+      setPartnershipRewards(mapped);
+      return mapped;
+    } catch (error) {
+      console.error('Failed to fetch partnership rewards', error);
+      setPartnershipRewards([]);
+      return [];
+    }
+  };
+
+  const mapPartnershipStatus = (apiStatus) => {
+    switch (apiStatus) {
+      case 'PREPARING': return 'preparing';
+      case 'SHIPPING': return 'shipping';
+      case 'ARRIVED': return 'at_school';
+      case 'DELIVERED': return 'given';
+      case 'CONFIRMED': return 'collected';
+      default: return 'shipping';
+    }
+  };
+
   const processRewardRequest = async (id, approved, reason = '') => {
     try {
       // If approved is true and reason is empty, provide a default reason
@@ -175,30 +227,21 @@ export function useRewards() {
   useEffect(() => {
     fetchRewards();
     fetchRewardRequests();
+    fetchPartnershipInvitations();
   }, []);
 
-  const confirmPartnershipReward = (id) => {
-    setPartnershipRewards(prev => prev.map(reward => {
-      if (reward.id !== id) return reward;
-
-      if (reward.status === 'shipping') {
-        return { 
-          ...reward, 
-          status: 'at_school', 
-          receivedAt: new Date().toLocaleDateString('vi-VN') 
-        };
+  const confirmPartnershipReward = async (id, status, payload = {}) => {
+    try {
+      if (status === 'shipping') {
+        await campaignService.markRewardArrived(id);
+      } else if (status === 'at_school') {
+        await campaignService.markRewardDelivered(id, payload);
       }
-      
-      if (reward.status === 'at_school') {
-        return { 
-          ...reward, 
-          status: 'given', 
-          givenAt: new Date().toLocaleDateString('vi-VN') 
-        };
-      }
-
-      return reward;
-    }));
+      return { success: true };
+    } catch (error) {
+      console.error('Failed to confirm partnership reward', error);
+      return { success: false, error };
+    }
   };
 
   return {
@@ -216,6 +259,9 @@ export function useRewards() {
     stats: localStats,
     topRewards: localTopRewards,
     partnershipRewards,
+    partnershipInvitations,
+    fetchPartnershipInvitations,
+    fetchPartnershipRewards,
     confirmPartnershipReward,
   };
 }

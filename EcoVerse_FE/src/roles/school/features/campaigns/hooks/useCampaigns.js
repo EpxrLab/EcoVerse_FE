@@ -95,16 +95,23 @@ export function useCampaigns() {
     const campaignsList = attachInvitations(mappedCampaigns);
     
     // Map partnership invitations to UI format
-    const getDynamicStatus = (inv) => {
-      const now = new Date();
-      const invitationDeadline = inv.invitationDeadline ? new Date(inv.invitationDeadline) : null;
-      const endDate = inv.endDate ? new Date(inv.endDate) : null;
-      // If the campaign has ended, it's completed
-      if (endDate && now > endDate) return 'completed';
-      // If invitation deadline has passed but campaign hasn't ended, it's either ongoing or active
-      if (invitationDeadline && now > invitationDeadline) return 'on_going';
-      // Default to inviting if it's within the invitation period
-      return 'inviting';
+    const mapCampaignStatus = (serverStatus) => {
+      if (!serverStatus) return 'draft';
+      const status = serverStatus.toUpperCase();
+      switch (status) {
+        case 'INVITING': return 'inviting';
+        case 'JOINING':
+        case 'ONGOING':
+        case 'ACTIVE':
+        case 'ON_GOING': return 'on_going';
+        case 'REWARDING':
+        case 'COMPLETED':
+        case 'FINISHED': return 'completed';
+        case 'CANCELLED': return 'cancelled';
+        case 'SCHEDULED': return 'scheduled';
+        case 'EXTENDED': return 'inviting';
+        default: return status.toLowerCase();
+      }
     };
 
     const partnershipList = (partnershipInvitations || []).map(inv => ({
@@ -119,8 +126,9 @@ export function useCampaigns() {
       invitation_deadline: toLocalISO(inv.invitationDeadline),
       registration_date: toLocalISO(inv.registrationDate),
       registration_deadline: toLocalISO(inv.registrationDeadline),
-      status: inv.status === 'APPROVED' ? getDynamicStatus(inv) : 'invitation_pending',
+      status: inv.status === 'APPROVED' ? mapCampaignStatus(inv.campaignCampaignStatus) : 'invitation_pending',
       invitation_status: inv.status,
+      campaignCampaignStatus: inv.campaignCampaignStatus, // Pass raw status for logic checks
       origin: 'partnership',
       partnership_name: inv.partnershipName || 'Đối tác chưa xác định',
       student_limit: inv.maxStudentsPerSchool || 0,
@@ -360,7 +368,11 @@ export function useCampaigns() {
   const fetchAssignedStudents = async (id) => {
     try {
       const response = await campaignService.getAssignedStudentsForPartnershipInvitation(id);
-      return response.data; // Assuming it returns an array of student objects or IDs
+      const rawData = response.data?.data?.selectedStudents || [];
+      // Handle array of student objects and map to IDs
+      return Array.isArray(rawData) 
+        ? rawData.map(item => item.studentId || item.id)
+        : [];
     } catch (error) {
       console.error('Failed to fetch assigned students:', error);
       return [];
@@ -475,7 +487,9 @@ export function useCampaigns() {
         name: data.campaignName || data.name,
         code: data.campaignCode || data.code,
         description: data.description,
-        status: data.status?.toLowerCase() || 'draft',
+        status: origin === 'partnership' 
+          ? (data.campaignCampaignStatus ? mapCampaignStatus(data.campaignCampaignStatus) : (data.status?.toLowerCase() || 'invitation_pending'))
+          : (data.status?.toLowerCase() || 'draft'),
         start_date: data.startDate || data.start_date,
         end_date: data.endDate || data.end_date,
         invitation_send_date: data.invitationDate || data.invitation_send_date,
@@ -492,6 +506,7 @@ export function useCampaigns() {
         students_enrolled: data.studentsEnrolled || data.students_enrolled || 0,
         invitation_sent_at: data.invitationSentAt,
         participation_confirmed_at: data.participationConfirmedAt,
+        campaignCampaignStatus: data.campaignCampaignStatus,
         // Map rounds
         rounds: data.rounds?.map(r => ({
           id: r.id,

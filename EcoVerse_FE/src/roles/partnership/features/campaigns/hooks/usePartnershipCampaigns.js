@@ -614,6 +614,26 @@ export function usePartnershipCampaigns() {
     }
   };
 
+  const fetchRewardDeliveries = async (campaignId) => {
+    try {
+      const res = await partnershipCampaignService.getRewardDeliveries(campaignId);
+      return res.data?.data || [];
+    } catch (error) {
+      console.error('Failed to fetch reward deliveries', error);
+      return [];
+    }
+  };
+
+  const markRewardShipped = async (deliveryId, payload) => {
+    try {
+      await partnershipCampaignService.markRewardShipped(deliveryId, payload);
+      return true;
+    } catch (error) {
+      console.error('Failed to mark reward as shipped', error);
+      return false;
+    }
+  };
+
   return {
     campaigns,
     stats,
@@ -651,5 +671,7 @@ export function usePartnershipCampaigns() {
     handleCloseAddQuiz,
     handleAddGameSubmit,
     handleAddQuizSubmit,
+    fetchRewardDeliveries,
+    markRewardShipped,
   };
 }

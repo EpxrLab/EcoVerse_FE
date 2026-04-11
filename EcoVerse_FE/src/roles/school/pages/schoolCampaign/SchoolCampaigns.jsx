@@ -12,7 +12,6 @@ import { useCampaignForm } from '../../features/campaigns/hooks';
 import { CampaignStats, CampaignList, CampaignForm, CampaignDetail, InvitationList, ConfirmDeleteDialog, ConfirmCancelDialog, ExtendInvitingDialog, ConfirmInvitationDialog, PartnershipStudentAssignmentDialog } from '../../features/campaigns/components';
 import { AddGameModal } from '../../features/campaigns/components/AddGameModal';
 import { AddQuizModal } from '../../features/campaigns/components/AddQuizModal';
-import { GAME_TYPES } from '../../features/campaigns/types/campaign';
 import { useStudents } from '../../hooks/useStudents';
 
 export default function SchoolCampaigns() {
@@ -30,17 +29,19 @@ export default function SchoolCampaigns() {
     changeStatus,
     acceptInvitation,
     declineInvitation,
-    addStudentsToCampaign,
-    assignStudentsToPartnership,
     revertToDraft,
     activateCampaign,
+    assignStudentsToPartnership,
+    fetchAssignedStudents,
     cancelCampaign,
     extendInviting,
     fetchCampaignDetail,
-    fetchAssignedStudents,
     bindQuizzesToRound,
     getCampaigns,
+    isLoading
   } = useCampaigns();
+
+  const { students } = useStudents();
 
   const {
     formData,
@@ -58,6 +59,7 @@ export default function SchoolCampaigns() {
   const [isDetailOpen, setIsDetailOpen] = useState(false);
   const [isInviteOpen, setIsInviteOpen] = useState(false);
   const [inviteCampaign, setInviteCampaign] = useState(null);
+  
   const [editingCampaign, setEditingCampaign] = useState(null);
   const [isCancelConfirmOpen, setIsCancelConfirmOpen] = useState(false);
   const [campaignToCancel, setCampaignToCancel] = useState(null);
@@ -79,7 +81,13 @@ export default function SchoolCampaigns() {
 
   // Partnership Invitation logic
   const invitationsPending = allCampaigns.filter(c => c.origin === 'partnership' && c.invitation_status === 'INVITED');
-  const invitationsAccepted = allCampaigns.filter(c => c.origin === 'partnership' && c.invitation_status === 'APPROVED');
+  const invitationsAccepted = allCampaigns
+    .filter(c => c.origin === 'partnership' && c.invitation_status === 'APPROVED')
+    .sort((a, b) => {
+      if (a.campaignCampaignStatus === 'JOINING' && b.campaignCampaignStatus !== 'JOINING') return -1;
+      if (a.campaignCampaignStatus !== 'JOINING' && b.campaignCampaignStatus === 'JOINING') return 1;
+      return 0;
+    });
   const invitationsRejected = allCampaigns.filter(c => c.origin === 'partnership' && (c.invitation_status === 'REJECTED' || c.invitation_status === 'DECLINED'));
 
   const handleOpenAcceptDialog = (campaign) => {
@@ -550,8 +558,6 @@ export default function SchoolCampaigns() {
                 onInvite={handleOpenInviteDialog}
                 onChangeStatus={changeStatus}
                 onDelete={handleConfirmDelete}
-                onCancel={handleOpenCancelConfirm}
-                onExtend={handleOpenExtendDialog}
               />
             </TabsContent>
 
