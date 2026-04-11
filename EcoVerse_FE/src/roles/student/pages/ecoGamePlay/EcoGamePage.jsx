@@ -270,7 +270,7 @@ export default function EcoGamePage() {
           <Spin
             indicator={
               <LoadingOutlined
-                style={{ fontSize: 48, color: "#4caf50" }}
+                style={{ fontSize: 48, color: "#ffffffff" }}
                 spin
               />
             }

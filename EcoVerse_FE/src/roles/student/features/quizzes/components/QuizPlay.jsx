@@ -163,7 +163,9 @@ function ResultModal({ result, onClose }) {
           )}
           {result.coinsEarned === 0 && (
             <p className="mt-3 text-sm text-white/50">
-              {passed ? "Không nhận thêm xu cho lần làm lại" : "Không nhận xu (chưa đạt)"}
+              {passed
+                ? "Không nhận thêm xu cho lần làm lại"
+                : "Không nhận xu (chưa đạt)"}
             </p>
           )}
         </div>
@@ -314,7 +316,6 @@ export default function QuizPlay({ quiz: _quiz, onFinish, onCancel }) {
     setIsSubmitting(true);
 
     const finalPayload = { answers };
-    console.log("Final Payload:", finalPayload);
 
     try {
       const res = await submitQuiz(attemptId, finalPayload);
@@ -564,12 +565,16 @@ export default function QuizPlay({ quiz: _quiz, onFinish, onCancel }) {
                     type="primary"
                     size="large"
                     loading={isSubmitting}
+                    disabled={
+                      currentQuestionIndex === questions.length - 1 &&
+                      answeredCount < questions.length
+                    }
                     onClick={
                       currentQuestionIndex === questions.length - 1
                         ? handleFinish
                         : () => setCurrentQuestionIndex((p) => p + 1)
                     }
-                    className="bg-indigo-600 border-indigo-600 hover:bg-indigo-700 rounded-xl px-8 font-bold"
+                    className="bg-indigo-600 border-indigo-600 hover:bg-indigo-700 rounded-xl px-8 font-bold disabled:bg-slate-200 disabled:border-slate-200 disabled:text-slate-400"
                   >
                     {currentQuestionIndex === questions.length - 1
                       ? "Gửi bài"

@@ -133,6 +133,15 @@ const submitGame = async (sessionId, payload) => {
   }
 };
 
+const getCampaignLeaderboard = async (campaignId) => {
+  try {
+    const res = await axios.get(`/student/campaigns/${campaignId}/leaderboard`);
+    return res.data;
+  } catch (error) {
+    console.log(error);
+  }
+};
+
 export {
   getAuthenticatedStudentProfile,
   getAllRewards,
@@ -147,4 +156,5 @@ export {
   getAttemptResult,
   startGame,
   submitGame,
+  getCampaignLeaderboard,
 };

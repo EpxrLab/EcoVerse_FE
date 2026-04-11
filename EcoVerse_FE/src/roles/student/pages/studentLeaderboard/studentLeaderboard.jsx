@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router";
 import { Card, Button, Select } from "antd";
 import {
@@ -9,70 +9,11 @@ import {
 } from "@ant-design/icons";
 import { Crown, Medal } from "lucide-react";
 import { motion } from "framer-motion";
-import { useStudentCampaigns } from "../../hooks/useStudentCampaign";
 import { useCampaignContext, useStudentContext } from "../../context";
-
-// ─── Demo Data ────────────────────────────────────────────────────────────────
-
-const DEMO_LEADERBOARD = [
-  {
-    id: "student-002",
-    rank: 1,
-    name: "Trần Văn B",
-    class: "3B",
-    school: "Tiểu học Nguyễn Huệ",
-    totalCoins: 2850,
-    quizzesCompleted: 25,
-    gamesPlayed: 18,
-    isCurrentUser: false,
-  },
-  {
-    id: "student-003",
-    rank: 2,
-    name: "Lê Thị C",
-    class: "3A",
-    school: "Tiểu học Nguyễn Huệ",
-    totalCoins: 2650,
-    quizzesCompleted: 23,
-    gamesPlayed: 16,
-    isCurrentUser: false,
-  },
-  {
-    id: "student-001",
-    rank: 3,
-    name: "Nguyễn Minh An",
-    class: "3A",
-    school: "Tiểu học Nguyễn Huệ",
-    totalCoins: 2450,
-    quizzesCompleted: 23,
-    gamesPlayed: 15,
-    isCurrentUser: true,
-  },
-  {
-    id: "student-004",
-    rank: 4,
-    name: "Phạm Văn D",
-    class: "4A",
-    school: "Tiểu học Nguyễn Huệ",
-    totalCoins: 2250,
-    quizzesCompleted: 20,
-    gamesPlayed: 14,
-    isCurrentUser: false,
-  },
-  {
-    id: "student-005",
-    rank: 5,
-    name: "Hoàng Thị E",
-    class: "3C",
-    school: "Tiểu học Nguyễn Huệ",
-    totalCoins: 2100,
-    quizzesCompleted: 19,
-    gamesPlayed: 13,
-    isCurrentUser: false,
-  },
-];
-
-// ─── CoinIcon ─────────────────────────────────────────────────────────────────
+import {
+  getAuthenticatedStudentProfile,
+  getCampaignLeaderboard,
+} from "../../services";
 
 const CoinIcon = ({ className = "w-4 h-4 text-amber-500" }) => (
   <svg viewBox="0 0 24 24" fill="currentColor" className={className}>
@@ -130,14 +71,29 @@ const itemVariants = {
 export default function StudentLeaderboard() {
   const navigate = useNavigate();
   const { campaignId } = useParams();
-  const leaderboardData = DEMO_LEADERBOARD;
+  const [leaderboardData, setLeaderboardData] = useState([]);
   const [selectedRound, setSelectedRound] = useState("main");
   const { selectedCampaign } = useCampaignContext();
   const campaign = selectedCampaign;
-  const { currentUser } = useStudentContext();
-  const topThree = leaderboardData.slice(0, 3);
+  const [currentUser, setCurrentUser] = useState(null);
+  const topThree = leaderboardData?.slice(0, 3);
   const hasQualifyingRounds =
     campaign?.type === "partnership" && campaign?.qualifyingRounds?.length > 0;
+
+  const fetchData = async () => {
+    try {
+      const res1 = await getAuthenticatedStudentProfile();
+      setCurrentUser(res1.data);
+      const res2 = await getCampaignLeaderboard(campaignId);
+      setLeaderboardData(res2.data);
+    } catch (error) {
+      console.log(error);
+    }
+  };
+
+  useEffect(() => {
+    fetchData();
+  }, []);
 
   if (!campaign) {
     return (
@@ -376,7 +332,7 @@ export default function StudentLeaderboard() {
             initial="hidden"
             animate="visible"
           >
-            {leaderboardData.map((user) => (
+            {leaderboardData?.map((user) => (
               <motion.div key={user.id} variants={itemVariants}>
                 <Card
                   className={`rounded-2xl border-2 transition-all ${
