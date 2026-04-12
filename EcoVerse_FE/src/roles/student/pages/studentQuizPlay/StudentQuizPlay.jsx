@@ -47,6 +47,7 @@ export default function StudentQuizPlay() {
       },
     });
   };
+
   if (loading) {
     return (
       <div className="fixed inset-0 bg-white flex flex-col items-center justify-center z-[10000]">

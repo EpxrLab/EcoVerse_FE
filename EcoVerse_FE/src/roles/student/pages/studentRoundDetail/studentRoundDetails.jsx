@@ -17,6 +17,7 @@ import {
 import { motion, AnimatePresence } from "framer-motion";
 import { getCurrentRoundContent } from "../../services";
 import { ClippingGroup } from "three/webgpu";
+import { RotateCcw } from "lucide-react";
 
 // ─── Constants ────────────────────────────────────────────────────────────────
 
@@ -193,20 +194,9 @@ function LevelCard({ item, isUnlocked, isCompleted, onPlay, campaignId }) {
 
             {/* CTA */}
             <div className="flex-shrink-0">
-              {isCompleted ? (
-                <Tooltip title="Bạn đã hoàn thành màn này và nhận thưởng">
-                  <Button
-                    size="small"
-                    disabled
-                    className="rounded-xl border-green-200 text-green-600 bg-green-50 cursor-default"
-                    icon={<CheckCircleOutlined />}
-                  >
-                    Đã xong
-                  </Button>
-                </Tooltip>
-              ) : isUnlocked ? (
+              {isUnlocked ? (
                 isOutOfAttempts ? (
-                  <Tooltip title="Bạn đã hết lượt chơi cho màn này trong hôm nay. Hãy quay lại vào ngày mai!">
+                  <Tooltip title="Bạn đã hết lượt chơi cho màn này trong hôm nay.">
                     <Button
                       size="small"
                       disabled
@@ -217,15 +207,27 @@ function LevelCard({ item, isUnlocked, isCompleted, onPlay, campaignId }) {
                     </Button>
                   </Tooltip>
                 ) : (
-                  <Button
-                    type="primary"
-                    size="small"
-                    onClick={() => onPlay(item.levelNumber)}
-                    className="rounded-xl bg-blue-500 border-blue-500 hover:bg-blue-600 font-semibold px-4"
-                    icon={<PlayCircleOutlined />}
-                  >
-                    Chơi
-                  </Button>
+                  <div className="flex flex-col items-end gap-1">
+                    <Button
+                      type="primary"
+                      size="small"
+                      onClick={() => onPlay(item.levelNumber)}
+                      className={`rounded-xl font-semibold px-4 ${
+                        isCompleted
+                          ? "bg-green-500 border-green-500 hover:bg-green-600 shadow-sm shadow-green-100"
+                          : "bg-blue-500 border-blue-500 hover:bg-blue-600 shadow-sm shadow-blue-100"
+                      }`}
+                      icon={
+                        isCompleted ? (
+                          <RotateCcw className="w-4 h-4" />
+                        ) : (
+                          <PlayCircleOutlined />
+                        )
+                      }
+                    >
+                      {isCompleted ? "Chơi lại" : "Chơi"}
+                    </Button>
+                  </div>
                 )
               ) : (
                 <Tooltip title={`Hoàn thành màn ${item.levelNumber - 1} trước`}>
@@ -241,6 +243,22 @@ function LevelCard({ item, isUnlocked, isCompleted, onPlay, campaignId }) {
               )}
             </div>
           </div>
+
+          {/* Additional Info for completed levels */}
+          {isCompleted && !isOutOfAttempts && (
+            <motion.div
+              initial={{ height: 0, opacity: 0 }}
+              animate={{ height: "auto", opacity: 1 }}
+              className="mt-3 pt-3 border-t border-green-100"
+            >
+              <div className="flex items-center gap-2 text-[11px] text-amber-600 font-medium bg-amber-50/50 py-1.5 px-3 rounded-lg border border-amber-100">
+                <ThunderboltOutlined className="text-amber-500" />
+                <span>
+                  Bạn đã hoàn thành level này. Chơi lại sẽ không nhận thêm xu.
+                </span>
+              </div>
+            </motion.div>
+          )}
         </div>
       </div>
     </motion.div>
