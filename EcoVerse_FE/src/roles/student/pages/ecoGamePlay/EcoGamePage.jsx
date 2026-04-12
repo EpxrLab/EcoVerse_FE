@@ -12,6 +12,7 @@ import { GLTFLoader } from "three/examples/jsm/loaders/GLTFLoader";
 import EcoGame from "../../features/eco-game/EcoGame";
 import EcoGameHUD from "../../features/eco-game/EcoGameHUD";
 import { startGame, submitGame } from "../../services";
+import toast from "react-hot-toast";
 
 export default function EcoGamePage() {
   const containerRef = useRef(null);
@@ -29,6 +30,7 @@ export default function EcoGamePage() {
   const [searchParams] = useSearchParams();
   const location = useLocation();
   const levelNumber = location.state?.levelNumber;
+  const presetId = location.state?.presetId;
   const typeCode = location.state?.typeCode;
 
   // Cảnh báo người dùng khi họ cố gắng tải lại trang hoặc đóng tab
@@ -56,6 +58,7 @@ export default function EcoGamePage() {
           campaignId,
           roundId,
           roundGameConfigId,
+          presetId,
           levelNumber,
         );
         if (cancelled) return;
@@ -155,8 +158,16 @@ export default function EcoGamePage() {
           setGameInstance(game);
         });
       } catch (err) {
-        console.error("[EcoGamePage] Failed to load level config:", err);
-        if (!cancelled) setLoading(false);
+        const serverMessage =
+          err.response?.data?.message || err?.message || "Lỗi không xác định";
+        toast.error(serverMessage);
+        console.log("Error Message to user:", serverMessage);
+        if (!cancelled) {
+          setLoading(false);
+          setTimeout(() => {
+            navigate(-1);
+          }, 1500);
+        }
       }
     }
 
@@ -261,7 +272,7 @@ export default function EcoGamePage() {
           <Spin
             indicator={
               <LoadingOutlined
-                style={{ fontSize: 48, color: "#4caf50" }}
+                style={{ fontSize: 48, color: "#ffffffff" }}
                 spin
               />
             }

@@ -357,7 +357,7 @@ export default class EcoSeaRescue {
       this._onEndGame(reason, this._gameState?.recycledInStorage ?? 0);
     }
 
-    const delay = reason === "win" ? 500 : 1500;
+    const delay = reason === "win" ? 0 : 1500;
     setTimeout(() => {
       if (this._onStageComplete) {
         this._onStageComplete(reason, this._gameState?.recycledInStorage ?? 0);

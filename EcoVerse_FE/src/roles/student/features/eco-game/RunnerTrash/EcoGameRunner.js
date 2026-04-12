@@ -551,7 +551,7 @@ export default class EcoGameRunner {
         mesh.traverse((child) => {
           if (child.isMesh && child.material && child.material.emissive) {
             child.material.emissive.setHex(0x555555); // Tự phát sáng một chút
-            child.material.emissiveIntensity = 0.5;
+            child.material.emissiveIntensity = 0.2;
           }
         });
 
@@ -562,21 +562,22 @@ export default class EcoGameRunner {
           HAZARDOUS: 0xf44336,
           GENERAL: 0xeeeeee,
         };
-        const auraGeo = new THREE.CylinderGeometry(0.7, 0.7, 3, 16, 1, true);
+        const auraGeo = new THREE.CylinderGeometry(0.8, 0.9, 0.4, 16, 1, true);
         const auraMat = new THREE.MeshBasicMaterial({
           color: catColors[apiItem.wasteCategory] || 0xffffff,
           transparent: true,
-          opacity: 0.2, // Will pulse to higher opacity
+          opacity: 0.3,
           side: THREE.DoubleSide,
           depthWrite: false,
           blending: THREE.AdditiveBlending,
         });
         const aura = new THREE.Mesh(auraGeo, auraMat);
+        aura.position.y = -0.2;
         mesh.add(aura);
 
         gsap.to(auraMat, {
-          opacity: 0.65,
-          duration: 0.8,
+          opacity: 0.5,
+          duration: 1.2,
           yoyo: true,
           repeat: -1,
           ease: "sine.inOut",
@@ -732,7 +733,7 @@ export default class EcoGameRunner {
       const trashBox = new THREE.Box3().setFromObject(trash);
       if (playerBox.intersectsBox(trashBox)) {
         trash.userData.collected = true;
-        this.stateManager.addTrash(trash.userData.trashType);
+        // this.stateManager.addTrash(trash.userData.trashType); // Removed: Orchestrator handles this via callback
 
         // Collection animation
         gsap.to(trash.scale, {
@@ -747,9 +748,9 @@ export default class EcoGameRunner {
           },
         });
 
-        // Emit collection event for HUD
+        // Emit collection event for HUD - Pass the item info, not just count
         if (this._onTrashCollected) {
-          this._onTrashCollected(this.stateManager.getTotalTrashCount());
+          this._onTrashCollected(trash.userData.trashType);
         }
 
         // Play collection sound
@@ -813,7 +814,7 @@ export default class EcoGameRunner {
     setTimeout(() => {
       this.stateManager.distance = this.distance;
       if (this._onStageComplete) {
-        this._onStageComplete();
+        this._onStageComplete("win", this.stateManager.getTotalTrashCount());
       }
     }, 1500);
   }
@@ -852,7 +853,7 @@ export default class EcoGameRunner {
         setTimeout(() => {
           this.stateManager.distance = this.distance;
           if (this._onStageComplete) {
-            this._onStageComplete();
+            this._onStageComplete("win", this.stateManager.getTotalTrashCount());
           }
         }, 800);
         return;
@@ -864,7 +865,8 @@ export default class EcoGameRunner {
       this.isRunning = false;
       this.stateManager.distance = this.distance;
       setTimeout(() => {
-        if (this._onStageComplete) this._onStageComplete();
+        if (this._onStageComplete)
+          this._onStageComplete("win", this.stateManager.getTotalTrashCount());
       }, 500);
       return;
     }

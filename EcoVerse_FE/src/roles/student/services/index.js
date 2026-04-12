@@ -108,15 +108,21 @@ const getAttemptResult = async (attemptId) => {
   }
 };
 
-const startGame = async (campaignId, roundId, configId, levelNumber) => {
+const startGame = async (
+  campaignId,
+  roundId,
+  configId,
+  presetId,
+  levelNumber,
+) => {
   try {
     const res = await axios.post(
-      `/student/game/campaigns/${campaignId}/rounds/${roundId}/configs/${configId}/start?levelNumber=${levelNumber}`,
+      `/student/game/campaigns/${campaignId}/rounds/${roundId}/configs/${configId}/start?presetId=${presetId}&levelNumber=${levelNumber}`,
     );
-    console.log(res.data);
     return res.data;
   } catch (error) {
     console.log(error);
+    throw error;
   }
 };
 
@@ -126,6 +132,15 @@ const submitGame = async (sessionId, payload) => {
       `/student/game/sessions/${sessionId}/submit`,
       payload,
     );
+    return res.data;
+  } catch (error) {
+    console.log(error);
+  }
+};
+
+const getCampaignLeaderboard = async (campaignId) => {
+  try {
+    const res = await axios.get(`/campaigns/${campaignId}/leaderboard`);
     return res.data;
   } catch (error) {
     console.log(error);
@@ -155,5 +170,6 @@ export {
   getAttemptResult,
   startGame,
   submitGame,
+  getCampaignLeaderboard,
   getMyRewardDeliveries,
 };

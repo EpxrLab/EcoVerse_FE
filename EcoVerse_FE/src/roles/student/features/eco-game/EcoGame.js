@@ -139,19 +139,33 @@ export default class EcoGame {
     });
 
     this.stage1Game.onStageComplete((reason, recycledCount) => {
-      const totalTrash = this.levelConfig.itemCount || 12;
-      const percentage = (recycledCount / totalTrash) * 100;
+      const gameType = this.levelConfig?.stage1Game ?? "runner";
+      
+      let totalTrash = 12;
+      let reqPercent = 80;
 
-      // SUCCESS: Hit the win target OR collected >= 80%
-      const isWin = reason === "win" || percentage >= 80;
+      if (gameType === "searescue") {
+        const seaConfig = this.levelConfig.searescue || {};
+        totalTrash = seaConfig.totalTrash || 12;
+        reqPercent = seaConfig.requiredPercentage || 80;
+      } else {
+        const runnerConfig = this.levelConfig.runner || {};
+        totalTrash = runnerConfig.itemCount || 20;
+        reqPercent = 0; // In runner, we usually allow transition as long as it's not a hard fail
+      }
+
+      const percentage = totalTrash > 0 ? (recycledCount / totalTrash) * 100 : 0;
+
+      // SUCCESS: Hit the win target OR collected >= required %
+      const isWin = reason === "win" || percentage >= reqPercent;
 
       if (isWin) {
         this.switchToStage2();
       } else {
         // FAILURE: Show result screen with failure message
         const failMessage = reason === "death" 
-          ? "Thuyền bị hỏng! Bạn cần thu thập ít nhất 80% rác." 
-          : `Bạn mới thu gom được ${Math.round(percentage)}%, cần đạt 80% để tiếp tục!`;
+          ? "Thuyền bị hỏng! Bạn cần thu thập ít nhất " + reqPercent + "% rác." 
+          : `Bạn mới thu gom được ${Math.round(percentage)}%, cần đạt ${reqPercent}% để tiếp tục!`;
 
         this._showResult({ correct: 0, wrong: 0 }, {
           success: false,

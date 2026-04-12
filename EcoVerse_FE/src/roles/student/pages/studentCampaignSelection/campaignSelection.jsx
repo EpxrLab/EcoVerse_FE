@@ -322,10 +322,9 @@ export default function CampaignSelection() {
 
   const normalize = (s) => s?.toUpperCase() ?? "";
 
-  const { active, upcoming, completed } = useMemo(
+  const { active, completed } = useMemo(
     () => ({
       active: campaigns.filter((c) => normalize(c.status) === "ON_GOING"),
-      upcoming: campaigns.filter((c) => normalize(c.status) === "INVITING"),
       completed: campaigns.filter((c) => normalize(c.status) === "COMPLETED"),
     }),
     [campaigns],
@@ -349,25 +348,6 @@ export default function CampaignSelection() {
           <EmptyState message="Chưa có chiến dịch nào đang diễn ra" />
         ) : (
           <CampaignGrid campaigns={active} onSelect={handleSelect} />
-        ),
-    },
-    {
-      key: "upcoming",
-      label: (
-        <span className="flex items-center gap-2">
-          Được mời
-          {upcoming.length > 0 && (
-            <span className="px-1.5 py-0.5 rounded-full text-xs font-bold bg-blue-100 text-blue-600">
-              {upcoming.length}
-            </span>
-          )}
-        </span>
-      ),
-      children:
-        upcoming.length === 0 ? (
-          <EmptyState message="Bạn chưa được mời vào chiến dịch nào" />
-        ) : (
-          <CampaignGrid campaigns={upcoming} onSelect={handleSelect} />
         ),
     },
     {
