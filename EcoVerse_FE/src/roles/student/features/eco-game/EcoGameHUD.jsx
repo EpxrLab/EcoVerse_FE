@@ -55,7 +55,8 @@ function ExitConfirmOverlay({ show, onConfirm, onCancel }) {
           Bạn có chắc chắn muốn thoát?
         </h3>
         <p className="text-gray-600 mb-8">
-          Nếu bạn thoát game giữa chừng, toàn bộ dữ liệu của phiên chơi này sẽ bị mất.
+          Nếu bạn thoát game giữa chừng, toàn bộ dữ liệu của phiên chơi này sẽ
+          bị mất.
         </p>
         <div className="flex gap-4 justify-center">
           <button
@@ -119,7 +120,12 @@ export default function EcoGameHUD({
   onGameResult,
   onPauseChange,
 }) {
-  console.log("[EcoGameHUD] Rendering. gameType:", gameType, "isSeaRescue:", levelConfig?.stage1Game === "searescue");
+  console.log(
+    "[EcoGameHUD] Rendering. gameType:",
+    gameType,
+    "isSeaRescue:",
+    levelConfig?.stage1Game === "searescue",
+  );
   const [stage, setStage] = useState("STAGE_1");
   const [distance, setDistance] = useState(0);
   const [speed, setSpeed] = useState(levelConfig?.runner?.baseSpeed || 12);
@@ -142,7 +148,11 @@ export default function EcoGameHUD({
     if (onPauseChange) {
       onPauseChange(showExitConfirm);
     }
-    if (game && typeof game.pause === "function" && typeof game.resume === "function") {
+    if (
+      game &&
+      typeof game.pause === "function" &&
+      typeof game.resume === "function"
+    ) {
       if (showExitConfirm) {
         game.pause();
       } else {
@@ -182,15 +192,11 @@ export default function EcoGameHUD({
         const tl = levelConfig?.sorter?.timeLimit || 0;
         setTimeRemaining(tl > 0 ? tl : null);
 
-        setShowGameOver(true);
+        setShowTransition(true);
         setTimeout(() => {
-          setShowGameOver(false);
-          setShowTransition(true);
-          setTimeout(() => {
-            setShowTransition(false);
-            setStage("STAGE_2");
-          }, 2000);
-        }, 1200);
+          setShowTransition(false);
+          setStage("STAGE_2");
+        }, 2000);
       } else if (newStage === "RESULT") {
         setStage("RESULT");
       }
@@ -229,7 +235,11 @@ export default function EcoGameHUD({
       <button
         onClick={() => setShowExitConfirm(true)}
         className="absolute top-4 right-4 text-white rounded-full w-10 h-10 flex items-center justify-center hover:bg-black/60 transition-colors"
-        style={{ zIndex: 999999, background: "rgba(0,0,0,0.4)", backdropFilter: "blur(4px)" }}
+        style={{
+          zIndex: 999999,
+          background: "rgba(0,0,0,0.4)",
+          backdropFilter: "blur(4px)",
+        }}
         title="Quay về"
       >
         ✕
@@ -240,7 +250,15 @@ export default function EcoGameHUD({
         !showGameOver &&
         !showTransition &&
         (isSeaRescue ? (
-          <div key="searescue" style={{ position: "absolute", inset: 0, zIndex: 1000, pointerEvents: "none" }}>
+          <div
+            key="searescue"
+            style={{
+              position: "absolute",
+              inset: 0,
+              zIndex: 1000,
+              pointerEvents: "none",
+            }}
+          >
             <EcoSeaRescueHUD
               game={game}
               levelConfig={levelConfig}
@@ -248,7 +266,15 @@ export default function EcoGameHUD({
             />
           </div>
         ) : (
-          <div key="runner" style={{ position: "absolute", inset: 0, zIndex: 1000, pointerEvents: "none" }}>
+          <div
+            key="runner"
+            style={{
+              position: "absolute",
+              inset: 0,
+              zIndex: 1000,
+              pointerEvents: "none",
+            }}
+          >
             <RunnerHUD
               distance={distance}
               speed={speed}

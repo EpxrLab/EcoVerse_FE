@@ -106,6 +106,8 @@ const PlanFormModal = ({ open, onClose, onSave, initialValues, isCreate }) => {
             maxCampaignsPerMonth: initialValues.maxCampaignsPerMonth,
             maxRoundsPerCampaign: initialValues.maxRoundsPerCampaign,
             maxSchoolsPerCampaign: initialValues.maxSchoolsPerCampaign,
+            maxAiQuizGenerationsPerPeriod:
+              initialValues.maxAiQuizGenerationsPerPeriod,
             gracePeriodDays: initialValues.gracePeriodDays,
             displayOrder: initialValues.displayOrder,
             ...featFields,
@@ -119,6 +121,7 @@ const PlanFormModal = ({ open, onClose, onSave, initialValues, isCreate }) => {
             maxCampaignsPerMonth: 3,
             maxRoundsPerCampaign: 3,
             maxSchoolsPerCampaign: 1,
+            maxAiQuizGenerationsPerPeriod: 0,
           },
     );
   }, [open, initialValues]);
@@ -147,6 +150,9 @@ const PlanFormModal = ({ open, onClose, onSave, initialValues, isCreate }) => {
         maxCampaignsPerMonth: Number(vals.maxCampaignsPerMonth),
         maxRoundsPerCampaign: Number(vals.maxRoundsPerCampaign),
         maxSchoolsPerCampaign: Number(vals.maxSchoolsPerCampaign),
+        maxAiQuizGenerationsPerPeriod: Number(
+          vals.maxAiQuizGenerationsPerPeriod,
+        ),
         features,
         gracePeriodDays: Number(vals.gracePeriodDays),
         displayOrder: Number(vals.displayOrder),
@@ -423,6 +429,23 @@ const PlanFormModal = ({ open, onClose, onSave, initialValues, isCreate }) => {
                 placeholder="1"
               />
             </Form.Item>
+            <Form.Item
+              label={
+                <span className={`flex items-center gap-1 ${lbl}`}>
+                  Lượt tạo Quiz AI
+                  <Tooltip title="Số lượt cho phép AI tạo quiz trong thời gian sử dụng gói">
+                    <InfoCircleOutlined className="text-gray-400 text-xs" />
+                  </Tooltip>
+                </span>
+              }
+              name="maxAiQuizGenerationsPerPeriod"
+            >
+              <InputNumber
+                className="w-full rounded-lg"
+                min={0}
+                placeholder="10"
+              />
+            </Form.Item>
           </div>
         </div>
 
@@ -656,6 +679,7 @@ const AdminSubscriptions = () => {
             học sinh
           </p>
           <p>{plan.maxCampaignsPerMonth} chiến dịch/tháng</p>
+          <p>{plan.maxAiQuizGenerationsPerPeriod} lượt AI Quiz</p>
         </div>
       ),
     },

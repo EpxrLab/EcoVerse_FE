@@ -345,11 +345,12 @@ export default function StudentRoundDetails() {
     );
 
   const game = roundData.games?.[0];
-  const handlePlay = (levelNumber, typeCode) => {
+  const handlePlay = (levelNumber, typeCode, presetId) => {
     navigate(
       `/student/campaign/${campaignId}/round/${roundId}/game/${roundGameConfigId}/play`,
       {
         state: {
+          presetId,
           levelNumber,
           typeCode,
         },
@@ -386,7 +387,9 @@ export default function StudentRoundDetails() {
       children: (
         <PresetTabContent
           preset={preset}
-          onPlay={(levelNum) => handlePlay(levelNum, game.typeCode)}
+          onPlay={(levelNum) =>
+            handlePlay(levelNum, game.typeCode, preset.presetId)
+          }
           campaignId={campaignId}
         />
       ),
