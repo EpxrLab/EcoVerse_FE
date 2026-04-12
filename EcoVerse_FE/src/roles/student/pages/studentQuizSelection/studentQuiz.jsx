@@ -1,7 +1,18 @@
 import { useState, lazy, Suspense, useEffect } from "react";
 import { useNavigate, useParams } from "react-router";
 import { motion, AnimatePresence } from "framer-motion";
-import { Card, Badge, Button, Spin, Statistic, Select, Space } from "antd";
+import {
+  Card,
+  Badge,
+  Button,
+  Spin,
+  Statistic,
+  Select,
+  Space,
+  Modal,
+  Empty,
+  Tag,
+} from "antd";
 import {
   Home,
   Coins,
@@ -13,14 +24,21 @@ import {
   Target,
   Trophy,
   Play,
+  History,
+  Clock,
+  ExternalLink,
 } from "lucide-react";
-import { ClippingGroup } from "three/webgpu";
-import { getCampaignDetails } from "../../services";
+import { getCampaignDetails, getQuizHistory } from "../../services";
 
 // Lazy-loaded QuizCard component
 const QuizCard = lazy(() =>
   Promise.resolve({
-    default: function QuizCard({ quiz, getDifficultyConfig, onStart }) {
+    default: function QuizCard({
+      quiz,
+      getDifficultyConfig,
+      onStart,
+      onOpenHistory,
+    }) {
       const config = getDifficultyConfig(quiz.difficulty);
       const isCompleted = quiz.isPassed;
 
@@ -33,13 +51,27 @@ const QuizCard = lazy(() =>
           layout
         >
           <Card
-            className={`border-2 transition-all duration-300 hover:shadow-2xl rounded-2xl overflow-hidden ${
+            className={`border-2 transition-all duration-300 hover:shadow-2xl rounded-2xl overflow-hidden relative ${
               isCompleted ? "border-green-400/40" : "border-gray-200"
             }`}
             bodyStyle={{ padding: 0 }}
           >
             {/* Card top accent bar */}
             <div className={`h-1.5 w-full ${config.bar}`} />
+
+            {/* History Toggle Button */}
+            <div className="absolute top-4 right-4 z-10">
+              <Button
+                size="small"
+                shape="circle"
+                icon={<History className="w-3.5 h-3.5" />}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onOpenHistory(quiz);
+                }}
+                className="bg-white/80 backdrop-blur-sm border-gray-200 text-gray-400 hover:text-blue-500 hover:border-blue-200 shadow-sm"
+              />
+            </div>
 
             <div className="p-6 space-y-4">
               {/* Header */}
@@ -63,10 +95,10 @@ const QuizCard = lazy(() =>
                       </span>
                     )}
                   </div>
-                  <h3 className="text-xl font-bold text-gray-800 mb-1">
+                  <h3 className="text-xl font-bold text-gray-800 mb-1 line-clamp-1">
                     {quiz.title}
                   </h3>
-                  <p className="text-sm text-gray-500 leading-relaxed">
+                  <p className="text-sm text-gray-500 leading-relaxed line-clamp-2">
                     {quiz.description ||
                       "Tham gia giải đố để tích lũy kiến thức bảo vệ môi trường."}
                   </p>
@@ -119,7 +151,7 @@ const QuizCard = lazy(() =>
                 className={`w-full h-10 font-semibold flex items-center justify-center gap-2 rounded-xl transition-all duration-200 ${
                   isCompleted
                     ? "bg-gray-100 text-gray-700 hover:bg-gray-200 border-gray-200"
-                    : "bg-blue-500 hover:bg-blue-600 border-blue-500 text-white"
+                    : "bg-blue-500 hover:bg-blue-600 border-blue-500 text-white shadow-md shadow-blue-100"
                 }`}
               >
                 {isCompleted ? "Làm lại" : "Bắt đầu"}
@@ -194,6 +226,36 @@ export default function StudentQuiz() {
   const [selectedRoundId, setSelectedRoundId] = useState(null);
   const [quizzes, setQuizzes] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [quizHistory, setQuizHistory] = useState([]);
+  const [historyModalOpen, setHistoryModalOpen] = useState(false);
+  const [selectedQuiz, setSelectedQuiz] = useState(null);
+  const [historyLoading, setHistoryLoading] = useState(false);
+
+  const fetchQuizHistoryData = async (quizId) => {
+    setHistoryLoading(true);
+    try {
+      const res = await getQuizHistory(campaignId, selectedRoundId, quizId);
+      setQuizHistory(res.data || []);
+    } catch (error) {
+      console.log(error);
+      setQuizHistory([]);
+    } finally {
+      setHistoryLoading(false);
+    }
+  };
+
+  const handleOpenHistory = (quiz) => {
+    setSelectedQuiz(quiz);
+    setHistoryModalOpen(true);
+    fetchQuizHistoryData(quiz.quizId);
+  };
+
+  const formatTime = (seconds) => {
+    if (!seconds) return "00:00";
+    const mins = Math.floor(seconds / 60);
+    const secs = seconds % 60;
+    return `${mins.toString().padStart(2, "0")}:${secs.toString().padStart(2, "0")}`;
+  };
 
   const fetchData = async () => {
     setLoading(true);
@@ -487,6 +549,7 @@ export default function StudentQuiz() {
                         quiz={quiz}
                         getDifficultyConfig={getDifficultyConfig}
                         onStart={() => handleStartQuiz(quiz)}
+                        onOpenHistory={handleOpenHistory}
                       />
                     </motion.div>
                   ))
@@ -502,6 +565,120 @@ export default function StudentQuiz() {
             </AnimatePresence>
           )}
         </Suspense>
+
+        <Modal
+          title={
+            <div className="flex items-center gap-2 text-lg font-bold">
+              <History className="w-5 h-5 text-blue-500" />
+              <span>Lịch sử làm bài: {selectedQuiz?.title}</span>
+            </div>
+          }
+          open={historyModalOpen}
+          onCancel={() => setHistoryModalOpen(false)}
+          footer={null}
+          width={700}
+          className="rounded-2xl overflow-hidden"
+          bodyStyle={{ padding: "12px 24px 24px" }}
+        >
+          {historyLoading ? (
+            <div className="py-20 text-center">
+              <Spin tip="Đang tải lịch sử..." />
+            </div>
+          ) : quizHistory.length > 0 ? (
+            <div className="space-y-3 mt-4">
+              {quizHistory.map((item) => (
+                <div
+                  key={item.attemptId}
+                  className="flex items-center justify-between p-4 rounded-xl border border-gray-100 bg-gray-50/50 hover:bg-white hover:shadow-md transition-all duration-200 group"
+                >
+                  <div className="flex flex-wrap items-center gap-4 flex-1">
+                    <div className="flex flex-col">
+                      <span className="text-xs text-gray-400 font-medium uppercase tracking-wider">
+                        Lần thử
+                      </span>
+                      <span className="font-bold text-gray-700">
+                        #{item.attemptNumber}
+                      </span>
+                    </div>
+
+                    <div className="w-px h-8 bg-gray-200 mx-2 hidden sm:block" />
+
+                    <div className="flex flex-col min-w-[80px]">
+                      <span className="text-xs text-gray-400 font-medium uppercase tracking-wider">
+                        Điểm số
+                      </span>
+                      <span
+                        className={`font-extrabold ${item.scorePercentage >= 80 ? "text-green-600" : "text-amber-600"}`}
+                      >
+                        {item.scorePercentage}%
+                      </span>
+                    </div>
+
+                    <div className="flex flex-col min-w-[100px]">
+                      <span className="text-xs text-gray-400 font-medium uppercase tracking-wider">
+                        Thời gian
+                      </span>
+                      <div className="flex items-center gap-1.5 text-gray-600 font-medium">
+                        <Clock className="w-3.5 h-3.5" />
+                        {formatTime(item.timeTakenSeconds)}
+                      </div>
+                    </div>
+
+                    <div className="flex flex-col">
+                      <span className="text-xs text-gray-400 font-medium uppercase tracking-wider">
+                        Kết quả
+                      </span>
+                      {item.isPassed ? (
+                        <Tag
+                          color="success"
+                          className="rounded-lg font-bold border-0 bg-green-100 text-green-700"
+                        >
+                          ĐẠT
+                        </Tag>
+                      ) : (
+                        <Tag
+                          color="error"
+                          className="rounded-lg font-bold border-0 bg-red-100 text-red-600"
+                        >
+                          KHÔNG ĐẠT
+                        </Tag>
+                      )}
+                    </div>
+                  </div>
+
+                  <Button
+                    type="primary"
+                    ghost
+                    size="middle"
+                    icon={<ExternalLink className="w-4 h-4" />}
+                    onClick={() =>
+                      navigate(
+                        `/student/campaign/${campaignId}/round/${selectedRoundId}/quiz/${selectedQuiz.quizId}/history/${item.attemptId}`,
+                      )
+                    }
+                    className="rounded-xl font-semibold border-blue-200 text-blue-600 hover:bg-blue-50 ml-4 opacity-0 group-hover:opacity-100 transition-opacity"
+                  >
+                    Xem chi tiết
+                  </Button>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <div className="py-12">
+              <Empty
+                image={Empty.PRESENTED_IMAGE_SIMPLE}
+                description={
+                  <div className="space-y-1">
+                    <p className="text-gray-500 font-medium">Chưa làm</p>
+                    <p className="text-xs text-gray-400">
+                      Bạn chưa thực hiện lần làm bài nào cho quiz này.
+                    </p>
+                  </div>
+                }
+              />
+            </div>
+          )}
+        </Modal>
       </div>
     </div>
   );

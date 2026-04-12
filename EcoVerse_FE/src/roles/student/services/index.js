@@ -156,6 +156,28 @@ const getMyRewardDeliveries = async () => {
   }
 };
 
+const getQuizHistory = async (cId, rId, qId) => {
+  try {
+    const res = await axios.get(
+      `/student/quiz/campaigns/${cId}/rounds/${rId}/quizzes/${qId}/history`,
+    );
+    return res.data;
+  } catch (error) {
+    console.log(error);
+  }
+};
+
+const getAttemptHistory = async (attemptId) => {
+  try {
+    const res = await axios.get(
+      `/student/quiz/quiz-attempts/${attemptId}/result`,
+    );
+    return res.data;
+  } catch (error) {
+    console.log(error);
+  }
+};
+
 export {
   getAuthenticatedStudentProfile,
   getAllRewards,
@@ -172,4 +194,6 @@ export {
   submitGame,
   getCampaignLeaderboard,
   getMyRewardDeliveries,
+  getQuizHistory,
+  getAttemptHistory,
 };
