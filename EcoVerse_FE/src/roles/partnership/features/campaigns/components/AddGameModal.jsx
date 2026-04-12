@@ -1,23 +1,21 @@
 import React, { useState, useEffect } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/shared/components/ui/dialog';
 import { Button } from '@/shared/components/ui/button';
-import { Input } from '@/shared/components/ui/input';
 import { Badge } from '@/shared/components/ui/badge';
 import { ScrollArea } from '@/shared/components/ui/scroll-area';
 import {
   ChevronRight, ChevronLeft, Loader2, AlertCircle, Check,
-  Gamepad2, Zap, RotateCcw, Save, Clock, Package, Shield, Layers
+  Gamepad2, Zap, Save, Clock, Package, Shield, Layers
 } from 'lucide-react';
 import { cn } from '@/shared/lib/utils';
 import { partnershipCampaignService } from '../../../services/partnershipCampaign.service';
 
 // ─── Constants ────────────────────────────────────────────────────────────────
 const STEPS = [
-  { id: 1, label: 'Coin thưởng' },
-  { id: 2, label: 'Loại game' },
-  { id: 3, label: 'Độ khó' },
-  { id: 4, label: 'Danh mục rác' },
-  { id: 5, label: 'Xem trước' },
+  { id: 1, label: 'Loại game' },
+  { id: 2, label: 'Độ khó' },
+  { id: 3, label: 'Danh mục rác' },
+  { id: 4, label: 'Xem trước' },
 ];
 
 const DIFFICULTY_META = {
@@ -25,8 +23,6 @@ const DIFFICULTY_META = {
   MEDIUM: { label: 'Trung bình', color: 'text-eco-green',    border: 'border-eco-green',     bg: 'bg-eco-green/5' },
   HARD:   { label: 'Khó',   color: 'text-emerald-700',  border: 'border-emerald-700',   bg: 'bg-emerald-700/5' },
 };
-
-const DEFAULT_COIN = 20;
 
 const WASTE_LABEL = { ORGANIC: 'Hữu cơ', RECYCLABLE: 'Tái chế', GENERAL: 'Chung', HAZARDOUS: 'Nguy hại' };
 
@@ -38,7 +34,6 @@ export function AddGameModal({ isOpen, onClose, campaign, onSubmit }) {
   const roundId = existingRound?.id;
 
   const [step, setStep] = useState(1);
-  const [coinPerSession, setCoinPerSession] = useState(DEFAULT_COIN);
 
   // Step 2 – Game Type
   const [gameTypes, setGameTypes] = useState([]);
@@ -74,7 +69,6 @@ export function AddGameModal({ isOpen, onClose, campaign, onSubmit }) {
     
     if (!hasConfig) {
       setStep(1);
-      setCoinPerSession(DEFAULT_COIN);
       setSelectedGameTypeId(null);
       setSelectedPresetIds([]);
       setPresets([]);
@@ -82,7 +76,6 @@ export function AddGameModal({ isOpen, onClose, campaign, onSubmit }) {
       pendingSubCategoryIdsRef.current = {};
     } else {
       setStep(1);
-      setCoinPerSession(existingRound?.coin_per_session ?? existingRound?.coinPerSession ?? DEFAULT_COIN);
       setSelectedGameTypeId(initialGameTypeId);
       setSelectedPresetIds(existingRound.selected_preset_ids || existingRound.selectedPresetIds || []);
 
@@ -154,13 +147,12 @@ export function AddGameModal({ isOpen, onClose, campaign, onSubmit }) {
   const selectedGameType = gameTypes.find(g => g.id === selectedGameTypeId);
   
   const canGoNext = { 
-    1: true, 
-    2: !!selectedGameTypeId, 
-    3: selectedPresetIds.length > 0, 
-    4: selectedPresetIds.every(id => selectedSubCategoryIds[id]?.length > 0)
+    1: !!selectedGameTypeId, 
+    2: selectedPresetIds.length > 0, 
+    3: selectedPresetIds.every(id => selectedSubCategoryIds[id]?.length > 0)
   };
 
-  const handleNext = () => setStep(s => Math.min(s + 1, 5));
+  const handleNext = () => setStep(s => Math.min(s + 1, 4));
   const handleBack = () => setStep(s => Math.max(s - 1, 1));
   const handleStepClick = (s) => { if (s <= step) setStep(s); };
 
@@ -211,7 +203,7 @@ export function AddGameModal({ isOpen, onClose, campaign, onSubmit }) {
           selectedSubCategoryIds: userSelected.filter(id => availableForThisPreset.includes(id))
         };
       }),
-      coinPerSession: Number(coinPerSession) || 0,
+      coinPerSession: 0,
     };
 
     setIsSubmitting(true);
@@ -301,30 +293,10 @@ export function AddGameModal({ isOpen, onClose, campaign, onSubmit }) {
               </div>
             )}
 
-            {/* ── Step 1: Coin thưởng ─────────────────────────── */}
-            {step === 1 && (
-              <div className="space-y-4">
-                <SectionLabel>COIN THƯỞNG KHI HOÀN THÀNH GAME</SectionLabel>
-                <div className="flex gap-2 items-center">
-                  <div className="relative flex-1">
-                    <Input
-                      type="number" min={0}
-                      value={coinPerSession}
-                      onChange={e => setCoinPerSession(e.target.value)}
-                      className="pr-28 text-lg font-semibold h-12"
-                    />
-                    <span className="absolute right-3 top-1/2 -translate-y-1/2 text-sm text-muted-foreground">coin / session</span>
-                  </div>
-                  <Button variant="secondary" onClick={() => setCoinPerSession(DEFAULT_COIN)} className="h-12 shrink-0">
-                    <RotateCcw className="w-4 h-4 mr-2" />
-                    Dùng mặc định hệ thống
-                  </Button>
-                </div>
-              </div>
-            )}
 
-            {/* ── Step 2: Loại game ───────────────────────────── */}
-            {step === 2 && (
+
+            {/* ── Step 1: Loại game ───────────────────────────── */}
+            {step === 1 && (
               <div className="space-y-4">
                 <SectionLabel>LOẠI GAME</SectionLabel>
                 {loadingGameTypes ? <LoadingCard /> : (
@@ -356,8 +328,8 @@ export function AddGameModal({ isOpen, onClose, campaign, onSubmit }) {
               </div>
             )}
 
-            {/* ── Step 3: Độ khó (= chọn presets) ────────────── */}
-            {step === 3 && (
+            {/* ── Step 2: Độ khó (= chọn presets) ────────────── */}
+            {step === 2 && (
               <div className="space-y-4">
                 <SectionLabel>ĐỘ KHÓ</SectionLabel>
                 {loadingPresets ? <LoadingCard /> : (
@@ -399,7 +371,8 @@ export function AddGameModal({ isOpen, onClose, campaign, onSubmit }) {
               </div>
             )}
 
-            {step === 4 && (
+            {/* ── Step 3: Danh mục rác ───────────────────────── */}
+            {step === 3 && (
               <div className="space-y-6">
                 <SectionLabel>DANH MỤC RÁC SỬ DỤNG CHO TỪNG ĐỘ KHÓ</SectionLabel>
                 {loadingSubCategories ? <LoadingCard /> : (
@@ -463,8 +436,8 @@ export function AddGameModal({ isOpen, onClose, campaign, onSubmit }) {
               </div>
             )}
 
-            {/* ── Step 5: Xem trước ──────────────────────────── */}
-            {step === 5 && (
+            {/* ── Step 4: Xem trước ──────────────────────────── */}
+            {step === 4 && (
               <div className="space-y-4">
                 <SectionLabel>XÁC NHẬN CẤU HÌNH GAME</SectionLabel>
                 <div className="border-2 border-muted/30 rounded-xl overflow-hidden">
@@ -529,10 +502,7 @@ export function AddGameModal({ isOpen, onClose, campaign, onSubmit }) {
                     </div>
                   </div>
 
-                  <div className="p-4 text-center bg-eco-orange/10">
-                    <p className="text-2xl font-bold text-eco-orange">{coinPerSession}</p>
-                    <p className="text-xs text-muted-foreground">Coin / session</p>
-                  </div>
+
                 </div>
               </div>
             )}
@@ -545,7 +515,7 @@ export function AddGameModal({ isOpen, onClose, campaign, onSubmit }) {
             ? <Button variant="outline" onClick={handleBack}><ChevronLeft className="w-4 h-4 mr-1" /> Quay lại</Button>
             : <Button variant="ghost" onClick={onClose}>Hủy</Button>
           }
-          {step < 5 ? (
+          {step < 4 ? (
             <Button onClick={handleNext} disabled={!canGoNext[step]} className="bg-eco-green hover:bg-eco-green/90 text-white">
               Tiếp theo <ChevronRight className="w-4 h-4 ml-1" />
             </Button>

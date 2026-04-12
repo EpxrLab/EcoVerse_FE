@@ -56,7 +56,7 @@ export function useCampaigns() {
     // Helper to attach invitations
     const attachInvitations = (list) => list.map(campaign => ({
       ...campaign,
-      student_invitations: Array.isArray(mockStudentInvitations) ? 
+      student_invitations: Array.isArray(mockStudentInvitations) ?
         mockStudentInvitations.filter(inv => inv.campaign_id === campaign?.id) : [],
     }));
 
@@ -93,23 +93,17 @@ export function useCampaigns() {
     }).filter(Boolean);
 
     const campaignsList = attachInvitations(mappedCampaigns);
-    
+
     // Map partnership invitations to UI format
     const mapCampaignStatus = (serverStatus) => {
       if (!serverStatus) return 'draft';
       const status = serverStatus.toUpperCase();
       switch (status) {
         case 'INVITING': return 'inviting';
-        case 'JOINING':
-        case 'ONGOING':
-        case 'ACTIVE':
+        case 'JOINING': return 'joining';
         case 'ON_GOING': return 'on_going';
-        case 'REWARDING':
-        case 'COMPLETED':
-        case 'FINISHED': return 'completed';
+        case 'COMPLETED': return 'completed';
         case 'CANCELLED': return 'cancelled';
-        case 'SCHEDULED': return 'scheduled';
-        case 'EXTENDED': return 'inviting';
         default: return status.toLowerCase();
       }
     };
@@ -137,7 +131,7 @@ export function useCampaigns() {
       students_enrolled: inv.studentsEnrolled || 0,
       banner_image_url: inv.bannerImageUrl || '',
     }));
-    
+
     return [...campaignsList, ...partnershipList];
   }, [campaigns, partnershipInvitations]);
 
@@ -159,7 +153,7 @@ export function useCampaigns() {
   }, [allFormattedCampaigns]);
 
 
-  
+
   // Get all available quizzes (both default and custom)
   const availableQuizzes = useMemo(() => {
     const publishedApiQuizzes = apiQuizzes
@@ -176,10 +170,10 @@ export function useCampaigns() {
   }, [apiQuizzes]);
 
   const addCampaign = (data) => {
-    const calculatedDeadline = data.start_date 
+    const calculatedDeadline = data.start_date
       ? new Date(new Date(data.start_date).getTime() - 24 * 60 * 60 * 1000).toISOString()
       : undefined;
-    
+
     const finalDeadline = (data.invitation_deadline ? new Date(data.invitation_deadline).toISOString() : null) || calculatedDeadline || null;
 
     const payload = {
@@ -211,7 +205,7 @@ export function useCampaigns() {
         setCampaigns([newCampaign, ...campaigns]);
         // Also refresh the overall list from the server to get full backend data
         fetchCampaigns();
-        
+
         toast({
           title: "Thành công",
           description: `Đã tạo chiến dịch "${data.name}"`,
@@ -249,9 +243,9 @@ export function useCampaigns() {
       };
 
       await campaignService.updateCampaign(id, payload);
-      
+
       // Update local state
-      setCampaigns(prev => prev.map(c => 
+      setCampaigns(prev => prev.map(c =>
         c.id === id ? { ...c, ...data, updated_at: new Date().toISOString() } : c
       ));
 
@@ -259,7 +253,7 @@ export function useCampaigns() {
         title: "Thành công",
         description: "Đã cập nhật chiến dịch",
       });
-      
+
       // Refresh to ensure everything is in sync
       fetchCampaigns();
     } catch (error) {
@@ -292,7 +286,7 @@ export function useCampaigns() {
   };
 
   const changeStatus = (id, status) => {
-    setCampaigns(campaigns.map(c => 
+    setCampaigns(campaigns.map(c =>
       c.id === id ? { ...c, status, updated_at: new Date().toISOString() } : c
     ));
     const statusLabels = {
@@ -328,7 +322,7 @@ export function useCampaigns() {
       });
     }
   };
-  
+
   const declineInvitation = async (id) => {
     try {
       await campaignService.rejectPartnershipInvitation(id);
@@ -370,7 +364,7 @@ export function useCampaigns() {
       const response = await campaignService.getAssignedStudentsForPartnershipInvitation(id);
       const rawData = response.data?.data?.selectedStudents || [];
       // Handle array of student objects and map to IDs
-      return Array.isArray(rawData) 
+      return Array.isArray(rawData)
         ? rawData.map(item => item.studentId || item.id)
         : [];
     } catch (error) {
@@ -384,7 +378,7 @@ export function useCampaigns() {
       if (c.id === id) {
         const currentStudents = c.participating_students || [];
         const updatedStudents = Array.from(new Set([...currentStudents, ...newStudentIds]));
-        
+
         return {
           ...c,
           participating_students: updatedStudents,
@@ -474,7 +468,7 @@ export function useCampaigns() {
 
   const fetchCampaignDetail = async (id, origin = 'school') => {
     try {
-      const res = origin === 'partnership' 
+      const res = origin === 'partnership'
         ? await campaignService.getPartnershipInvitationDetail(id)
         : await campaignService.getCampaignById(id);
       const data = res.data?.data;
@@ -487,7 +481,7 @@ export function useCampaigns() {
         name: data.campaignName || data.name,
         code: data.campaignCode || data.code,
         description: data.description,
-        status: origin === 'partnership' 
+        status: origin === 'partnership'
           ? (data.campaignCampaignStatus ? mapCampaignStatus(data.campaignCampaignStatus) : (data.status?.toLowerCase() || 'invitation_pending'))
           : (data.status?.toLowerCase() || 'draft'),
         start_date: data.startDate || data.start_date,

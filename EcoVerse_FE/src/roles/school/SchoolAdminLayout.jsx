@@ -42,6 +42,8 @@ import {
 import { logoutFunction } from "../../features/auth/services";
 import toast from "react-hot-toast";
 import { useProfile } from "./hooks";
+import { studentService } from "./services";
+import { useState, useEffect } from "react";
 
 const menuItems = [
   { title: "Tổng quan", url: "/school", icon: LayoutDashboard },
@@ -58,6 +60,23 @@ function SchoolAdminSidebar({ schoolInfo, isProfileLoading }) {
   const location = useLocation();
   const { state } = useSidebar();
   const isCollapsed = state === "collapsed";
+  const [totalStudents, setTotalStudents] = useState(0);
+
+  useEffect(() => {
+    const fetchStats = async () => {
+      try {
+        const response = await studentService.getStudents({ pageSize: 1 });
+        if (response?.data?.data?.totalElements !== undefined) {
+          setTotalStudents(response.data.data.totalElements);
+        } else if (response?.data?.totalElements !== undefined) {
+          setTotalStudents(response.data.totalElements);
+        }
+      } catch (error) {
+        console.error("Error fetching student stats:", error);
+      }
+    };
+    fetchStats();
+  }, []);
 
   const handleLogout = async () => {
     try {
@@ -139,19 +158,11 @@ function SchoolAdminSidebar({ schoolInfo, isProfileLoading }) {
 
           {/* Quick Stats - hide when collapsed */}
           {!isCollapsed && (
-            <div className="grid grid-cols-2 gap-2">
-              <div className="p-3 rounded-xl bg-eco-green/8 border border-eco-green/20 text-center">
-                <p className="text-lg font-bold text-eco-green">156</p>
-                <p className="text-[10px] text-muted-foreground font-medium">
-                  Học sinh
-                </p>
-              </div>
-              <div className="p-3 rounded-xl bg-eco-blue/8 border border-eco-blue/20 text-center">
-                <p className="text-lg font-bold text-eco-blue">87%</p>
-                <p className="text-[10px] text-muted-foreground font-medium">
-                  Độ chính xác
-                </p>
-              </div>
+            <div className="p-3 rounded-xl bg-eco-green/8 border border-eco-green/20 text-center">
+              <p className="text-lg font-bold text-eco-green">{totalStudents}</p>
+              <p className="text-[10px] text-muted-foreground font-medium">
+                Học sinh
+              </p>
             </div>
           )}
         </div>

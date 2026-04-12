@@ -5,10 +5,11 @@ import { Label } from '@/shared/components/ui/label';
 import { Input } from '@/shared/components/ui/input';
 import { Checkbox } from '@/shared/components/ui/checkbox';
 import { Badge } from '@/shared/components/ui/badge';
-import { Brain, Sparkles, Bot, BookOpen, Plus, Minus, Check, Loader2, Wand2, RotateCcw } from 'lucide-react';
+import { Brain, Sparkles, Bot, BookOpen, Plus, Minus, Check, Loader2, Wand2, RotateCcw, FileUp, File, X } from 'lucide-react';
 import { cn } from '@/shared/lib/utils';
-
-// ─── Data ─────────────────────────────────────────────────────────────────────
+import { aiQuizService } from '../../quizzes/services/aiQuiz.service';
+import { toast } from 'sonner';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/shared/components/ui/select';
 
 const difficultyConfig = {
   easy: { label: 'Dễ', color: 'bg-eco-green/15 text-eco-green', dot: 'bg-eco-green' },
@@ -16,193 +17,365 @@ const difficultyConfig = {
   hard: { label: 'Khó', color: 'bg-destructive/15 text-destructive', dot: 'bg-destructive' },
 };
 
-const AI_TOPICS = ['Tái chế nhựa', 'Phân loại rác hữu cơ', 'Năng lượng tái tạo', 'Ô nhiễm không khí', 'Biến đổi khí hậu'];
-
-const DEMO_AI_QUESTIONS = {
-  easy: [
-    'Chai nhựa thuộc loại rác thải nào?',
-    'Vỏ chuối nên bỏ vào thùng rác nào?',
-    'Màu sắc thùng rác hữu cơ thường là gì?',
-  ],
-  medium: [
-    'Thời gian phân hủy của túi nilon là bao nhiêu năm?',
-    'Pin điện tử được phân loại là rác thải gì?',
-    'Quy trình tái chế giấy gồm mấy bước?',
-  ],
-  hard: [
-    'LCA (Life Cycle Assessment) đo lường điều gì trong quản lý chất thải?',
-    'Nguyên tắc 3R trong kinh tế tuần hoàn là gì?',
-    'Phân biệt rác thải nguy hại và rác thải thông thường?',
-  ],
-};
-
-function generateAIQuiz(topic, difficulty, count, existingCount) {
-  const questions = DEMO_AI_QUESTIONS[difficulty] || DEMO_AI_QUESTIONS.medium;
-  return {
-    id: `ai_${Date.now()}`,
-    title: `[AI] ${topic} — Bộ ${existingCount + 1}`,
-    difficulty,
-    questions: count,
-    isAI: true,
-    preview: questions.slice(0, 2).map((q, i) => `${i + 1}. ${q}`),
-  };
-}
-
-// ─── AI Panel ─────────────────────────────────────────────────────────────────
-
-function AIGeneratePanel({ onGenerated, existingCount = 0 }) {
-  const [topic, setTopic] = useState('');
-  const [difficulty, setDifficulty] = useState('easy');
-  const [questionCount, setQuestionCount] = useState(10);
+function AIGeneratePanel({ campaignId, roundId, onGenerated }) {
+  const [questionCount, setQuestionCount] = useState(15);
+  const [targetGrade, setTargetGrade] = useState(1);
+  const [coinsOnPass, setCoinsOnPass] = useState(10);
+  const [timePerQuestion, setTimePerQuestion] = useState(30);
+  const [selectedFileIds, setSelectedFileIds] = useState([]);
+  const [myFiles, setMyFiles] = useState([]);
+  
   const [isGenerating, setIsGenerating] = useState(false);
-  const [generatedQuiz, setGeneratedQuiz] = useState(null);
+  const [isConfirming, setIsConfirming] = useState(false);
+  const [isUploading, setIsUploading] = useState(false);
+  const [generatedData, setGeneratedData] = useState(null); // { aiGenerationLogId, quizPreview }
 
-  const handleGenerate = () => {
-    if (!topic.trim()) return;
-    setIsGenerating(true);
-    setGeneratedQuiz(null);
-    setTimeout(() => {
-      const quiz = generateAIQuiz(topic, difficulty, questionCount, existingCount);
-      setGeneratedQuiz(quiz);
-      setIsGenerating(false);
-    }, 1800);
-  };
+  React.useEffect(() => {
+    fetchMyFiles();
+  }, []);
 
-  const handleAdd = () => {
-    if (generatedQuiz) {
-      onGenerated(generatedQuiz);
-      setGeneratedQuiz(null);
-      setTopic('');
+  const fetchMyFiles = async () => {
+    try {
+      const res = await aiQuizService.getMyFiles();
+      if (res.data?.data) {
+        // Handle both simple array and paginated response
+        const allFiles = Array.isArray(res.data.data) ? res.data.data : (res.data.data.content || []);
+        // Filter to only show documents
+        const docs = allFiles.filter(file => file.category === 'DOCUMENT');
+        setMyFiles(docs);
+      }
+    } catch (error) {
+      console.error('Failed to fetch files:', error);
     }
   };
 
-  return (
-    <div className="space-y-5">
-      {/* Header */}
-      <div className="flex items-center gap-2.5 p-3 rounded-xl bg-gradient-to-r from-purple-50 to-violet-50 border border-purple-100">
-        <div className="w-9 h-9 rounded-xl bg-purple-100 flex items-center justify-center shrink-0">
-          <Bot className="w-5 h-5 text-purple-600" />
-        </div>
-        <div>
-          <p className="font-semibold text-purple-900 text-sm">Tạo Quiz bằng AI</p>
-          <p className="text-xs text-purple-500">AI sẽ tự động tạo bộ câu hỏi phù hợp chủ đề môi trường bạn nhập</p>
-        </div>
-      </div>
+  const handleFileUpload = async (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
 
-      {/* Topic input */}
-      <div className="space-y-2">
-        <Label className="text-sm font-medium text-gray-700">Chủ đề / Nội dung</Label>
-        <Input
-          value={topic}
-          onChange={e => setTopic(e.target.value)}
-          placeholder="VD: Phân loại rác thải nhựa trong gia đình..."
-          className="rounded-xl border-purple-100 focus-visible:ring-purple-400"
-        />
-        <div className="flex flex-wrap gap-1.5 mt-1">
-          {AI_TOPICS.map(t => (
-            <button
-              key={t}
-              type="button"
-              onClick={() => setTopic(t)}
-              className={cn(
-                "text-xs px-2.5 py-1 rounded-full border transition-all",
-                topic === t
-                  ? "bg-purple-100 border-purple-400 text-purple-700 font-medium"
-                  : "border-gray-200 text-gray-500 hover:border-purple-300 hover:text-purple-600"
-              )}
-            >
-              {t}
-            </button>
-          ))}
-        </div>
-      </div>
+    setIsUploading(true);
+    try {
+      const res = await aiQuizService.uploadDocument(file);
+      if (res.data?.data) {
+        const newFile = res.data.data;
+        setMyFiles(prev => [newFile, ...prev]);
+        setSelectedFileIds(prev => [...prev, newFile.id]);
+        toast.success('Tải tài liệu thành công');
+      }
+    } catch (error) {
+      toast.error('Tải tài liệu thất bại');
+      console.error(error);
+    } finally {
+      setIsUploading(false);
+      e.target.value = '';
+    }
+  };
 
-      {/* Difficulty + Count */}
-      <div className="grid grid-cols-2 gap-4">
-        <div className="space-y-2">
-          <Label className="text-sm font-medium text-gray-700">Độ khó</Label>
-          <div className="flex flex-col gap-1.5">
-            {Object.entries(difficultyConfig).map(([key, cfg]) => (
-              <label key={key} className={cn(
-                "flex items-center gap-2.5 p-2 rounded-xl border-2 cursor-pointer transition-all",
-                difficulty === key ? "border-purple-400 bg-purple-50" : "border-gray-100 hover:border-gray-200"
-              )}>
-                <input type="radio" className="hidden" checked={difficulty === key} onChange={() => setDifficulty(key)} />
-                <div className={cn("w-3 h-3 rounded-full flex-shrink-0", cfg.dot)} />
-                <span className={cn("text-sm font-medium", difficulty === key ? "text-purple-800" : "text-gray-600")}>{cfg.label}</span>
-                {difficulty === key && <Check className="w-3.5 h-3.5 text-purple-500 ml-auto" />}
-              </label>
-            ))}
+  const toggleFileSelection = (fileId) => {
+    setSelectedFileIds(prev => 
+      prev.includes(fileId) ? prev.filter(id => id !== fileId) : [...prev, fileId]
+    );
+  };
+
+  const handleGenerate = async () => {
+    if (selectedFileIds.length === 0) {
+      toast.error('Vui lòng chọn ít nhất một tài liệu');
+      return;
+    }
+
+    setIsGenerating(true);
+    setGeneratedData(null);
+    try {
+      const res = await aiQuizService.generateQuiz({
+        campaignId,
+        roundId,
+        questionCount,
+        targetGrade,
+        coinsOnPass,
+        timePerQuestion,
+        fileIds: selectedFileIds
+      });
+
+      if (res.data?.data) {
+        setGeneratedData(res.data.data);
+        toast.success('Tạo quiz thành công! Vui lòng xem trước.');
+      }
+    } catch (error) {
+      const errorMsg = error.response?.data?.message || 'Tạo quiz thất bại';
+      toast.error(errorMsg);
+      console.error(error);
+    } finally {
+      setIsGenerating(false);
+    }
+  };
+
+  const handleConfirm = async () => {
+    if (!generatedData) return;
+
+    setIsConfirming(true);
+    try {
+      const res = await aiQuizService.confirmQuiz({
+        aiGenerationLogId: generatedData.aiGenerationLogId,
+        questions: generatedData.quizPreview.questions.map(q => ({
+          questionOrder: q.questionOrder,
+          questionType: q.questionType,
+          questionText: q.questionText,
+          answers: q.answers.map(a => ({
+            answerText: a.answerText,
+            correct: a.correct
+          }))
+        }))
+      });
+
+      if (res.data?.data) {
+        toast.success('Đã lưu quiz vào hệ thống');
+        onGenerated(res.data.data); // This passes the confirmed quiz back
+        setGeneratedData(null);
+      }
+    } catch (error) {
+      toast.error('Lưu quiz thất bại');
+      console.error(error);
+    } finally {
+      setIsConfirming(false);
+    }
+  };
+
+  if (generatedData) {
+    const quiz = generatedData.quizPreview;
+    return (
+      <div className="space-y-4 animate-in fade-in slide-in-from-bottom-2 duration-300">
+        <div className="flex items-center justify-between pb-2 border-b">
+          <div className="flex items-center gap-2">
+            <Sparkles className="w-5 h-5 text-purple-500" />
+            <h3 className="font-bold text-lg">Xem trước Quiz</h3>
           </div>
-        </div>
-
-        <div className="space-y-2">
-          <Label className="text-sm font-medium text-gray-700">Số câu hỏi</Label>
-          <div className="flex flex-col gap-1.5">
-            {[5, 10, 15, 20].map(n => (
-              <button
-                key={n}
-                type="button"
-                onClick={() => setQuestionCount(n)}
-                className={cn(
-                  "p-2 rounded-xl border-2 text-sm font-medium transition-all text-left",
-                  questionCount === n ? "border-purple-400 bg-purple-50 text-purple-800" : "border-gray-100 text-gray-600 hover:border-gray-200"
-                )}
-              >
-                {n} câu hỏi
-              </button>
-            ))}
-          </div>
-        </div>
-      </div>
-
-      {/* Generate button */}
-      <Button
-        onClick={handleGenerate}
-        disabled={isGenerating || !topic.trim()}
-        className="w-full h-11 rounded-xl bg-gradient-to-r from-purple-600 to-violet-600 hover:from-purple-700 hover:to-violet-700 text-white font-semibold shadow-lg shadow-purple-100"
-      >
-        {isGenerating ? (
-          <><Loader2 className="w-4 h-4 mr-2 animate-spin" />Đang tạo quiz...</>
-        ) : (
-          <><Wand2 className="w-4 h-4 mr-2" />Tạo ngay</>
-        )}
-      </Button>
-
-      {/* Generated result */}
-      {generatedQuiz && (
-        <div className="rounded-2xl border-2 border-purple-300 bg-purple-50/50 p-4 space-y-3 animate-in fade-in slide-in-from-bottom-2 duration-300">
-          <div className="flex items-start justify-between gap-2">
-            <div>
-              <div className="flex items-center gap-2 mb-1">
-                <Sparkles className="w-4 h-4 text-purple-500" />
-                <p className="font-semibold text-purple-900 text-sm">{generatedQuiz.title}</p>
-              </div>
-              <div className="flex gap-1.5">
-                <Badge className={cn(difficultyConfig[generatedQuiz.difficulty].color, "text-[10px] border-0")}>{difficultyConfig[generatedQuiz.difficulty].label}</Badge>
-                <Badge variant="outline" className="text-[10px]">{generatedQuiz.questions} câu</Badge>
-              </div>
-            </div>
-            <div className="w-8 h-8 rounded-full bg-purple-200 flex items-center justify-center">
-              <Bot className="w-4 h-4 text-purple-600" />
-            </div>
-          </div>
-          <div className="space-y-1 bg-white/70 rounded-xl p-2.5 border border-purple-100">
-            <p className="text-xs font-semibold text-purple-700 mb-1.5">Xem trước câu hỏi:</p>
-            {generatedQuiz.preview.map((q, i) => (
-              <p key={i} className="text-xs text-gray-600">{q}</p>
-            ))}
-            <p className="text-xs text-purple-400 italic mt-1">... và {generatedQuiz.questions - 2} câu khác</p>
-          </div>
-          <Button
-            onClick={handleAdd}
-            className="w-full h-9 rounded-xl bg-purple-600 hover:bg-purple-700 text-white text-sm font-semibold"
-          >
-            <Plus className="w-4 h-4 mr-1.5" />
-            Thêm bộ quiz này vào chiến dịch
+          <Button variant="ghost" size="sm" onClick={() => setGeneratedData(null)}>
+            <RotateCcw className="w-4 h-4 mr-2" />
+            Tạo lại
           </Button>
         </div>
-      )}
+
+        <div className="bg-purple-50/50 rounded-2xl p-4 border border-purple-100 space-y-3">
+          <div>
+            <h4 className="font-bold text-purple-900">{quiz.title}</h4>
+            <p className="text-sm text-purple-700">{quiz.description}</p>
+          </div>
+          
+          <div className="flex flex-wrap gap-2">
+            <Badge variant="outline" className="bg-white">Lớp {quiz.targetGrade}</Badge>
+            <Badge variant="outline" className="bg-white">{quiz.questions.length} câu hỏi</Badge>
+            <Badge variant="outline" className="bg-white">{quiz.timePerQuestion}s / câu</Badge>
+            <Badge variant="outline" className="bg-white">{quiz.coinsOnPass} điểm thưởng</Badge>
+            <Badge className="bg-eco-green/10 text-eco-green border-0 uppercase text-[10px]">{quiz.difficulty}</Badge>
+          </div>
+        </div>
+
+        <div className="space-y-3">
+          <p className="text-sm font-semibold text-gray-700">Danh sách câu hỏi:</p>
+          {quiz.questions.map((q, idx) => (
+            <div key={`question-${idx}`} className="p-3 rounded-xl border bg-white space-y-2">
+              <p className="text-sm font-medium"><span className="text-purple-600 font-bold mr-2">#{idx + 1}</span>{q.questionText}</p>
+              <div className="grid grid-cols-2 gap-2">
+                {q.answers.map((a, aidx) => (
+                  <div key={`answer-${idx}-${aidx}`} className={cn(
+                    "text-xs p-2 rounded-lg border",
+                    a.correct ? "bg-eco-green/10 border-eco-green/30 text-eco-green-dark font-medium" : "bg-gray-50 text-gray-600"
+                  )}>
+                    {a.answerText}
+                    {a.correct && " ✓"}
+                  </div>
+                ))}
+              </div>
+            </div>
+          ))}
+        </div>
+
+        <div className="pt-4 flex gap-3 sticky bottom-0 bg-background pb-2">
+          <Button variant="outline" className="flex-1" onClick={() => setGeneratedData(null)}>
+            Hủy & Chỉnh sửa
+          </Button>
+          <Button 
+            className="flex-1 bg-purple-600 hover:bg-purple-700 text-white font-bold"
+            onClick={handleConfirm}
+            disabled={isConfirming}
+          >
+            {isConfirming ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : <Check className="w-4 h-4 mr-2" />}
+            Xác nhận & Lưu Quiz
+          </Button>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="grid grid-cols-1 md:grid-cols-5 gap-6 h-full min-h-[400px]">
+      {/* Left Column: Settings */}
+      <div className="md:col-span-2 space-y-6 flex flex-col">
+        <div className="space-y-4">
+          <div className="flex items-center gap-2.5 p-4 rounded-xl bg-gradient-to-r from-purple-50 to-violet-50 border border-purple-100">
+            <div className="w-10 h-10 rounded-xl bg-purple-100 flex items-center justify-center shrink-0">
+              <Bot className="w-6 h-6 text-purple-600" />
+            </div>
+            <div>
+              <p className="font-bold text-purple-900 leading-none">Cấu hình AI</p>
+              <p className="text-[10px] text-purple-500 mt-1">Điều chỉnh thông số cho bộ câu hỏi</p>
+            </div>
+          </div>
+
+          <div className="grid grid-cols-1 gap-4">
+            <div className="space-y-2">
+              <Label className="text-xs font-bold text-gray-700">Hạng mục lớp</Label>
+              <Select 
+                value={String(targetGrade)} 
+                onValueChange={(val) => setTargetGrade(parseInt(val))}
+              >
+                <SelectTrigger className="h-9 rounded-xl border-gray-200">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {[1, 2, 3, 4, 5].map(g => (
+                    <SelectItem key={g} value={String(g)}>Lớp {g}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div className="space-y-2">
+              <Label className="text-xs font-bold text-gray-700">Số câu hỏi</Label>
+              <Select 
+                value={String(questionCount)} 
+                onValueChange={(val) => setQuestionCount(parseInt(val))}
+              >
+                <SelectTrigger className="h-9 rounded-xl border-gray-200">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {[15, 20, 25, 30].map(n => (
+                    <SelectItem key={n} value={String(n)}>{n} câu</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div className="grid grid-cols-2 gap-3">
+              <div className="space-y-2">
+                <Label className="text-xs font-bold text-gray-700">Thời gian (s/câu)</Label>
+                <div className="flex items-center gap-2 bg-gray-50 border rounded-xl px-2 h-9">
+                  <Button variant="ghost" size="icon" className="h-6 w-6" onClick={() => setTimePerQuestion(Math.max(5, timePerQuestion - 5))}><Minus className="w-3" /></Button>
+                  <span className="flex-1 text-center text-xs font-bold">{timePerQuestion}s</span>
+                  <Button variant="ghost" size="icon" className="h-6 w-6" onClick={() => setTimePerQuestion(timePerQuestion + 5)}><Plus className="w-3" /></Button>
+                </div>
+              </div>
+
+              <div className="space-y-2">
+                <Label className="text-xs font-bold text-gray-700">Điểm thưởng</Label>
+                <div className="flex items-center gap-2 bg-gray-50 border rounded-xl px-2 h-9">
+                  <Button variant="ghost" size="icon" className="h-6 w-6" onClick={() => setCoinsOnPass(Math.max(1, coinsOnPass - 1))}><Minus className="w-3" /></Button>
+                  <span className="flex-1 text-center text-xs font-bold">{coinsOnPass}</span>
+                  <Button variant="ghost" size="icon" className="h-6 w-6" onClick={() => setCoinsOnPass(coinsOnPass + 1)}><Plus className="w-3" /></Button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div className="mt-auto pt-4">
+          <Button
+            onClick={handleGenerate}
+            disabled={isGenerating || selectedFileIds.length === 0}
+            className="w-full h-11 rounded-xl bg-purple-600 hover:bg-purple-700 text-white font-bold shadow-lg shadow-purple-100"
+          >
+            {isGenerating ? (
+              <><Loader2 className="w-4 h-4 mr-2 animate-spin" />Đang soạn...</>
+            ) : (
+              <><Wand2 className="w-4 h-4 mr-2" />Tạo Quiz ngay</>
+            )}
+          </Button>
+          {selectedFileIds.length === 0 && (
+            <p className="text-[10px] text-destructive text-center mt-2 font-medium italic">
+              * Vui lòng chọn ít nhất 1 tài liệu ở bên phải
+            </p>
+          )}
+        </div>
+      </div>
+
+      {/* Right Column: Document Management */}
+      <div className="md:col-span-3 h-full border-l pl-6 space-y-4 flex flex-col min-h-0">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <BookOpen className="w-4 h-4 text-purple-600" />
+            <Label className="text-sm font-bold text-gray-700">Tài liệu tham khảo ({selectedFileIds.length})</Label>
+          </div>
+          <Button 
+            variant="outline" 
+            size="sm" 
+            className="h-8 text-[11px] border-purple-200 text-purple-600 hover:bg-purple-50"
+            onClick={() => document.getElementById('ai-file-upload').click()}
+            disabled={isUploading}
+          >
+            {isUploading ? <Loader2 className="w-3 h-3 animate-spin mr-1" /> : <FileUp className="w-3 h-3 mr-1" />}
+            Tải File mới
+          </Button>
+          <input 
+            id="ai-file-upload" 
+            type="file" 
+            className="hidden" 
+            accept=".pdf,.doc,.docx,.txt" 
+            onChange={handleFileUpload}
+          />
+        </div>
+
+        <div className="flex-1 overflow-hidden flex flex-col">
+          {myFiles.length > 0 ? (
+            <div className="space-y-2 overflow-y-auto pr-2 scrollbar-thin flex-1">
+              {myFiles.map((file, index) => (
+                <div 
+                  key={file.id || `file-${index}`} 
+                  onClick={() => toggleFileSelection(file.id)}
+                  className={cn(
+                    "group flex items-center gap-3 p-3 rounded-xl border-2 cursor-pointer transition-all",
+                    selectedFileIds.includes(file.id) 
+                      ? "border-purple-400 bg-purple-50/50" 
+                      : "border-gray-50 hover:border-gray-200 bg-gray-50/30"
+                  )}
+                >
+                  <div className={cn(
+                    "w-10 h-10 rounded-xl flex items-center justify-center transition-colors",
+                    selectedFileIds.includes(file.id) ? "bg-purple-100" : "bg-white border shadow-sm"
+                  )}>
+                    <File className={cn("w-5 h-5", selectedFileIds.includes(file.id) ? "text-purple-600" : "text-gray-400")} />
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-xs font-bold truncate text-gray-700">
+                      {file.name || file.fileName || (file.publicId ? file.publicId.split('/').pop() : 'Tài liệu không tên')}
+                    </p>
+                    <p className="text-[10px] text-gray-400 mt-0.5">
+                      {file.size ? `${(file.size / 1024).toFixed(1)} KB` : 'Đang xử lý size'} 
+                      • 
+                      {file.createdAt ? new Date(file.createdAt).toLocaleDateString() : 'Vừa tải lên'}
+                    </p>
+                  </div>
+                  <div className={cn(
+                    "w-5 h-5 rounded-full border-2 flex items-center justify-center transition-all",
+                    selectedFileIds.includes(file.id) 
+                      ? "bg-purple-600 border-purple-600" 
+                      : "border-gray-200 group-hover:border-purple-300"
+                  )}>
+                    {selectedFileIds.includes(file.id) && <Check className="w-3 h-3 text-white" />}
+                  </div>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <div className="flex-1 flex flex-col items-center justify-center border-2 border-dashed rounded-2xl bg-gray-50/50">
+              <div className="w-12 h-12 rounded-full bg-gray-100 flex items-center justify-center mb-3">
+                <FileUp className="w-6 h-6 text-gray-300" />
+              </div>
+              <p className="text-xs text-gray-400 text-center px-8 font-medium">Chưa có tài liệu nào. Vui lòng tải tài liệu lên để AI có dữ liệu tạo câu hỏi.</p>
+            </div>
+          )}
+        </div>
+      </div>
     </div>
   );
 }
@@ -249,8 +422,15 @@ export function AddQuizModal({ isOpen, onClose, campaign, roundId, availableQuiz
   };
 
   const handleAIGenerated = (quiz) => {
-    setAiGeneratedQuizzes(prev => [...prev, quiz]);
-    setSelectedQuizIds(prev => [...prev, quiz.id]);
+    // Transform API quiz to match local quiz format if needed
+    const transformedQuiz = {
+      ...quiz,
+      questions: quiz.questions?.length || quiz.questionCount || 0,
+      difficulty: quiz.difficulty?.toLowerCase() || 'easy',
+      isAI: true
+    };
+    setAiGeneratedQuizzes(prev => [...prev, transformedQuiz]);
+    setSelectedQuizIds(prev => [...prev, transformedQuiz.id]);
     setActiveTab('library');
   };
 
@@ -271,6 +451,14 @@ export function AddQuizModal({ isOpen, onClose, campaign, roundId, availableQuiz
     }
     return (campaign?.selected_quizzes?.length || 0) > 0;
   }, [campaign, roundId]);
+
+  const effectiveRoundId = useMemo(() => {
+    if (roundId) return roundId;
+    if (campaign?.rounds && campaign.rounds.length > 0) {
+      return campaign.rounds[0].id;
+    }
+    return null;
+  }, [roundId, campaign]);
 
   const handleSubmit = async () => {
     setIsSubmitting(true);
@@ -297,9 +485,9 @@ export function AddQuizModal({ isOpen, onClose, campaign, roundId, availableQuiz
         {quizzes.length === 0 ? (
           <p className="text-sm text-muted-foreground italic pl-2">Chưa có quiz nào</p>
         ) : (
-          quizzes.map(quiz => (
+          quizzes.map((quiz, index) => (
             <div
-              key={quiz.id}
+              key={quiz.id || `${diffKey}-${index}`}
               onClick={() => toggleQuiz(quiz.id)}
               className={cn(
                 "flex items-center space-x-3 p-2.5 rounded-xl border-2 cursor-pointer transition-all",
@@ -329,7 +517,10 @@ export function AddQuizModal({ isOpen, onClose, campaign, roundId, availableQuiz
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="max-w-xl h-[85vh] flex flex-col overflow-hidden">
+      <DialogContent className={cn(
+        "h-[85vh] flex flex-col overflow-hidden transition-all duration-300",
+        activeTab === 'ai' && !isSubmitting ? "max-w-4xl" : "max-w-xl"
+      )}>
         <DialogHeader className="shrink-0 pb-2">
           <div className="flex items-center gap-3">
             <div className="w-9 h-9 rounded-xl bg-eco-blue/10 flex items-center justify-center">
@@ -389,8 +580,9 @@ export function AddQuizModal({ isOpen, onClose, campaign, roundId, availableQuiz
           ) : (
             <div className="px-1">
               <AIGeneratePanel
+                campaignId={campaign?.id}
+                roundId={effectiveRoundId}
                 onGenerated={handleAIGenerated}
-                existingCount={aiGeneratedQuizzes.length}
               />
             </div>
           )}
