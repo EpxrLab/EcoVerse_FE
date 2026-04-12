@@ -164,7 +164,7 @@ export default class EcoGameSorter {
 
   _createBins() {
     const numBins = this.wasteCategories.length;
-    const totalWidth = 10; // Spread bins across this width
+    const totalWidth = 14; // Spread bins across this width
     let spacing, startX;
 
     if (numBins === 1) {
@@ -183,7 +183,7 @@ export default class EcoGameSorter {
       const group = new THREE.Group();
 
       // Bin body
-      const binGeo = new THREE.CylinderGeometry(0.7, 0.6, 1.4, 16, 1, true);
+      const binGeo = new THREE.CylinderGeometry(1.0, 0.85, 2.0, 16, 1, true);
       const binMat = new THREE.MeshStandardMaterial({
         color: binType.color,
         side: THREE.DoubleSide,
@@ -195,29 +195,29 @@ export default class EcoGameSorter {
       group.add(bin);
 
       // Bin bottom
-      const bottomGeo = new THREE.CircleGeometry(0.6, 16);
+      const bottomGeo = new THREE.CircleGeometry(0.85, 16);
       const bottomMat = new THREE.MeshStandardMaterial({
         color: binType.color,
       });
       const bottom = new THREE.Mesh(bottomGeo, bottomMat);
       bottom.rotation.x = -Math.PI / 2;
-      bottom.position.y = -0.7;
+      bottom.position.y = -1.0;
       group.add(bottom);
 
       // Bin rim
-      const rimGeo = new THREE.TorusGeometry(0.7, 0.05, 8, 32);
+      const rimGeo = new THREE.TorusGeometry(1.0, 0.06, 8, 32);
       const rimMat = new THREE.MeshStandardMaterial({
         color: 0xffffff,
         metalness: 0.5,
       });
       const rim = new THREE.Mesh(rimGeo, rimMat);
       rim.rotation.x = Math.PI / 2;
-      rim.position.y = 0.7;
+      rim.position.y = 1.0;
       group.add(rim);
 
       // Label using a small plane with canvas texture
       const label = this._createBinLabel(binType.name, binType.color);
-      label.position.set(0, 0, 0.72);
+      label.position.set(0, 0, 1.05);
       group.add(label);
 
       group.position.set(x, 0, z);
@@ -241,24 +241,27 @@ export default class EcoGameSorter {
 
   _createBinLabel(text, bgColor) {
     const canvas = document.createElement("canvas");
-    canvas.width = 256;
-    canvas.height = 96;
+    canvas.width = 512;
+    canvas.height = 192;
     const ctx = canvas.getContext("2d");
 
     // Background
     ctx.fillStyle = "#ffffff";
-    ctx.roundRect(4, 4, 248, 88, 12);
+    ctx.roundRect(8, 8, 496, 176, 24);
     ctx.fill();
 
     // Text
     ctx.fillStyle = "#333333";
-    ctx.font = "bold 36px Arial, sans-serif";
+    ctx.font = "bold 64px Arial, sans-serif";
     ctx.textAlign = "center";
     ctx.textBaseline = "middle";
-    ctx.fillText(text, 128, 48);
+    ctx.fillText(text, 256, 96);
 
     const texture = new THREE.CanvasTexture(canvas);
-    const geo = new THREE.PlaneGeometry(1.2, 0.45);
+    texture.minFilter = THREE.LinearFilter;
+    texture.magFilter = THREE.LinearFilter;
+
+    const geo = new THREE.PlaneGeometry(1.6, 0.6);
     const mat = new THREE.MeshBasicMaterial({
       map: texture,
       transparent: true,

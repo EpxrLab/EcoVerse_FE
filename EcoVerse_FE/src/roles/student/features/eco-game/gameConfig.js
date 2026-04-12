@@ -39,6 +39,7 @@ export const DEFAULT_LEVEL_CONFIG = {
     gameTime: 60,
     totalTrash: 12,
     maxHp: 5,
+    requiredPercentage: 80,
   },
 
   // Stage 2 - Sorter configuration

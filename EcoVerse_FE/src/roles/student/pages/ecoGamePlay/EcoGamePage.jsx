@@ -30,6 +30,7 @@ export default function EcoGamePage() {
   const [searchParams] = useSearchParams();
   const location = useLocation();
   const levelNumber = location.state?.levelNumber;
+  const presetId = location.state?.presetId;
   const typeCode = location.state?.typeCode;
 
   // Cảnh báo người dùng khi họ cố gắng tải lại trang hoặc đóng tab
@@ -57,6 +58,7 @@ export default function EcoGamePage() {
           campaignId,
           roundId,
           roundGameConfigId,
+          presetId,
           levelNumber,
         );
         if (cancelled) return;

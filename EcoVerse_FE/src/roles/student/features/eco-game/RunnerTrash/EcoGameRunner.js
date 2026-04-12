@@ -733,7 +733,7 @@ export default class EcoGameRunner {
       const trashBox = new THREE.Box3().setFromObject(trash);
       if (playerBox.intersectsBox(trashBox)) {
         trash.userData.collected = true;
-        this.stateManager.addTrash(trash.userData.trashType);
+        // this.stateManager.addTrash(trash.userData.trashType); // Removed: Orchestrator handles this via callback
 
         // Collection animation
         gsap.to(trash.scale, {
@@ -748,9 +748,9 @@ export default class EcoGameRunner {
           },
         });
 
-        // Emit collection event for HUD
+        // Emit collection event for HUD - Pass the item info, not just count
         if (this._onTrashCollected) {
-          this._onTrashCollected(this.stateManager.getTotalTrashCount());
+          this._onTrashCollected(trash.userData.trashType);
         }
 
         // Play collection sound
@@ -814,7 +814,7 @@ export default class EcoGameRunner {
     setTimeout(() => {
       this.stateManager.distance = this.distance;
       if (this._onStageComplete) {
-        this._onStageComplete();
+        this._onStageComplete("win", this.stateManager.getTotalTrashCount());
       }
     }, 1500);
   }
@@ -853,7 +853,7 @@ export default class EcoGameRunner {
         setTimeout(() => {
           this.stateManager.distance = this.distance;
           if (this._onStageComplete) {
-            this._onStageComplete();
+            this._onStageComplete("win", this.stateManager.getTotalTrashCount());
           }
         }, 800);
         return;
@@ -865,7 +865,8 @@ export default class EcoGameRunner {
       this.isRunning = false;
       this.stateManager.distance = this.distance;
       setTimeout(() => {
-        if (this._onStageComplete) this._onStageComplete();
+        if (this._onStageComplete)
+          this._onStageComplete("win", this.stateManager.getTotalTrashCount());
       }, 500);
       return;
     }

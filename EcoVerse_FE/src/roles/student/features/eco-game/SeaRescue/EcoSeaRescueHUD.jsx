@@ -4,7 +4,6 @@ import * as THREE from "three";
 import {
   PLAYER_CAPACITY,
   PLAYER_MAX_HP,
-  TOTAL_TRASH,
   GAME_TIME,
   REQUIRED_PERCENTAGE,
   isMobileDevice,
@@ -81,13 +80,15 @@ function ZoneIndicator({ currentZone }) {
 
 function HUD({
   hp,
+  maxHp,
   inventoryCount,
   inventoryFull,
   timeLeft,
   recycledCount,
+  totalTrash,
   hudPulse,
 }) {
-  const progressPercent = (recycledCount / (TOTAL_TRASH || 12)) * 100;
+  const progressPercent = (recycledCount / (totalTrash || 12)) * 100;
 
   return (
     <div
@@ -125,10 +126,11 @@ function HUD({
         }}
       >
         <div>
-          ❤️ {hp}/{(PLAYER_MAX_HP || 5)}
+          ❤️ {hp}/{maxHp || 5}
         </div>
         <div style={{ color: inventoryFull ? "#fca5a5" : "white" }}>
-          {inventoryFull ? "🎒❌" : "🎒"} {inventoryCount}/{(PLAYER_CAPACITY || 5)}
+          {inventoryFull ? "🎒❌" : "🎒"} {inventoryCount}/
+          {PLAYER_CAPACITY || 5}
           {inventoryFull && (
             <span style={{ fontSize: 12, marginLeft: 4 }}>ĐẦY!</span>
           )}
@@ -138,7 +140,7 @@ function HUD({
 
       <div style={{ marginTop: 8 }}>
         <div style={{ fontSize: 14, marginBottom: 6, opacity: 0.9 }}>
-          🗑️ Đã gom vào kho: {recycledCount}/{TOTAL_TRASH}
+          🗑️ Đã gom vào kho: {recycledCount}/{totalTrash}
         </div>
         <div
           style={{
@@ -206,8 +208,15 @@ function MobileJoystick({ onTouchStart, onTouchMove, onTouchEnd }) {
   );
 }
 
-function GameOverScreen({ message, recycledCount, onAction }) {
-  const requiredTrash = Math.ceil(((REQUIRED_PERCENTAGE || 80) / 100) * (TOTAL_TRASH || 12));
+function GameOverScreen({
+  message,
+  recycledCount,
+  totalTrash,
+  requiredPercentage,
+  onAction,
+}) {
+  const reqPercent = requiredPercentage || 80;
+  const requiredTrash = Math.ceil((reqPercent / 100) * (totalTrash || 12));
   const canProceed = recycledCount >= requiredTrash;
   const isWin = message.includes("Hoàn thành") || canProceed;
 
@@ -255,9 +264,9 @@ function GameOverScreen({ message, recycledCount, onAction }) {
           <div style={{ fontSize: 16, opacity: 0.9 }}>
             Cần thu gom ít nhất{" "}
             <span style={{ fontWeight: "bold", color: "#fbbf24" }}>
-              {requiredTrash}/{TOTAL_TRASH}
+              {requiredTrash}/{totalTrash}
             </span>{" "}
-            rác vào kho (≥{REQUIRED_PERCENTAGE}%)
+            rác vào kho (≥{reqPercent}%)
           </div>
           <div style={{ fontSize: 16, marginTop: 8 }}>
             Bạn đã gom vào kho:{" "}
@@ -267,7 +276,7 @@ function GameOverScreen({ message, recycledCount, onAction }) {
                 color: canProceed ? "#22c55e" : "#ef4444",
               }}
             >
-              {recycledCount}/{TOTAL_TRASH}
+              {recycledCount}/{totalTrash}
             </span>{" "}
             rác
           </div>
@@ -297,12 +306,14 @@ function GameOverScreen({ message, recycledCount, onAction }) {
 }
 
 /* ===================== MAIN COMPONENT ===================== */
-export function EcoSeaRescueHUD({ game, onComplete }) {
+export function EcoSeaRescueHUD({ game, levelConfig, onComplete }) {
   const navigate = useNavigate();
   const [inventoryCount, setInventoryCount] = useState(0);
   const [recycledCount, setRecycledCount] = useState(0);
-  const [hp, setHp] = useState(PLAYER_MAX_HP);
-  const [timeLeft, setTimeLeft] = useState(GAME_TIME);
+  const [hp, setHp] = useState(levelConfig?.searescue?.maxHp);
+  const [timeLeft, setTimeLeft] = useState(levelConfig?.searescue?.gameTime);
+  const totalTrash = levelConfig?.searescue?.totalTrash;
+  const requiredPercentage = levelConfig?.searescue?.requiredPercentage;
   const [gameOver, setGameOver] = useState(false);
   const [message, setMessage] = useState("");
   const [isMobile, setIsMobile] = useState(false);
@@ -311,16 +322,20 @@ export function EcoSeaRescueHUD({ game, onComplete }) {
   const [screenShake, setScreenShake] = useState({ x: 0, y: 0 });
   const [inventoryFull, setInventoryFull] = useState(false);
   const [currentZone, setCurrentZone] = useState(null);
+  console.log(levelConfig);
 
   // Sync state from the logic layer (EcoSeaRescue.js)
   useEffect(() => {
     setIsMobile(isMobileDevice());
-    
+
     // stage1Game is our EcoSeaRescue instance
     const logic = game?.stage1Game;
     if (!logic) return;
 
-    console.log("[EcoSeaRescueHUD] Wiring HUD callbacks for logic instance:", logic);
+    console.log(
+      "[EcoSeaRescueHUD] Wiring HUD callbacks for logic instance:",
+      logic,
+    );
 
     logic.setHudCallbacks({
       setInventoryCount: (count) => {
@@ -344,10 +359,24 @@ export function EcoSeaRescueHUD({ game, onComplete }) {
 
     logic.setEndGameCallback((reason, count) => {
       console.log("[EcoSeaRescueHUD] Game ended:", reason, count);
+
+      const reqPercent = requiredPercentage || 80;
+      const requiredTrash = Math.ceil(
+        (reqPercent / 100) * (totalTrash || 12),
+      );
+      const canProceed = reason === "win" || count >= requiredTrash;
+
+      if (canProceed) {
+        // Skip game over modal, let orchestrator handle stage transition
+        return;
+      }
+
       setGameOver(true);
       if (reason === "win") setMessage("🎉 Hoàn thành! Đã thu gom hết rác!");
       else if (reason === "timeout")
-        setMessage(`⏰ Hết giờ! Đã gom được ${count}/${TOTAL_TRASH} rác vào kho`);
+        setMessage(
+          `⏰ Hết giờ! Đã gom được ${count}/${totalTrash} rác vào kho`,
+        );
       else setMessage("💀 Va chạm vật cản – Hết mạng!");
     });
 
@@ -368,8 +397,16 @@ export function EcoSeaRescueHUD({ game, onComplete }) {
       logic._joyStartX = t.clientX;
       logic._joyStartY = t.clientY;
     } else {
-      const x = THREE.MathUtils.clamp((t.clientX - (logic._joyStartX || 0)) / 50, -1, 1);
-      const y = THREE.MathUtils.clamp((t.clientY - (logic._joyStartY || 0)) / 50, -1, 1);
+      const x = THREE.MathUtils.clamp(
+        (t.clientX - (logic._joyStartX || 0)) / 50,
+        -1,
+        1,
+      );
+      const y = THREE.MathUtils.clamp(
+        (t.clientY - (logic._joyStartY || 0)) / 50,
+        -1,
+        1,
+      );
       logic.setJoystick(x, y);
     }
   };
@@ -379,7 +416,8 @@ export function EcoSeaRescueHUD({ game, onComplete }) {
   };
 
   const handleGameOverAction = () => {
-    const requiredTrash = Math.ceil((REQUIRED_PERCENTAGE / 100) * TOTAL_TRASH);
+    const reqPercent = requiredPercentage || 80;
+    const requiredTrash = Math.ceil((reqPercent / 100) * totalTrash);
     if (message.includes("Hoàn thành") || recycledCount >= requiredTrash) {
       onComplete?.();
     } else {
@@ -406,10 +444,12 @@ export function EcoSeaRescueHUD({ game, onComplete }) {
 
         <HUD
           hp={hp}
+          maxHp={levelConfig?.searescue?.maxHp}
           inventoryCount={inventoryCount}
           inventoryFull={inventoryFull}
           timeLeft={timeLeft}
           recycledCount={recycledCount}
+          totalTrash={totalTrash}
           hudPulse={hudPulse}
         />
 
@@ -425,6 +465,8 @@ export function EcoSeaRescueHUD({ game, onComplete }) {
           <GameOverScreen
             message={message}
             recycledCount={recycledCount}
+            totalTrash={totalTrash}
+            requiredPercentage={requiredPercentage}
             onAction={handleGameOverAction}
           />
         )}
