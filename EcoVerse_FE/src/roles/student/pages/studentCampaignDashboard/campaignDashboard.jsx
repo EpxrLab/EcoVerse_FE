@@ -324,19 +324,19 @@ export default function CampaignDashboard() {
           className="border-2 shadow-xl overflow-hidden rounded-3xl"
           bodyStyle={{ padding: 0 }}
         >
-          <div className="relative bg-gradient-to-br from-green-50 via-blue-50 to-purple-50 p-7">
-            <div className="absolute top-0 right-0 w-96 h-96 bg-gradient-to-br from-green-200/30 to-transparent rounded-full blur-3xl pointer-events-none" />
-            <div className="absolute bottom-0 left-0 w-64 h-64 bg-gradient-to-tr from-purple-200/30 to-transparent rounded-full blur-3xl pointer-events-none" />
+          <div className="relative bg-gradient-mint-eco p-8 text-white">
+            <div className="absolute top-0 right-0 w-96 h-96 bg-white/10 rounded-full blur-3xl pointer-events-none" />
+            <div className="absolute bottom-0 left-0 w-64 h-64 bg-black/5 rounded-full blur-3xl pointer-events-none" />
 
-            <div className="relative space-y-4">
+            <div className="relative space-y-5">
               {/* Badges row */}
               <div className="flex flex-wrap items-center gap-2">
                 <span
-                  className={`inline-flex items-center gap-1 px-3 py-1 rounded-full text-xs font-semibold border ${statusCfg.tw}`}
+                  className={`inline-flex items-center gap-1 px-3 py-1 rounded-full text-[11px] font-bold border border-white/30 bg-white/20`}
                 >
                   {statusCfg.label}
                 </span>
-                <span className="px-3 py-1 rounded-full text-xs font-semibold bg-white/60 border border-gray-200 text-gray-600">
+                <span className="px-3 py-1 rounded-full text-[11px] font-bold bg-white/10 border border-white/20">
                   {CAMPAIGN_TYPE_LABEL[c.campaignType] ?? c.campaignType}
                 </span>
                 {c.campaignCode && (
@@ -348,23 +348,23 @@ export default function CampaignDashboard() {
               </div>
 
               {/* Title */}
-              <h1 className="text-3xl md:text-4xl font-extrabold text-gray-800 leading-tight">
+              <h1 className="text-3xl md:text-5xl font-black leading-tight drop-shadow-sm">
                 {c.campaignName}
               </h1>
 
               {/* Description */}
               {c.description && (
-                <p className="text-gray-500 text-base max-w-3xl line-clamp-3">
+                <p className="text-white/80 text-base max-w-3xl line-clamp-3 font-medium">
                   {c.description}
                 </p>
               )}
 
               {/* Date + deadline row */}
               <div className="flex flex-wrap gap-3">
-                <div className="flex items-center gap-2 text-sm text-gray-500 bg-white/60 px-3 py-1.5 rounded-xl border border-gray-200">
-                  <CalendarOutlined className="text-gray-400" />
+                <div className="flex items-center gap-2 text-sm bg-black/10 px-4 py-2 rounded-xl backdrop-blur-sm border border-white/10">
+                  <CalendarOutlined className="text-white/60" />
                   <span>{fmtDate(c.startDate)}</span>
-                  <span className="text-gray-300">→</span>
+                  <span className="text-white/40">→</span>
                   <span>{fmtDate(c.endDate)}</span>
                 </div>
 
@@ -390,18 +390,16 @@ export default function CampaignDashboard() {
               {/* Round progress */}
               {c.totalRounds > 0 && (
                 <div className="max-w-xl">
-                  <div className="flex items-center justify-between mb-1.5 text-sm">
-                    <span className="text-gray-500 font-medium">
-                      Tiến độ vòng thi
-                    </span>
-                    <span className="font-bold text-green-600">
+                  <div className="flex items-center justify-between mb-2 text-sm font-bold">
+                    <span className="text-white/70">Tiến độ chiến dịch</span>
+                    <span className="text-white">
                       {completedRounds}/{c.totalRounds} vòng
                     </span>
                   </div>
                   <Progress
                     percent={roundProgress}
-                    strokeColor="#22c55e"
-                    trailColor="#e5e7eb"
+                    strokeColor="#ffffff"
+                    trailColor="rgba(255,255,255,0.2)"
                     strokeWidth={10}
                     showInfo={false}
                   />
@@ -446,18 +444,16 @@ export default function CampaignDashboard() {
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.15 }}
         >
-          <div className="flex items-center gap-2 mb-3">
-            <span className="flex h-2 w-2">
-              <span className="animate-ping absolute inline-flex h-2 w-2 rounded-full bg-green-400 opacity-75" />
-              <span className="relative inline-flex rounded-full h-2 w-2 bg-green-500" />
+          <div className="flex items-center gap-2 mb-3 px-1">
+            <span className="flex h-2.5 w-2.5">
+              <span className="animate-ping absolute inline-flex h-2.5 w-2.5 rounded-full bg-primary/40 opacity-75" />
+              <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-primary" />
             </span>
-            <p className="text-sm font-bold text-green-600">
+            <p className="text-xs font-black text-primary uppercase tracking-widest">
               Vòng đang diễn ra
             </p>
           </div>
           <Card
-            className="rounded-2xl border-2 border-green-300 shadow-lg"
-            bodyStyle={{ padding: "20px 24px" }}
           >
             <div className="flex items-center justify-between gap-4 flex-wrap">
               <div>
