@@ -101,6 +101,26 @@ export default class EcoGameRunner {
 
     // Cache for dynamically loaded 3D models from API imagePresignedUrl
     this.modelCache = {};
+
+    // Load static obstacle model (Rock)
+    const loader = new GLTFLoader();
+    loader.load(
+      "/assets/rock.glb",
+      (gltf) => {
+        this.rockModel = gltf.scene;
+        // Pre-normalize the rock model for the runner path scale
+        this.rockModel.scale.setScalar(0.25);
+        this.rockModel.traverse((child) => {
+          if (child.isMesh) {
+            child.castShadow = true;
+            child.receiveShadow = true;
+          }
+        });
+        console.log("--- RUNNER OBSTACLE MODEL LOADED ---");
+      },
+      undefined,
+      (err) => console.warn("Failed to load /assets/rock.glb for runner", err),
+    );
   }
 
   _createGround() {
@@ -531,31 +551,35 @@ export default class EcoGameRunner {
         collected: false,
       };
 
-      const finalizeMesh = (mesh) => {
-        // Scale to a reasonable size relative to the runner character
-        const box = new THREE.Box3().setFromObject(mesh);
+      const finalizeMesh = (model) => {
+        const traskRoot = new THREE.Group();
+
+        // 1. Normalize model scale based on its internal bounding box
+        const box = new THREE.Box3().setFromObject(model);
         const size = box.getSize(new THREE.Vector3());
         const maxDim = Math.max(size.x, size.y, size.z);
-        const targetSize = 1.0; // make it more visible!
+        const targetSize = 1.0; // Standardize all items for the runner
         if (maxDim > 0) {
-          mesh.scale.multiplyScalar(targetSize / maxDim);
+          model.scale.setScalar(targetSize / maxDim);
         }
 
-        // Center the mesh visually around its local origin so it positions correctly on the lane
+        // 2. Center the model visually within the trashRoot
         const center = box.getCenter(new THREE.Vector3());
-        mesh.children.forEach((child) => {
-          child.position.sub(center);
-        });
+        model.position.x = -center.x * model.scale.x;
+        model.position.y = -center.y * model.scale.y;
+        model.position.z = -center.z * model.scale.z;
 
-        // Tăng cường độ sáng của model (emissive) để chống bị tối nát
-        mesh.traverse((child) => {
+        // Tăng cường độ sáng của model (emissive)
+        model.traverse((child) => {
           if (child.isMesh && child.material && child.material.emissive) {
-            child.material.emissive.setHex(0x555555); // Tự phát sáng một chút
+            child.material.emissive.setHex(0x555555);
             child.material.emissiveIntensity = 0.2;
           }
         });
 
-        // Tạo vầng sáng (Aura) bao quanh
+        traskRoot.add(model);
+
+        // 3. Create Aura on the ROOT group (so it stays at radius 0.8-0.9 regardless of model scale)
         const catColors = {
           RECYCLABLE: 0x2196f3,
           ORGANIC: 0x4caf50,
@@ -572,8 +596,8 @@ export default class EcoGameRunner {
           blending: THREE.AdditiveBlending,
         });
         const aura = new THREE.Mesh(auraGeo, auraMat);
-        aura.position.y = -0.2;
-        mesh.add(aura);
+        aura.position.y = 0.0; // relative to traskRoot center
+        traskRoot.add(aura);
 
         gsap.to(auraMat, {
           opacity: 0.5,
@@ -583,13 +607,18 @@ export default class EcoGameRunner {
           ease: "sine.inOut",
         });
 
-        mesh.position.set(LANES[lane], 0.6, -60);
-        mesh.userData = trashUserData;
-        this.scene.add(mesh);
-        this.trashItems.push(mesh);
+        // 4. Final positioning in scene
+        traskRoot.position.set(LANES[lane], 0.6, -60);
+        traskRoot.userData = {
+          ...trashUserData,
+          collisionTarget: model, // Reference to model for precise collision checks
+        };
 
-        // Spin animation
-        gsap.to(mesh.rotation, {
+        this.scene.add(traskRoot);
+        this.trashItems.push(traskRoot);
+
+        // Spin animation for the whole container
+        gsap.to(traskRoot.rotation, {
           y: Math.PI * 2,
           duration: 2,
           repeat: -1,
@@ -657,16 +686,39 @@ export default class EcoGameRunner {
       OBSTACLE_TYPES[Math.floor(Math.random() * OBSTACLE_TYPES.length)];
     const lane = Math.floor(Math.random() * 3);
 
-    const geo = new THREE.BoxGeometry(obsType.w, obsType.h, obsType.d);
-    const mat = new THREE.MeshStandardMaterial({
-      color: obsType.color,
-      roughness: 0.6,
-      metalness: 0.1,
-    });
-    const mesh = new THREE.Mesh(geo, mat);
-    mesh.position.set(LANES[lane], obsType.h / 2 - 0.7, -60);
+    let mesh;
+    if (this.rockModel) {
+      mesh = this.rockModel.clone(true);
+      // Randomize rotation for variety
+      mesh.rotation.y = Math.random() * Math.PI * 2;
+      mesh.rotation.x = (Math.random() - 0.5) * 0.2;
+      
+      // Slight scale variation (0.8x to 1.2x of the base 0.25 scale)
+      const scaleVar = 0.8 + Math.random() * 0.4;
+      mesh.scale.multiplyScalar(scaleVar);
+
+      // Positioning - rocks sit on the ground (y=0 in their local space usually)
+      // but we need them slightly raised or lowered based on their pivot.
+      // 0.2 seems like a safe bet for the rock model pivot.
+      mesh.position.set(LANES[lane], 0.2, -60);
+    } else {
+      // Fallback to primitive if model not loaded
+      const geo = new THREE.BoxGeometry(obsType.w, obsType.h, obsType.d);
+      const mat = new THREE.MeshStandardMaterial({
+        color: obsType.color,
+        roughness: 0.6,
+      });
+      mesh = new THREE.Mesh(geo, mat);
+      mesh.position.set(LANES[lane], obsType.h / 2 - 0.7, -60);
+    }
+
     mesh.castShadow = true;
-    mesh.userData = { type: "obstacle", obsType };
+    mesh.userData = { 
+      type: "obstacle", 
+      obsType,
+      collisionTarget: mesh // For Box3 calculation
+    };
+    
     this.scene.add(mesh);
     this.obstacles.push(mesh);
   }
@@ -730,7 +782,18 @@ export default class EcoGameRunner {
       const trash = this.trashItems[i];
       if (trash.userData.collected) continue;
 
-      const trashBox = new THREE.Box3().setFromObject(trash);
+      // PERFORMANCE & BUG FIX: Skip collision checks for items far away (spawning at -60)
+      // Only check items that are within a reasonable proximity to the player (at z=0)
+      if (trash.position.z < -5) continue;
+
+      // Force update matrix to ensure the bounding box is calculated at the actual current position
+      // This prevents "teleporting" collection bugs where new items default to world origin (0,0,0)
+      trash.updateMatrixWorld(true);
+
+      // Check trash collisions using either the specific collisionTarget (model only) OR the whole object
+      const collisionTarget = trash.userData.collisionTarget || trash;
+      const trashBox = new THREE.Box3().setFromObject(collisionTarget);
+
       if (playerBox.intersectsBox(trashBox)) {
         trash.userData.collected = true;
         // this.stateManager.addTrash(trash.userData.trashType); // Removed: Orchestrator handles this via callback

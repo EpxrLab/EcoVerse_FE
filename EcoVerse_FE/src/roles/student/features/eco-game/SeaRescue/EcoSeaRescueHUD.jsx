@@ -322,7 +322,6 @@ export function EcoSeaRescueHUD({ game, levelConfig, onComplete }) {
   const [screenShake, setScreenShake] = useState({ x: 0, y: 0 });
   const [inventoryFull, setInventoryFull] = useState(false);
   const [currentZone, setCurrentZone] = useState(null);
-  console.log(levelConfig);
 
   // Sync state from the logic layer (EcoSeaRescue.js)
   useEffect(() => {
@@ -361,9 +360,7 @@ export function EcoSeaRescueHUD({ game, levelConfig, onComplete }) {
       console.log("[EcoSeaRescueHUD] Game ended:", reason, count);
 
       const reqPercent = requiredPercentage || 80;
-      const requiredTrash = Math.ceil(
-        (reqPercent / 100) * (totalTrash || 12),
-      );
+      const requiredTrash = Math.ceil((reqPercent / 100) * (totalTrash || 12));
       const canProceed = reason === "win" || count >= requiredTrash;
 
       if (canProceed) {

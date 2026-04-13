@@ -273,13 +273,6 @@ export default class EcoGameSorter {
   _createTrashItems() {
     const items = this.stateManager.getTrashItemsForSorting();
 
-    // If no items collected, add some defaults for playability
-    if (items.length === 0) {
-      for (let i = 0; i < 5; i++) {
-        items.push({ ...SPAWNABLE_TRASH[i % SPAWNABLE_TRASH.length] });
-      }
-    }
-
     this.itemsRemaining = items.length;
 
     // Arrange items on the table in a grid
