@@ -72,7 +72,7 @@ export function initScene(container) {
   const height = container.clientHeight;
 
   const scene = new THREE.Scene();
-  scene.background = new THREE.Color(0x7dd3fc);
+  // scene.background = new THREE.Color(0x7dd3fc);
 
   const camera = new THREE.PerspectiveCamera(75, width / height, 0.1, 5000);
 
@@ -111,8 +111,70 @@ function createBuoyMesh(isRed) {
 
 /* ===================== INIT WORLD ===================== */
 export function initWorld(scene, state) {
-  // Set sea background
+  // Set sea background (Blue fallback while 3D Skybox loads)
   scene.background = new THREE.Color(0x7dd3fc);
+
+  // 3D Skybox Loading
+  const skyboxLoader = new GLTFLoader();
+  skyboxLoader.load(
+    "/assets/skybox.glb",
+    (gltf) => {
+      const model = gltf.scene;
+      const skyboxContainer = new THREE.Group();
+
+      // 1. Calculate the actual bounding box of the model to determine its true size/center
+      const bbox = new THREE.Box3().setFromObject(model);
+      const size = new THREE.Vector3();
+      bbox.getSize(size);
+      const center = bbox.getCenter(new THREE.Vector3());
+      const maxDim = Math.max(size.x, size.y, size.z);
+
+      // 2. Normalize and scale perfectly to encapsulate the world
+      // We want the skybox to be large (3500 units) but safely within the 5000 camera far plane
+      const targetSize = 3500;
+      const scaleFactor = maxDim > 0 ? targetSize / maxDim : 1;
+      model.scale.setScalar(scaleFactor);
+
+      // 3. Center the model's geometry relative to the skyboxContainer
+      // This ensures that even if the GLB's origin is offset, the skybox centers on 0,0,0
+      model.position.set(
+        -center.x * scaleFactor,
+        -center.y * scaleFactor,
+        -center.z * scaleFactor,
+      );
+
+      console.log(`[Skybox Debug] Name: ${model.name || "skybox"}, size:`, size, "scale:", scaleFactor);
+
+      model.traverse((child) => {
+        if (child.isMesh) {
+          child.castShadow = false;
+          child.receiveShadow = false;
+          child.frustumCulled = false;
+
+          if (child.material) {
+            const oldMat = child.material;
+            // Force basic material (unlit) and render inside (BackSide)
+            child.material = new THREE.MeshBasicMaterial({
+              map: oldMat.map,
+              color: oldMat.color,
+              side: THREE.BackSide,
+              fog: false,
+              depthWrite: false, // Prevent the sky from blocking other transparency
+            });
+            oldMat.dispose();
+          }
+        }
+      });
+
+      skyboxContainer.add(model);
+      scene.add(skyboxContainer);
+      state.skybox = skyboxContainer;
+      
+      console.log("[Skybox Debug] Added to scene at current camera far range.");
+    },
+    undefined,
+    (err) => console.warn("Failed to load /assets/skybox.glb", err),
+  );
 
   // Ocean ground
   const gltfLoaderGround = new GLTFLoader();
@@ -149,19 +211,6 @@ export function initWorld(scene, state) {
     },
   );
 
-  // Deeper water layer
-  const depthGeo = new THREE.CircleGeometry(WORLD_SAFE_RADIUS - 0.5, 64);
-  const depthMat = new THREE.MeshStandardMaterial({
-    color: 0x0c4a6e,
-    transparent: true,
-    opacity: 0.9,
-    side: THREE.DoubleSide,
-  });
-  const depthDisc = new THREE.Mesh(depthGeo, depthMat);
-  depthDisc.rotation.x = -Math.PI / 2;
-  depthDisc.position.y = -0.5;
-  scene.add(depthDisc);
-  state.depthDisc = depthDisc;
 
   // Buoy Perimeter (Physical indicator)
   const buoyCount = 36;

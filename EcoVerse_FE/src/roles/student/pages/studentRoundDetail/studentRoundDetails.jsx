@@ -168,7 +168,7 @@ function LevelCard({ item, isUnlocked, isCompleted, onPlay, campaignId }) {
                         isOutOfAttempts ? "text-orange-500" : "text-gray-400"
                       }
                     />
-                    Lượt chơi:{" "}
+                    Lượt chơi hôm nay:{" "}
                     <b className="ml-0.5">
                       {item.todayAttempts ?? 0}/{item.maxDailyAttempts}
                     </b>

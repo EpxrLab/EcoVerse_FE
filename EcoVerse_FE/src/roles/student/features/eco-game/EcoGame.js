@@ -68,7 +68,7 @@ export default class EcoGame {
       60,
       container.clientWidth / container.clientHeight,
       0.1,
-      200,
+      5000,
     );
 
     // Resize listener
@@ -140,7 +140,7 @@ export default class EcoGame {
 
     this.stage1Game.onStageComplete((reason, recycledCount) => {
       const gameType = this.levelConfig?.stage1Game ?? "runner";
-      
+
       let totalTrash = 12;
       let reqPercent = 80;
 
@@ -151,31 +151,48 @@ export default class EcoGame {
       } else {
         const runnerConfig = this.levelConfig.runner || {};
         totalTrash = runnerConfig.itemCount || 20;
-        reqPercent = 0; // In runner, we usually allow transition as long as it's not a hard fail
+        reqPercent = 80; // Enforced 80% for runner as requested
       }
 
       const percentage = totalTrash > 0 ? (recycledCount / totalTrash) * 100 : 0;
 
       // SUCCESS: Hit the win target OR collected >= required %
-      const isWin = reason === "win" || percentage >= reqPercent;
+      const isWin = reason === "win" && percentage >= reqPercent;
 
       if (isWin) {
         this.switchToStage2();
       } else {
         // FAILURE: Show result screen with failure message
-        const failMessage = reason === "death" 
-          ? "Thuyền bị hỏng! Bạn cần thu thập ít nhất " + reqPercent + "% rác." 
-          : `Bạn mới thu gom được ${Math.round(percentage)}%, cần đạt ${reqPercent}% để tiếp tục!`;
+        let failMessage = "";
 
-        this._showResult({ correct: 0, wrong: 0 }, {
-          success: false,
-          apiResult: {
-            feedbackMessage: failMessage,
-            totalItems: totalTrash,
-            correctItems: recycledCount,
-            accuracyPercentage: Math.round(percentage)
-          }
-        });
+        if (reason === "death") {
+          failMessage =
+            gameType === "searescue"
+              ? "Thuyền bị hỏng! Bạn cần thu thập ít nhất " +
+                reqPercent +
+                "% rác."
+              : "Bạn đã va chạm! Bạn cần nhặt đủ ít nhất " +
+                reqPercent +
+                "% rác để tiếp tục.";
+        } else {
+          failMessage =
+            gameType === "runner"
+              ? "Bạn buộc phải nhặt đủ số lượng rác tại stage 1 để qua màn phân loại (stage 2)"
+              : `Bạn mới thu gom được ${Math.round(percentage)}%, cần đạt ${reqPercent}% để tiếp tục!`;
+        }
+
+        this._showResult(
+          { correct: 0, wrong: 0 },
+          {
+            success: false,
+            apiResult: {
+              feedbackMessage: failMessage,
+              totalItems: totalTrash,
+              correctItems: recycledCount,
+              accuracyPercentage: Math.round(percentage),
+            },
+          },
+        );
       }
     });
   }
