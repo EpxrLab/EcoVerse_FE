@@ -43,7 +43,7 @@ export function GradeGroup({
               <div className={cn(
                 "w-11 h-11 rounded-xl flex items-center justify-center transition-all duration-300",
                 isExpanded 
-                  ? "bg-gradient-to-br from-eco-green to-eco-green-dark shadow-md" 
+                  ? "bg-eco-green shadow-md" 
                   : "bg-eco-green/10"
               )}>
                 <span className={cn(
@@ -54,10 +54,10 @@ export function GradeGroup({
                 </span>
               </div>
               <div className="text-left">
-                <h3 className="text-base font-bold text-foreground">Khối {group.grade}</h3>
-                <div className="flex items-center gap-3 text-xs text-muted-foreground">
+                <h3 className="text-lg font-semibold text-foreground">Khối {group.grade}</h3>
+                <div className="flex items-center gap-3 text-sm text-muted-foreground font-medium">
                   <span className="flex items-center gap-1">
-                    <GraduationCap className="w-3.5 h-3.5" />
+                    <GraduationCap className="w-4 h-4" />
                     {group.classes.length} lớp
                   </span>
                   <span className="flex items-center gap-1">
@@ -87,7 +87,7 @@ export function GradeGroup({
             {/* View mode toggle */}
             {showViewToggle && (
               <div className="flex items-center justify-between mb-3 pt-1">
-                <span className="text-xs text-muted-foreground">
+                <span className="text-sm text-muted-foreground font-medium">
                   {group.classes.length} lớp học
                 </span>
                 <div className="flex items-center gap-0.5 p-0.5 rounded-lg bg-muted/50 border border-border">

@@ -91,12 +91,12 @@ export default function PartnershipReports() {
     <div className="space-y-6 animate-fade-in pb-10">
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div className="flex items-center gap-4">
-          <div className="w-12 h-12 rounded-2xl bg-primary/10 flex items-center justify-center">
-            <BarChart3 className="w-6 h-6 text-primary" />
+          <div className="w-12 h-12 rounded-2xl bg-eco-blue/10 flex items-center justify-center">
+            <BarChart3 className="w-6 h-6 text-eco-blue" />
           </div>
           <div>
-            <h1 className="text-2xl font-bold text-foreground">Báo cáo hoạt động</h1>
-            <p className="text-muted-foreground text-sm">Phân tích hiệu suất và tầm ảnh hưởng của các chiến dịch</p>
+            <h1 className="text-3xl font-bold text-foreground">Báo cáo hoạt động</h1>
+            <p className="text-muted-foreground text-base">Phân tích hiệu suất và tầm ảnh hưởng của các chiến dịch</p>
           </div>
         </div>
 
@@ -109,27 +109,27 @@ export default function PartnershipReports() {
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-        <Card className="border-2 border-primary/10 bg-primary/5">
+        <Card className="border-2 border-eco-blue/10 bg-eco-blue/5">
           <CardContent className="p-6">
             <div className="flex items-center gap-4 mb-2">
-              <div className="p-2 rounded-lg bg-primary/10">
-                <FileText className="w-5 h-5 text-primary" />
+              <div className="p-2 rounded-lg bg-eco-blue/10">
+                <FileText className="w-5 h-5 text-eco-blue" />
               </div>
-              <p className="text-sm font-bold text-muted-foreground uppercase">Tổng chiến dịch</p>
+              <p className="text-base font-bold text-muted-foreground uppercase">Tổng chiến dịch</p>
             </div>
-            <p className="text-3xl font-black text-foreground">{completedCampaigns.length}</p>
+            <p className="text-4xl font-bold text-foreground">{completedCampaigns.length}</p>
           </CardContent>
         </Card>
 
-        <Card className="border-2 border-emerald-100 bg-emerald-50/30">
+        <Card className="border-2 border-eco-blue/5 bg-eco-blue/5/30">
           <CardContent className="p-6">
             <div className="flex items-center gap-4 mb-2">
-              <div className="p-2 rounded-lg bg-emerald-100">
-                <School className="w-5 h-5 text-emerald-600" />
+              <div className="p-2 rounded-lg bg-eco-blue/10">
+                <School className="w-5 h-5 text-eco-blue" />
               </div>
-              <p className="text-sm font-bold text-muted-foreground uppercase">Trường tham gia TB</p>
+              <p className="text-base font-bold text-muted-foreground uppercase">Trường tham gia TB</p>
             </div>
-            <p className="text-3xl font-black text-foreground">
+            <p className="text-4xl font-bold text-foreground">
               {completedCampaigns.length > 0 ? (completedCampaigns.reduce((acc, c) => acc + c.schoolsParticipated, 0) / completedCampaigns.length).toFixed(1) : 0}
             </p>
           </CardContent>
@@ -141,10 +141,10 @@ export default function PartnershipReports() {
               <div className="p-2 rounded-lg bg-blue-100">
                 <Users className="w-5 h-5 text-blue-600" />
               </div>
-              <p className="text-sm font-bold text-muted-foreground uppercase">Tầm ảnh hưởng TB</p>
+              <p className="text-base font-bold text-muted-foreground uppercase">Tầm ảnh hưởng TB</p>
             </div>
-            <p className="text-3xl font-black text-foreground">
-              {completedCampaigns.length > 0 ? Math.round(completedCampaigns.reduce((acc, c) => acc + c.totalStudentsEnrolled, 0) / completedCampaigns.length) : 0} <span className="text-xs text-muted-foreground font-normal">HS/CD</span>
+            <p className="text-4xl font-bold text-foreground">
+              {completedCampaigns.length > 0 ? Math.round(completedCampaigns.reduce((acc, c) => acc + c.totalStudentsEnrolled, 0) / completedCampaigns.length) : 0} <span className="text-sm text-muted-foreground font-normal">HS/CD</span>
             </p>
           </CardContent>
         </Card>
@@ -178,7 +178,7 @@ export default function PartnershipReports() {
              <div className="overflow-x-auto">
                 <table className="w-full text-left border-collapse">
                    <thead>
-                      <tr className="bg-muted/30 border-b border-border/50 text-[10px] font-black uppercase tracking-widest text-muted-foreground/80">
+                      <tr className="bg-muted/30 border-b border-border/50 text-xs font-bold uppercase tracking-widest text-muted-foreground/80">
                          <th className="p-4">Chiến dịch</th>
                          <th className="p-4 text-center">Trạng thái</th>
                          <th className="p-4 text-center">Số vòng</th>
@@ -192,31 +192,31 @@ export default function PartnershipReports() {
                       {paginatedCampaigns.map((campaign) => (
                         <tr key={campaign.campaignId} className="hover:bg-primary/5 transition-colors group">
                            <td className="p-4">
-                              <p className="font-black text-foreground group-hover:text-primary transition-colors">{campaign.campaignName}</p>
-                              <p className="text-[10px] font-mono text-muted-foreground">{campaign.campaignCode}</p>
+                              <p className="font-bold text-foreground text-sm group-hover:text-primary transition-colors">{campaign.campaignName}</p>
+                              <p className="text-xs font-mono text-muted-foreground">{campaign.campaignCode}</p>
                            </td>
                            <td className="p-4 text-center">
-                              <Badge variant="outline" className="rounded-lg text-[10px] font-bold uppercase tracking-wider bg-muted text-muted-foreground border-none">
+                              <Badge variant="outline" className="rounded-lg text-xs font-bold uppercase tracking-wider bg-muted text-muted-foreground border-none px-3 py-1">
                                 Hoàn thành
                               </Badge>
                            </td>
                            <td className="p-4 text-center">
                               <span className="font-bold text-sm bg-muted/50 px-2 py-1 rounded-lg">{campaign.totalRounds}</span>
                            </td>
-                           <td className="p-4 text-center font-bold text-emerald-600">{campaign.schoolsParticipated}</td>
-                           <td className="p-4 text-center font-bold text-blue-600">{campaign.totalStudentsEnrolled}</td>
+                           <td className="p-4 text-center font-bold text-eco-blue">{campaign.schoolsParticipated}</td>
+                           <td className="p-4 text-center font-bold text-eco-blue-light">{campaign.totalStudentsEnrolled}</td>
                            <td className="p-4 text-center">
                               <div className="flex flex-col items-center gap-1">
-                                 <span className="text-xs font-black">{(campaign.avgParticipantAccuracy).toFixed(1)}%</span>
+                                 <span className="text-xs font-bold">{(campaign.avgParticipantAccuracy).toFixed(1)}%</span>
                                  <div className="w-16 h-1 bg-muted rounded-full overflow-hidden">
-                                    <div className="h-full bg-primary" style={{ width: `${campaign.avgParticipantAccuracy}%` }} />
+                                    <div className="h-full bg-eco-blue" style={{ width: `${campaign.avgParticipantAccuracy}%` }} />
                                  </div>
                               </div>
                            </td>
                            <td className="p-4">
-                              <div className="flex flex-col text-[10px] items-start gap-1">
-                                 <div className="flex items-center gap-1.5 text-emerald-600 font-bold">
-                                    <div className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
+                              <div className="flex flex-col text-xs items-start gap-1">
+                                 <div className="flex items-center gap-1.5 text-eco-blue font-bold">
+                                    <div className="w-1.5 h-1.5 rounded-full bg-eco-blue" />
                                     {new Date(campaign.startDate).toLocaleDateString()}
                                  </div>
                                  <div className="flex items-center gap-1.5 text-muted-foreground">
@@ -241,7 +241,7 @@ export default function PartnershipReports() {
                    {/* Impact Chart (Students Enrolled) */}
                    <div className="space-y-4">
                       <div className="flex items-center justify-between">
-                         <h3 className="text-sm font-black uppercase tracking-widest text-muted-foreground italic">Tầm ảnh hưởng (Số học sinh)</h3>
+                         <h3 className="text-sm font-bold uppercase tracking-widest text-muted-foreground italic">Tầm ảnh hưởng (Số học sinh)</h3>
                          <Badge variant="outline" className="text-[10px] font-bold bg-primary/5 border-primary/20">Top 5 chiến dịch</Badge>
                       </div>
                       <div className="h-[300px] w-full bg-white rounded-3xl border-2 border-border/50 p-4 pt-8">
@@ -276,7 +276,7 @@ export default function PartnershipReports() {
                    {/* Participation Chart */}
                    <div className="space-y-4">
                       <div className="flex items-center justify-between">
-                         <h3 className="text-sm font-black uppercase tracking-widest text-muted-foreground italic">Số trường tham gia</h3>
+                         <h3 className="text-sm font-bold uppercase tracking-widest text-muted-foreground italic">Số trường tham gia</h3>
                          <Badge variant="outline" className="text-[10px] font-bold bg-amber-50 border-amber-200 text-amber-600">Phổ biến nhất</Badge>
                       </div>
                       <div className="h-[300px] w-full bg-white rounded-3xl border-2 border-border/50 p-4 pt-8">

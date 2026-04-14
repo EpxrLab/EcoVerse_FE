@@ -19,7 +19,7 @@ export function LeaderboardFilters({
           value={selectedCampaignId}
           onChange={onCampaignChange}
           placeholder="Chọn chiến dịch"
-          options={campaigns.map(c => ({ value: c.id, label: c.name }))}
+          options={campaigns.map(c => ({ value: c.id, label: c.campaignName || c.name }))}
         />
         <FilterItem
           icon={<Calendar className="w-5 h-5" />}

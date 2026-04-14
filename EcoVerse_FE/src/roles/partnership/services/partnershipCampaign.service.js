@@ -70,5 +70,14 @@ export const partnershipCampaignService = {
 
   markRewardShipped: (deliveryId, payload) => {
     return axios.put(`/partnership/reward-deliveries/${deliveryId}/ship`, payload);
+  },
+
+  // Leaderboard
+  getCampaignLeaderboard: (id) => {
+    return axios.get(`/partnership/campaigns/${id}/leaderboard`);
+  },
+
+  getRoundLeaderboard: (id, roundId) => {
+    return axios.get(`/partnership/campaigns/${id}/rounds/${roundId}/leaderboard`);
   }
 };

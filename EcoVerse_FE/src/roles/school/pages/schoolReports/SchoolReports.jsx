@@ -118,16 +118,16 @@ export default function SchoolReports() {
       {/* Header */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div className="flex items-center gap-4">
-          <div className="w-14 h-14 rounded-2xl bg-primary flex items-center justify-center shadow-lg shadow-primary/20">
+          <div className="w-14 h-14 rounded-2xl bg-eco-green flex items-center justify-center shadow-lg shadow-eco-green/20">
             <BarChart3 className="w-7 h-7 text-primary-foreground" />
           </div>
           <div>
             <h1 className="text-2xl font-bold text-foreground">Báo cáo chi tiết</h1>
-            <p className="text-muted-foreground font-medium">Phân tích hiệu suất học tập và chiến dịch của trường</p>
+            <p className="text-muted-foreground font-semibold">Phân tích hiệu suất học tập và chiến dịch của trường</p>
           </div>
         </div>
         <div className="flex items-center gap-2">
-          <Button variant="outline" className="rounded-xl border-2 font-semibold" onClick={exportToExcel}>
+          <Button variant="outline" className="rounded-xl border-2 border-eco-green/20 font-semibold hover:bg-eco-green/5 text-eco-green" onClick={exportToExcel}>
             <Download className="w-4 h-4 mr-2" />
             Xuất báo cáo
           </Button>
@@ -139,13 +139,13 @@ export default function SchoolReports() {
           <TabsList className="bg-transparent h-12 gap-1 p-0">
             <TabsTrigger 
               value="students" 
-              className="rounded-xl h-10 px-6 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-lg data-[state=active]:shadow-primary/20 font-bold transition-all"
+              className="rounded-xl h-10 px-6 data-[state=active]:bg-eco-green data-[state=active]:text-primary-foreground data-[state=active]:shadow-lg data-[state=active]:shadow-eco-green/20 font-bold transition-all"
             >
               Phân tích Học sinh
             </TabsTrigger>
             <TabsTrigger 
               value="campaigns"
-              className="rounded-xl h-10 px-6 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-lg data-[state=active]:shadow-primary/20 font-bold transition-all"
+              className="rounded-xl h-10 px-6 data-[state=active]:bg-eco-green data-[state=active]:text-primary-foreground data-[state=active]:shadow-lg data-[state=active]:shadow-eco-green/20 font-bold transition-all"
             >
               Kết quả Chiến dịch
             </TabsTrigger>
@@ -155,7 +155,7 @@ export default function SchoolReports() {
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
             <Input 
               placeholder={activeTab === "students" ? "Tìm theo tên, lớp..." : "Tìm tên chiến dịch..."}
-              className="pl-10 h-10 rounded-xl bg-card border-none focus-visible:ring-2 focus-visible:ring-primary/20 shadow-inner"
+              className="pl-10 h-10 rounded-xl bg-card border-none focus-visible:ring-2 focus-visible:ring-eco-green/20 shadow-inner"
               value={searchTerm}
               onChange={(e) => {
                 setSearchTerm(e.target.value);
@@ -188,42 +188,42 @@ export default function SchoolReports() {
                   <tbody className="divide-y divide-border/30">
                     {paginatedStudents.map((student) => (
                       <tr key={student.studentId} className="hover:bg-muted/10 transition-colors group">
-                        <td className="p-4">
+                        <td colSpan={1} className="p-4">
                           <div className="flex items-center gap-3">
-                            <div className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center font-bold text-primary group-hover:scale-110 transition-transform">
+                            <div className="w-10 h-10 rounded-xl bg-eco-green/10 flex items-center justify-center font-bold text-eco-green group-hover:scale-110 transition-transform">
                               {student.fullName.charAt(0)}
                             </div>
-                            <span className="font-bold text-sm">{student.fullName}</span>
+                            <span className="font-semibold text-base">{student.fullName}</span>
                           </div>
                         </td>
                         <td className="p-4">
-                          <p className="text-sm font-bold text-foreground">Lớp {student.gradeLevel}{student.className}</p>
+                          <p className="text-sm font-semibold text-foreground">Lớp {student.gradeLevel}{student.className}</p>
                         </td>
                         <td className="p-4 text-center">
                           <div className="flex flex-col items-center gap-1.5">
-                            <span className="text-sm font-bold text-blue-600">{Math.round(student.avgGameAccuracy)}%</span>
-                            <div className="w-24 h-1.5 bg-blue-100 rounded-full overflow-hidden">
-                              <div className="h-full bg-blue-500 rounded-full" style={{ width: `${student.avgGameAccuracy}%` }} />
+                            <span className="text-sm font-bold text-eco-green">{Math.round(student.avgGameAccuracy)}%</span>
+                            <div className="w-24 h-1.5 bg-eco-green/10 rounded-full overflow-hidden">
+                              <div className="h-full bg-eco-green rounded-full" style={{ width: `${student.avgGameAccuracy}%` }} />
                             </div>
                           </div>
                         </td>
                         <td className="p-4 text-center">
                           <div className="flex flex-col items-center gap-1.5">
-                            <span className="text-sm font-bold text-emerald-600">{Math.round(student.avgQuizScore)}%</span>
-                            <div className="w-24 h-1.5 bg-emerald-100 rounded-full overflow-hidden">
-                              <div className="h-full bg-emerald-500 rounded-full" style={{ width: `${student.avgQuizScore}%` }} />
+                            <span className="text-sm font-bold text-eco-green">{Math.round(student.avgQuizScore)}%</span>
+                            <div className="w-24 h-1.5 bg-eco-green/10 rounded-full overflow-hidden">
+                              <div className="h-full bg-eco-green rounded-full" style={{ width: `${student.avgQuizScore}%` }} />
                             </div>
                           </div>
                         </td>
                         <td className="p-4 text-center">
-                          <Badge variant="secondary" className="bg-orange-50 text-orange-600 border-orange-100 font-bold">
+                          <Badge variant="secondary" className="bg-eco-green/5 text-eco-green border-eco-green/10 font-bold">
                             {student.totalCampaignsJoined} đã tham gia
                           </Badge>
                         </td>
                         <td className="p-4 text-right">
-                          <div className="inline-flex items-center gap-1.5 font-black text-foreground">
+                          <div className="inline-flex items-center gap-1.5 font-bold text-foreground">
                             {student.totalCoins.toLocaleString()}
-                            <div className="p-1 rounded-md bg-eco-orange/10 text-eco-orange">
+                            <div className="p-1 rounded-md bg-eco-green/10 text-eco-green">
                                <TrendingUp className="w-3 h-3" />
                             </div>
                           </div>
@@ -253,38 +253,38 @@ export default function SchoolReports() {
           ) : (
             <div className="grid grid-cols-1 gap-6">
               <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
-                 <Card className="bg-primary/5 border-primary/20 shadow-none">
+                 <Card className="bg-eco-green/5 border-eco-green/20 shadow-none">
                    <CardContent className="p-5 flex items-center gap-4">
-                      <div className="w-12 h-12 rounded-xl bg-primary/10 flex items-center justify-center text-primary">
+                      <div className="w-12 h-12 rounded-xl bg-eco-green/10 flex items-center justify-center text-eco-green">
                         <Flag className="w-6 h-6" />
                       </div>
                       <div>
                         <p className="text-xs text-muted-foreground font-bold uppercase tracking-wider">Tổng chiến dịch</p>
-                        <p className="text-2xl font-black">{completedCampaigns.length}</p>
+                        <p className="text-2xl font-bold">{completedCampaigns.length}</p>
                       </div>
                    </CardContent>
                  </Card>
-                 <Card className="bg-emerald-50 border-emerald-200 shadow-none">
+                 <Card className="bg-eco-green/5 border-eco-green/20 shadow-none">
                    <CardContent className="p-5 flex items-center gap-4">
-                      <div className="w-12 h-12 rounded-xl bg-emerald-100 flex items-center justify-center text-emerald-600">
+                      <div className="w-12 h-12 rounded-xl bg-eco-green/10 flex items-center justify-center text-eco-green">
                         <Users className="w-6 h-6" />
                       </div>
                       <div>
                         <p className="text-xs text-muted-foreground font-bold uppercase tracking-wider">HS tham gia ĐTB</p>
-                        <p className="text-2xl font-black">
+                        <p className="text-2xl font-bold">
                           {completedCampaigns.length > 0 ? Math.round(completedCampaigns.reduce((acc, c) => acc + c.studentsEnrolled, 0) / completedCampaigns.length) : 0}
                         </p>
                       </div>
                    </CardContent>
                  </Card>
-                 <Card className="bg-blue-50 border-blue-200 shadow-none">
+                 <Card className="bg-eco-green/5 border-eco-green/20 shadow-none">
                    <CardContent className="p-5 flex items-center gap-4">
-                      <div className="w-12 h-12 rounded-xl bg-blue-100 flex items-center justify-center text-blue-600">
+                      <div className="w-12 h-12 rounded-xl bg-eco-green/10 flex items-center justify-center text-eco-green">
                         <Target className="w-6 h-6" />
                       </div>
                       <div>
                         <p className="text-xs text-muted-foreground font-bold uppercase tracking-wider">Độ chính xác tổng</p>
-                        <p className="text-2xl font-black">
+                        <p className="text-2xl font-bold">
                            {completedCampaigns.length > 0 ? (completedCampaigns.reduce((acc, c) => acc + c.avgCombinedAccuracy, 0) / completedCampaigns.length).toFixed(1) : 0}%
                         </p>
                       </div>
@@ -317,20 +317,20 @@ export default function SchoolReports() {
                      <CardContent className="p-5 space-y-5">
                         <div className="grid grid-cols-2 gap-4">
                            <div className="space-y-1.5 p-3 rounded-xl bg-muted/40 border border-border/50">
-                              <p className="text-[10px] text-muted-foreground font-black uppercase tracking-widest">Tiến độ tham gia</p>
-                              <div className="flex items-center justify-between font-black">
+                              <p className="text-[10px] text-muted-foreground font-bold uppercase tracking-widest">Tiến độ tham gia</p>
+                              <div className="flex items-center justify-between font-bold">
                                  <span className="text-sm">{campaign.studentsEnrolled}</span>
                                  <span className="text-[10px] text-muted-foreground">/{campaign.studentsEnrolled || '?'} HS</span>
                               </div>
                               <Progress value={(campaign.studentsCompleted / (campaign.studentsEnrolled || 1)) * 100} className="h-1.5" />
-                              <p className="text-[9px] text-emerald-600 font-bold">{campaign.studentsCompleted} hoàn thành</p>
+                              <p className="text-[9px] text-eco-green font-bold">{campaign.studentsCompleted} hoàn thành</p>
                            </div>
-                           <div className="space-y-1.5 p-3 rounded-xl bg-primary/5 border border-primary/10">
-                              <p className="text-[10px] text-primary/70 font-black uppercase tracking-widest">Độ chính xác TB</p>
+                           <div className="space-y-1.5 p-3 rounded-xl bg-eco-green/5 border border-eco-green/10">
+                              <p className="text-[10px] text-eco-green/70 font-bold uppercase tracking-widest">Độ chính xác TB</p>
                               <div className="flex items-center gap-2">
-                                 <div className="text-2xl font-black text-primary">{(campaign.avgCombinedAccuracy).toFixed(0)}<span className="text-xs ml-0.5">%</span></div>
-                                 <div className="flex-1 h-3 rounded-full bg-primary/10 overflow-hidden">
-                                     <div className="h-full bg-primary" style={{ width: `${campaign.avgCombinedAccuracy}%` }} />
+                                 <div className="text-2xl font-bold text-eco-green">{(campaign.avgCombinedAccuracy).toFixed(0)}<span className="text-xs ml-0.5">%</span></div>
+                                 <div className="flex-1 h-3 rounded-full bg-eco-green/10 overflow-hidden">
+                                     <div className="h-full bg-eco-green" style={{ width: `${campaign.avgCombinedAccuracy}%` }} />
                                  </div>
                               </div>
                               <p className="text-[9px] text-muted-foreground font-medium uppercase tracking-tight italic">Combined Accuracy</p>

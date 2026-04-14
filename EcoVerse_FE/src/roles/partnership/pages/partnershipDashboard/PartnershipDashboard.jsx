@@ -23,32 +23,32 @@ export default function PartnershipDashboard() {
       title: "Tổng chiến dịch",
       value: stats.totalCampaignsCreated,
       icon: FileText,
-      color: "text-blue-600",
-      bg: "bg-blue-100",
+      color: "text-eco-blue",
+      bg: "bg-eco-blue/10",
       desc: `${stats.activeCampaigns} đang diễn ra`
     },
     {
       title: "Trường tham gia",
       value: stats.totalSchoolsParticipated,
       icon: School,
-      color: "text-emerald-600",
-      bg: "bg-emerald-100",
+      color: "text-eco-blue-light",
+      bg: "bg-eco-blue-light/10",
       desc: "Trong thời gian qua"
     },
     {
       title: "HS tiếp cận",
       value: stats.totalStudentsReached.toLocaleString(),
       icon: Users,
-      color: "text-orange-600",
-      bg: "bg-orange-100",
+      color: "text-blue-500",
+      bg: "bg-blue-50",
       desc: "Tham gia các chiến dịch"
     },
     {
       title: "Độ chính xác TB",
       value: `${(stats.avgParticipantAccuracy).toFixed(1)}%`,
       icon: Target,
-      color: "text-purple-600",
-      bg: "bg-purple-100",
+      color: "text-cyan-500",
+      bg: "bg-cyan-50",
       desc: "Hiệu suất trung bình"
     }
   ];
@@ -89,18 +89,18 @@ export default function PartnershipDashboard() {
 
       {/* Subscription Alert if nearly expired or status check */}
       {stats.subscriptionStatus === "ACTIVE" && (
-        <Card className="border-l-4 border-l-primary bg-primary/5 overflow-hidden">
+        <Card className="border-l-4 border-l-eco-blue bg-eco-blue/5 overflow-hidden">
           <CardContent className="py-4 flex items-center justify-between">
             <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center">
-                <Trophy className="w-5 h-5 text-primary" />
+              <div className="w-10 h-10 rounded-full bg-eco-blue/10 flex items-center justify-center">
+                <Trophy className="w-5 h-5 text-eco-blue" />
               </div>
               <div>
-                <p className="text-sm font-bold text-primary">Gói {stats.subscriptionPlanName}</p>
+                <p className="text-sm font-bold text-eco-blue">Gói {stats.subscriptionPlanName}</p>
                 <p className="text-xs text-muted-foreground">Thời hạn đến: {new Date(stats.subscriptionEndDate).toLocaleDateString('vi-VN')}</p>
               </div>
             </div>
-            <Badge variant="outline" className="text-primary border-primary/20 bg-white">Đang sử dụng</Badge>
+            <Badge variant="outline" className="text-eco-blue border-eco-blue/20 bg-white">Đang sử dụng</Badge>
           </CardContent>
         </Card>
       )}
@@ -108,14 +108,14 @@ export default function PartnershipDashboard() {
       {/* KPI Cards */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
         {kpis.map((kpi, index) => (
-          <Card key={index} className="border-2 border-border/50 hover:border-primary/20 transition-all hover:shadow-lg hover:shadow-primary/5 group">
+          <Card key={index} className="border-2 border-border/50 hover:border-eco-blue/20 transition-all hover:shadow-lg hover:shadow-eco-blue/5 group">
             <CardContent className="p-6">
               <div className="flex justify-between items-start mb-4">
                 <div className={cn("p-3 rounded-2xl group-hover:scale-110 transition-transform", kpi.bg)}>
                   <kpi.icon className={cn("w-6 h-6", kpi.color)} />
                 </div>
               </div>
-              <p className="text-3xl font-black text-foreground mb-1 tracking-tight">{isLoading ? "---" : kpi.value}</p>
+              <p className="text-3xl font-bold text-foreground mb-1 tracking-tight">{isLoading ? "---" : kpi.value}</p>
               <p className="text-sm font-bold text-muted-foreground uppercase tracking-wider mb-2">{kpi.title}</p>
               <p className="text-[10px] font-medium text-muted-foreground/70 italic">{kpi.desc}</p>
             </CardContent>
@@ -128,8 +128,8 @@ export default function PartnershipDashboard() {
         <Card className="lg:col-span-1 border-2 border-border/50 flex flex-col h-full overflow-hidden">
           <CardHeader className="p-6 pb-2">
             <div className="flex items-center justify-between">
-              <CardTitle className="text-lg font-black flex items-center gap-2">
-                <School className="w-5 h-5 text-primary" />
+              <CardTitle className="text-lg font-bold flex items-center gap-2">
+                <School className="w-5 h-5 text-eco-blue" />
                 Trường học tham gia
               </CardTitle>
             </div>
@@ -141,7 +141,7 @@ export default function PartnershipDashboard() {
                   <div key={school.schoolId} className="flex items-center justify-between group cursor-pointer">
                     <div className="flex items-center gap-3">
                       <div className={cn(
-                        "w-10 h-10 rounded-xl flex items-center justify-center font-black text-sm transition-all",
+                        "w-10 h-10 rounded-xl flex items-center justify-center font-bold text-sm transition-all",
                         index === 0 ? "bg-amber-100 text-amber-600" : 
                         index === 1 ? "bg-slate-100 text-slate-600" : 
                         index === 2 ? "bg-orange-100 text-orange-600" : "bg-muted text-muted-foreground"
@@ -149,13 +149,13 @@ export default function PartnershipDashboard() {
                         {index + 1}
                       </div>
                       <div>
-                        <p className="text-sm font-bold text-foreground group-hover:text-primary transition-colors">{school.schoolName}</p>
+                        <p className="text-sm font-bold text-foreground group-hover:text-eco-blue transition-colors">{school.schoolName}</p>
                         <p className="text-[10px] text-muted-foreground font-medium uppercase">{school.campaignsParticipated} chiến dịch</p>
                       </div>
                     </div>
                     <div className="text-right">
-                      <p className="text-sm font-black text-primary">{school.totalStudentsEnrolled}</p>
-                      <p className="text-[10px] text-muted-foreground font-black uppercase tracking-tighter">HS tham gia</p>
+                      <p className="text-sm font-bold text-eco-blue">{school.totalStudentsEnrolled}</p>
+                      <p className="text-[10px] text-muted-foreground font-bold uppercase tracking-tighter">HS tham gia</p>
                     </div>
                   </div>
                 ))
@@ -164,7 +164,7 @@ export default function PartnershipDashboard() {
               )}
             </div>
             
-            <button className="w-full mt-8 py-3 rounded-xl bg-muted/30 text-xs font-bold text-muted-foreground hover:bg-primary/5 hover:text-primary transition-all flex items-center justify-center gap-2 group">
+            <button className="w-full mt-8 py-3 rounded-xl bg-muted/30 text-xs font-bold text-muted-foreground hover:bg-eco-blue/5 hover:text-eco-blue transition-all flex items-center justify-center gap-2 group">
               Xem tất cả trường học
               <ChevronRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
             </button>

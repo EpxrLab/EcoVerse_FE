@@ -29,6 +29,7 @@ import {
   ArrowLeft,
   Sparkles,
   Mail,
+  File,
 } from 'lucide-react';
 import { cn } from '@/shared/lib/utils';
 import { toast } from 'sonner';
@@ -164,7 +165,7 @@ function StepIndicator({ current }) {
           <div className={cn(
             'w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold transition-all',
             i < current ? 'bg-eco-green text-white' :
-            i === current ? 'bg-eco-blue text-white ring-2 ring-eco-blue/30' :
+            i === current ? 'bg-eco-green text-white ring-2 ring-eco-green/30 shadow-md' :
             'bg-muted text-muted-foreground'
           )}>
             {i < current ? <CheckCircle2 className="w-4 h-4" /> : i + 1}
@@ -191,9 +192,9 @@ function PreviewSummary({ rows }) {
   return (
     <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-4">
       {[
-        { icon: Layers, label: 'Khối', value: grades.length, color: 'eco-leaf' },
+        { icon: Layers, label: 'Khối', value: grades.length, color: 'eco-green' },
         { icon: GraduationCap, label: 'Lớp', value: classes.length, color: 'eco-green' },
-        { icon: Users, label: 'Học sinh', value: rows.length, color: 'eco-orange' },
+        { icon: Users, label: 'Học sinh', value: rows.length, color: 'eco-green' },
       ].map(({ icon: Icon, label, value, color }) => (
         <div key={label} className={cn(
           'flex items-center gap-2 p-3 rounded-xl border-2 bg-gradient-to-br',
@@ -310,11 +311,11 @@ export function BulkImportDialog({ isOpen, onClose, onImport }) {
       <DialogContent className="max-w-2xl h-[85vh] flex flex-col p-0 gap-0 overflow-hidden">
         <DialogHeader className="shrink-0 px-6 pt-5 pb-2 border-b">
           <DialogTitle className="flex items-center gap-3">
-            <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-eco-blue to-eco-green flex items-center justify-center shrink-0">
-              <Sparkles className="w-4.5 h-4.5 text-white" />
+            <div className="w-9 h-9 rounded-xl bg-eco-green flex items-center justify-center shrink-0">
+              <File className="w-4.5 h-4.5 text-white" />
             </div>
             <div>
-              <p className="text-base font-bold">Import hàng loạt</p>
+              <p className="text-base font-bold">Import</p>
               <p className="text-xs text-muted-foreground font-normal">Tạo khối · lớp · học sinh · phụ huynh từ 1 file</p>
             </div>
           </DialogTitle>
@@ -330,8 +331,8 @@ export function BulkImportDialog({ isOpen, onClose, onImport }) {
                 className={cn(
                   'relative border-2 border-dashed rounded-xl p-8 text-center transition-all cursor-pointer',
                   isDragging
-                    ? 'border-eco-blue bg-eco-blue/5 scale-[1.01]'
-                    : 'border-muted-foreground/25 hover:border-eco-blue/50 hover:bg-muted/20'
+                    ? 'border-eco-green bg-eco-green/5 scale-[1.01]'
+                    : 'border-muted-foreground/25 hover:border-eco-green/50 hover:bg-muted/20'
                 )}
                 onDragOver={(e) => { e.preventDefault(); setIsDragging(true); }}
                 onDragLeave={() => setIsDragging(false)}
@@ -363,7 +364,7 @@ export function BulkImportDialog({ isOpen, onClose, onImport }) {
 
               <div className="p-4 rounded-xl bg-muted/30 border border-border space-y-2">
                 <p className="text-xs font-bold flex items-center gap-1.5 uppercase tracking-wider text-muted-foreground">
-                  <FileSpreadsheet className="w-4 h-4 text-eco-blue" />
+                  <FileSpreadsheet className="w-4 h-4 text-eco-green" />
                   Định dạng file Excel / CSV
                 </p>
                 <div className="overflow-x-auto rounded-lg border bg-white p-2">
@@ -375,7 +376,7 @@ Nguyễn Hoàng Nhật Ân,A1,1,2014-08-10,Male,8 Dương Văn Cam,Nguyễn Văn
                 <Button
                   variant="outline"
                   size="sm"
-                  className="mt-1 border-eco-blue/30 hover:bg-eco-blue/10 text-eco-blue w-full sm:w-auto"
+                  className="mt-1 border-eco-green/30 hover:bg-eco-green/10 text-eco-green w-full sm:w-auto"
                   onClick={(e) => { e.stopPropagation(); downloadSampleXLSX(); }}
                 >
                   <Download className="w-3.5 h-3.5 mr-1.5" />
@@ -400,7 +401,7 @@ Nguyễn Hoàng Nhật Ân,A1,1,2014-08-10,Male,8 Dương Văn Cam,Nguyễn Văn
                 <Button
                   variant="ghost"
                   size="sm"
-                  className="text-muted-foreground text-xs hover:text-eco-blue"
+                  className="text-muted-foreground text-xs hover:text-eco-green"
                   onClick={() => { setParsedRows([]); setFileName(''); setStep(0); }}
                 >
                   <ArrowLeft className="w-3.5 h-3.5 mr-1" />
@@ -427,7 +428,7 @@ Nguyễn Hoàng Nhật Ân,A1,1,2014-08-10,Male,8 Dương Văn Cam,Nguyễn Văn
                         <TableRow key={i} className="text-xs hover:bg-muted/30 transition-colors">
                           <TableCell className="text-muted-foreground text-center font-mono">{i + 1}</TableCell>
                           <TableCell>
-                            <Badge variant="outline" className="font-bold text-eco-blue bg-eco-blue/5">
+                            <Badge variant="outline" className="font-bold text-eco-green bg-eco-green/5">
                               {row.grade}{row.class_name}
                             </Badge>
                           </TableCell>
@@ -467,8 +468,8 @@ Nguyễn Hoàng Nhật Ân,A1,1,2014-08-10,Male,8 Dương Văn Cam,Nguyễn Văn
               <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
                 {[
                   { label: 'Lớp mới', value: importResult.createdClasses.length, icon: GraduationCap, color: 'eco-green' },
-                  { label: 'Học sinh', value: importResult.createdStudents, icon: Users, color: 'eco-leaf' },
-                  { label: 'Phụ huynh', value: importResult.createdStudents, icon: Mail, color: 'eco-blue' },
+                  { label: 'Học sinh', value: importResult.createdStudents, icon: Users, color: 'eco-green' },
+                  { label: 'Phụ huynh', value: importResult.createdStudents, icon: Mail, color: 'eco-green' },
                 ].map(({ label, value, icon: Icon, color }) => (
                   <div key={label} className="p-4 rounded-2xl bg-muted/40 border border-border shadow-sm text-center">
                     <p className="text-3xl font-black text-foreground">{value}</p>
