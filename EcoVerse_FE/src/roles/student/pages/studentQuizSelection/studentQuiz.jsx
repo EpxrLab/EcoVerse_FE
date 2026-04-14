@@ -1,82 +1,46 @@
-import { useState, lazy, Suspense } from "react";
+import { useState, lazy, Suspense, useEffect } from "react";
 import { useNavigate, useParams } from "react-router";
 import { motion, AnimatePresence } from "framer-motion";
-import { Card, Badge, Button, Spin, Statistic } from "antd";
 import {
-  BookOpen,
-  Clock,
-  CheckCircle,
-  Play,
-  RotateCcw,
-  Trophy,
-  Target,
+  Card,
+  Badge,
+  Button,
+  Spin,
+  Statistic,
+  Select,
+  Space,
+  Modal,
+  Empty,
+  Tag,
+} from "antd";
+import {
   Home,
   Coins,
+  Layers,
+  ChevronRight,
+  BookOpen,
+  CheckCircle,
+  RotateCcw,
+  Target,
+  Trophy,
+  Play,
+  History,
+  Clock,
+  ExternalLink,
 } from "lucide-react";
-
-// Mock quiz data
-const mockQuizzes = [
-  {
-    id: 1,
-    title: "Ô nhiễm không khí",
-    description: "Tìm hiểu về các nguyên nhân và hậu quả của ô nhiễm không khí",
-    difficulty: "Dễ",
-    questionCount: 10,
-    timeLimit: 10,
-    coinReward: 25,
-    completed: true,
-    score: 90,
-    completedAt: "2024-01-20",
-  },
-  {
-    id: 2,
-    title: "Phân loại rác thải",
-    description: "Học cách phân loại rác thải đúng cách để bảo vệ môi trường",
-    difficulty: "Trung bình",
-    questionCount: 15,
-    timeLimit: 15,
-    coinReward: 35,
-    completed: true,
-    score: 85,
-    completedAt: "2024-01-19",
-  },
-  {
-    id: 3,
-    title: "Tiết kiệm năng lượng",
-    description: "Các biện pháp tiết kiệm năng lượng trong sinh hoạt hàng ngày",
-    difficulty: "Dễ",
-    questionCount: 10,
-    timeLimit: 10,
-    coinReward: 25,
-    completed: false,
-  },
-  {
-    id: 4,
-    title: "Biến đổi khí hậu",
-    description: "Nguyên nhân và tác động của biến đổi khí hậu toàn cầu",
-    difficulty: "Khó",
-    questionCount: 20,
-    timeLimit: 20,
-    coinReward: 50,
-    completed: false,
-  },
-  {
-    id: 5,
-    title: "Bảo vệ đa dạng sinh học",
-    description: "Tầm quan trọng của việc bảo vệ đa dạng sinh học",
-    difficulty: "Trung bình",
-    questionCount: 15,
-    timeLimit: 15,
-    coinReward: 35,
-    completed: false,
-  },
-];
+import { getCampaignDetails, getQuizHistory } from "../../services";
 
 // Lazy-loaded QuizCard component
 const QuizCard = lazy(() =>
   Promise.resolve({
-    default: function QuizCard({ quiz, getDifficultyConfig, onStart }) {
+    default: function QuizCard({
+      quiz,
+      getDifficultyConfig,
+      onStart,
+      onOpenHistory,
+    }) {
       const config = getDifficultyConfig(quiz.difficulty);
+      const isCompleted = quiz.isPassed;
 
       return (
         <motion.div
@@ -87,13 +51,27 @@ const QuizCard = lazy(() =>
           layout
         >
           <Card
-            className={`border-2 transition-all duration-300 hover:shadow-2xl rounded-2xl overflow-hidden ${
-              quiz.completed ? "border-green-400/40" : "border-gray-200"
+            className={`border-2 transition-all duration-300 hover:shadow-2xl rounded-2xl overflow-hidden relative ${
+              isCompleted ? "border-green-400/40" : "border-gray-200"
             }`}
             bodyStyle={{ padding: 0 }}
           >
             {/* Card top accent bar */}
             <div className={`h-1.5 w-full ${config.bar}`} />
+
+            {/* History Toggle Button */}
+            <div className="absolute top-4 right-4 z-10">
+              <Button
+                size="small"
+                shape="circle"
+                icon={<History className="w-3.5 h-3.5" />}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onOpenHistory(quiz);
+                }}
+                className="bg-white/80 backdrop-blur-sm border-gray-200 text-gray-400 hover:text-blue-500 hover:border-blue-200 shadow-sm"
+              />
+            </div>
 
             <div className="p-6 space-y-4">
               {/* Header */}
@@ -103,20 +81,26 @@ const QuizCard = lazy(() =>
                     <span
                       className={`text-xs font-semibold px-2.5 py-0.5 rounded-full border ${config.badge}`}
                     >
-                      {quiz.difficulty}
+                      {config.label}
                     </span>
-                    {quiz.completed && (
+                    {isCompleted && (
                       <span className="inline-flex items-center gap-1 text-xs font-semibold px-2.5 py-0.5 rounded-full bg-green-100 text-green-700 border border-green-300">
                         <CheckCircle className="w-3 h-3" />
                         Hoàn thành
                       </span>
                     )}
+                    {quiz.isRequired && (
+                      <span className="inline-flex items-center gap-1 text-xs font-semibold px-2.5 py-0.5 rounded-full bg-amber-50 text-amber-700 border border-amber-200">
+                        Bắt buộc
+                      </span>
+                    )}
                   </div>
-                  <h3 className="text-xl font-bold text-gray-800 mb-1">
+                  <h3 className="text-xl font-bold text-gray-800 mb-1 line-clamp-1">
                     {quiz.title}
                   </h3>
-                  <p className="text-sm text-gray-500 leading-relaxed">
-                    {quiz.description}
+                  <p className="text-sm text-gray-500 leading-relaxed line-clamp-2">
+                    {quiz.description ||
+                      "Tham gia giải đố để tích lũy kiến thức bảo vệ môi trường."}
                   </p>
                 </div>
                 <div className="w-14 h-14 rounded-2xl bg-blue-50 flex items-center justify-center text-3xl shrink-0 shadow-inner">
@@ -127,24 +111,26 @@ const QuizCard = lazy(() =>
               {/* Info Grid */}
               <div className="grid grid-cols-2 gap-3 p-4 rounded-xl bg-gray-50">
                 <div className="flex items-center gap-2 text-gray-600">
-                  <Target className="w-4 h-4" />
-                  <span className="text-sm">{quiz.questionCount} câu hỏi</span>
+                  <RotateCcw className="w-4 h-4 text-blue-500" />
+                  <span className="text-sm">
+                    Lần thử: {quiz.attemptsUsed}/{quiz.maxAttempts}
+                  </span>
                 </div>
                 <div className="flex items-center gap-2 text-gray-600">
-                  <Clock className="w-4 h-4" />
-                  <span className="text-sm">{quiz.timeLimit} phút</span>
+                  <Target className="w-4 h-4 text-purple-500" />
+                  <span className="text-sm">Thứ tự: {quiz.displayOrder}</span>
                 </div>
                 <div className="flex items-center gap-2">
                   <Coins className="w-4 h-4 text-amber-500" />
                   <span className="text-sm font-semibold text-amber-600">
-                    +{quiz.coinReward} xu
+                    +{quiz.coinReward || 20} xu
                   </span>
                 </div>
-                {quiz.completed && (
+                {isCompleted && (
                   <div className="flex items-center gap-2">
                     <Trophy className="w-4 h-4 text-green-500" />
                     <span className="text-sm font-semibold text-green-600">
-                      {quiz.score}%
+                      Đã đạt
                     </span>
                   </div>
                 )}
@@ -152,22 +138,23 @@ const QuizCard = lazy(() =>
 
               {/* Action Button */}
               <Button
-                type={quiz.completed ? "default" : "primary"}
+                type={isCompleted ? "default" : "primary"}
+                disabled={quiz.attemptsUsed >= quiz.maxAttempts && !isCompleted}
                 icon={
-                  quiz.completed ? (
+                  isCompleted ? (
                     <RotateCcw className="w-4 h-4" />
                   ) : (
                     <Play className="w-4 h-4" />
                   )
                 }
-                onClick={() => onStart(quiz.id)}
+                onClick={() => onStart(quiz)}
                 className={`w-full h-10 font-semibold flex items-center justify-center gap-2 rounded-xl transition-all duration-200 ${
-                  quiz.completed
+                  isCompleted
                     ? "bg-gray-100 text-gray-700 hover:bg-gray-200 border-gray-200"
-                    : "bg-blue-500 hover:bg-blue-600 border-blue-500 text-white"
+                    : "bg-blue-500 hover:bg-blue-600 border-blue-500 text-white shadow-md shadow-blue-100"
                 }`}
               >
-                {quiz.completed ? "Làm lại" : "Bắt đầu"}
+                {isCompleted ? "Làm lại" : "Bắt đầu"}
               </Button>
             </div>
           </Card>
@@ -180,23 +167,27 @@ const QuizCard = lazy(() =>
 // Difficulty config helper
 function getDifficultyConfig(difficulty) {
   switch (difficulty) {
-    case "Dễ":
+    case "EASY":
       return {
+        label: "Dễ",
         badge: "bg-green-50 text-green-700 border-green-300",
         bar: "bg-gradient-to-r from-green-400 to-emerald-400",
       };
-    case "Trung bình":
+    case "MEDIUM":
       return {
+        label: "Trung bình",
         badge: "bg-blue-50 text-blue-700 border-blue-300",
         bar: "bg-gradient-to-r from-blue-400 to-sky-400",
       };
-    case "Khó":
+    case "HARD":
       return {
+        label: "Khó",
         badge: "bg-red-50 text-red-700 border-red-300",
         bar: "bg-gradient-to-r from-red-400 to-rose-400",
       };
     default:
       return {
+        label: difficulty,
         badge: "bg-gray-100 text-gray-600 border-gray-300",
         bar: "bg-gray-300",
       };
@@ -211,17 +202,17 @@ const FILTER_OPTIONS = [
     activeClass: "bg-gray-800 text-white border-gray-800",
   },
   {
-    key: "Dễ",
+    key: "EASY",
     label: "Dễ",
     activeClass: "bg-green-500 text-white border-green-500",
   },
   {
-    key: "Trung bình",
+    key: "MEDIUM",
     label: "Trung bình",
     activeClass: "bg-blue-500 text-white border-blue-500",
   },
   {
-    key: "Khó",
+    key: "HARD",
     label: "Khó",
     activeClass: "bg-red-500 text-white border-red-500",
   },
@@ -231,23 +222,88 @@ export default function StudentQuiz() {
   const navigate = useNavigate();
   const { campaignId } = useParams();
   const [selectedDifficulty, setSelectedDifficulty] = useState("all");
+  const [campaign, setCampaign] = useState(null);
+  const [selectedRoundId, setSelectedRoundId] = useState(null);
+  const [quizzes, setQuizzes] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [quizHistory, setQuizHistory] = useState([]);
+  const [historyModalOpen, setHistoryModalOpen] = useState(false);
+  const [selectedQuiz, setSelectedQuiz] = useState(null);
+  const [historyLoading, setHistoryLoading] = useState(false);
+
+  const fetchQuizHistoryData = async (quizId) => {
+    setHistoryLoading(true);
+    try {
+      const res = await getQuizHistory(campaignId, selectedRoundId, quizId);
+      setQuizHistory(res.data || []);
+    } catch (error) {
+      console.log(error);
+      setQuizHistory([]);
+    } finally {
+      setHistoryLoading(false);
+    }
+  };
+
+  const handleOpenHistory = (quiz) => {
+    setSelectedQuiz(quiz);
+    setHistoryModalOpen(true);
+    fetchQuizHistoryData(quiz.quizId);
+  };
+
+  const formatTime = (seconds) => {
+    if (!seconds) return "00:00";
+    const mins = Math.floor(seconds / 60);
+    const secs = seconds % 60;
+    return `${mins.toString().padStart(2, "0")}:${secs.toString().padStart(2, "0")}`;
+  };
+
+  const fetchData = async () => {
+    setLoading(true);
+    try {
+      const res = await getCampaignDetails(campaignId);
+      const campaignData = res.data;
+      setCampaign(campaignData);
+
+      // Default to the first round
+      if (campaignData?.rounds?.length > 0) {
+        const firstRound = campaignData.rounds[0];
+        setSelectedRoundId(firstRound.id);
+        setQuizzes(firstRound.quizzes || []);
+      }
+    } catch (error) {
+      console.log(error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchData();
+  }, [campaignId]);
+
+  useEffect(() => {
+    if (campaign && selectedRoundId) {
+      const round = campaign.rounds.find((r) => r.id === selectedRoundId);
+      if (round) {
+        setQuizzes(round.quizzes || []);
+      }
+    }
+  }, [selectedRoundId, campaign]);
 
   const filteredQuizzes =
     selectedDifficulty === "all"
-      ? mockQuizzes
-      : mockQuizzes.filter((q) => q.difficulty === selectedDifficulty);
+      ? quizzes
+      : quizzes.filter((q) => q.difficulty === selectedDifficulty);
 
-  const completedQuizzes = mockQuizzes.filter((q) => q.completed);
+  const completedQuizzes = quizzes.filter((q) => q.isPassed);
   const totalCoinsEarned = completedQuizzes.reduce(
-    (sum, q) => sum + (q.score >= 80 ? q.coinReward : 0),
+    (sum, q) => sum + (q.coinReward || 20),
     0,
   );
 
   const handleStartQuiz = (quiz) => {
     navigate(
-      `/student/campaign/${campaignId}/quiz/${quiz.id}?title=${encodeURIComponent(
-        quiz.title,
-      )}&time=${quiz.timeLimit}&reward=${quiz.coinReward}`,
+      `/student/campaign/${campaignId}/round/${selectedRoundId}/quiz/${quiz.quizId}`,
     );
   };
 
@@ -288,15 +344,25 @@ export default function StudentQuiz() {
 
               <div className="relative flex flex-col sm:flex-row items-start sm:items-center justify-between gap-6">
                 {/* Title */}
-                <div>
-                  <h1 className="text-3xl font-extrabold text-gray-800 mb-2 flex items-center gap-3">
+                <div className="flex-1">
+                  <div className="flex items-center gap-3 mb-2">
                     <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-blue-500 to-purple-500 flex items-center justify-center shadow-lg">
                       <BookOpen className="w-6 h-6 text-white" />
                     </div>
-                    Làm Quiz
-                  </h1>
-                  <p className="text-gray-500 text-base">
-                    Trả lời câu hỏi để kiểm tra kiến thức và nhận xu
+                    <div>
+                      <h1 className="text-3xl font-extrabold text-gray-800 leading-none">
+                        Làm Quiz
+                      </h1>
+                      {campaign?.campaignName && (
+                        <p className="text-blue-600 font-medium text-sm mt-1">
+                          {campaign.campaignName}
+                        </p>
+                      )}
+                    </div>
+                  </div>
+                  <p className="text-gray-500 text-base max-w-md">
+                    Trả lời câu hỏi để kiểm tra kiến thức và nhận xu bảo vệ môi
+                    trường.
                   </p>
                 </div>
 
@@ -311,11 +377,11 @@ export default function StudentQuiz() {
                         <CheckCircle className="w-5 h-5 text-blue-500" />
                       </div>
                       <div>
-                        <p className="text-xs text-gray-400">Đã hoàn thành</p>
+                        <p className="text-xs text-gray-400">Hoàn thành vòng</p>
                         <p className="text-2xl font-bold text-gray-800">
                           {completedQuizzes.length}
                           <span className="text-gray-400 text-base font-normal">
-                            /{mockQuizzes.length}
+                            /{quizzes.length}
                           </span>
                         </p>
                       </div>
@@ -331,7 +397,7 @@ export default function StudentQuiz() {
                         <Coins className="w-5 h-5 text-white" />
                       </div>
                       <div>
-                        <p className="text-xs text-gray-400">Xu kiếm được</p>
+                        <p className="text-xs text-gray-400">Xu có thể nhận</p>
                         <p className="text-2xl font-bold bg-gradient-to-r from-amber-600 to-orange-500 bg-clip-text text-transparent">
                           {totalCoinsEarned}
                         </p>
@@ -344,36 +410,112 @@ export default function StudentQuiz() {
           </Card>
         </motion.div>
 
-        {/* Filters */}
-        <motion.div
-          initial={{ opacity: 0, y: 10 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.15 }}
-        >
-          <Card
-            className="border-2 border-gray-100 rounded-2xl shadow-sm"
-            bodyStyle={{ padding: "18px 24px" }}
+        {/* Round Selection & Filters */}
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
+          {/* Round Selector - Only show if not SCHOOL_INTERNAL and has rounds */}
+          {campaign?.campaignType !== "SCHOOL_INTERNAL" &&
+            campaign?.rounds?.length > 1 && (
+              <motion.div
+                className="lg:col-span-4"
+                initial={{ opacity: 0, x: -20 }}
+                animate={{ opacity: 1, x: 0 }}
+                transition={{ delay: 0.2 }}
+              >
+                <Card
+                  className="border-2 border-blue-100 rounded-2xl shadow-sm hover:border-blue-200 transition-colors"
+                  bodyStyle={{ padding: "20px" }}
+                >
+                  <Space direction="vertical" className="w-full" size="middle">
+                    <div className="flex items-center gap-2 text-blue-600 font-bold px-1">
+                      <Layers className="w-5 h-5" />
+                      <span className="text-base">Chọn vòng thi đấu</span>
+                    </div>
+                    <Select
+                      className="w-full h-12"
+                      placeholder="Chọn vòng"
+                      value={selectedRoundId}
+                      onChange={setSelectedRoundId}
+                      size="large"
+                      suffixIcon={<ChevronRight className="w-4 h-4" />}
+                      dropdownClassName="rounded-xl overflow-hidden shadow-xl"
+                    >
+                      {campaign.rounds.map((round) => (
+                        <Select.Option key={round.id} value={round.id}>
+                          <div className="flex items-center justify-between py-1 px-1">
+                            <span className="font-semibold text-gray-700">
+                              {round.roundName || `Vòng ${round.roundNumber}`}
+                            </span>
+                            <Badge
+                              status={
+                                round.status === "ACTIVE"
+                                  ? "processing"
+                                  : "default"
+                              }
+                              text={
+                                <span className="text-[10px] text-gray-400">
+                                  {round.status}
+                                </span>
+                              }
+                            />
+                          </div>
+                        </Select.Option>
+                      ))}
+                    </Select>
+                    <div className="px-2 pt-1 text-xs text-gray-400 italic flex items-center gap-2">
+                      <div className="w-1.5 h-1.5 rounded-full bg-blue-400" />
+                      Mỗi vòng thi sẽ có bộ câu đố kiến thức riêng biệt.
+                    </div>
+                  </Space>
+                </Card>
+              </motion.div>
+            )}
+
+          {/* Filters */}
+          <motion.div
+            className={
+              campaign?.campaignType !== "SCHOOL_INTERNAL" &&
+              campaign?.rounds?.length > 1
+                ? "lg:col-span-8"
+                : "lg:col-span-12"
+            }
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.15 }}
           >
-            <div className="flex items-center gap-4 flex-wrap">
-              <span className="text-sm font-medium text-gray-500">Độ khó:</span>
-              <div className="flex gap-2 flex-wrap">
-                {FILTER_OPTIONS.map(({ key, label, activeClass }) => (
-                  <button
-                    key={key}
-                    onClick={() => setSelectedDifficulty(key)}
-                    className={`px-4 py-1.5 text-sm font-semibold rounded-full border-2 transition-all duration-200 ${
-                      selectedDifficulty === key
-                        ? activeClass
-                        : "bg-white text-gray-600 border-gray-200 hover:border-gray-400"
-                    }`}
-                  >
-                    {label}
-                  </button>
-                ))}
+            <Card
+              className="border-2 border-gray-100 rounded-2xl shadow-sm h-full"
+              bodyStyle={{ padding: "22px 24px" }}
+            >
+              <div className="flex items-center gap-6 flex-wrap h-full">
+                <div className="flex items-center gap-2 pr-2 border-r border-gray-100">
+                  <Statistic
+                    title={
+                      <span className="text-xs uppercase tracking-wider font-bold text-gray-400">
+                        Độ khó
+                      </span>
+                    }
+                    value=" "
+                  />
+                </div>
+                <div className="flex gap-2 flex-wrap">
+                  {FILTER_OPTIONS.map(({ key, label, activeClass }) => (
+                    <button
+                      key={key}
+                      onClick={() => setSelectedDifficulty(key)}
+                      className={`px-5 py-2 text-sm font-bold rounded-xl border-2 transition-all duration-300 ${
+                        selectedDifficulty === key
+                          ? `${activeClass} shadow-lg scale-105`
+                          : "bg-white text-gray-500 border-gray-100 hover:border-gray-300"
+                      }`}
+                    >
+                      {label}
+                    </button>
+                  ))}
+                </div>
               </div>
-            </div>
-          </Card>
-        </motion.div>
+            </Card>
+          </motion.div>
+        </div>
 
         {/* Quiz Grid with lazy-loaded cards */}
         <Suspense
@@ -383,30 +525,160 @@ export default function StudentQuiz() {
             </div>
           }
         >
-          <AnimatePresence mode="popLayout">
-            <motion.div
-              className="grid grid-cols-1 md:grid-cols-2 gap-6"
-              layout
-            >
-              {filteredQuizzes.map((quiz, index) => (
-                <motion.div
-                  key={quiz.id}
-                  initial={{ opacity: 0, y: 24 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  exit={{ opacity: 0, scale: 0.95 }}
-                  transition={{ delay: index * 0.07, duration: 0.35 }}
-                  layout
-                >
-                  <QuizCard
-                    quiz={quiz}
-                    getDifficultyConfig={getDifficultyConfig}
-                    onStart={() => handleStartQuiz(quiz)}
-                  />
-                </motion.div>
-              ))}
-            </motion.div>
-          </AnimatePresence>
+          {loading ? (
+            <div className="flex justify-center py-16">
+              <Spin size="large" tip="Đang lấy dữ liệu..." />
+            </div>
+          ) : (
+            <AnimatePresence mode="popLayout">
+              <motion.div
+                className="grid grid-cols-1 md:grid-cols-2 gap-6"
+                layout
+              >
+                {filteredQuizzes.length > 0 ? (
+                  filteredQuizzes.map((quiz, index) => (
+                    <motion.div
+                      key={quiz.quizId}
+                      initial={{ opacity: 0, y: 24 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      exit={{ opacity: 0, scale: 0.95 }}
+                      transition={{ delay: index * 0.07, duration: 0.35 }}
+                      layout
+                    >
+                      <QuizCard
+                        quiz={quiz}
+                        getDifficultyConfig={getDifficultyConfig}
+                        onStart={() => handleStartQuiz(quiz)}
+                        onOpenHistory={handleOpenHistory}
+                      />
+                    </motion.div>
+                  ))
+                ) : (
+                  <div className="col-span-full py-20 text-center bg-gray-50 rounded-3xl border-2 border-dashed border-gray-200">
+                    <BookOpen className="w-12 h-12 text-gray-300 mx-auto mb-4" />
+                    <p className="text-gray-500 text-lg">
+                      Không tìm thấy câu đố nào trong phần này.
+                    </p>
+                  </div>
+                )}
+              </motion.div>
+            </AnimatePresence>
+          )}
         </Suspense>
+
+        <Modal
+          title={
+            <div className="flex items-center gap-2 text-lg font-bold">
+              <History className="w-5 h-5 text-blue-500" />
+              <span>Lịch sử làm bài: {selectedQuiz?.title}</span>
+            </div>
+          }
+          open={historyModalOpen}
+          onCancel={() => setHistoryModalOpen(false)}
+          footer={null}
+          width={700}
+          className="rounded-2xl overflow-hidden"
+          bodyStyle={{ padding: "12px 24px 24px" }}
+        >
+          {historyLoading ? (
+            <div className="py-20 text-center">
+              <Spin tip="Đang tải lịch sử..." />
+            </div>
+          ) : quizHistory.length > 0 ? (
+            <div className="space-y-3 mt-4">
+              {quizHistory.map((item) => (
+                <div
+                  key={item.attemptId}
+                  className="flex items-center justify-between p-4 rounded-xl border border-gray-100 bg-gray-50/50 hover:bg-white hover:shadow-md transition-all duration-200 group"
+                >
+                  <div className="flex flex-wrap items-center gap-4 flex-1">
+                    <div className="flex flex-col">
+                      <span className="text-xs text-gray-400 font-medium uppercase tracking-wider">
+                        Lần thử
+                      </span>
+                      <span className="font-bold text-gray-700">
+                        #{item.attemptNumber}
+                      </span>
+                    </div>
+
+                    <div className="w-px h-8 bg-gray-200 mx-2 hidden sm:block" />
+
+                    <div className="flex flex-col min-w-[80px]">
+                      <span className="text-xs text-gray-400 font-medium uppercase tracking-wider">
+                        Điểm số
+                      </span>
+                      <span
+                        className={`font-extrabold ${item.scorePercentage >= 80 ? "text-green-600" : "text-amber-600"}`}
+                      >
+                        {item.scorePercentage}%
+                      </span>
+                    </div>
+
+                    <div className="flex flex-col min-w-[100px]">
+                      <span className="text-xs text-gray-400 font-medium uppercase tracking-wider">
+                        Thời gian
+                      </span>
+                      <div className="flex items-center gap-1.5 text-gray-600 font-medium">
+                        <Clock className="w-3.5 h-3.5" />
+                        {formatTime(item.timeTakenSeconds)}
+                      </div>
+                    </div>
+
+                    <div className="flex flex-col">
+                      <span className="text-xs text-gray-400 font-medium uppercase tracking-wider">
+                        Kết quả
+                      </span>
+                      {item.isPassed ? (
+                        <Tag
+                          color="success"
+                          className="rounded-lg font-bold border-0 bg-green-100 text-green-700"
+                        >
+                          ĐẠT
+                        </Tag>
+                      ) : (
+                        <Tag
+                          color="error"
+                          className="rounded-lg font-bold border-0 bg-red-100 text-red-600"
+                        >
+                          KHÔNG ĐẠT
+                        </Tag>
+                      )}
+                    </div>
+                  </div>
+
+                  <Button
+                    type="primary"
+                    ghost
+                    size="middle"
+                    icon={<ExternalLink className="w-4 h-4" />}
+                    onClick={() =>
+                      navigate(
+                        `/student/campaign/${campaignId}/round/${selectedRoundId}/quiz/${selectedQuiz.quizId}/history/${item.attemptId}`,
+                      )
+                    }
+                    className="rounded-xl font-semibold border-blue-200 text-blue-600 hover:bg-blue-50 ml-4 opacity-0 group-hover:opacity-100 transition-opacity"
+                  >
+                    Xem chi tiết
+                  </Button>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <div className="py-12">
+              <Empty
+                image={Empty.PRESENTED_IMAGE_SIMPLE}
+                description={
+                  <div className="space-y-1">
+                    <p className="text-gray-500 font-medium">Chưa làm</p>
+                    <p className="text-xs text-gray-400">
+                      Bạn chưa thực hiện lần làm bài nào cho quiz này.
+                    </p>
+                  </div>
+                }
+              />
+            </div>
+          )}
+        </Modal>
       </div>
     </div>
   );

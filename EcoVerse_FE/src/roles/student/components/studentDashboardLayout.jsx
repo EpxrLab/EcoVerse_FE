@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Outlet, useNavigate, useParams, useLocation } from "react-router";
 import { Layout, Menu, Button, Badge, Drawer, Dropdown } from "antd";
 import {
@@ -55,9 +55,27 @@ export default function StudentDashboardLayout() {
 
   // Find campaign
   const campaign = getCampaignById(campaignId);
+  const isCompleted = campaign?.status === "COMPLETED";
+
   if (campaign) {
     setSelectedCampaign(campaign);
   }
+
+  useEffect(() => {
+    if (isCompleted) {
+      const isRestrictedPath =
+        location.pathname === `/student/campaign/${campaignId}` ||
+        location.pathname === `/student/campaign/${campaignId}/` ||
+        location.pathname.includes("/game") ||
+        location.pathname.includes("/quiz");
+
+      if (isRestrictedPath) {
+        navigate(`/student/campaign/${campaignId}/leaderboard`, {
+          replace: true,
+        });
+      }
+    }
+  }, [isCompleted, location.pathname, campaignId, navigate]);
   // Menu items
   const menuItems = [
     {
@@ -65,24 +83,28 @@ export default function StudentDashboardLayout() {
       label: "Tổng quan",
       icon: <HomeOutlined />,
       path: `/student/campaign/${campaignId}`,
+      disabled: isCompleted,
     },
     {
       key: "game",
       label: "Chơi game",
       icon: <PlayCircleOutlined />,
       path: `/student/campaign/${campaignId}/game`,
+      disabled: isCompleted,
     },
     {
       key: "quiz",
       label: "Làm Quiz",
       icon: <BookOutlined />,
       path: `/student/campaign/${campaignId}/quiz`,
+      disabled: isCompleted,
     },
     {
       key: "leaderboard",
       label: "Bảng xếp hạng",
       icon: <TrophyOutlined />,
       path: `/student/campaign/${campaignId}/leaderboard`,
+      disabled: false,
     },
   ];
 
@@ -213,6 +235,7 @@ export default function StudentDashboardLayout() {
               key: item.key,
               icon: item.icon,
               label: item.label,
+              disabled: item.disabled,
             }))}
             className="border-0"
             style={{ background: "transparent" }}

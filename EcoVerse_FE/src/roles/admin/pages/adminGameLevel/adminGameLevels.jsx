@@ -454,6 +454,9 @@ function PresetTab({ gameTypes }) {
     (p) => p.gameTypeId === selectedGameId,
   );
 
+  const selectedGame = gameTypes.find((g) => g.id === selectedGameId);
+  const isRunner = selectedGame?.typeCode === "RUN_SORTING";
+
   const fetchData = async () => {
     try {
       const res = await getAllGameLevels(selectedGameId);
@@ -479,7 +482,7 @@ function PresetTab({ gameTypes }) {
           levelNumber: 1,
           itemCount: 10,
           timeLimitSeconds: 0,
-          lives: 3,
+          lives: isRunner ? 1 : 3,
           wasteCategories: ["RECYCLABLE"],
         },
       ],
@@ -802,7 +805,11 @@ function PresetTab({ gameTypes }) {
                           label="Số mạng"
                           name={[name, "lives"]}
                         >
-                          <InputNumber min={0} className="w-full" />
+                          <InputNumber
+                            min={0}
+                            className="w-full"
+                            disabled={isRunner}
+                          />
                         </Form.Item>
                         <Form.Item
                           {...restField}
@@ -854,7 +861,7 @@ function PresetTab({ gameTypes }) {
                         levelNumber: fields.length + 1,
                         itemCount: 10,
                         timeLimitSeconds: 0,
-                        lives: 3,
+                        lives: isRunner ? 1 : 3,
                         wasteCategories: ["RECYCLABLE"],
                       });
                     }}

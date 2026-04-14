@@ -81,6 +81,7 @@ import PartnershipProfile from "./roles/partnership/pages/partnershipProfile/par
 import PaymentResult from "./features/payment/pages/paymentResult/paymentResult";
 import StudentRoundDetails from "./roles/student/pages/studentRoundDetail/studentRoundDetails";
 import ForgotPassword from "./features/auth/pages/forgot-password/forgotPassword";
+import StudentQuizHistory from "./roles/student/pages/studentQuizHistory/studentQuizHistoy";
 
 const queryClient = new QueryClient();
 
@@ -171,6 +172,7 @@ const App = () => (
                     path="round/:roundId/quiz/:quizId"
                     element={<StudentQuizPlay />}
                   />
+
                   <Route
                     path="round/:roundId/game/:roundGameConfigId/play"
                     element={<EcoGamePage />}
@@ -178,6 +180,10 @@ const App = () => (
                   <Route path="game" element={<StudentGame />} />
 
                   <Route path="quiz" element={<StudentQuiz />} />
+                  <Route
+                    path="round/:roundId/quiz/:quizId/history/:attemptId"
+                    element={<StudentQuizHistory />}
+                  />
                   <Route path="quiz/:quizId" element={<StudentQuizPlay />} />
                   <Route path="leaderboard" element={<StudentLeaderboard />} />
                 </Route>
