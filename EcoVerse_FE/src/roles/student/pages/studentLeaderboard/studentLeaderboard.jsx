@@ -40,14 +40,14 @@ const CoinIcon = ({ className = "w-4 h-4" }) => (
 
 const PODIUM_HEIGHT = { 1: "h-32", 2: "h-24", 3: "h-20" };
 const PODIUM_GRADIENT = {
-  1: "from-amber-400 to-yellow-500",
-  2: "from-slate-300 to-slate-400",
-  3: "from-orange-400 to-orange-500",
+  1: "bg-amber-500",
+  2: "bg-slate-400",
+  3: "bg-orange-500",
 };
 const AVATAR_GRADIENT = {
-  1: "from-amber-400 to-yellow-500",
-  2: "from-slate-300 to-slate-400",
-  3: "from-orange-400 to-orange-500",
+  1: "bg-amber-500 text-white",
+  2: "bg-slate-400 text-white",
+  3: "bg-orange-500 text-white",
 };
 
 const fmtTime = (sec) => {
@@ -82,8 +82,8 @@ function PodiumSlot({ entry, isFirst }) {
 
       {/* Avatar */}
       <div
-        className={`rounded-full flex items-center justify-center font-black text-white shadow-xl border-4 border-white mb-3
-        bg-gradient-to-br ${AVATAR_GRADIENT[entry.rank] ?? "from-blue-400 to-green-400"}
+        className={`rounded-full flex items-center justify-center font-black shadow-xl border-4 border-white mb-3
+        ${AVATAR_GRADIENT[entry.rank] ?? "bg-blue-400 text-white"}
         ${isFirst ? "w-24 h-24 text-4xl" : "w-20 h-20 text-3xl"}`}
       >
         {initial}
@@ -111,8 +111,8 @@ function PodiumSlot({ entry, isFirst }) {
 
       {/* Podium block */}
       <div
-        className={`w-32 rounded-t-2xl bg-gradient-to-br flex items-center justify-center shadow-md
-        ${PODIUM_HEIGHT[entry.rank] ?? "h-16"} ${PODIUM_GRADIENT[entry.rank] ?? "from-gray-200 to-gray-300"}`}
+        className={`w-32 rounded-t-2xl flex items-center justify-center shadow-md
+        ${PODIUM_HEIGHT[entry.rank] ?? "h-16"} ${PODIUM_GRADIENT[entry.rank] ?? "bg-gray-200"}`}
       >
         <span
           className={`font-black text-white ${isFirst ? "text-5xl" : "text-4xl"}`}
@@ -248,7 +248,7 @@ export default function StudentLeaderboard() {
                     Xếp hạng của bạn
                   </p>
                   <div className="flex items-center gap-4">
-                    <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-amber-400 to-orange-500 flex items-center justify-center shadow-lg border-2 border-white/30">
+                    <div className="w-12 h-12 rounded-xl bg-amber-500 flex items-center justify-center shadow-lg border-2 border-white/30">
                       <TrophyOutlined className="text-white text-xl" />
                     </div>
                     <div>
@@ -257,19 +257,19 @@ export default function StudentLeaderboard() {
                       </p>
                       <div className="flex items-center gap-1 mt-0.5">
                         <CoinIcon className="w-3.5 h-3.5 text-amber-500" />
-                        <span className="text-sm font-bold text-amber-600">
+                        <span className="text-sm font-bold text-white">
                           {myEntry.totalCoinsEarned?.toLocaleString()} xu
                         </span>
                       </div>
                     </div>
                   </div>
-                  <div className="flex gap-3 mt-2 text-xs text-gray-500">
+                  <div className="flex gap-3 mt-2 text-xs text-white/70">
                     <span className="flex items-center gap-1">
-                      <AimOutlined className="text-blue-400" />
+                      <AimOutlined className="text-white/80" />
                       {myEntry.combinedAccuracyPercentage?.toFixed(1)}%
                     </span>
                     <span className="flex items-center gap-1">
-                      <ClockCircleOutlined className="text-purple-400" />
+                      <ClockCircleOutlined className="text-white/80" />
                       {fmtTime(myEntry.avgTimeSeconds)}
                     </span>
                   </div>
@@ -331,8 +331,8 @@ export default function StudentLeaderboard() {
               const initial = (entry.studentName ?? "?")
                 .charAt(0)
                 .toUpperCase();
-              const avatarGrad =
-                AVATAR_GRADIENT[entry.rank] ?? "from-blue-400 to-green-400";
+              const avatarColor =
+                AVATAR_GRADIENT[entry.rank] ?? "bg-blue-400 text-white";
 
               return (
                 <motion.div key={entry.studentId} variants={row}>
@@ -364,8 +364,8 @@ export default function StudentLeaderboard() {
 
                     {/* Avatar */}
                     <div
-                      className={`w-12 h-12 rounded-full flex items-center justify-center font-black text-white text-xl flex-shrink-0
-                      shadow-inner bg-gradient-to-br ${avatarGrad}`}
+                      className={`w-12 h-12 rounded-full flex items-center justify-center font-black text-xl flex-shrink-0
+                      shadow-inner ${avatarColor}`}
                     >
                       {initial}
                     </div>

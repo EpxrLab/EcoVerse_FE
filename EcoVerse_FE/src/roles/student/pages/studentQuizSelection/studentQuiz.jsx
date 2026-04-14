@@ -171,19 +171,19 @@ function getDifficultyConfig(difficulty) {
       return {
         label: "Dễ",
         badge: "bg-green-50 text-green-700 border-green-300",
-        bar: "bg-gradient-to-r from-green-400 to-emerald-400",
+        bar: "bg-emerald-400",
       };
     case "MEDIUM":
       return {
         label: "Trung bình",
         badge: "bg-blue-50 text-blue-700 border-blue-300",
-        bar: "bg-gradient-to-r from-blue-400 to-sky-400",
+        bar: "bg-blue-400",
       };
     case "HARD":
       return {
         label: "Khó",
         badge: "bg-red-50 text-red-700 border-red-300",
-        bar: "bg-gradient-to-r from-red-400 to-rose-400",
+        bar: "bg-red-400",
       };
     default:
       return {
@@ -308,7 +308,7 @@ export default function StudentQuiz() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-white to-blue-50/30">
+    <div className="min-h-screen bg-emerald-50/30">
       <div className="max-w-6xl mx-auto px-4 py-8 space-y-6">
         {/* Breadcrumb */}
         <motion.div
@@ -337,10 +337,10 @@ export default function StudentQuiz() {
             className="border-2 border-blue-100 shadow-xl rounded-3xl overflow-hidden"
             bodyStyle={{ padding: 0 }}
           >
-            <div className="relative bg-gradient-to-br from-blue-50 via-purple-50/40 to-green-50 p-8">
+            <div className="relative bg-emerald-50/60 p-8">
               {/* Decorative blobs */}
-              <div className="absolute top-0 right-0 w-72 h-72 bg-gradient-to-br from-blue-300/20 to-transparent rounded-full blur-3xl pointer-events-none" />
-              <div className="absolute bottom-0 left-0 w-56 h-56 bg-gradient-to-tr from-purple-400/15 to-transparent rounded-full blur-3xl pointer-events-none" />
+              <div className="absolute top-0 right-0 w-72 h-72 bg-blue-300/10 rounded-full blur-3xl pointer-events-none" />
+              <div className="absolute bottom-0 left-0 w-56 h-56 bg-emerald-300/10 rounded-full blur-3xl pointer-events-none" />
 
               {/* Title */}
               <div className="relative flex flex-col sm:flex-row items-start sm:items-center justify-between gap-6">
@@ -388,16 +388,16 @@ export default function StudentQuiz() {
                   </Card>
 
                   <Card
-                    className="border-2 border-amber-200 bg-gradient-to-br from-amber-50 to-orange-50 rounded-2xl shadow-sm"
+                    className="border-2 border-amber-200 bg-amber-50 rounded-2xl shadow-sm"
                     bodyStyle={{ padding: "16px 20px" }}
                   >
                     <div className="flex items-center gap-3">
-                      <div className="w-11 h-11 rounded-xl bg-gradient-to-br from-amber-400 to-orange-500 flex items-center justify-center shadow">
+                      <div className="w-11 h-11 rounded-xl bg-amber-500 flex items-center justify-center shadow">
                         <Coins className="w-5 h-5 text-white" />
                       </div>
                       <div>
                         <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider mb-0.5">Xu tích lũy</p>
-                        <p className="text-2xl font-black bg-gradient-to-r from-amber-600 to-orange-500 bg-clip-text text-transparent">
+                        <p className="text-2xl font-black text-amber-600">
                           {totalCoinsEarned}
                         </p>
                       </div>
@@ -437,6 +437,10 @@ export default function StudentQuiz() {
                       size="large"
                       suffixIcon={<ChevronRight className="w-4 h-4" />}
                       dropdownClassName="rounded-xl overflow-hidden shadow-xl"
+                      options={campaign?.rounds?.map((round) => ({
+                        label: `Vòng ${round.roundNumber}: ${round.roundName}`,
+                        value: round.id,
+                      }))}
                     />
                   </Space>
                 </Card>
