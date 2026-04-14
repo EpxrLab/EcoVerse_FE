@@ -121,19 +121,27 @@ const CAMPAIGN_TYPE_LABEL = {
   PARTNERSHIP_EVENT: "Đối tác",
 };
 
+const PERIOD_MAP = {
+  THIS_WEEK: "Tuần này",
+  THIS_MONTH: "Tháng này",
+  LAST_3_MONTHS: "3 tháng qua",
+  THIS_YEAR: "Năm nay",
+  ALL_TIME: "Tất cả thời gian",
+};
+
 const AchievementCard = ({ achievement }) => (
   <motion.div
     whileHover={{ scale: 1.05, y: -4 }}
     transition={{ duration: 0.2 }}
   >
     <Card
-      className="border-2 border-green-200 rounded-2xl bg-gradient-to-br from-green-50 to-blue-50 hover:shadow-lg transition-shadow overflow-hidden"
+      className="border-2 border-green-200 rounded-2xl bg-emerald-50 hover:shadow-lg transition-shadow overflow-hidden"
       bodyStyle={{ padding: "0px", textAlign: "center" }}
     >
       <div className="relative group">
         {/* Image display based on criteriaType */}
         <div className="h-44 w-full bg-white flex items-center justify-center p-0 overflow-hidden relative">
-          <div className="absolute inset-0 bg-gradient-to-b from-transparent to-black/5 z-10" />
+          <div className="absolute inset-0 bg-black/5 z-10" />
           <img 
             src={ACHIEVEMENT_IMAGES[achievement.criteriaType] || "/image/MOST_COMPLETED.png"} 
             alt={achievement.titleName}
@@ -165,7 +173,7 @@ const AchievementCard = ({ achievement }) => (
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
-const pct = (v) => `${((v ?? 0) * 100).toFixed(1)}%`;
+const pct = (v) => `${(v ?? 0)}%`;
 const fmtN = (v) => (v ?? 0).toLocaleString();
 const fmtDate = (iso) => {
   if (!iso) return "—";
@@ -279,7 +287,7 @@ function SummaryTab() {
         <>
           {/* Coin summary strip */}
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-            <div className="flex items-center gap-3 p-4 rounded-2xl bg-gradient-to-br from-amber-400 to-orange-500 text-white shadow-md">
+            <div className="flex items-center gap-3 p-4 rounded-2xl bg-amber-500 text-white shadow-md">
               <div className="w-10 h-10 rounded-xl bg-white/20 flex items-center justify-center">
                 <CoinIcon size={22} />
               </div>
@@ -373,7 +381,7 @@ function SummaryTab() {
             />
             <StatTile
               label="Giai đoạn"
-              value={s.period ?? "—"}
+              value={PERIOD_MAP[s.period] ?? s.period ?? "—"}
               sub={
                 s.fromDate
                   ? `${s.fromDate?.slice(0, 10)} → ${s.toDate?.slice(0, 10)}`
@@ -435,7 +443,7 @@ function SummaryTab() {
             />
             <StatTile
               label="Giai đoạn"
-              value={s.period ?? "—"}
+              value={PERIOD_MAP[s.period] ?? s.period ?? "—"}
               sub={
                 s.fromDate
                   ? `${s.fromDate?.slice(0, 10)} → ${s.toDate?.slice(0, 10)}`
@@ -486,7 +494,7 @@ function CoinsTab() {
         <>
           {/* Balance cards */}
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-            <div className="p-4 rounded-2xl bg-gradient-to-br from-amber-400 to-orange-500 text-white shadow-md">
+            <div className="p-4 rounded-2xl bg-amber-500 text-white shadow-md">
               <p className="text-[10px] font-bold opacity-75 uppercase tracking-wider mb-1">
                 Số dư hiện tại
               </p>
@@ -632,6 +640,10 @@ function PerformanceSection() {
       </div>
 
       <div className="p-6">
+        <div className="mb-4 inline-flex items-center gap-2 px-3 py-1 rounded-full bg-indigo-50 text-indigo-700 text-xs font-bold border border-indigo-100">
+          <CalendarOutlined />
+          <span>Đang xem: {PERIOD_OPTIONS.find(o => o.value === period)?.label}</span>
+        </div>
         {loading ? (
           <Skeleton active paragraph={{ rows: 8 }} />
         ) : !d ? (
@@ -679,10 +691,10 @@ function PerformanceSection() {
                   </div>
                   <Progress
                     percent={Number(
-                      ((d.avgGameAccuracy ?? 0) * 100).toFixed(1),
+                      (d.avgGameAccuracy ?? 0).toFixed(1),
                     )}
                     showInfo={false}
-                    strokeColor={{ "0%": "#6366f1", "100%": "#14b8a6" }}
+                    strokeColor="#14b8a6"
                     trailColor="#e0e7ff"
                     strokeWidth={6}
                   />
@@ -727,9 +739,9 @@ function PerformanceSection() {
                     <span className="font-bold">{pct(d.avgQuizScore)}</span>
                   </div>
                   <Progress
-                    percent={Number(((d.avgQuizScore ?? 0) * 100).toFixed(1))}
+                    percent={Number((d.avgQuizScore ?? 0).toFixed(1))}
                     showInfo={false}
-                    strokeColor={{ "0%": "#10b981", "100%": "#0d9488" }}
+                    strokeColor="#10b981"
                     trailColor="#d1fae5"
                     strokeWidth={6}
                   />

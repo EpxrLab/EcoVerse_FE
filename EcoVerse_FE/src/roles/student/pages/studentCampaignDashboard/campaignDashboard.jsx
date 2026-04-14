@@ -132,7 +132,7 @@ function RoundCard({ round, campaignId, navigate }) {
       >
         {/* Top accent */}
         <div
-          className={`absolute top-0 inset-x-0 h-1 rounded-t-2xl ${isActive ? "bg-gradient-to-r from-green-400 to-blue-400" : "bg-gray-200"}`}
+          className={`absolute top-0 inset-x-0 h-1 rounded-t-2xl ${isActive ? "bg-primary" : "bg-gray-200"}`}
         />
 
         {/* Header */}

@@ -88,7 +88,7 @@ export default function StudentLogin() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-green-50 via-blue-50 to-cyan-50 flex items-center justify-center p-4 relative overflow-hidden">
+    <div className="min-h-screen bg-emerald-50 flex items-center justify-center p-4 relative overflow-hidden">
       {/* Decorative Background Elements */}
       <div className="absolute inset-0 overflow-hidden pointer-events-none">
         <motion.div
@@ -165,12 +165,12 @@ export default function StudentLogin() {
             }}
             transition={{ duration: 3, repeat: Infinity, repeatDelay: 2 }}
           >
-            <div className="w-20 h-20 bg-gradient-to-br from-green-400 to-blue-500 rounded-3xl flex items-center justify-center shadow-2xl">
+            <div className="w-20 h-20 bg-primary rounded-3xl flex items-center justify-center shadow-2xl">
               <SmileOutlined className="text-4xl text-white" />
             </div>
           </motion.div>
 
-          <h1 className="text-4xl font-bold bg-gradient-to-r from-green-600 to-blue-600 bg-clip-text text-transparent">
+          <h1 className="text-4xl font-bold text-primary">
             EcoVerse
           </h1>
           <p className="text-gray-600 mt-2 text-lg">Chào bạn nhỏ! 🌱</p>
@@ -189,7 +189,7 @@ export default function StudentLogin() {
             }}
           >
             {/* Gradient Header */}
-            <div className="absolute top-0 left-0 right-0 h-2 bg-gradient-to-r from-green-400 to-blue-400" />
+            <div className="absolute top-0 left-0 right-0 h-2 bg-primary/40" />
 
             <div className="p-8">
               <div className="mb-6 text-center">
@@ -256,7 +256,7 @@ export default function StudentLogin() {
                     block
                     onClick={handleLogin}
                     loading={isLoading}
-                    className="bg-gradient-to-r from-green-500 to-blue-500 hover:from-green-600 hover:to-blue-600 border-0 h-12 rounded-xl font-semibold text-base shadow-lg mt-6"
+                    className="bg-primary hover:bg-emerald-600 border-0 h-12 rounded-xl font-semibold text-base shadow-lg mt-6"
                   >
                     {isLoading ? "Đang đăng nhập..." : "Đăng nhập 🚀"}
                   </Button>

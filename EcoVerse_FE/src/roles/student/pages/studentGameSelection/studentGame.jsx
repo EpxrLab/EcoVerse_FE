@@ -158,14 +158,14 @@ export default function StudentGame() {
           className="border-2 shadow-lg overflow-hidden rounded-3xl"
           bodyStyle={{ padding: 0 }}
         >
-          <div className="relative bg-gradient-to-br from-green-50 via-purple-50 to-blue-50 p-8">
-            <div className="absolute top-0 right-0 w-64 h-64 bg-gradient-to-br from-green-200/30 to-transparent rounded-full blur-3xl" />
-            <div className="absolute bottom-0 left-0 w-48 h-48 bg-gradient-to-tr from-purple-200/30 to-transparent rounded-full blur-3xl" />
+          <div className="relative bg-emerald-50/60 p-8">
+            <div className="absolute top-0 right-0 w-64 h-64 bg-emerald-200/20 rounded-full blur-3xl" />
+            <div className="absolute bottom-0 left-0 w-48 h-48 bg-blue-200/20 rounded-full blur-3xl" />
 
             <div className="relative flex flex-col lg:flex-row items-start lg:items-center justify-between gap-6">
               <div>
                 <h1 className="text-4xl font-bold text-gray-800 mb-3 flex items-center gap-3">
-                  <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-green-400 to-blue-500 flex items-center justify-center shadow-lg">
+                  <div className="w-12 h-12 rounded-2xl bg-primary flex items-center justify-center shadow-lg">
                     <PlayCircleOutlined className="text-2xl text-white" />
                   </div>
                   Chơi Game
@@ -212,16 +212,16 @@ export default function StudentGame() {
                 </Card>
 
                 <Card
-                  className="border-2 border-amber-200 rounded-2xl bg-gradient-to-br from-amber-50 to-orange-50"
+                  className="border-2 border-amber-200 rounded-2xl bg-amber-50"
                   bodyStyle={{ padding: "16px" }}
                 >
                   <div className="flex items-center gap-3">
-                    <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-amber-400 to-orange-500 flex items-center justify-center shadow-lg">
+                    <div className="w-12 h-12 rounded-xl bg-amber-500 flex items-center justify-center shadow-lg">
                       <CoinIcon />
                     </div>
                     <div className="text-left">
                       <p className="text-sm text-gray-500">Xu kiếm được</p>
-                      <p className="text-2xl font-bold bg-gradient-to-r from-amber-600 to-orange-600 bg-clip-text text-transparent">
+                      <p className="text-2xl font-bold text-amber-600">
                         {totalCoins}
                       </p>
                     </div>
