@@ -2,12 +2,19 @@ import { motion, AnimatePresence } from "framer-motion";
 export function ResultScreen({ result, onReplay, onBack }) {
   if (!result) return null;
 
-  const { distance, trashCollected, sortingScore, collectedTrash, apiResult } = result;
-  
+  const { distance, trashCollected, sortingScore, collectedTrash, apiResult } =
+    result;
+
   // Choose which values to display based on whether we have API result
-  const totalItems = apiResult ? apiResult.totalItems : (sortingScore.correct + sortingScore.wrong);
+  const totalItems = apiResult
+    ? apiResult.totalItems
+    : sortingScore.correct + sortingScore.wrong;
   const correct = apiResult ? apiResult.correctItems : sortingScore.correct;
-  const accuracy = apiResult ? apiResult.accuracyPercentage : (totalItems > 0 ? Math.round((correct / totalItems) * 100) : 0);
+  const accuracy = apiResult
+    ? apiResult.accuracyPercentage
+    : totalItems > 0
+      ? Math.round((correct / totalItems) * 100)
+      : 0;
   const coins = apiResult ? apiResult.coinAwarded : 0;
   const timeTaken = apiResult ? apiResult.timeTakenSeconds : 0;
   const feedbackMessage = apiResult?.feedbackMessage;
@@ -25,30 +32,37 @@ export function ResultScreen({ result, onReplay, onBack }) {
         className="bg-white rounded-3xl p-6 max-w-lg w-full shadow-2xl"
       >
         <h2 className="text-3xl flex items-center justify-center font-bold text-center mb-2 text-gray-800">
-          <span className="mr-2">🎉</span> Kết quả <span className="ml-2">🎉</span>
+          <span className="mr-2">🎉</span> Kết quả{" "}
+          <span className="ml-2">🎉</span>
         </h2>
         {feedbackMessage && (
-           <p className="text-center font-medium text-emerald-600 mb-6 bg-emerald-50 py-2 rounded-lg">
-             {feedbackMessage}
-           </p>
+          <p className="text-center font-medium text-emerald-600 mb-6 bg-emerald-50 py-2 rounded-lg">
+            {feedbackMessage}
+          </p>
         )}
 
         {/* Stats Grid */}
         <div className="grid grid-cols-2 md:grid-cols-3 gap-3 mb-6">
           <div className="bg-blue-50 rounded-2xl p-4 text-center">
-            <div className="text-xs font-semibold text-blue-600 mb-1 uppercase tracking-wider">🏃 Quãng đường</div>
+            <div className="text-xs font-semibold text-blue-600 mb-1 uppercase tracking-wider">
+              🏃 Quãng đường
+            </div>
             <div className="text-xl font-bold text-blue-700">
               {Math.floor(distance || 0)}m
             </div>
           </div>
           <div className="bg-green-50 rounded-2xl p-4 text-center">
-            <div className="text-xs font-semibold text-green-600 mb-1 uppercase tracking-wider">🗑️ Thu gom</div>
+            <div className="text-xs font-semibold text-green-600 mb-1 uppercase tracking-wider">
+              🗑️ Thu gom
+            </div>
             <div className="text-xl font-bold text-green-700">
               {trashCollected || 0}
             </div>
           </div>
           <div className="bg-purple-50 rounded-2xl p-4 text-center">
-            <div className="text-xs font-semibold text-purple-600 mb-1 uppercase tracking-wider">⏱️ Thời gian</div>
+            <div className="text-xs font-semibold text-purple-600 mb-1 uppercase tracking-wider">
+              ⏱️ Thời gian
+            </div>
             <div className="text-xl font-bold text-purple-700">
               {timeTaken}s
             </div>
@@ -62,12 +76,18 @@ export function ResultScreen({ result, onReplay, onBack }) {
             </div>
           </div>
           <div className="bg-amber-50 rounded-2xl p-4 text-center">
-            <div className="text-xs font-semibold text-amber-600 mb-1 uppercase tracking-wider">🎯 Chính xác</div>
+            <div className="text-xs font-semibold text-amber-600 mb-1 uppercase tracking-wider">
+              🎯 Chính xác
+            </div>
             <div className="text-xl font-bold text-amber-700">{accuracy}%</div>
           </div>
           <div className="bg-yellow-50 rounded-2xl p-4 text-center">
-            <div className="text-xs font-semibold text-yellow-600 mb-1 uppercase tracking-wider">💰 Thưởng</div>
-            <div className="text-xl font-bold text-yellow-700">+{coins} Coin</div>
+            <div className="text-xs font-semibold text-yellow-600 mb-1 uppercase tracking-wider">
+              💰 Thưởng
+            </div>
+            <div className="text-xl font-bold text-yellow-700">
+              +{coins} Coin
+            </div>
           </div>
         </div>
 
@@ -77,16 +97,23 @@ export function ResultScreen({ result, onReplay, onBack }) {
             <h3 className="text-sm font-semibold text-gray-500 mb-2 uppercase tracking-wider">
               Chi tiết rác thu gom
             </h3>
-            <div className="space-y-1">
+            <div className="max-h-[160px] overflow-y-auto pr-1 custom-scrollbar space-y-1.5">
               {collectedTrash.map((item, i) => (
                 <div
                   key={i}
-                  className="flex justify-between text-sm py-1 px-3 bg-gray-50 rounded-lg"
+                  className="flex flex-col bg-gray-50 rounded-xl py-2 px-3 border border-gray-100"
                 >
-                  <span className="text-gray-700">{item.type.name}</span>
-                  <span className="font-semibold text-gray-800">
-                    ×{item.count}
-                  </span>
+                  <div className="flex justify-between items-center text-sm">
+                    <span className="text-gray-700 font-medium">{item.type.name}</span>
+                    <span className="font-bold text-emerald-600 ml-2">
+                      ×{item.count}
+                    </span>
+                  </div>
+                  {item.type.funFact && (
+                    <p className="text-[10px] text-gray-500 italic mt-1 leading-relaxed border-t border-gray-200/50 pt-1">
+                      {item.type.funFact}
+                    </p>
+                  )}
                 </div>
               ))}
             </div>

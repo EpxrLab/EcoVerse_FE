@@ -457,6 +457,7 @@ export function initTrash(
             apiItem.preloadedModel) ||
           apiItem.imagePresignedUrl ||
           apiItem.imageUrl,
+        funFact: apiItem.funFact, // Captured for result display
       };
 
       const auraColor =

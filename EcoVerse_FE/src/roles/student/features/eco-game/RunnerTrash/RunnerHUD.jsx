@@ -44,14 +44,6 @@ export function RunnerHUD({ distance, speed, trashCount, totalTrash }) {
           </div>
         </div>
       </div>
-
-      {/* Controls hint */}
-      <div className="mt-4 text-center">
-        <div className="inline-block bg-black/30 backdrop-blur-md rounded-xl px-4 py-2 text-white/70 text-xs">
-          ← → Chuyển làn &nbsp;|&nbsp; ↑ Nhảy &nbsp;|&nbsp; Vuốt trái/phải/lên
-          (mobile)
-        </div>
-      </div>
     </motion.div>
   );
 }
