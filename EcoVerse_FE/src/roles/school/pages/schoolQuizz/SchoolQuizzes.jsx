@@ -223,6 +223,8 @@ export default function SchoolQuizzes() {
         coinOnPass: quizForm.coinsOnPass,
         timePerQuestion: quizForm.timeLimit,
         passScorePercentage: quizForm.passingScore,
+        createdBy: 'USER',
+        source: 'MANUAL',
         questions: questions.map((q, index) => ({
           questionOrder: index + 1,
           questionType: q.type?.toUpperCase() === 'TRUE_FALSE' ? 'TRUE_FALSE' : 'MULTIPLE_CHOICE',

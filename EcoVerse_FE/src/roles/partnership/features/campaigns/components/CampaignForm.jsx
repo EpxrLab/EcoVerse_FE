@@ -266,7 +266,7 @@ export function CampaignForm({
               <div className="border-t pt-4 space-y-4">
                 <div>
                   <h3 className="text-sm font-semibold flex items-center gap-2">
-                    <Users className="w-4 h-4 text-eco-green" />
+                    <Users className="w-4 h-4 text-eco-blue" />
                     Mời học sinh & Chỉ tiêu
                   </h3>
                 </div>
@@ -416,22 +416,23 @@ export function CampaignForm({
               <div className="flex items-center justify-between">
                 <div>
                   <Label className="text-base font-bold flex items-center gap-2">
-                    <Zap className="w-5 h-5 text-eco-green" />
+                    <Zap className="w-5 h-5 text-eco-blue" />
                     Cấu trúc các vòng loại
                   </Label>
                 </div>
                 <Button 
                    onClick={() => {
                     const nextRoundNumber = formData.rounds.length + 1;
+                    const lastRound = formData.rounds[formData.rounds.length - 1];
                     onFormChange({
                       rounds: [
                         ...formData.rounds,
                         {
                           roundNumber: nextRoundNumber,
                           roundName: `Vòng ${nextRoundNumber}`,
-                          startTime: '',
+                          startTime: lastRound ? lastRound.endTime : '',
                           endTime: '',
-                          maxParticipants: 0,
+                          maxParticipants: lastRound ? lastRound.advanceCount : (formData.totalStudentQuota || 0),
                           advanceCount: 0,
                           isFinalRound: false
                         }
@@ -439,7 +440,7 @@ export function CampaignForm({
                     });
                   }}
                   variant="outline" 
-                  className="gap-2 border-eco-green text-eco-green hover:bg-eco-green hover:text-white"
+                  className="gap-2 border-eco-blue text-eco-blue hover:bg-eco-blue hover:text-white"
                 >
                   <Plus className="w-4 h-4" />
                   Thêm vòng
@@ -452,7 +453,12 @@ export function CampaignForm({
                     {formData.rounds.length > 1 && (
                       <button
                         onClick={() => {
-                          const newRounds = formData.rounds.filter((_, i) => i !== index);
+                          const newRounds = formData.rounds.filter((_, i) => i !== index).map((r, i, arr) => {
+                            if (i === 0) {
+                              return { ...r, maxParticipants: formData.totalStudentQuota || 0 };
+                            }
+                            return { ...r, maxParticipants: arr[i-1].advanceCount };
+                          });
                           onFormChange({ rounds: newRounds });
                         }}
                         className="absolute top-2 right-2 p-1.5 text-muted-foreground hover:text-destructive"
@@ -478,11 +484,7 @@ export function CampaignForm({
                         <Input
                           type="number"
                           value={round.maxParticipants}
-                          onChange={(e) => {
-                            const newRounds = [...formData.rounds];
-                            newRounds[index].maxParticipants = parseInt(e.target.value) || 0;
-                            onFormChange({ rounds: newRounds });
-                          }}
+                          disabled
                         />
                       </div>
                       <div className="space-y-2">
@@ -492,8 +494,15 @@ export function CampaignForm({
                           value={round.advanceCount}
                           disabled={round.isFinalRound}
                           onChange={(e) => {
+                            const val = parseInt(e.target.value) || 0;
                             const newRounds = [...formData.rounds];
-                            newRounds[index].advanceCount = parseInt(e.target.value) || 0;
+                            newRounds[index].advanceCount = val;
+                            
+                            // Chain to next round maxParticipants
+                            if (newRounds[index + 1]) {
+                              newRounds[index + 1].maxParticipants = val;
+                            }
+                            
                             onFormChange({ rounds: newRounds });
                           }}
                         />
@@ -516,8 +525,15 @@ export function CampaignForm({
                           type="datetime-local"
                           value={round.endTime}
                           onChange={(e) => {
+                            const newEndTime = e.target.value;
                             const newRounds = [...formData.rounds];
-                            newRounds[index].endTime = e.target.value;
+                            newRounds[index].endTime = newEndTime;
+                            
+                            // Chain to next round start time
+                            if (newRounds[index + 1]) {
+                              newRounds[index + 1].startTime = newEndTime;
+                            }
+                            
                             onFormChange({ rounds: newRounds });
                           }}
                         />
@@ -552,7 +568,7 @@ export function CampaignForm({
               <div className="flex items-center justify-between">
                 <div>
                   <Label className="text-base font-bold flex items-center gap-2">
-                    <Package className="w-5 h-5 text-eco-orange" />
+                    <Package className="w-5 h-5 text-eco-blue" />
                     Danh sách phần thưởng cho Top {formData.topRankingCount}
                   </Label>
                   <p className="text-sm text-muted-foreground mt-1">
@@ -679,7 +695,7 @@ export function CampaignForm({
               </Button>
             ) : (
               <Button
-                className="bg-eco-green hover:bg-eco-green/90 text-white font-semibold min-w-[150px]"
+                className="bg-eco-blue hover:bg-eco-blue/90 text-white font-semibold min-w-[150px]"
                 onClick={() => onSubmit(true)}
                 disabled={currentStep !== steps.length - 1}
               >

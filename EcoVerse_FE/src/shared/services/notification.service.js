@@ -15,6 +15,10 @@ export const notificationService = {
     return axios.get('/notifications/unread-count');
   },
 
+  getNotificationById: (id) => {
+    return axios.get(`/notifications/${id}`);
+  },
+
   markAllAsRead: () => {
     return axios.patch('/notifications/read-all');
   },
@@ -37,7 +41,7 @@ export const notificationService = {
 
     stompClient.onConnect = (frame) => {
       console.log('Notification STOMP connected:', frame);
-      
+
       // Subscribe to user-specific notification queue
       stompClient.subscribe('/user/queue/notifications', (message) => {
         try {

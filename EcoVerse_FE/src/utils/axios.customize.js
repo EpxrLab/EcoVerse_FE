@@ -32,35 +32,49 @@ instance.interceptors.response.use(
     const originalRequest = error.config;
 
     // Check if error is 401 and not already retried
-    if (error.response && error.response.status === 401 && !originalRequest._retry) {
+    if (
+      error.response &&
+      error.response.status === 401 &&
+      !originalRequest._retry
+    ) {
       originalRequest._retry = true;
 
       try {
+        const refreshToken = sessionStorage.getItem("refreshToken");
+        if (!refreshToken) {
+          sessionStorage.clear();
+          return Promise.reject(error);
+        }
+
         // Call refresh token API
         // We use the base axios here to avoid interceptor recursion
-        const res = await axios.post(`${baseUrl}/auth/refresh`, {}, {
-          withCredentials: true // Important if using cookies for refresh token
+        const res = await axios.post(`${baseUrl}/auth/refresh`, {
+          refreshToken: refreshToken,
         });
 
-        if (res.data && res.data.data && res.data.data.accessToken) {
-          const newToken = res.data.data.accessToken;
-          
-          // Update sessionStorage
-          sessionStorage.setItem("accessToken", newToken);
-          
-          // Update default header for future requests
-          instance.defaults.headers.common["Authorization"] = `Bearer ${newToken}`;
-          
-          // Update current request header and retry
-          originalRequest.headers["Authorization"] = `Bearer ${newToken}`;
-          return instance(originalRequest);
+        if (res.data && res.data.data) {
+          const { accessToken, refreshToken: newRefreshToken } = res.data.data;
+
+          if (accessToken) {
+            // Update sessionStorage
+            sessionStorage.setItem("accessToken", accessToken);
+            if (newRefreshToken) {
+              sessionStorage.setItem("refreshToken", newRefreshToken);
+            }
+
+            // Update default header for future requests
+            instance.defaults.headers.common["Authorization"] = `Bearer ${accessToken}`;
+
+            // Update current request header and retry
+            originalRequest.headers["Authorization"] = `Bearer ${accessToken}`;
+            return instance(originalRequest);
+          }
         }
       } catch (refreshError) {
         // If refresh fails, clear session and redirect (optional)
         console.error("Refresh token failed:", refreshError);
         sessionStorage.clear();
-        // You might want to trigger a logout or redirect to login here
-        // window.location.href = "/login";
+        // window.location.href = "/auth"; // Redirect to auth page if needed
         return Promise.reject(refreshError);
       }
     }

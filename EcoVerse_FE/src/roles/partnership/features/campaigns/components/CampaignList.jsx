@@ -3,6 +3,7 @@ import { Badge } from '@/shared/components/ui/badge';
 import { Button } from '@/shared/components/ui/button';
 import { Eye, Calendar, School, Users, Send, MoreVertical, Edit, Trash2, RotateCcw, Gamepad2, FileQuestion, XCircle } from 'lucide-react';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, DropdownMenuSeparator } from '@/shared/components/ui/dropdown-menu';
+import toast from 'react-hot-toast';
 import { cn } from '@/shared/lib/utils';
 
 export function CampaignList({ campaigns, onViewDetail, onEdit, onDelete, onActivate, onRevertToDraft, onAddGame, onAddQuiz, onCancel }) {
@@ -113,12 +114,12 @@ export function CampaignList({ campaigns, onViewDetail, onEdit, onDelete, onActi
               <TableCell>
                 <div className="flex items-center justify-center gap-3">
                   <div className="flex flex-col items-center gap-1">
-                    <Gamepad2 className={cn("w-5 h-5", campaign.hasGame ? "text-eco-green" : "text-muted-foreground/30")} />
-                    <span className={cn("text-[10px] uppercase font-bold", campaign.hasGame ? "text-eco-green" : "text-muted-foreground/30")}>Game</span>
+                    <Gamepad2 className={cn("w-5 h-5", campaign.hasGame ? "text-eco-blue" : "text-muted-foreground/30")} />
+                    <span className={cn("text-[10px] uppercase font-bold", campaign.hasGame ? "text-eco-blue" : "text-muted-foreground/30")}>Game</span>
                   </div>
                   <div className="flex flex-col items-center gap-1">
-                    <FileQuestion className={cn("w-5 h-5", campaign.hasQuiz ? "text-eco-green" : "text-muted-foreground/30")} />
-                    <span className={cn("text-[10px] uppercase font-bold", campaign.hasQuiz ? "text-eco-green" : "text-muted-foreground/30")}>Quiz</span>
+                    <FileQuestion className={cn("w-5 h-5", campaign.hasQuiz ? "text-eco-blue" : "text-muted-foreground/30")} />
+                    <span className={cn("text-[10px] uppercase font-bold", campaign.hasQuiz ? "text-eco-blue" : "text-muted-foreground/30")}>Quiz</span>
                   </div>
                 </div>
               </TableCell>
@@ -136,7 +137,16 @@ export function CampaignList({ campaigns, onViewDetail, onEdit, onDelete, onActi
                     </DropdownMenuItem>
                     
                     {campaign.status === 'draft' && onActivate && (
-                      <DropdownMenuItem onClick={() => onActivate(campaign)} className="text-eco-blue focus:text-eco-blue">
+                      <DropdownMenuItem 
+                        onClick={() => {
+                          if (!campaign.hasGame || !campaign.hasQuiz) {
+                            toast.error("Cần cấu hình ít nhất 1 Game và 1 Quiz để kích hoạt chiến dịch");
+                            return;
+                          }
+                          onActivate(campaign);
+                        }} 
+                        className="text-eco-blue focus:text-eco-blue"
+                      >
                         <Send className="w-4 h-4 mr-2" />
                         Kích hoạt
                       </DropdownMenuItem>

@@ -1,32 +1,28 @@
 import React, { useState, useEffect } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/shared/components/ui/dialog';
 import { Button } from '@/shared/components/ui/button';
-import { Input } from '@/shared/components/ui/input';
 import { Badge } from '@/shared/components/ui/badge';
 import { ScrollArea } from '@/shared/components/ui/scroll-area';
 import {
   ChevronRight, ChevronLeft, Loader2, AlertCircle, Check,
-  Gamepad2, Zap, RotateCcw, Save, Clock, Package, Shield, Layers
+  Gamepad2, Zap, Save, Clock, Package, Shield, Layers
 } from 'lucide-react';
 import { cn } from '@/shared/lib/utils';
 import { partnershipCampaignService } from '../../../services/partnershipCampaign.service';
 
 // ─── Constants ────────────────────────────────────────────────────────────────
 const STEPS = [
-  { id: 1, label: 'Coin thưởng' },
-  { id: 2, label: 'Loại game' },
-  { id: 3, label: 'Độ khó' },
-  { id: 4, label: 'Danh mục rác' },
-  { id: 5, label: 'Xem trước' },
+  { id: 1, label: 'Loại game' },
+  { id: 2, label: 'Độ khó' },
+  { id: 3, label: 'Danh mục rác' },
+  { id: 4, label: 'Xem trước' },
 ];
 
 const DIFFICULTY_META = {
-  EASY:   { label: 'Dễ',   color: 'text-eco-green',    border: 'border-eco-green',     bg: 'bg-eco-green/5' },
-  MEDIUM: { label: 'Trung bình', color: 'text-eco-green',    border: 'border-eco-green',     bg: 'bg-eco-green/5' },
-  HARD:   { label: 'Khó',   color: 'text-emerald-700',  border: 'border-emerald-700',   bg: 'bg-emerald-700/5' },
+  EASY:   { label: 'Dễ',   color: 'text-blue-400',    border: 'border-blue-200',     bg: 'bg-blue-50/50' },
+  MEDIUM: { label: 'Trung bình', color: 'text-eco-blue',    border: 'border-blue-300',     bg: 'bg-blue-50/50' },
+  HARD:   { label: 'Khó',   color: 'text-blue-700',  border: 'border-blue-500',   bg: 'bg-blue-50/50' },
 };
-
-const DEFAULT_COIN = 20;
 
 const WASTE_LABEL = { ORGANIC: 'Hữu cơ', RECYCLABLE: 'Tái chế', GENERAL: 'Chung', HAZARDOUS: 'Nguy hại' };
 
@@ -38,7 +34,6 @@ export function AddGameModal({ isOpen, onClose, campaign, onSubmit }) {
   const roundId = existingRound?.id;
 
   const [step, setStep] = useState(1);
-  const [coinPerSession, setCoinPerSession] = useState(DEFAULT_COIN);
 
   // Step 2 – Game Type
   const [gameTypes, setGameTypes] = useState([]);
@@ -74,7 +69,6 @@ export function AddGameModal({ isOpen, onClose, campaign, onSubmit }) {
     
     if (!hasConfig) {
       setStep(1);
-      setCoinPerSession(DEFAULT_COIN);
       setSelectedGameTypeId(null);
       setSelectedPresetIds([]);
       setPresets([]);
@@ -82,7 +76,6 @@ export function AddGameModal({ isOpen, onClose, campaign, onSubmit }) {
       pendingSubCategoryIdsRef.current = {};
     } else {
       setStep(1);
-      setCoinPerSession(existingRound?.coin_per_session ?? existingRound?.coinPerSession ?? DEFAULT_COIN);
       setSelectedGameTypeId(initialGameTypeId);
       setSelectedPresetIds(existingRound.selected_preset_ids || existingRound.selectedPresetIds || []);
 
@@ -154,13 +147,12 @@ export function AddGameModal({ isOpen, onClose, campaign, onSubmit }) {
   const selectedGameType = gameTypes.find(g => g.id === selectedGameTypeId);
   
   const canGoNext = { 
-    1: true, 
-    2: !!selectedGameTypeId, 
-    3: selectedPresetIds.length > 0, 
-    4: selectedPresetIds.every(id => selectedSubCategoryIds[id]?.length > 0)
+    1: !!selectedGameTypeId, 
+    2: selectedPresetIds.length > 0, 
+    3: selectedPresetIds.every(id => selectedSubCategoryIds[id]?.length > 0)
   };
 
-  const handleNext = () => setStep(s => Math.min(s + 1, 5));
+  const handleNext = () => setStep(s => Math.min(s + 1, 4));
   const handleBack = () => setStep(s => Math.max(s - 1, 1));
   const handleStepClick = (s) => { if (s <= step) setStep(s); };
 
@@ -211,7 +203,7 @@ export function AddGameModal({ isOpen, onClose, campaign, onSubmit }) {
           selectedSubCategoryIds: userSelected.filter(id => availableForThisPreset.includes(id))
         };
       }),
-      coinPerSession: Number(coinPerSession) || 0,
+      coinPerSession: 0,
     };
 
     setIsSubmitting(true);
@@ -232,7 +224,7 @@ export function AddGameModal({ isOpen, onClose, campaign, onSubmit }) {
         {/* Header */}
         <DialogHeader className="px-6 pt-5 pb-0 shrink-0">
           <DialogTitle className="flex items-center gap-2 text-lg font-bold">
-            <Gamepad2 className="w-5 h-5 text-eco-green" />
+            <Gamepad2 className="w-5 h-5 text-eco-blue" />
             Thêm Game vào Vòng Loại
             {campaign?.name && <span className="font-normal text-muted-foreground text-sm">— {campaign.name}</span>}
           </DialogTitle>
@@ -254,7 +246,7 @@ export function AddGameModal({ isOpen, onClose, campaign, onSubmit }) {
                   onClick={() => setActiveRoundTab(idx)}
                   className={cn(
                     "flex items-center gap-2 px-5 py-2 text-sm font-bold border-b-2 -mb-px transition-colors whitespace-nowrap rounded-t-lg",
-                    active ? "border-eco-green text-eco-green bg-eco-green/5" : "border-transparent text-muted-foreground hover:bg-muted/30"
+                    active ? "border-eco-blue text-eco-blue bg-eco-blue/5" : "border-transparent text-muted-foreground hover:bg-muted/30"
                   )}
                 >
                   <Gamepad2 className="w-4 h-4" />
@@ -276,13 +268,13 @@ export function AddGameModal({ isOpen, onClose, campaign, onSubmit }) {
                 onClick={() => handleStepClick(s.id)}
                 className={cn(
                   "flex items-center gap-1.5 px-4 py-2.5 text-sm font-medium border-b-2 -mb-px transition-colors whitespace-nowrap",
-                  active ? "border-eco-green text-eco-green" : "border-transparent",
-                  done ? "text-eco-green cursor-pointer" : !active ? "text-muted-foreground cursor-default" : ""
+                  active ? "border-eco-blue text-eco-blue" : "border-transparent",
+                  done ? "text-eco-blue cursor-pointer" : !active ? "text-muted-foreground cursor-default" : ""
                 )}
               >
                 <span className={cn(
                   "w-5 h-5 rounded-full text-xs flex items-center justify-center font-bold shrink-0",
-                  active ? "bg-eco-green text-white" : done ? "bg-eco-green/20 text-eco-green" : "bg-muted text-muted-foreground"
+                  active ? "bg-eco-blue text-white" : done ? "bg-eco-blue/20 text-eco-blue" : "bg-muted text-muted-foreground"
                 )}>
                   {done ? <Check className="w-3 h-3" /> : s.id}
                 </span>
@@ -301,30 +293,10 @@ export function AddGameModal({ isOpen, onClose, campaign, onSubmit }) {
               </div>
             )}
 
-            {/* ── Step 1: Coin thưởng ─────────────────────────── */}
-            {step === 1 && (
-              <div className="space-y-4">
-                <SectionLabel>COIN THƯỞNG KHI HOÀN THÀNH GAME</SectionLabel>
-                <div className="flex gap-2 items-center">
-                  <div className="relative flex-1">
-                    <Input
-                      type="number" min={0}
-                      value={coinPerSession}
-                      onChange={e => setCoinPerSession(e.target.value)}
-                      className="pr-28 text-lg font-semibold h-12"
-                    />
-                    <span className="absolute right-3 top-1/2 -translate-y-1/2 text-sm text-muted-foreground">coin / session</span>
-                  </div>
-                  <Button variant="secondary" onClick={() => setCoinPerSession(DEFAULT_COIN)} className="h-12 shrink-0">
-                    <RotateCcw className="w-4 h-4 mr-2" />
-                    Dùng mặc định hệ thống
-                  </Button>
-                </div>
-              </div>
-            )}
 
-            {/* ── Step 2: Loại game ───────────────────────────── */}
-            {step === 2 && (
+
+            {/* ── Step 1: Loại game ───────────────────────────── */}
+            {step === 1 && (
               <div className="space-y-4">
                 <SectionLabel>LOẠI GAME</SectionLabel>
                 {loadingGameTypes ? <LoadingCard /> : (
@@ -335,18 +307,18 @@ export function AddGameModal({ isOpen, onClose, campaign, onSubmit }) {
                         <div key={gt.id} onClick={() => { setSelectedGameTypeId(gt.id); setSelectedPresetIds([]); setSelectedSubCategoryIds({}); }}
                           className={cn(
                             "flex items-center gap-4 p-4 rounded-xl border-2 cursor-pointer transition-all",
-                            sel ? "border-eco-green bg-eco-green/5 shadow-sm" : "border-border hover:border-eco-green/30"
+                            sel ? "border-eco-blue bg-eco-blue/5 shadow-sm" : "border-border hover:border-eco-blue/30"
                           )}>
-                          <div className={cn("w-12 h-12 rounded-xl flex items-center justify-center shrink-0", sel ? "bg-eco-green/20" : "bg-muted")}>
+                          <div className={cn("w-12 h-12 rounded-xl flex items-center justify-center shrink-0", sel ? "bg-eco-blue/20" : "bg-muted")}>
                             {gt.iconPresignedUrl || gt.iconUrl
                               ? <img src={gt.iconPresignedUrl || gt.iconUrl} alt={gt.name} className="w-8 h-8 object-contain" />
-                              : <Zap className={cn("w-6 h-6", sel ? "text-eco-green" : "text-muted-foreground")} />}
+                              : <Zap className={cn("w-6 h-6", sel ? "text-eco-blue" : "text-muted-foreground")} />}
                           </div>
                           <div className="flex-1 min-w-0">
-                            <p className={cn("font-semibold text-base", sel ? "text-eco-green" : "")}>{gt.name || gt.typeName}</p>
+                            <p className={cn("font-semibold text-base", sel ? "text-eco-blue" : "")}>{gt.name || gt.typeName}</p>
                             {gt.description && <p className="text-sm text-muted-foreground mt-0.5 line-clamp-1">{gt.description}</p>}
                           </div>
-                          {sel && <div className="w-6 h-6 rounded-full bg-eco-green flex items-center justify-center shrink-0"><Check className="w-3.5 h-3.5 text-white" /></div>}
+                          {sel && <div className="w-6 h-6 rounded-full bg-eco-blue flex items-center justify-center shrink-0"><Check className="w-3.5 h-3.5 text-white" /></div>}
                         </div>
                       );
                     })}
@@ -356,8 +328,8 @@ export function AddGameModal({ isOpen, onClose, campaign, onSubmit }) {
               </div>
             )}
 
-            {/* ── Step 3: Độ khó (= chọn presets) ────────────── */}
-            {step === 3 && (
+            {/* ── Step 2: Độ khó (= chọn presets) ────────────── */}
+            {step === 2 && (
               <div className="space-y-4">
                 <SectionLabel>ĐỘ KHÓ</SectionLabel>
                 {loadingPresets ? <LoadingCard /> : (
@@ -383,7 +355,7 @@ export function AddGameModal({ isOpen, onClose, campaign, onSubmit }) {
                                 </div>
                               </div>
                             </div>
-                            {sel && <div className="w-6 h-6 rounded-full bg-eco-green flex items-center justify-center shrink-0"><Check className="w-3.5 h-3.5 text-white" /></div>}
+                            {sel && <div className="w-6 h-6 rounded-full bg-eco-blue flex items-center justify-center shrink-0"><Check className="w-3.5 h-3.5 text-white" /></div>}
                           </div>
                           <div className="grid grid-cols-3 divide-x border-t mx-0 text-center py-2 px-0 bg-background/50 text-xs">
                             <div className="px-3"><p className="font-bold flex items-center justify-center gap-1"><Package className="w-3.5 h-3.5" />{maxItems}</p><p className="text-[10px] text-muted-foreground">vật phẩm</p></div>
@@ -399,7 +371,8 @@ export function AddGameModal({ isOpen, onClose, campaign, onSubmit }) {
               </div>
             )}
 
-            {step === 4 && (
+            {/* ── Step 3: Danh mục rác ───────────────────────── */}
+            {step === 3 && (
               <div className="space-y-6">
                 <SectionLabel>DANH MỤC RÁC SỬ DỤNG CHO TỪNG ĐỘ KHÓ</SectionLabel>
                 {loadingSubCategories ? <LoadingCard /> : (
@@ -418,7 +391,7 @@ export function AddGameModal({ isOpen, onClose, campaign, onSubmit }) {
                               CẤU HÌNH <Badge variant="outline" className={cn(diffMeta.color, diffMeta.border, diffMeta.bg)}>{diffMeta.label}</Badge>
                             </h3>
                             <span className="text-xs text-muted-foreground font-medium">
-                              Đã chọn <span className={cn(selectedCount > 0 ? "text-eco-green font-bold" : "text-destructive font-bold")}>{selectedCount}</span>/{availableSc.length}
+                              Đã chọn <span className={cn(selectedCount > 0 ? "text-eco-blue font-bold" : "text-destructive font-bold")}>{selectedCount}</span>/{availableSc.length}
                             </span>
                           </div>
                           
@@ -429,21 +402,21 @@ export function AddGameModal({ isOpen, onClose, campaign, onSubmit }) {
                                 <div key={sc.id} onClick={() => toggleSubCategory(presetId, sc.id)}
                                   className={cn(
                                     "flex flex-col items-center gap-2 p-4 rounded-xl border-2 cursor-pointer transition-all text-center relative",
-                                    isSelected ? "border-eco-green bg-eco-green/5 shadow-sm" : "border-border hover:border-eco-green/30"
+                                    isSelected ? "border-eco-blue bg-eco-blue/5 shadow-sm" : "border-border hover:border-eco-blue/30"
                                   )}>
-                                  <div className={cn("w-14 h-14 rounded-full flex items-center justify-center", isSelected ? "bg-eco-green/20" : "bg-muted")}>
+                                  <div className={cn("w-14 h-14 rounded-full flex items-center justify-center", isSelected ? "bg-eco-blue/20" : "bg-muted")}>
                                     {sc.iconPresignedUrl || sc.iconUrl
                                       ? <img src={sc.iconPresignedUrl || sc.iconUrl} alt={sc.displayName} className="w-9 h-9 object-contain" />
-                                      : <Layers className={cn("w-7 h-7", isSelected ? "text-eco-green" : "text-muted-foreground")} />}
+                                      : <Layers className={cn("w-7 h-7", isSelected ? "text-eco-blue" : "text-muted-foreground")} />}
                                   </div>
                                   <div className="min-w-0">
-                                    <p className={cn("font-bold text-sm", isSelected ? "text-eco-green" : "")}>{sc.displayName}</p>
+                                    <p className={cn("font-bold text-sm", isSelected ? "text-eco-blue" : "")}>{sc.displayName}</p>
                                     <Badge variant="outline" className="text-[10px] uppercase mt-1">
                                       {WASTE_LABEL[sc.category] || sc.category}
                                     </Badge>
                                   </div>
                                   {isSelected && (
-                                    <div className="absolute top-2 right-2 w-5 h-5 rounded-full bg-eco-green flex items-center justify-center">
+                                    <div className="absolute top-2 right-2 w-5 h-5 rounded-full bg-eco-blue flex items-center justify-center">
                                       <Check className="w-3 h-3 text-white" />
                                     </div>
                                   )}
@@ -463,8 +436,8 @@ export function AddGameModal({ isOpen, onClose, campaign, onSubmit }) {
               </div>
             )}
 
-            {/* ── Step 5: Xem trước ──────────────────────────── */}
-            {step === 5 && (
+            {/* ── Step 4: Xem trước ──────────────────────────── */}
+            {step === 4 && (
               <div className="space-y-4">
                 <SectionLabel>XÁC NHẬN CẤU HÌNH GAME</SectionLabel>
                 <div className="border-2 border-muted/30 rounded-xl overflow-hidden">
@@ -479,7 +452,7 @@ export function AddGameModal({ isOpen, onClose, campaign, onSubmit }) {
                       <p className="text-sm text-muted-foreground flex gap-1.5 flex-wrap">
                         {selectedPresetIds.map(id => {
                           const p = presets.find(pr => pr.id === id);
-                          return <span key={id} className="text-eco-green">#{p?.difficulty}</span>;
+                          return <span key={id} className="text-eco-blue">#{p?.difficulty}</span>;
                         })}
                       </p>
                     </div>
@@ -529,10 +502,7 @@ export function AddGameModal({ isOpen, onClose, campaign, onSubmit }) {
                     </div>
                   </div>
 
-                  <div className="p-4 text-center bg-eco-orange/10">
-                    <p className="text-2xl font-bold text-eco-orange">{coinPerSession}</p>
-                    <p className="text-xs text-muted-foreground">Coin / session</p>
-                  </div>
+
                 </div>
               </div>
             )}
@@ -545,12 +515,12 @@ export function AddGameModal({ isOpen, onClose, campaign, onSubmit }) {
             ? <Button variant="outline" onClick={handleBack}><ChevronLeft className="w-4 h-4 mr-1" /> Quay lại</Button>
             : <Button variant="ghost" onClick={onClose}>Hủy</Button>
           }
-          {step < 5 ? (
-            <Button onClick={handleNext} disabled={!canGoNext[step]} className="bg-eco-green hover:bg-eco-green/90 text-white">
+          {step < 4 ? (
+            <Button onClick={handleNext} disabled={!canGoNext[step]} className="bg-eco-blue hover:bg-eco-blue/90 text-white">
               Tiếp theo <ChevronRight className="w-4 h-4 ml-1" />
             </Button>
           ) : (
-            <Button onClick={handleSubmit} disabled={isSubmitting} className="bg-eco-green hover:bg-eco-green/90 text-white">
+            <Button onClick={handleSubmit} disabled={isSubmitting} className="bg-eco-blue hover:bg-eco-blue/90 text-white">
               {isSubmitting ? <><Loader2 className="w-4 h-4 mr-2 animate-spin" /> Đang lưu...</> : <><Save className="w-4 h-4 mr-2" /> Lưu cấu hình ✓</>}
             </Button>
           )}

@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, lazy, Suspense } from "react";
 import {
   Card,
   Button,
@@ -15,8 +15,6 @@ import {
 } from "antd";
 import {
   HomeOutlined,
-  TrophyOutlined,
-  AimOutlined,
   BookOutlined,
   RocketOutlined,
   CrownOutlined,
@@ -25,8 +23,9 @@ import {
   IdcardOutlined,
   ManOutlined,
   WomanOutlined,
-  KeyOutlined,
+  EnvironmentOutlined,
   LockOutlined,
+  KeyOutlined,
   SwapOutlined,
   DollarOutlined,
   ClockCircleOutlined,
@@ -35,6 +34,8 @@ import {
   FireOutlined,
   RiseOutlined,
   ToolOutlined,
+  TrophyOutlined,
+  AimOutlined,
 } from "@ant-design/icons";
 import { motion, AnimatePresence } from "framer-motion";
 import { useNavigate } from "react-router";
@@ -105,12 +106,62 @@ const TX_TYPE_CFG = {
     cls: "bg-gray-100 text-gray-400",
   },
 };
+ 
+const ACHIEVEMENT_IMAGES = {
+  MOST_GAMES_COMPLETED: "/image/MOST_COMPLETED.png",
+  BEST_ACCURACY_AND_TIME: "/image/BEST_ACCURACY_TIME.png",
+  HIGHEST_ACCURACY: "/image/HIGHEST_ACCURACY.png",
+  FASTEST_COMPLETION: "/image/FASTEST_COMPETION.png",
+  MOST_QUIZZES_PASSED: "/image/MOST_QUIZ_PASSED.png",
+};
 
 const CAMPAIGN_TYPE_LABEL = {
   SCHOOL_INTERNAL: "Nội bộ",
   INTER_SCHOOL: "Liên trường",
   PARTNERSHIP_EVENT: "Đối tác",
 };
+
+const AchievementCard = ({ achievement }) => (
+  <motion.div
+    whileHover={{ scale: 1.05, y: -4 }}
+    transition={{ duration: 0.2 }}
+  >
+    <Card
+      className="border-2 border-green-200 rounded-2xl bg-gradient-to-br from-green-50 to-blue-50 hover:shadow-lg transition-shadow overflow-hidden"
+      bodyStyle={{ padding: "0px", textAlign: "center" }}
+    >
+      <div className="relative group">
+        {/* Image display based on criteriaType */}
+        <div className="h-44 w-full bg-white flex items-center justify-center p-0 overflow-hidden relative">
+          <div className="absolute inset-0 bg-gradient-to-b from-transparent to-black/5 z-10" />
+          <img 
+            src={ACHIEVEMENT_IMAGES[achievement.criteriaType] || "/image/MOST_COMPLETED.png"} 
+            alt={achievement.titleName}
+            onError={(e) => {
+              e.target.onerror = null;
+              e.target.src = "https://www.svgrepo.com/show/452030/avatar-default.svg";
+            }}
+            className="h-full w-full object-cover filter brightness-105 group-hover:scale-110 transition-all duration-500 transform"
+          />
+        </div>
+        
+        <div className="p-4 space-y-1">
+          <h3 className="font-bold text-sm text-gray-800 line-clamp-1">
+            {achievement.titleName}
+          </h3>
+          <p className="text-[10px] text-gray-500 font-medium">
+            {achievement.campaignName}
+          </p>
+          <div className="pt-2">
+            <span className="inline-block px-3 py-1 rounded-full text-[10px] font-bold bg-green-500 text-white shadow-sm shadow-green-100 italic">
+               {fmtDate(achievement.earnedAt?.split('T')[0])}
+            </span>
+          </div>
+        </div>
+      </div>
+    </Card>
+  </motion.div>
+);
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
@@ -269,6 +320,68 @@ function SummaryTab() {
                 </p>
               </div>
             </div>
+          </div>
+
+          {/* Stat grid */}
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+            <StatTile
+              label="Chiến dịch"
+              value={s.totalCampaignsJoined}
+              sub={`Đang hoạt động: ${s.activeCampaigns}`}
+              icon={<FireOutlined />}
+              accent="bg-orange-50 text-orange-500"
+            />
+            <StatTile
+              label="Độ chính xác game"
+              value={pct(s.avgGameAccuracy)}
+              sub={`Tốt nhất: ${pct(s.bestGameAccuracy)}`}
+              icon={<AimOutlined />}
+              accent="bg-green-50 text-green-600"
+            />
+            <StatTile
+              label="Điểm quiz"
+              value={pct(s.avgQuizScore)}
+              sub={`Tỷ lệ đạt: ${pct(s.quizPassRate)}`}
+              icon={<BookOutlined />}
+              accent="bg-blue-50 text-blue-600"
+            />
+            <StatTile
+              label="Hạng tốt nhất"
+              value={s.bestOverallRank > 0 ? `#${s.bestOverallRank}` : "—"}
+              sub={`Danh hiệu: ${s.totalTitlesEarned}`}
+              icon={<TrophyOutlined />}
+              accent="bg-amber-50 text-amber-600"
+            />
+            <StatTile
+              label="Phiên game"
+              value={s.totalGameSessionsCompleted}
+              icon={<RocketOutlined />}
+              accent="bg-purple-50 text-purple-600"
+            />
+            <StatTile
+              label="Lượt quiz"
+              value={s.totalQuizAttemptsCompleted}
+              icon={<HistoryOutlined />}
+              accent="bg-slate-50 text-slate-500"
+            />
+            <StatTile
+              label="Đổi quà"
+              value={s.totalRewardRequestsMade}
+              sub={`Đang chờ: ${s.pendingRewardRequests}`}
+              icon={<CrownOutlined />}
+              accent="bg-pink-50 text-pink-500"
+            />
+            <StatTile
+              label="Giai đoạn"
+              value={s.period ?? "—"}
+              sub={
+                s.fromDate
+                  ? `${s.fromDate?.slice(0, 10)} → ${s.toDate?.slice(0, 10)}`
+                  : ""
+              }
+              icon={<CalendarOutlined />}
+              accent="bg-teal-50 text-teal-600"
+            />
           </div>
 
           {/* Stat grid */}
@@ -1044,32 +1157,34 @@ export default function StudentProfile() {
                 </h2>
               </div>
             }
+            bodyStyle={{ padding: "24px" }}
           >
-            {student?.achievements?.length > 0 ? (
-              <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-6 gap-4">
-                {student.achievements.map((a, i) => (
-                  <div
-                    key={i}
-                    className="text-center group cursor-pointer p-4 rounded-2xl hover:bg-amber-50 transition-all border-2 border-transparent hover:border-amber-100"
-                  >
-                    <div className="text-5xl mb-2 grayscale group-hover:grayscale-0 transition-all">
-                      {a.icon}
-                    </div>
-                    <p className="font-black text-gray-800 text-xs uppercase tracking-tight mb-0.5">
-                      {a.name}
-                    </p>
-                    <p className="text-[10px] text-gray-400 line-clamp-2">
-                      {a.description}
-                    </p>
-                  </div>
-                ))}
-              </div>
-            ) : (
-              <div className="py-12 text-center border-2 border-dashed border-gray-100 rounded-2xl">
-                <TrophyOutlined className="text-4xl text-gray-200 mb-2" />
-                <p className="text-sm text-gray-400 font-medium">
-                  Chưa có thành tựu. Hãy tiếp tục cố gắng!
-                </p>
+            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
+              {student?.earnedTitles?.map((achievement) => (
+                <Suspense
+                  key={achievement.studentTitleId}
+                  fallback={
+                    <Card
+                      className="rounded-2xl border-2"
+                      bodyStyle={{ padding: 60 }}
+                    >
+                      <Skeleton.Avatar
+                        active
+                        size={40}
+                        className="mx-auto mb-2"
+                      />
+                      <Skeleton active paragraph={{ rows: 2 }} />
+                    </Card>
+                  }
+                >
+                  <AchievementCard achievement={achievement} />
+                </Suspense>
+              ))}
+            </div>
+            {(!student?.earnedTitles || student.earnedTitles.length === 0) && (
+              <div className="py-12 text-center space-y-3 border-2 border-dashed border-gray-100 rounded-2xl">
+                <div className="text-4xl opacity-20">🏆</div>
+                <p className="text-gray-400 text-sm">Chưa có thành tựu nào đạt được</p>
               </div>
             )}
           </Card>

@@ -459,7 +459,15 @@ export default function SchoolSubscription() {
                     return (
                       <TableRow key={purchase.id || purchase.transactionRef || Math.random()}>
                         <TableCell className="font-medium">{purchase.planName || purchase.subscriptionName || purchase.subscriptionCode || 'Gói đăng ký'}</TableCell>
-                        <TableCell>{purchase.amount || purchase.price ? new Intl.NumberFormat('vi-VN', { style: 'currency', currency: purchase.currency || 'VND' }).format(purchase.amount || purchase.price) : '₫0'}</TableCell>
+                        <TableCell>
+                          {(() => {
+                            const amount = purchase.amount ?? purchase.price ?? purchase.transactions?.[0]?.amount;
+                            const currency = (purchase.currency ?? purchase.transactions?.[0]?.currency) || 'VND';
+                            return amount !== undefined && amount !== null 
+                              ? new Intl.NumberFormat('vi-VN', { style: 'currency', currency }).format(amount) 
+                              : '₫0';
+                          })()}
+                        </TableCell>
                         <TableCell>
                           <div className="flex items-center gap-1.5 text-muted-foreground">
                             <Calendar className="w-3.5 h-3.5" />

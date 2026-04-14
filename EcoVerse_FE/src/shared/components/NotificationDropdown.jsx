@@ -10,6 +10,7 @@ import {
 } from '@/shared/components/ui/dropdown-menu';
 import { cn } from '@/shared/lib/utils';
 import { notificationService } from '@/shared/services';
+import { NotificationDetailDialog } from './NotificationDetailDialog';
 
 const getNotificationIcon = (type) => {
   switch (type) {
@@ -57,6 +58,8 @@ export function NotificationDropdown() {
   const [unreadCount, setUnreadCount] = useState(0);
   const [isOpen, setIsOpen] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
+  const [selectedNotificationId, setSelectedNotificationId] = useState(null);
+  const [isDetailOpen, setIsDetailOpen] = useState(false);
 
   const fetchNotifications = useCallback(async () => {
     try {
@@ -97,6 +100,14 @@ export function NotificationDropdown() {
       if (ws) ws.deactivate();
     };
   }, [fetchNotifications]);
+
+  const handleNotificationClick = (notification) => {
+    setSelectedNotificationId(notification.id);
+    setIsDetailOpen(true);
+    if (notification.status === 'UNREAD') {
+      markAsRead(notification.id);
+    }
+  };
 
   const markAsRead = async (id) => {
     try {
@@ -178,7 +189,7 @@ export function NotificationDropdown() {
                     "p-4 hover:bg-muted/50 transition-colors cursor-pointer relative group",
                     notification.status === 'UNREAD' && "bg-primary/5"
                   )}
-                  onClick={() => notification.status === 'UNREAD' && markAsRead(notification.id)}
+                  onClick={() => handleNotificationClick(notification)}
                 >
                   <div className="flex gap-3">
                     <div className={cn(
@@ -226,6 +237,12 @@ export function NotificationDropdown() {
         </div>
 
       </DropdownMenuContent>
+
+      <NotificationDetailDialog 
+        isOpen={isDetailOpen} 
+        onClose={() => setIsDetailOpen(false)} 
+        notificationId={selectedNotificationId} 
+      />
     </DropdownMenu>
   );
 }

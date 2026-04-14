@@ -1,7 +1,7 @@
 import { Card } from '@/shared/components/ui/card';
 import { Button } from '@/shared/components/ui/button';
 import { Badge } from '@/shared/components/ui/badge';
-import { Eye, Edit, Trash2, Lock, Star, MoreHorizontal, Globe } from 'lucide-react';
+import { Eye, Edit, Trash2, Lock, Star, MoreHorizontal, Globe, User } from 'lucide-react';
 import {
   Table,
   TableBody,
@@ -42,6 +42,7 @@ export function QuizList({
             <TableHead className="w-[300px] font-bold">Tên Quiz</TableHead>
             <TableHead className="font-bold">Độ khó</TableHead>
             <TableHead className="font-bold">Trạng thái</TableHead>
+            <TableHead className="font-bold">Tạo bởi</TableHead>
             <TableHead className="text-center font-bold">Thống kê</TableHead>
             <TableHead className="text-right font-bold">Thao tác</TableHead>
           </TableRow>
@@ -101,15 +102,25 @@ export function QuizList({
                   )}
                 </TableCell>
                 <TableCell>
+                  <div className="flex items-center gap-2">
+                    <div className="w-7 h-7 rounded-full bg-muted flex items-center justify-center border shrink-0">
+                      <User className="w-4 h-4 text-muted-foreground" />
+                    </div>
+                    <span className="text-sm font-medium truncate max-w-[120px]" title={quiz.createdBy || 'Hệ thống'}>
+                      {(() => {
+                        const creator = quiz.createdBy?.toUpperCase();
+                        if (creator === 'USER' || creator === 'IMPORT') return 'Người dùng';
+                        if (creator === 'AI') return 'AI';
+                        return quiz.createdBy || 'Hệ thống';
+                      })()}
+                    </span>
+                  </div>
+                </TableCell>
+                <TableCell>
                   <div className="flex items-center justify-center gap-4 text-sm text-muted-foreground">
                       <div className="flex flex-col items-center" title="Số câu hỏi">
                           <span className="font-bold text-foreground">{quiz.questions}</span>
                           <span className="text-[10px]">Câu hỏi</span>
-                      </div>
-                      <div className="w-px h-8 bg-border" />
-                      <div className="flex flex-col items-center" title="Điểm trung bình">
-                          <span className="font-bold text-eco-leaf">{quiz.avgScore || 0}%</span>
-                          <span className="text-[10px]">ĐTB</span>
                       </div>
                   </div>
                 </TableCell>
@@ -138,8 +149,8 @@ export function QuizList({
                                   )}
                                   {quiz.status === 'draft' && onPublish && (
                                       <DropdownMenuItem onClick={() => onPublish(quiz.id, true)}>
-                                      <Globe className="mr-2 h-4 w-4 text-eco-green" />
-                                      <span className="text-eco-green font-medium">Xuất bản</span>
+                                      <Globe className="mr-2 h-4 w-4 text-eco-blue" />
+                                      <span className="text-eco-blue font-medium">Xuất bản</span>
                                       </DropdownMenuItem>
                                   )}
                                   {quiz.status === 'published' && onPublish && (

@@ -1,169 +1,494 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/shared/components/ui/dialog';
 import { Button } from '@/shared/components/ui/button';
-import { Input } from '@/shared/components/ui/input';
 import { Label } from '@/shared/components/ui/label';
+import { Input } from '@/shared/components/ui/input';
+import { Checkbox } from '@/shared/components/ui/checkbox';
 import { Badge } from '@/shared/components/ui/badge';
-import { Brain, Sparkles, Bot, BookOpen, Plus, Check, Loader2, Wand2 } from 'lucide-react';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/shared/components/ui/select';
+import { Brain, Sparkles, Bot, BookOpen, Plus, Minus, Check, Loader2, Wand2, RotateCcw, FileUp, File, X } from 'lucide-react';
 import { cn } from '@/shared/lib/utils';
-
-// ─── Shared AI Data ────────────────────────────────────────────────────────────
+import { aiQuizService } from '../../quizzes/services/aiQuiz.service';
+import toast from 'react-hot-toast';
 
 const difficultyConfig = {
-  easy:   { label: 'Dễ',         color: 'bg-eco-green/15 text-eco-green', dot: 'bg-eco-green' },
-  medium: { label: 'Trung bình', color: 'bg-amber-100 text-amber-700',    dot: 'bg-amber-500' },
-  hard:   { label: 'Khó',        color: 'bg-destructive/15 text-destructive', dot: 'bg-destructive' },
+  easy: { label: 'Dễ', color: 'bg-eco-green/15 text-eco-green', dot: 'bg-eco-green' },
+  medium: { label: 'Trung bình', color: 'bg-amber-100 text-amber-700', dot: 'bg-amber-500' },
+  hard: { label: 'Khó', color: 'bg-destructive/15 text-destructive', dot: 'bg-destructive' },
 };
 
-const AI_TOPICS = ['Tái chế nhựa', 'Phân loại rác hữu cơ', 'Năng lượng tái tạo', 'Ô nhiễm không khí', 'Biến đổi khí hậu'];
+// ─── AI Generate Panel (Ported from School) ───────────────────────────────────
 
-const DEMO_AI_QUESTIONS = {
-  easy:   ['Chai nhựa thuộc loại rác thải nào?', 'Vỏ chuối nên bỏ vào thùng rác nào?', 'Màu sắc thùng rác hữu cơ thường là gì?'],
-  medium: ['Thời gian phân hủy của túi nilon là bao nhiêu năm?', 'Pin điện tử được phân loại là rác thải gì?', 'Quy trình tái chế giấy gồm mấy bước?'],
-  hard:   ['LCA (Life Cycle Assessment) đo lường điều gì trong quản lý chất thải?', 'Nguyên tắc 3R trong kinh tế tuần hoàn là gì?', 'Phân biệt rác thải nguy hại và rác thải thông thường?'],
-};
-
-function generateAIQuiz(topic, difficulty, count, existingCount) {
-  return {
-    id: `ai_${Date.now()}`,
-    title: `[AI] ${topic} — Bộ ${existingCount + 1}`,
-    difficulty,
-    question_count: count,
-    isAI: true,
-    preview: (DEMO_AI_QUESTIONS[difficulty] || []).slice(0, 2).map((q, i) => `${i + 1}. ${q}`),
-  };
-}
-
-// ─── AI Panel Component ────────────────────────────────────────────────────────
-
-function AIGeneratePanel({ onGenerated, existingCount = 0 }) {
-  const [topic, setTopic] = useState('');
-  const [difficulty, setDifficulty] = useState('easy');
-  const [questionCount, setQuestionCount] = useState(10);
+function AIGeneratePanel({ campaignId, rounds, onGenerated }) {
+  const [selectedRoundId, setSelectedRoundId] = useState(rounds[0]?.id || '');
+  const [questionCount, setQuestionCount] = useState(15);
+  const [targetGrade, setTargetGrade] = useState(1);
+  const coinsOnPass = 0;
+  const [timePerQuestion, setTimePerQuestion] = useState(30);
+  const [selectedFileIds, setSelectedFileIds] = useState([]);
+  const [myFiles, setMyFiles] = useState([]);
+  
   const [isGenerating, setIsGenerating] = useState(false);
-  const [generatedQuiz, setGeneratedQuiz] = useState(null);
+  const [isConfirming, setIsConfirming] = useState(false);
+  const [isUploading, setIsUploading] = useState(false);
+  const [editableQuiz, setEditableQuiz] = useState(null);
+  const [isModified, setIsModified] = useState(false);
 
-  const handleGenerate = () => {
-    if (!topic.trim()) return;
-    setIsGenerating(true);
-    setGeneratedQuiz(null);
-    setTimeout(() => {
-      setGeneratedQuiz(generateAIQuiz(topic, difficulty, questionCount, existingCount));
-      setIsGenerating(false);
-    }, 1800);
-  };
+  useEffect(() => {
+    fetchMyFiles();
+  }, []);
 
-  const handleAdd = () => {
-    if (generatedQuiz) {
-      onGenerated(generatedQuiz);
-      setGeneratedQuiz(null);
-      setTopic('');
+  const fetchMyFiles = async () => {
+    try {
+      const res = await aiQuizService.getMyFiles();
+      if (res.data?.data) {
+        const allFiles = Array.isArray(res.data.data) ? res.data.data : (res.data.data.content || []);
+        const docs = allFiles.filter(file => file.category === 'DOCUMENT');
+        setMyFiles(docs);
+      }
+    } catch (error) {
+      console.error('Failed to fetch files:', error);
     }
   };
 
-  return (
-    <div className="space-y-4">
-      {/* Header banner */}
-      <div className="flex items-center gap-2.5 p-3 rounded-xl bg-gradient-to-r from-purple-50 to-violet-50 border border-purple-100">
-        <div className="w-9 h-9 rounded-xl bg-purple-100 flex items-center justify-center shrink-0">
-          <Bot className="w-5 h-5 text-purple-600" />
-        </div>
-        <div>
-          <p className="font-semibold text-purple-900 text-sm">Tạo Quiz bằng AI</p>
-          <p className="text-xs text-purple-500">AI tạo bộ câu hỏi phù hợp chủ đề môi trường bạn nhập</p>
-        </div>
-      </div>
+  const handleFileUpload = async (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
 
-      {/* Topic */}
-      <div className="space-y-2">
-        <Label className="text-sm font-medium">Chủ đề / Nội dung</Label>
-        <Input
-          value={topic}
-          onChange={e => setTopic(e.target.value)}
-          placeholder="VD: Phân loại rác thải nhựa trong gia đình..."
-          className="rounded-xl border-purple-100 focus-visible:ring-purple-400"
-        />
-        <div className="flex flex-wrap gap-1.5">
-          {AI_TOPICS.map(t => (
-            <button key={t} type="button" onClick={() => setTopic(t)} className={cn(
-              "text-xs px-2.5 py-1 rounded-full border transition-all",
-              topic === t ? "bg-purple-100 border-purple-400 text-purple-700 font-medium" : "border-gray-200 text-gray-500 hover:border-purple-300 hover:text-purple-600"
-            )}>{t}</button>
-          ))}
-        </div>
-      </div>
+    setIsUploading(true);
+    try {
+      const res = await aiQuizService.uploadDocument(file);
+      if (res.data?.data) {
+        const newFile = { ...res.data.data, name: file.name };
+        setMyFiles(prev => [newFile, ...prev]);
+        setSelectedFileIds(prev => [...prev, newFile.id]);
+        toast.success('Tải tài liệu thành công');
+      }
+    } catch (error) {
+      toast.error('Tải tài liệu thất bại');
+      console.error(error);
+    } finally {
+      setIsUploading(false);
+      e.target.value = '';
+    }
+  };
 
-      {/* Difficulty + Count */}
-      <div className="grid grid-cols-2 gap-4">
-        <div className="space-y-2">
-          <Label className="text-sm font-medium">Độ khó</Label>
-          <div className="flex flex-col gap-1.5">
-            {Object.entries(difficultyConfig).map(([key, cfg]) => (
-              <label key={key} className={cn(
-                "flex items-center gap-2.5 p-2 rounded-xl border-2 cursor-pointer transition-all",
-                difficulty === key ? "border-purple-400 bg-purple-50" : "border-gray-100 hover:border-gray-200"
-              )}>
-                <input type="radio" className="hidden" checked={difficulty === key} onChange={() => setDifficulty(key)} />
-                <div className={cn("w-3 h-3 rounded-full shrink-0", cfg.dot)} />
-                <span className={cn("text-sm font-medium", difficulty === key ? "text-purple-800" : "text-gray-600")}>{cfg.label}</span>
-                {difficulty === key && <Check className="w-3.5 h-3.5 text-purple-500 ml-auto" />}
-              </label>
-            ))}
-          </div>
-        </div>
-        <div className="space-y-2">
-          <Label className="text-sm font-medium">Số câu hỏi</Label>
-          <div className="flex flex-col gap-1.5">
-            {[5, 10, 15, 20].map(n => (
-              <button key={n} type="button" onClick={() => setQuestionCount(n)} className={cn(
-                "p-2 rounded-xl border-2 text-sm font-medium transition-all text-left",
-                questionCount === n ? "border-purple-400 bg-purple-50 text-purple-800" : "border-gray-100 text-gray-600 hover:border-gray-200"
-              )}>{n} câu hỏi</button>
-            ))}
-          </div>
-        </div>
-      </div>
+  const toggleFileSelection = (fileId) => {
+    setSelectedFileIds(prev => 
+      prev.includes(fileId) ? prev.filter(id => id !== fileId) : [...prev, fileId]
+    );
+  };
 
-      {/* Generate button */}
-      <Button
-        onClick={handleGenerate}
-        disabled={isGenerating || !topic.trim()}
-        className="w-full h-11 rounded-xl bg-gradient-to-r from-purple-600 to-violet-600 hover:from-purple-700 hover:to-violet-700 text-white font-semibold shadow-lg shadow-purple-100"
-      >
-        {isGenerating
-          ? <><Loader2 className="w-4 h-4 mr-2 animate-spin" />Đang tạo quiz...</>
-          : <><Wand2 className="w-4 h-4 mr-2" />Tạo ngay</>}
-      </Button>
+  const handleGenerate = async () => {
+    setIsGenerating(true);
+    setEditableQuiz(null);
+    try {
+      const res = await aiQuizService.generateQuiz({
+        campaignId,
+        roundId: selectedRoundId,
+        questionCount,
+        targetGrade,
+        coinsOnPass,
+        timePerQuestion,
+        fileIds: selectedFileIds
+      });
 
-      {/* Generated result preview */}
-      {generatedQuiz && (
-        <div className="rounded-2xl border-2 border-purple-300 bg-purple-50/50 p-4 space-y-3 animate-in fade-in slide-in-from-bottom-2 duration-300">
-          <div className="flex items-start justify-between gap-2">
-            <div>
-              <div className="flex items-center gap-2 mb-1">
-                <Sparkles className="w-4 h-4 text-purple-500" />
-                <p className="font-semibold text-purple-900 text-sm">{generatedQuiz.title}</p>
-              </div>
-              <div className="flex gap-1.5">
-                <Badge className={cn(difficultyConfig[generatedQuiz.difficulty].color, "border-0 text-[10px]")}>{difficultyConfig[generatedQuiz.difficulty].label}</Badge>
-                <Badge variant="outline" className="text-[10px]">{generatedQuiz.question_count} câu</Badge>
-              </div>
-            </div>
-            <div className="w-8 h-8 rounded-full bg-purple-200 flex items-center justify-center shrink-0">
-              <Bot className="w-4 h-4 text-purple-600" />
-            </div>
+      if (res.data?.data?.quizPreview) {
+        setEditableQuiz(res.data.data.quizPreview);
+        setIsModified(false);
+        toast.success('Tạo quiz thành công! Bạn có thể chỉnh sửa trước khi lưu.');
+      }
+    } catch (error) {
+      const errorMsg = error.response?.data?.message || 'Tạo quiz thất bại';
+      toast.error(errorMsg);
+      console.error(error);
+    } finally {
+      setIsGenerating(false);
+    }
+  };
+
+  const handleConfirm = async () => {
+    if (!editableQuiz) return;
+
+    setIsConfirming(true);
+    try {
+      const res = await aiQuizService.confirmQuiz({
+        title: editableQuiz.title,
+        description: editableQuiz.description,
+        difficulty: editableQuiz.difficulty,
+        targetGrade: editableQuiz.targetGrade,
+        coinOnPass: editableQuiz.coinsOnPass,
+        timePerQuestion: editableQuiz.timePerQuestion,
+        passScorePercentage: editableQuiz.passScorePercentage,
+        createdBy: isModified ? 'USER' : 'AI',
+        source: 'AI_GENERATED',
+        questions: editableQuiz.questions.map(q => ({
+          questionOrder: q.questionOrder,
+          questionType: q.questionType || "MULTIPLE_CHOICE",
+          questionText: q.questionText,
+          answers: q.answers.map(a => ({
+            answerText: a.answerText,
+            correct: a.correct
+          }))
+        }))
+      });
+
+      if (res.data?.data) {
+        toast.success('Đã lưu quiz vào hệ thống');
+        onGenerated(res.data.data);
+        setEditableQuiz(null);
+      }
+    } catch (error) {
+      toast.error('Lưu quiz thất bại');
+      console.error(error);
+    } finally {
+      setIsConfirming(false);
+    }
+  };
+
+  if (editableQuiz) {
+    const quiz = editableQuiz;
+    return (
+      <div className="space-y-6 animate-in fade-in slide-in-from-bottom-2 duration-300">
+        <div className="flex items-center justify-between pb-2 border-b">
+          <div className="flex items-center gap-2">
+            <Sparkles className="w-5 h-5 text-purple-500" />
+            <h3 className="font-bold text-lg">Chỉnh sửa Quiz AI</h3>
           </div>
-          <div className="space-y-1 bg-white/70 rounded-xl p-2.5 border border-purple-100">
-            <p className="text-xs font-semibold text-purple-700 mb-1.5">Xem trước câu hỏi:</p>
-            {generatedQuiz.preview.map((q, i) => <p key={i} className="text-xs text-gray-600">{q}</p>)}
-            <p className="text-xs text-purple-400 italic mt-1">... và {generatedQuiz.question_count - 2} câu khác</p>
-          </div>
-          <Button onClick={handleAdd} className="w-full h-9 rounded-xl bg-purple-600 hover:bg-purple-700 text-white text-sm font-semibold">
-            <Plus className="w-4 h-4 mr-1.5" />
-            Thêm bộ quiz này
+          <Button variant="ghost" size="sm" onClick={() => setEditableQuiz(null)}>
+            <RotateCcw className="w-4 h-4 mr-2" />
+            Tạo lại
           </Button>
         </div>
-      )}
+
+        {/* Editable Metadata */}
+        <div className="bg-purple-50/50 rounded-2xl p-4 border border-purple-100 space-y-4">
+          <div className="grid grid-cols-1 gap-3">
+            <div className="space-y-1.5">
+              <Label className="text-[11px] font-bold text-purple-700 uppercase">Tiêu đề Quiz</Label>
+              <Input 
+                value={quiz.title} 
+                onChange={(e) => {
+                  setEditableQuiz({...quiz, title: e.target.value});
+                  setIsModified(true);
+                }}
+                className="bg-white border-purple-100 focus-visible:ring-purple-400 font-bold"
+              />
+            </div>
+            <div className="space-y-1.5">
+              <Label className="text-[11px] font-bold text-purple-700 uppercase">Mô tả</Label>
+              <Input 
+                value={quiz.description || ''} 
+                onChange={(e) => {
+                  setEditableQuiz({...quiz, description: e.target.value});
+                  setIsModified(true);
+                }}
+                className="bg-white border-purple-100 focus-visible:ring-purple-400 text-sm"
+                placeholder="Nhập mô tả..."
+              />
+            </div>
+          </div>
+          
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+            <div className="space-y-1">
+              <Label className="text-[10px] font-bold text-gray-500 uppercase">Độ khó</Label>
+              <Select 
+                value={quiz.difficulty} 
+                onValueChange={(v) => {
+                  setEditableQuiz({...quiz, difficulty: v});
+                  setIsModified(true);
+                }}
+              >
+                <SelectTrigger className="h-8 text-xs bg-white border-purple-100 capitalize">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="EASY">Dễ</SelectItem>
+                  <SelectItem value="MEDIUM">Trung bình</SelectItem>
+                  <SelectItem value="HARD">Khó</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="space-y-1">
+              <Label className="text-[10px] font-bold text-gray-500 uppercase">Lớp</Label>
+              <Select 
+                value={String(quiz.targetGrade)} 
+                onValueChange={(v) => {
+                  setEditableQuiz({...quiz, targetGrade: parseInt(v)});
+                  setIsModified(true);
+                }}
+              >
+                <SelectTrigger className="h-8 text-xs bg-white border-purple-100">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                   {[1,2,3,4,5].map(g => (
+                     <SelectItem key={g} value={String(g)}>Lớp {g}</SelectItem>
+                   ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="space-y-1">
+              <Label className="text-[10px] font-bold text-gray-500 uppercase">Điểm đạt (%)</Label>
+              <Input 
+                type="number"
+                value={quiz.passScorePercentage || 0} 
+                onChange={(e) => {
+                  setEditableQuiz({...quiz, passScorePercentage: parseInt(e.target.value)});
+                  setIsModified(true);
+                }}
+                className="h-8 text-xs bg-white border-purple-100"
+              />
+            </div>
+            <div className="space-y-1 invisible">
+              <Label className="text-[10px] font-bold text-gray-500 uppercase">Điểm thưởng</Label>
+              <Input 
+                type="number"
+                value={0} 
+                disabled
+                className="h-8 text-xs bg-white border-purple-100"
+              />
+            </div>
+          </div>
+
+          <div className="flex flex-wrap gap-2 pt-1 border-t border-purple-100/50 mt-2">
+            <Badge variant="outline" className="bg-white/50 text-[10px]">{quiz.questions.length} câu hỏi</Badge>
+            <Badge variant="outline" className="bg-white/50 text-[10px]">{quiz.timePerQuestion}s / câu</Badge>
+          </div>
+        </div>
+
+        <div className="space-y-4">
+          <p className="text-sm font-bold text-gray-700 flex items-center gap-2">
+            <Bot className="w-4 h-4 text-purple-600" />
+            Nội dung câu hỏi:
+          </p>
+          {quiz.questions.map((q, idx) => (
+            <div key={`question-${idx}`} className="p-4 rounded-2xl border bg-white shadow-sm hover:shadow-md transition-all space-y-3 relative group">
+              <div className="flex items-start gap-3">
+                <span className="flex-shrink-0 w-6 h-6 rounded-full bg-purple-100 text-purple-600 flex items-center justify-center text-xs font-bold">
+                  {idx + 1}
+                </span>
+                <div className="flex-1 space-y-2">
+                  <Input 
+                    value={q.questionText}
+                    onChange={(e) => {
+                      const newQs = [...quiz.questions];
+                      newQs[idx].questionText = e.target.value;
+                      setEditableQuiz({...quiz, questions: newQs});
+                      setIsModified(true);
+                    }}
+                    className="text-sm font-medium border-gray-100 focus:border-purple-200"
+                  />
+                  
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                    {q.answers.map((a, aidx) => (
+                      <div key={`answer-${idx}-${aidx}`} className={cn(
+                        "flex items-center gap-2 p-2 rounded-xl border text-xs",
+                        a.correct ? "bg-eco-green/5 border-eco-green/20" : "bg-gray-50/50 border-gray-100"
+                      )}>
+                        <Checkbox 
+                          checked={a.correct} 
+                          onCheckedChange={(checked) => {
+                             const newQs = [...quiz.questions];
+                             newQs[idx].answers = newQs[idx].answers.map((ans, i) => ({
+                               ...ans,
+                               correct: i === aidx ? !!checked : (checked ? false : ans.correct)
+                             }));
+                             setEditableQuiz({...quiz, questions: newQs});
+                             setIsModified(true);
+                          }}
+                        />
+                        <Input 
+                           value={a.answerText}
+                           onChange={(e) => {
+                             const newQs = [...quiz.questions];
+                             newQs[idx].answers[aidx].answerText = e.target.value;
+                             setEditableQuiz({...quiz, questions: newQs});
+                             setIsModified(true);
+                           }}
+                           className="h-7 border-0 bg-transparent focus-visible:ring-0 p-0 text-xs"
+                        />
+                      </div>
+                    ))}
+                  </div>
+                </div>
+                <Button 
+                   variant="ghost" 
+                   size="icon" 
+                   className="h-8 w-8 text-gray-400 hover:text-destructive opacity-0 group-hover:opacity-100 transition-opacity"
+                   onClick={() => {
+                     const newQs = quiz.questions.filter((_, i) => i !== idx);
+                     setEditableQuiz({...quiz, questions: newQs});
+                     setIsModified(true);
+                   }}
+                >
+                  <X className="w-4 h-4" />
+                </Button>
+              </div>
+            </div>
+          ))}
+        </div>
+
+        <div className="pt-6 flex gap-3 sticky bottom-0 bg-background/95 backdrop-blur-sm pb-2 border-t z-10">
+          <Button variant="outline" className="flex-1 rounded-xl h-11" onClick={() => setEditableQuiz(null)}>
+            Hủy & Tạo lại
+          </Button>
+          <Button 
+            className="flex-2 bg-purple-600 hover:bg-purple-700 text-white font-bold rounded-xl h-11 px-8 shadow-lg shadow-purple-100"
+            onClick={handleConfirm}
+            disabled={isConfirming}
+          >
+            {isConfirming ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : <Check className="w-4 h-4 mr-2" />}
+            Xác nhận & Lưu Quiz
+          </Button>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="grid grid-cols-1 md:grid-cols-5 gap-6 h-full min-h-[400px]">
+      <div className="md:col-span-2 space-y-6 flex flex-col">
+        <div className="space-y-4">
+          <div className="flex items-center gap-2.5 p-4 rounded-xl bg-gradient-to-r from-purple-50 to-violet-50 border border-purple-100">
+            <div className="w-10 h-10 rounded-xl bg-purple-100 flex items-center justify-center shrink-0">
+              <Bot className="w-6 h-6 text-purple-600" />
+            </div>
+            <div>
+              <p className="font-bold text-purple-900 leading-none">Cấu hình AI</p>
+              <p className="text-[10px] text-purple-500 mt-1">Điều chỉnh thông số cho bộ câu hỏi</p>
+            </div>
+          </div>
+
+          <div className="grid grid-cols-1 gap-4">
+            <div className="space-y-2">
+              <Label className="text-xs font-bold text-gray-700">Chọn vòng thi</Label>
+              <Select value={selectedRoundId} onValueChange={setSelectedRoundId}>
+                <SelectTrigger className="h-9 rounded-xl border-gray-200">
+                  <SelectValue placeholder="Chọn vòng thi..." />
+                </SelectTrigger>
+                <SelectContent>
+                  {rounds.map(r => (
+                    <SelectItem key={r.id} value={r.id}>{r.roundName || `Vòng ${r.roundNumber}`}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div className="space-y-2">
+              <Label className="text-xs font-bold text-gray-700">Hạng mục lớp</Label>
+              <Select value={String(targetGrade)} onValueChange={(val) => setTargetGrade(parseInt(val))}>
+                <SelectTrigger className="h-9 rounded-xl border-gray-200">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {[1, 2, 3, 4, 5].map(g => (
+                    <SelectItem key={g} value={String(g)}>Lớp {g}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div className="space-y-2">
+              <Label className="text-xs font-bold text-gray-700">Số câu hỏi</Label>
+              <Select value={String(questionCount)} onValueChange={(val) => setQuestionCount(parseInt(val))}>
+                <SelectTrigger className="h-9 rounded-xl border-gray-200">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {[15, 20, 25, 30].map(n => (
+                    <SelectItem key={n} value={String(n)}>{n} câu</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div className="space-y-2">
+              <Label className="text-xs font-bold text-gray-700">Thời gian (s/câu)</Label>
+              <div className="flex items-center gap-2 bg-gray-50 border rounded-xl px-2 h-9">
+                <Button variant="ghost" size="icon" className="h-6 w-6" onClick={() => setTimePerQuestion(Math.max(5, timePerQuestion - 5))}><Minus className="w-3" /></Button>
+                <span className="flex-1 text-center text-xs font-bold">{timePerQuestion}s</span>
+                <Button variant="ghost" size="icon" className="h-6 w-6" onClick={() => setTimePerQuestion(timePerQuestion + 5)}><Plus className="w-3" /></Button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div className="mt-auto pt-4">
+          <Button
+            onClick={handleGenerate}
+            disabled={isGenerating}
+            className="w-full h-11 rounded-xl bg-purple-600 hover:bg-purple-700 text-white font-bold shadow-lg shadow-purple-100"
+          >
+            {isGenerating ? (
+              <><Loader2 className="w-4 h-4 mr-2 animate-spin" />Đang soạn...</>
+            ) : (
+              <><Wand2 className="w-4 h-4 mr-2" />Tạo Quiz ngay</>
+            )}
+          </Button>
+        </div>
+      </div>
+
+      <div className="md:col-span-3 h-full border-l pl-6 space-y-4 flex flex-col min-h-0">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <BookOpen className="w-4 h-4 text-purple-600" />
+            <Label className="text-sm font-bold text-gray-700">Tài liệu tham khảo ({selectedFileIds.length})</Label>
+          </div>
+          <Button 
+            variant="outline" size="sm" className="h-8 text-[11px] border-purple-200 text-purple-600 hover:bg-purple-50"
+            onClick={() => document.getElementById('ai-file-upload').click()}
+            disabled={isUploading}
+          >
+            {isUploading ? <Loader2 className="w-3 h-3 animate-spin mr-1" /> : <FileUp className="w-3 h-3 mr-1" />}
+            Tải File mới
+          </Button>
+          <input id="ai-file-upload" type="file" className="hidden" accept=".pdf,.doc,.docx,.txt" onChange={handleFileUpload} />
+        </div>
+
+        <div className="flex-1 overflow-hidden flex flex-col">
+          {myFiles.length > 0 ? (
+            <div className="space-y-2 overflow-y-auto pr-2 scrollbar-thin flex-1">
+              {myFiles.map((file, index) => (
+                <div 
+                  key={file.id || `file-${index}`} 
+                  onClick={() => toggleFileSelection(file.id)}
+                  className={cn(
+                    "group flex items-center gap-3 p-3 rounded-xl border-2 cursor-pointer transition-all",
+                    selectedFileIds.includes(file.id) ? "border-purple-400 bg-purple-50/50" : "border-gray-50 hover:border-gray-200 bg-gray-50/30"
+                  )}
+                >
+                  <div className={cn("w-10 h-10 rounded-xl flex items-center justify-center transition-colors",
+                    selectedFileIds.includes(file.id) ? "bg-purple-100" : "bg-white border shadow-sm"
+                  )}>
+                    <File className={cn("w-5 h-5", selectedFileIds.includes(file.id) ? "text-purple-600" : "text-gray-400")} />
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-xs font-bold truncate text-gray-700">
+                      {file.name || file.fileName || (file.publicId ? file.publicId.split('/').pop().replace(/_\d{14}$/, '') : 'Tài liệu không tên')}
+                    </p>
+                    <p className="text-[10px] text-gray-400 mt-0.5">
+                      {file.size ? `${(file.size / 1024).toFixed(1)} KB` : 'Đang xử lý size'} • {file.createdAt ? new Date(file.createdAt).toLocaleDateString() : 'Vừa tải lên'}
+                    </p>
+                  </div>
+                  <div className={cn("w-5 h-5 rounded-full border-2 flex items-center justify-center transition-all",
+                    selectedFileIds.includes(file.id) ? "bg-purple-600 border-purple-600" : "border-gray-200 group-hover:border-purple-300"
+                  )}>
+                    {selectedFileIds.includes(file.id) && <Check className="w-3 h-3 text-white" />}
+                  </div>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <div className="flex-1 flex flex-col items-center justify-center border-2 border-dashed rounded-2xl bg-gray-50/50">
+              <div className="w-12 h-12 rounded-full bg-gray-100 flex items-center justify-center mb-3">
+                <FileUp className="w-6 h-6 text-gray-300" />
+              </div>
+              <p className="text-xs text-gray-400 text-center px-8 font-medium">Chưa có tài liệu nào. Vui lòng tải tài liệu lên để AI có dữ liệu tạo câu hỏi.</p>
+            </div>
+          )}
+        </div>
+      </div>
     </div>
   );
 }
@@ -181,7 +506,6 @@ export function AddQuizModal({ isOpen, onClose, campaign, availableQuizzes, setA
       const initial = {};
       rounds.forEach(round => {
         const roundId = round.id || round.roundNumber || round.round_number;
-        // Search for existing settings if available in the campaign data
         const existingQuizzes = round.quizzes || [];
         const isAlreadyBound = existingQuizzes.length > 0;
         
@@ -197,7 +521,16 @@ export function AddQuizModal({ isOpen, onClose, campaign, availableQuizzes, setA
     }
   }, [isOpen, campaign]);
 
-  const allQuizzes = [...availableQuizzes, ...aiGeneratedQuizzes];
+  const allQuizzes = useMemo(() => {
+    const combined = [...availableQuizzes, ...aiGeneratedQuizzes];
+    const seen = new Set();
+    return combined.filter(q => {
+      const id = q.id || q._id;
+      if (!id || seen.has(id)) return false;
+      seen.add(id);
+      return true;
+    });
+  }, [availableQuizzes, aiGeneratedQuizzes]);
 
   const toggleQuiz = (rnum, quizId) => {
     setConfigs(prev => {
@@ -205,35 +538,35 @@ export function AddQuizModal({ isOpen, onClose, campaign, availableQuizzes, setA
       const updatedIds = current.includes(quizId) 
         ? current.filter(id => id !== quizId) 
         : [...current, quizId];
-      return {
-        ...prev,
-        [rnum]: {
-          ...prev[rnum],
-          quiz_ids: updatedIds
-        }
-      };
+      return { ...prev, [rnum]: { ...prev[rnum], quiz_ids: updatedIds } };
     });
   };
 
   const handleUpdateSetting = (roundId, field, value) => {
-    setConfigs(prev => ({
-      ...prev,
-      [roundId]: {
-        ...prev[roundId],
-        [field]: value
-      }
-    }));
+    setConfigs(prev => ({ ...prev, [roundId]: { ...prev[roundId], [field]: value } }));
   };
 
   const handleAIGenerated = (quiz) => {
-    setAiGeneratedQuizzes(prev => [...prev, quiz]);
+    const transformedQuiz = {
+      ...quiz,
+      question_count: quiz.questions?.length || 0,
+      difficulty: quiz.difficulty?.toLowerCase() || 'easy',
+      isAI: true
+    };
+    setAiGeneratedQuizzes(prev => [...prev, transformedQuiz]);
     if (typeof setAvailableQuizzes === 'function') {
-      setAvailableQuizzes(prev => [...prev, quiz]);
+      setAvailableQuizzes(prev => [...prev, transformedQuiz]);
     }
     setActiveTab('library');
   };
 
+  const totalSelected = Object.values(configs).reduce((sum, cfg) => sum + (cfg.quiz_ids?.length || 0), 0);
+
   const handleSubmit = () => {
+    if (totalSelected === 0) {
+      toast.error('Vui lòng chọn ít nhất một quiz trước khi lưu');
+      return;
+    }
     const rounds = campaign?.qualifying_rounds || campaign?.rounds || [];
     const roundsWithQuizzes = rounds.map(round => {
       const roundId = round.id || round.roundNumber || round.round_number;
@@ -249,23 +582,23 @@ export function AddQuizModal({ isOpen, onClose, campaign, availableQuizzes, setA
     onSubmit(roundsWithQuizzes);
   };
 
-  const totalSelected = Object.values(configs).reduce((sum, ids) => sum + ids.length, 0);
-
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="max-w-xl max-h-[90vh] flex flex-col">
-        <DialogHeader className="shrink-0">
+      <DialogContent className={cn(
+        "h-[85vh] flex flex-col overflow-hidden transition-all duration-300",
+        activeTab === 'ai' ? "max-w-4xl" : "max-w-xl"
+      )}>
+        <DialogHeader className="shrink-0 pb-2">
           <div className="flex items-center gap-3">
             <div className="w-9 h-9 rounded-xl bg-eco-blue/10 flex items-center justify-center">
               <Brain className="w-5 h-5 text-eco-blue" />
             </div>
             <div>
-              <DialogTitle className="text-xl font-bold">Thêm Quiz vào Vòng loại</DialogTitle>
+              <DialogTitle className="text-xl font-bold">Thêm Quiz vào vòng thi</DialogTitle>
               <p className="text-xs text-muted-foreground mt-0.5">Chọn từ thư viện hoặc tạo mới bằng AI</p>
             </div>
           </div>
 
-          {/* Tabs */}
           <div className="flex gap-1 mt-4 bg-muted/40 rounded-xl p-1">
             <button
               onClick={() => setActiveTab('library')}
@@ -296,60 +629,53 @@ export function AddQuizModal({ isOpen, onClose, campaign, availableQuizzes, setA
           </div>
         </DialogHeader>
 
-        <div className="flex-1 overflow-y-auto py-4">
+        <div className="flex-1 min-h-0 overflow-y-auto py-4">
           {activeTab === 'library' ? (
             <div className="space-y-5">
               {(campaign?.qualifying_rounds || campaign?.rounds)?.map((round) => {
                 const roundId = round.id || round.roundNumber || round.round_number;
-                const currentSelected = configs[roundId] || [];
+                const currentConfig = configs[roundId] || { quiz_ids: [] };
                 return (
                   <div key={roundId} className="border p-4 rounded-xl space-y-3 bg-muted/5">
                     <div className="flex items-center justify-between border-b pb-2">
-                      <h3 className="font-bold text-base text-eco-green">
-                        {round.roundName || round.round_name}
-                        {(round.advancement_limit !== undefined || round.advanceCount !== undefined) && (
-                          <span className="text-xs font-normal text-muted-foreground ml-2">
-                            (Sĩ số duyệt: {round.advanceCount || round.advancement_limit})
-                          </span>
-                        )}
+                       <h3 className="font-bold text-base text-eco-blue">
+                        {round.roundName || round.round_name || `Vòng ${round.roundNumber}`}
                       </h3>
                       <Badge variant="secondary" className="text-xs border">
-                        {configs[roundId]?.quiz_ids?.length || 0} quiz đã chọn
+                        {currentConfig.quiz_ids.length} quiz đã chọn
                       </Badge>
                     </div>
 
-                    {/* Quiz Settings */}
                     <div className="grid grid-cols-1 gap-4 pt-1">
                       <div className="space-y-1.5">
                         <Label className="text-[11px] font-bold text-muted-foreground uppercase">Số lượt làm tối đa</Label>
                         <input
-                          type="number"
-                          min="1"
-                          value={configs[roundId]?.maxAttempts || 1}
+                          type="number" min="1"
+                          value={currentConfig.maxAttempts || 1}
                           onChange={(e) => handleUpdateSetting(roundId, 'maxAttempts', e.target.value)}
-                          className="w-full px-3 py-1.5 rounded-lg border bg-background text-sm focus:ring-2 focus:ring-eco-blue/20 outline-none transition-all"
+                          className="w-full px-3 py-1.5 rounded-lg border bg-background text-sm focus:ring-2 focus:ring-eco-blue/20 outline-none"
                         />
                       </div>
                     </div>
 
                     <div className="flex flex-col gap-2">
                       {allQuizzes.map((quiz) => {
-                        const isSelected = configs[roundId]?.quiz_ids?.includes(quiz.id);
+                        const isSelected = currentConfig.quiz_ids.includes(quiz.id);
                         return (
                           <div
                             key={quiz.id}
                             onClick={() => toggleQuiz(roundId, quiz.id)}
                             className={cn(
                               "flex items-center gap-3 p-2.5 rounded-xl border-2 cursor-pointer transition-all",
-                              isSelected ? "bg-orange-50 border-orange-400 shadow-sm" : "border-border hover:border-orange-200 bg-background"
+                              isSelected ? "bg-blue-50 border-blue-400 shadow-sm" : "border-border hover:border-blue-200 bg-background"
                             )}
                           >
-                            <div className={cn("w-5 h-5 rounded-md border-2 flex items-center justify-center shrink-0 transition-colors",
-                              isSelected ? "border-orange-500 bg-orange-500" : "border-muted-foreground/30"
+                            <div className={cn("w-5 h-5 rounded-md border-2 flex items-center justify-center shrink-0",
+                              isSelected ? "border-blue-500 bg-blue-500" : "border-muted-foreground/30"
                             )}>
                               {isSelected && <Check className="w-3 h-3 text-white" />}
                             </div>
-                            <span className={cn("font-medium text-sm flex-1 flex items-center gap-1.5", isSelected ? "text-orange-900" : "text-foreground")}>
+                            <span className={cn("font-medium text-sm flex-1 flex items-center gap-1.5", isSelected ? "text-blue-900" : "text-foreground")}>
                               {quiz.isAI && <Sparkles className="w-3 h-3 text-purple-500 shrink-0" />}
                               {quiz.title || quiz.name}
                             </span>
@@ -357,34 +683,28 @@ export function AddQuizModal({ isOpen, onClose, campaign, availableQuizzes, setA
                               <Badge className={cn(difficultyConfig[quiz.difficulty]?.color, "border-0 text-[10px]")}>
                                 {difficultyConfig[quiz.difficulty]?.label}
                               </Badge>
-                              <Badge variant="outline" className="text-[10px]">{quiz.question_count || quiz.questions || 0} câu</Badge>
+                              <Badge variant="outline" className="text-[10px]">{quiz.question_count || 0} câu</Badge>
                             </div>
                           </div>
                         );
                       })}
-                      {allQuizzes.length === 0 && (
-                        <p className="text-sm text-muted-foreground italic text-center py-3 bg-muted/20 rounded-lg">
-                          Chưa có quiz nào trong thư viện. Hãy qua tab "Tạo bằng AI" để bắt đầu!
-                        </p>
-                      )}
                     </div>
                   </div>
                 );
               })}
-              {(!campaign?.qualifying_rounds?.length && !campaign?.rounds?.length) && (
-                <div className="text-center py-12 border-2 border-dashed rounded-2xl">
-                  <p className="text-muted-foreground">Chiến dịch này chưa cấu hình vòng thi nào.</p>
-                </div>
-              )}
             </div>
           ) : (
-            <AIGeneratePanel onGenerated={handleAIGenerated} existingCount={aiGeneratedQuizzes.length} />
+            <AIGeneratePanel 
+              campaignId={campaign?.id} 
+              rounds={campaign?.qualifying_rounds || campaign?.rounds || []}
+              onGenerated={handleAIGenerated} 
+            />
           )}
         </div>
 
-        <DialogFooter className="border-t pt-4 shrink-0">
+        <DialogFooter className="border-t pt-4">
           <Button variant="ghost" onClick={onClose} className="mr-auto">Hủy</Button>
-          <Button onClick={handleSubmit} className="bg-eco-orange hover:bg-eco-orange/90 text-white">
+          <Button onClick={handleSubmit} className="bg-eco-blue hover:bg-eco-blue/90 text-white min-w-[140px]">
             Lưu cấu hình Quiz
           </Button>
         </DialogFooter>

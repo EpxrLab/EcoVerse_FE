@@ -57,6 +57,7 @@ import {
   SchoolCampaigns,
   SchoolSubscription,
   SchoolLeaderboardPage,
+  SchoolReports,
   SchoolProfile,
 } from "@/roles/school";
 
@@ -69,6 +70,7 @@ import {
   PartnershipLeaderboard,
   PartnershipRewards,
   PartnershipSubscription,
+  PartnershipReports,
 } from "@/roles/partnership";
 
 import NotFound from "./roles/notFound";
@@ -219,6 +221,7 @@ const App = () => (
                 <Route path="classes" element={<SchoolClasses />} />
                 <Route path="quizzes" element={<SchoolQuizzes />} />
                 <Route path="rewards" element={<SchoolRewards />} />
+                <Route path="reports" element={<SchoolReports />} />
                 <Route path="campaigns" element={<SchoolCampaigns />} />
                 <Route path="subscription" element={<SchoolSubscription />} />
                 <Route path="leaderboard" element={<SchoolLeaderboardPage />} />
@@ -253,6 +256,7 @@ const App = () => (
                   path="subscription"
                   element={<PartnershipSubscription />}
                 />
+                <Route path="reports" element={<PartnershipReports />} />
               </Route>
               <Route
                 path="/partnership/profile"

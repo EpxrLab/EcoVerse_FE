@@ -47,6 +47,7 @@ import {
 } from 'lucide-react';
 import { format } from 'date-fns';
 import { vi } from 'date-fns/locale';
+import { toast } from 'sonner';
 import { cn } from '@/shared/lib/utils';
 
 const statusConfig = {
@@ -63,10 +64,8 @@ export function CampaignList({
   campaigns,
   tableHeaderBg = 'bg-muted/30',
   rowHoverBg = 'hover:bg-muted/20',
-  participantLabel = 'Lớp tham gia',
   onView,
   onEdit,
-  onInvite,
   onChangeStatus,
   onDelete,
   onRevertToDraft,
@@ -270,7 +269,16 @@ export function CampaignList({
                                 Thêm Quiz
                               </DropdownMenuItem>
                             )}
-                            <DropdownMenuItem onClick={() => onActivate ? onActivate(campaign.id) : onChangeStatus(campaign.id, 'on_going')}>
+                            <DropdownMenuItem 
+                              onClick={() => {
+                                if (!campaign.has_game || !campaign.has_quiz) {
+                                  toast.error("Cần cấu hình ít nhất 1 Game và 1 Quiz để kích hoạt chiến dịch");
+                                  return;
+                                }
+                                if (onActivate) onActivate(campaign.id);
+                                else onChangeStatus(campaign.id, 'on_going');
+                              }}
+                            >
                               <Play className="w-4 h-4 mr-2" />
                               Kích hoạt
                             </DropdownMenuItem>

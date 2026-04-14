@@ -92,7 +92,7 @@ export function useQuizForm() {
     startEditQuestion,
     saveQuestion,
     cancelAddQuestion: () => {
-        setEditingQuestionId(null);
+      setEditingQuestionId(null);
     },
     // Dialog states
     isCreateDialogOpen,
