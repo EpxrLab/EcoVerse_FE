@@ -95,8 +95,8 @@ export function StudentFormDialog({
           <DialogTitle className="flex items-center gap-2 text-xl">
             {isEditing ? (
               <>
-                <div className="w-10 h-10 rounded-xl bg-eco-blue/10 flex items-center justify-center">
-                  <Edit className="w-5 h-5 text-eco-blue" />
+                <div className="w-10 h-10 rounded-xl bg-eco-green/10 flex items-center justify-center">
+                  <Edit className="w-5 h-5 text-eco-green" />
                 </div>
                 <span>Chỉnh sửa thông tin học sinh</span>
               </>
@@ -207,7 +207,7 @@ export function StudentFormDialog({
           {/* Parent Info Section */}
           <div className="space-y-4">
             <div className="flex items-center gap-2 text-sm font-semibold text-foreground">
-              <Phone className="w-4 h-4 text-eco-blue" />
+              <Phone className="w-4 h-4 text-eco-green" />
               Thông tin phụ huynh
             </div>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4 p-4 rounded-xl bg-muted/30 border border-border/50">
@@ -251,7 +251,7 @@ export function StudentFormDialog({
           {/* Additional Info Section */}
           <div className="space-y-4">
             <div className="flex items-center gap-2 text-sm font-semibold text-foreground">
-              <FileText className="w-4 h-4 text-eco-orange" />
+              <FileText className="w-4 h-4 text-eco-green" />
               Thông tin bổ sung
             </div>
             <div className="space-y-4 p-4 rounded-xl bg-muted/30 border border-border/50">
@@ -286,9 +286,7 @@ export function StudentFormDialog({
             Hủy
           </Button>
           <Button 
-            className={isEditing 
-              ? "bg-eco-blue hover:bg-eco-blue/90 text-white min-w-[120px]" 
-              : "bg-eco-green hover:bg-eco-green/90 text-white min-w-[120px]"}
+            className="bg-eco-green hover:bg-eco-green/90 text-white min-w-[120px]"
             onClick={handleSubmit}
           >
             {isEditing ? "Lưu thay đổi" : "Thêm học sinh"}

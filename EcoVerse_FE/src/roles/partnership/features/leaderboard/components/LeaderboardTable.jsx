@@ -22,19 +22,13 @@ export function LeaderboardTable({ data, currentPage, totalPages, totalItems, it
               <TableHead className="text-center font-bold py-3.5">
                 <div className="flex items-center justify-center gap-1.5">
                   <BookOpen className="w-3.5 h-3.5 text-eco-blue" />
-                  Quiz
+                  Độ chính xác (%)
                 </div>
               </TableHead>
               <TableHead className="text-center font-bold py-3.5">
                 <div className="flex items-center justify-center gap-1.5">
                   <Gamepad2 className="w-3.5 h-3.5 text-eco-green" />
-                  Game
-                </div>
-              </TableHead>
-              <TableHead className="text-center font-bold py-3.5">
-                <div className="flex items-center justify-center gap-1.5">
-                  <Coins className="w-3.5 h-3.5 text-eco-orange" />
-                  Tổng
+                  Thời gian TB (s)
                 </div>
               </TableHead>
             </TableRow>
@@ -44,7 +38,7 @@ export function LeaderboardTable({ data, currentPage, totalPages, totalItems, it
               const isTop3 = student.rank <= 3;
               return (
                 <TableRow
-                  key={student.id}
+                  key={student.studentId}
                   className={cn(
                     'group transition-colors border-b border-border/30 last:border-0',
                     isTop3 ? 'bg-primary/[0.03] hover:bg-primary/[0.06]' : 'hover:bg-muted/40'
@@ -95,16 +89,13 @@ export function LeaderboardTable({ data, currentPage, totalPages, totalItems, it
                   </TableCell>
 
                   <TableCell className="text-center py-2.5">
-                    <span className="text-sm font-medium text-eco-blue">{student.quizScore}</span>
+                    <span className="text-sm font-medium text-eco-blue">{student.combinedAccuracyPercentage || 0}%</span>
                   </TableCell>
 
                   <TableCell className="text-center py-2.5">
-                    <span className="text-sm font-medium text-eco-green">{student.gameScore}</span>
+                    <span className="text-sm font-medium text-eco-green">{student.avgTimeSeconds || 0}s</span>
                   </TableCell>
 
-                  <TableCell className="text-center py-2.5">
-                    <span className="text-sm font-bold text-eco-orange tabular-nums">{student.totalPoints.toLocaleString()}</span>
-                  </TableCell>
                 </TableRow>
               );
             })}

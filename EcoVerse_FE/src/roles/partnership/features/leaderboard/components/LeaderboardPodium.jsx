@@ -105,13 +105,6 @@ export function LeaderboardPodium({ top3 }) {
                   <span className="line-clamp-1">{student.schoolName}</span>
                 </div>
 
-                {/* Points */}
-                <div className="bg-muted/50 rounded-xl py-2 px-3 mb-3">
-                  <span className={cn('font-extrabold text-primary tabular-nums block', config.pointsSize)}>
-                    {student.totalPoints.toLocaleString()}
-                  </span>
-                  <span className="text-[10px] uppercase font-bold text-muted-foreground tracking-wider">Tổng điểm</span>
-                </div>
 
                 <Badge variant="outline" className={cn('font-medium', config.badgeClass)}>
                   {student.level}

@@ -161,47 +161,47 @@ export function SchoolAccountsView({ allStudents, onRefresh }) {
     <div className="space-y-4">
       {/* Stats row */}
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5">
-        <Card className="border border-eco-green/20 bg-eco-green/[0.02]">
-          <CardContent className="p-3 flex items-center gap-2.5">
-            <div className="w-8 h-8 rounded-lg bg-eco-green/10 flex items-center justify-center shrink-0">
-              <Users className="w-4 h-4 text-eco-green" />
+        <Card className="border border-eco-green/20 bg-eco-green/[0.02] shadow-sm hover:shadow-md transition-all">
+          <CardContent className="p-3.5 flex items-center gap-3">
+            <div className="w-9 h-9 rounded-xl bg-eco-green/10 flex items-center justify-center shrink-0">
+              <Users className="w-4.5 h-4.5 text-eco-green" />
             </div>
             <div>
-              <p className="text-lg font-bold leading-none">{allStudents.length}</p>
-              <p className="text-[11px] text-muted-foreground">Học sinh</p>
+              <p className="text-xl font-bold leading-none">{allStudents.length}</p>
+              <p className="text-[11px] text-muted-foreground font-semibold mt-1">Học sinh</p>
             </div>
           </CardContent>
         </Card>
-        <Card className="border border-eco-blue/20 bg-eco-blue/[0.02]">
-          <CardContent className="p-3 flex items-center gap-2.5">
-            <div className="w-8 h-8 rounded-lg bg-eco-blue/10 flex items-center justify-center shrink-0">
-              <UserCheck className="w-4 h-4 text-eco-blue" />
+        <Card className="border border-eco-green/20 bg-eco-green/[0.02] shadow-sm hover:shadow-md transition-all">
+          <CardContent className="p-3.5 flex items-center gap-3">
+            <div className="w-9 h-9 rounded-xl bg-eco-green/10 flex items-center justify-center shrink-0">
+              <UserCheck className="w-4.5 h-4.5 text-eco-green" />
             </div>
             <div>
-              <p className="text-lg font-bold leading-none">{parentsWithEmail.length}</p>
-              <p className="text-[11px] text-muted-foreground">Phụ huynh có email</p>
+              <p className="text-xl font-bold leading-none">{parentsWithEmail.length}</p>
+              <p className="text-[11px] text-muted-foreground font-semibold mt-1">Phụ huynh có email</p>
             </div>
           </CardContent>
         </Card>
-        <Card className="border border-eco-leaf/20 bg-eco-leaf/[0.02]">
-          <CardContent className="p-3 flex items-center gap-2.5">
-            <div className="w-8 h-8 rounded-lg bg-eco-leaf/10 flex items-center justify-center shrink-0">
-              <Mail className="w-4 h-4 text-eco-leaf" />
+        <Card className="border border-eco-green/20 bg-eco-green/[0.02] shadow-sm hover:shadow-md transition-all">
+          <CardContent className="p-3.5 flex items-center gap-3">
+            <div className="w-9 h-9 rounded-xl bg-eco-green/10 flex items-center justify-center shrink-0">
+              <Mail className="w-4.5 h-4.5 text-eco-green" />
             </div>
             <div>
-              <p className="text-lg font-bold leading-none">{filteredStudents.length}</p>
-              <p className="text-[11px] text-muted-foreground">Đang hiển thị</p>
+              <p className="text-xl font-bold leading-none">{filteredStudents.length}</p>
+              <p className="text-[11px] text-muted-foreground font-semibold mt-1">Đang hiển thị</p>
             </div>
           </CardContent>
         </Card>
-        <Card className="border border-eco-orange/20 bg-eco-orange/[0.02]">
-          <CardContent className="p-3 flex items-center gap-2.5">
-            <div className="w-8 h-8 rounded-lg bg-eco-orange/10 flex items-center justify-center shrink-0">
-              <MailCheck className="w-4 h-4 text-eco-orange" />
+        <Card className="border border-eco-green/20 bg-eco-green/[0.02] shadow-sm hover:shadow-md transition-all">
+          <CardContent className="p-3.5 flex items-center gap-3">
+            <div className="w-9 h-9 rounded-xl bg-eco-green/10 flex items-center justify-center shrink-0">
+              <MailCheck className="w-4.5 h-4.5 text-eco-green" />
             </div>
             <div>
-              <p className="text-lg font-bold leading-none">{sentEmailsCount}</p>
-              <p className="text-[11px] text-muted-foreground">Đã gửi email</p>
+              <p className="text-xl font-bold leading-none">{sentEmailsCount}</p>
+              <p className="text-[11px] text-muted-foreground font-semibold mt-1">Đã gửi email</p>
             </div>
           </CardContent>
         </Card>
@@ -244,7 +244,7 @@ export function SchoolAccountsView({ allStudents, onRefresh }) {
         </Select>
         <Button
           size="sm"
-          className="h-9 ml-auto bg-gradient-to-r from-eco-blue to-eco-green hover:opacity-90 shadow-sm font-medium text-sm gap-1.5"
+          className="h-9 ml-auto bg-eco-green hover:bg-eco-green/90 shadow-sm font-medium text-sm gap-1.5"
           onClick={handleSendAll}
           disabled={isSendingAll || parentsWithEmail.filter(s => !s.credentialEmailSent).length === 0}
         >
@@ -262,14 +262,12 @@ export function SchoolAccountsView({ allStudents, onRefresh }) {
           <Table>
             <TableHeader>
               <TableRow className="bg-muted/40 hover:bg-muted/40">
-                <TableHead className="w-10 text-center text-xs font-medium">#</TableHead>
-                <TableHead className="text-xs font-medium">Học sinh</TableHead>
-                <TableHead className="text-center text-xs font-medium">Lớp</TableHead>
-                <TableHead className="text-center text-xs font-medium">TK học sinh</TableHead>
-                <TableHead className="text-xs font-medium">Phụ huynh</TableHead>
-                <TableHead className="text-center text-xs font-medium">TK phụ huynh</TableHead>
-                <TableHead className="text-center text-xs font-medium">Email PH</TableHead>
-                <TableHead className="w-20 text-center text-xs font-medium">Gửi</TableHead>
+                <TableHead className="w-12 text-center text-[11px] font-bold text-muted-foreground/80 uppercase tracking-tight">#</TableHead>
+                <TableHead className="text-[11px] font-bold text-muted-foreground/80 uppercase tracking-tight">Học sinh</TableHead>
+                <TableHead className="text-center text-[11px] font-bold text-muted-foreground/80 uppercase tracking-tight">Lớp</TableHead>
+                <TableHead className="text-[11px] font-bold text-muted-foreground/80 uppercase tracking-tight">Phụ huynh</TableHead>
+                <TableHead className="text-center text-[11px] font-bold text-muted-foreground/80 uppercase tracking-tight">Email PH</TableHead>
+                <TableHead className="w-24 text-center text-[11px] font-bold text-muted-foreground/80 uppercase tracking-tight">Gửi</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -278,41 +276,37 @@ export function SchoolAccountsView({ allStudents, onRefresh }) {
                 return (
                   <TableRow key={s.id} className="hover:bg-muted/20 group">
                     {/* # */}
-                    <TableCell className="text-center text-xs text-muted-foreground">{globalIndex}</TableCell>
+                    <TableCell className="text-center text-[11px] font-medium text-muted-foreground/50">{globalIndex}</TableCell>
 
                     {/* Student name */}
                     <TableCell>
                       <div className="flex items-center gap-2">
-                        <div className="w-7 h-7 rounded-full bg-gradient-to-br from-eco-green/80 to-eco-blue/80 flex items-center justify-center text-white text-[10px] font-bold shrink-0">
+                        <div className="w-8 h-8 rounded-full bg-eco-green/10 flex items-center justify-center text-eco-green text-xs font-bold shrink-0">
                           {s.student_name.charAt(0).toUpperCase()}
                         </div>
                         <div>
-                          <p className="font-medium text-sm leading-tight">{s.student_name}</p>
-                          <p className="text-[10px] text-muted-foreground">{s.student_code}</p>
+                          <p className="font-semibold text-base leading-tight">{s.student_name}</p>
+                          <p className="text-xs text-muted-foreground font-medium">{s.student_code}</p>
                         </div>
                       </div>
                     </TableCell>
 
                     {/* Class */}
                     <TableCell className="text-center">
-                      <Badge variant="outline" className="border-eco-blue/30 text-eco-blue bg-eco-blue/5">
+                      <Badge variant="outline" className="border-eco-green/30 text-eco-green bg-eco-green/5 text-sm font-medium">
                         {s.grade}{s.className}
                       </Badge>
                     </TableCell>
 
-                    {/* Student username */}
-                    <TableCell className="text-center">
-                      <code className="text-xs bg-muted/60 px-1.5 py-0.5 rounded">{s.student_username || '—'}</code>
-                    </TableCell>
 
                     {/* Parent name + phone */}
                     <TableCell>
                       {s.parent_name ? (
                         <div>
-                          <p className="text-sm leading-tight">{s.parent_name}</p>
+                          <p className="text-base font-semibold leading-tight">{s.parent_name}</p>
                           {s.parent_phone && (
-                            <p className="text-[10px] text-muted-foreground flex items-center gap-0.5">
-                              <Phone className="w-2.5 h-2.5" /> {s.parent_phone}
+                            <p className="text-xs text-muted-foreground flex items-center gap-1 font-medium mt-0.5">
+                              <Phone className="w-3 h-3" /> {s.parent_phone}
                             </p>
                           )}
                         </div>
@@ -321,15 +315,11 @@ export function SchoolAccountsView({ allStudents, onRefresh }) {
                       )}
                     </TableCell>
 
-                    {/* Parent username */}
-                    <TableCell className="text-center">
-                      <code className="text-xs bg-muted/60 px-1.5 py-0.5 rounded">{s.parent_username || '—'}</code>
-                    </TableCell>
 
                     {/* Parent email */}
                     <TableCell className="text-center">
                       {s.parent_email ? (
-                        <span className="text-xs text-eco-blue">{s.parent_email}</span>
+                        <span className="text-sm text-eco-green font-medium">{s.parent_email}</span>
                       ) : (
                         <span className="text-xs text-muted-foreground">—</span>
                       )}
@@ -338,14 +328,14 @@ export function SchoolAccountsView({ allStudents, onRefresh }) {
                     {/* Send button */}
                     <TableCell className="text-center">
                       {s.credentialEmailSent ? (
-                        <span className="inline-flex items-center gap-0.5 text-eco-green text-[11px] font-medium">
-                          <CheckCircle2 className="w-3 h-3" /> Đã gửi
+                        <span className="inline-flex items-center gap-1 text-eco-green text-xs font-bold">
+                          <CheckCircle2 className="w-3.5 h-3.5" /> Đã gửi
                         </span>
                       ) : s.parent_email ? (
                         <Button
                           size="sm"
                           variant="ghost"
-                          className="h-6 px-2 text-[11px] gap-1 text-eco-blue hover:bg-eco-blue/10 rounded"
+                          className="h-7 px-3 text-xs gap-1.5 text-eco-green hover:bg-eco-green/10 rounded font-bold"
                           onClick={() => setEmailPreviewData({
                             parent: {
                               id: s.id,

@@ -1,56 +1,26 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import { Trophy } from 'lucide-react';
 import { usePartnershipCampaigns } from '../../features/campaigns/hooks/usePartnershipCampaigns';
+import { partnershipCampaignService } from '../../services/partnershipCampaign.service';
 import { LeaderboardFilters } from '../../features/leaderboard/components/LeaderboardFilters';
 import { LeaderboardPodium } from '../../features/leaderboard/components/LeaderboardPodium';
 import { LeaderboardTable } from '../../features/leaderboard/components/LeaderboardTable';
 
-// Mock data generator
-const generateMockLeaderboard = (campaignId, roundId) => {
-  const count = 50;
-  const schools = [
-    'Trường Tiểu học Nguyễn Du',
-    'Trường Tiểu học Lê Quý Đôn',
-    'Trường Tiểu học Trần Hưng Đạo',
-    'Trường Tiểu học Võ Thị Sáu',
-    'Trường Tiểu học Kim Đồng'
-  ];
-
-  const lastNames = ['Nguyễn', 'Trần', 'Lê', 'Phạm', 'Hoàng', 'Huỳnh', 'Phan', 'Vũ', 'Võ', 'Đặng', 'Bùi', 'Đỗ', 'Hồ', 'Ngô', 'Dương', 'Lý'];
-  const middleNames = ['Văn', 'Thị', 'Minh', 'Ngọc', 'Thanh', 'Đức', 'Thu', 'Hồng', 'Quang', 'Kim', 'Bảo', 'Gia', 'Tuấn', 'Hoài'];
-  const firstNames = ['Anh', 'Chi', 'Bảo', 'Dung', 'Đạt', 'Giang', 'Hà', 'Hải', 'Hiếu', 'Hoà', 'Hùng', 'Huy', 'Khánh', 'Lan', 'Linh', 'Long', 'Mai', 'Minh', 'Nam', 'Nga', 'Ngọc', 'Nhi', 'Nhung', 'Oanh', 'Phát', 'Phương', 'Quân', 'Quang', 'Quốc', 'Quyên', 'Quỳnh', 'Sang', 'Sơn', 'Tài', 'Tâm', 'Tân', 'Thảo', 'Thịnh', 'Thu', 'Thuỷ', 'Thư', 'Tiên', 'Toàn', 'Trang', 'Trí', 'Trinh', 'Trung', 'Tú', 'Tuấn', 'Tùng', 'Tuyết', 'Uyên', 'Vân', 'Việt', 'Vinh', 'Vy', 'Xuân', 'Yến'];
-
-  const getRandomItem = (arr) => arr[Math.floor(Math.random() * arr.length)];
-  const generateName = () => `${getRandomItem(lastNames)} ${getRandomItem(middleNames)} ${getRandomItem(firstNames)}`;
-
-  // Seeded random for consistent names based on index if desired, but for now simple random is fine as it's just mock data
-  // To make it consistent across re-renders without a seed, we can just rely on the fact that useMemo will hold it.
-  
-  return Array.from({ length: count }).map((_, index) => {
-    const rank = index + 1;
-    let baseScore = 1500 - (index * 25);
-    if (roundId !== 'all') baseScore -= Math.floor(Math.random() * 200);
-    const quizScore = Math.floor(baseScore * 0.4);
-    const gameScore = baseScore - quizScore;
-
-    return {
-      id: `${campaignId}-${roundId}-${index}`,
-      rank,
-      studentName: generateName(),
-      schoolName: schools[index % schools.length],
-      totalPoints: baseScore,
-      quizScore,
-      gameScore,
-      level: rank <= 5 ? 'Xuất sắc' : rank <= 15 ? 'Giỏi' : rank <= 30 ? 'Khá' : 'Trung bình'
-    };
-  });
-};
+// Remove mock data generator if no longer needed
 
 export default function PartnershipLeaderboard() {
-  const { campaigns } = usePartnershipCampaigns();
+  const { campaigns: allCampaigns } = usePartnershipCampaigns();
+
+  const campaigns = useMemo(() => 
+    allCampaigns.filter(c => c.status === 'on_going' || c.status === 'completed'),
+    [allCampaigns]
+  );
 
   const [selectedCampaignId, setSelectedCampaignId] = useState(campaigns[0]?.id || '');
   const [selectedRoundId, setSelectedRoundId] = useState('all');
+  const [selectedCampaignDetail, setSelectedCampaignDetail] = useState(null);
+  const [leaderboardData, setLeaderboardData] = useState([]);
+  const [loading, setLoading] = useState(false);
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 10;
 
@@ -60,21 +30,70 @@ export default function PartnershipLeaderboard() {
   );
 
   const rounds = useMemo(() => {
-    if (!selectedCampaign) return [];
-    return [
-      { id: 'all', name: 'Toàn bộ chiến dịch' },
-      ...(selectedCampaign.qualifying_rounds?.map(r => ({
-        id: `qualifying-${r.round_number}`,
-        name: r.round_name
-      })) || []),
-      { id: 'main', name: 'Vòng chính thức' }
-    ];
-  }, [selectedCampaign]);
+    const baseRounds = [{ id: 'all', name: 'Toàn bộ chiến dịch' }];
+    if (!selectedCampaignDetail) return baseRounds;
 
-  const leaderboardData = useMemo(() =>
-    generateMockLeaderboard(selectedCampaignId, selectedRoundId),
-    [selectedCampaignId, selectedRoundId]
-  );
+    const campaignRounds = (selectedCampaignDetail.rounds || selectedCampaignDetail.qualifying_rounds || []).map(r => ({
+      id: r.id,
+      name: r.roundName
+    }));
+
+    return [...baseRounds, ...campaignRounds];
+  }, [selectedCampaignDetail]);
+
+  useEffect(() => {
+    if (campaigns.length > 0 && !selectedCampaignId) {
+      setSelectedCampaignId(campaigns[0].id);
+    }
+  }, [campaigns, selectedCampaignId]);
+
+  useEffect(() => {
+    const fetchCampaignDetail = async () => {
+      if (!selectedCampaignId) {
+        setSelectedCampaignDetail(null);
+        return;
+      }
+      try {
+        const res = await partnershipCampaignService.getCampaignById(selectedCampaignId);
+        setSelectedCampaignDetail(res.data?.data);
+      } catch (error) {
+        console.error('Failed to fetch campaign detail', error);
+        setSelectedCampaignDetail(null);
+      }
+    };
+    fetchCampaignDetail();
+  }, [selectedCampaignId]);
+
+  useEffect(() => {
+    const fetchLeaderboard = async () => {
+      if (!selectedCampaignId) return;
+      
+      try {
+        setLoading(true);
+        let response;
+        if (selectedRoundId === 'all') {
+          response = await partnershipCampaignService.getCampaignLeaderboard(selectedCampaignId);
+        } else {
+          response = await partnershipCampaignService.getRoundLeaderboard(selectedCampaignId, selectedRoundId);
+        }
+        
+        const data = response.data?.data || [];
+        // Map rank-based levels since API doesn't provide them
+        const dataWithLevels = data.map(item => ({
+          ...item,
+          level: item.rank <= 5 ? 'Xuất sắc' : item.rank <= 15 ? 'Giỏi' : item.rank <= 30 ? 'Khá' : 'Trung bình'
+        }));
+        setLeaderboardData(dataWithLevels);
+      } catch (error) {
+        console.error('Failed to fetch leaderboard data', error);
+        setLeaderboardData([]);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchLeaderboard();
+  }, [selectedCampaignId, selectedRoundId]);
 
   const totalPages = Math.ceil(leaderboardData.length / itemsPerPage);
   const currentData = leaderboardData.slice(

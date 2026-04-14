@@ -91,4 +91,9 @@ export const campaignService = {
     return axios.get(`/school/partnership-invitations/${id}/assigned-students`);
   },
 
+  // Leaderboard
+  getCampaignLeaderboard: (id) => {
+    return axios.get(`/school/campaigns/${id}/leaderboard`);
+  }
+
 };

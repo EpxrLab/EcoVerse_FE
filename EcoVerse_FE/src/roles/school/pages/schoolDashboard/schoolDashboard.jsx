@@ -90,7 +90,7 @@ export default function SchoolDashboard() {
           <CardContent className="p-5">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm text-muted-foreground font-medium mb-1">Tổng học sinh</p>
+                <p className="text-sm text-muted-foreground font-semibold mb-1">Tổng học sinh</p>
                 <p className="text-3xl font-bold text-foreground">{stats.totalStudents}</p>
                 <div className="flex items-center gap-1.5 mt-2">
                   <div className="flex items-center gap-1 px-2 py-0.5 rounded-full bg-eco-green/10">
@@ -106,43 +106,43 @@ export default function SchoolDashboard() {
           </CardContent>
         </Card>
 
-        <Card className="group border-2 border-eco-blue/20 hover:border-eco-blue/40 transition-all duration-300 hover:shadow-lg hover:-translate-y-0.5 bg-card">
+        <Card className="group border-2 border-eco-green/20 hover:border-eco-green/40 transition-all duration-300 hover:shadow-lg hover:-translate-y-0.5 bg-card">
           <CardContent className="p-5">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm text-muted-foreground font-medium mb-1">Chiến dịch</p>
+                <p className="text-sm text-muted-foreground font-semibold mb-1">Chiến dịch</p>
                 <p className="text-3xl font-bold text-foreground">
                   {stats.totalCampaignsCreated + stats.totalCampaignsParticipated}
                 </p>
                 <div className="flex items-center gap-1.5 mt-2">
-                  <div className="flex items-center gap-1 px-2 py-0.5 rounded-full bg-eco-blue/10">
-                    <Flag className="w-3 h-3 text-eco-blue" />
-                    <span className="text-xs font-semibold text-eco-blue">{stats.activeCampaignsCreated} đang diễn ra</span>
+                  <div className="flex items-center gap-1 px-2 py-0.5 rounded-full bg-eco-green/10">
+                    <Flag className="w-3 h-3 text-eco-green" />
+                    <span className="text-xs font-semibold text-eco-green">{stats.activeCampaignsCreated} đang diễn ra</span>
                   </div>
                 </div>
               </div>
-              <div className="w-12 h-12 rounded-xl bg-eco-blue/10 flex items-center justify-center group-hover:scale-110 transition-transform">
-                <Target className="w-6 h-6 text-eco-blue" />
+              <div className="w-12 h-12 rounded-xl bg-eco-green/10 flex items-center justify-center group-hover:scale-110 transition-transform">
+                <Target className="w-6 h-6 text-eco-green" />
               </div>
             </div>
           </CardContent>
         </Card>
 
-        <Card className="group border-2 border-eco-orange/20 hover:border-eco-orange/40 transition-all duration-300 hover:shadow-lg hover:-translate-y-0.5 bg-card">
+        <Card className="group border-2 border-eco-green/20 hover:border-eco-green/40 transition-all duration-300 hover:shadow-lg hover:-translate-y-0.5 bg-card">
           <CardContent className="p-5">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm text-muted-foreground font-medium mb-1">Đổi thưởng chờ duyệt</p>
+                <p className="text-sm text-muted-foreground font-semibold mb-1">Đổi thưởng chờ duyệt</p>
                 <p className="text-3xl font-bold text-foreground">{stats.pendingRewardRequests}</p>
                 <div className="flex items-center gap-1.5 mt-2">
-                  <div className="flex items-center gap-1 px-2 py-0.5 rounded-full bg-eco-orange/10">
-                    <Timer className="w-3 h-3 text-eco-orange" />
-                    <span className="text-xs font-semibold text-eco-orange">Cần xử lý</span>
+                  <div className="flex items-center gap-1 px-2 py-0.5 rounded-full bg-eco-green/10">
+                    <Timer className="w-3 h-3 text-eco-green" />
+                    <span className="text-xs font-semibold text-eco-green">Cần xử lý</span>
                   </div>
                 </div>
               </div>
-              <div className="w-12 h-12 rounded-xl bg-eco-orange/10 flex items-center justify-center group-hover:scale-110 transition-transform">
-                <Gift className="w-6 h-6 text-eco-orange" />
+              <div className="w-12 h-12 rounded-xl bg-eco-green/10 flex items-center justify-center group-hover:scale-110 transition-transform">
+                <Gift className="w-6 h-6 text-eco-green" />
               </div>
             </div>
           </CardContent>
@@ -151,16 +151,16 @@ export default function SchoolDashboard() {
 
       {/* Top Lists Row */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
-        <Card className="border-2 border-eco-brown/15 bg-card">
-          <CardHeader className="pb-3 border-b border-eco-brown/10 mb-4 px-5">
+        <Card className="border-2 border-eco-green/15 bg-card">
+          <CardHeader className="pb-3 border-b border-eco-green/10 mb-4 px-5">
             <div className="flex items-center justify-between">
-              <CardTitle className="flex items-center gap-2 text-base font-bold text-eco-brown">
-                <div className="w-8 h-8 rounded-lg bg-eco-brown/10 flex items-center justify-center">
+              <CardTitle className="flex items-center gap-2 text-base font-bold text-eco-green">
+                <div className="w-8 h-8 rounded-lg bg-eco-green/10 flex items-center justify-center">
                   <Award className="w-4 h-4" />
                 </div>
                 Học sinh tiêu biểu - Coins
               </CardTitle>
-              <Button variant="ghost" size="sm" onClick={() => navigate('/school/leaderboard')} className="text-eco-brown hover:text-eco-brown hover:bg-eco-brown/10 text-xs">
+              <Button variant="ghost" size="sm" onClick={() => navigate('/school/leaderboard')} className="text-eco-green hover:text-eco-green hover:bg-eco-green/10 text-xs font-semibold">
                 Xếp hạng
                 <ChevronRight className="w-4 h-4 ml-1" />
               </Button>
@@ -174,28 +174,28 @@ export default function SchoolDashboard() {
                   className={cn(
                     "flex items-center gap-3 p-3 rounded-xl transition-all duration-200 border",
                     index === 0 
-                      ? "bg-eco-brown/5 border-eco-brown/20 shadow-sm shadow-eco-brown/5" 
+                      ? "bg-eco-green/5 border-eco-green/20 shadow-sm shadow-eco-green/5" 
                       : "bg-muted/30 border-transparent hover:border-border"
                   )}
                 >
                   <div className={cn(
                     "flex items-center justify-center w-8 h-8 rounded-lg font-bold text-sm shrink-0",
-                    index === 0 ? "bg-eco-brown text-primary-foreground" :
-                    index === 1 ? "bg-eco-green text-primary-foreground opacity-80" :
-                    index === 2 ? "bg-eco-blue text-primary-foreground opacity-80" :
+                    index === 0 ? "bg-eco-green text-primary-foreground" :
+                    index === 1 ? "bg-eco-green text-primary-foreground opacity-70" :
+                    index === 2 ? "bg-eco-green text-primary-foreground opacity-50" :
                     "bg-muted text-muted-foreground"
                   )}>
                     {index + 1}
                   </div>
                   <div className="flex-1 min-w-0">
-                    <p className="font-bold text-foreground text-sm truncate">{student.fullName}</p>
-                    <p className="text-[11px] text-muted-foreground font-bold uppercase tracking-tight">
+                    <p className="font-semibold text-foreground text-sm truncate">{student.fullName}</p>
+                    <p className="text-[11px] text-muted-foreground font-semibold uppercase tracking-tight">
                       Lớp {student.gradeLevel}{student.className}
                     </p>
                   </div>
                   <div className="text-right shrink-0">
-                    <div className="flex items-center gap-1 justify-end text-eco-orange mb-0.5">
-                       <Coins className="w-3 h-3" />
+                    <div className="flex items-center gap-1 justify-end text-eco-green mb-0.5">
+                       <Coins className="w-3.5 h-3.5" />
                        <span className="font-bold text-sm tracking-tight">{student.totalCoins.toLocaleString()}</span>
                     </div>
                     <p className="text-[10px] text-muted-foreground font-medium">accuracy: {Math.round(student.avgGameAccuracy)}%</p>
@@ -209,16 +209,16 @@ export default function SchoolDashboard() {
           </CardContent>
         </Card>
 
-        <Card className="border-2 border-eco-blue/15 bg-card">
-          <CardHeader className="pb-3 border-b border-eco-blue/10 mb-4 px-5">
+        <Card className="border-2 border-eco-green/15 bg-card">
+          <CardHeader className="pb-3 border-b border-eco-green/10 mb-4 px-5">
             <div className="flex items-center justify-between">
-              <CardTitle className="flex items-center gap-2 text-base font-bold text-eco-blue">
-                <div className="w-8 h-8 rounded-lg bg-eco-blue/10 flex items-center justify-center">
+              <CardTitle className="flex items-center gap-2 text-base font-bold text-eco-green">
+                <div className="w-8 h-8 rounded-lg bg-eco-green/10 flex items-center justify-center">
                   <Target className="w-4 h-4" />
                 </div>
                 Top chính xác trung bình
               </CardTitle>
-              <Button variant="ghost" size="sm" onClick={() => navigate('/school/reports')} className="text-eco-blue hover:text-eco-blue hover:bg-eco-blue/10 text-xs">
+              <Button variant="ghost" size="sm" onClick={() => navigate('/school/reports')} className="text-eco-green hover:text-eco-green hover:bg-eco-green/10 text-xs font-semibold">
                 Xem chi tiết
                 <ChevronRight className="w-4 h-4 ml-1" />
               </Button>
@@ -232,27 +232,27 @@ export default function SchoolDashboard() {
                   className={cn(
                     "flex items-center gap-3 p-3 rounded-xl transition-all duration-200 border",
                     index === 0 
-                      ? "bg-eco-blue/5 border-eco-blue/20 shadow-sm shadow-eco-blue/5" 
+                      ? "bg-eco-green/5 border-eco-green/20 shadow-sm shadow-eco-green/5" 
                       : "bg-muted/30 border-transparent hover:border-border"
                   )}
                 >
                   <div className={cn(
                     "flex items-center justify-center w-8 h-8 rounded-lg font-bold text-sm shrink-0",
-                    index === 0 ? "bg-eco-blue text-primary-foreground" :
-                    index === 1 ? "bg-eco-green text-primary-foreground opacity-80" :
-                    index === 2 ? "bg-eco-brown text-primary-foreground opacity-80" :
+                    index === 0 ? "bg-eco-green text-primary-foreground" :
+                    index === 1 ? "bg-eco-green text-primary-foreground opacity-70" :
+                    index === 2 ? "bg-eco-green text-primary-foreground opacity-50" :
                     "bg-muted text-muted-foreground"
                   )}>
                     {index + 1}
                   </div>
                   <div className="flex-1 min-w-0">
-                    <p className="font-bold text-foreground text-sm truncate">{student.fullName}</p>
-                    <p className="text-[11px] text-muted-foreground font-bold uppercase tracking-tight">
+                    <p className="font-semibold text-foreground text-sm truncate">{student.fullName}</p>
+                    <p className="text-[11px] text-muted-foreground font-semibold uppercase tracking-tight">
                       Lớp {student.gradeLevel}{student.className} • {student.totalCampaignsJoined} chiến dịch
                     </p>
                   </div>
                   <div className="text-right shrink-0">
-                    <p className="font-extrabold text-eco-blue text-base">
+                    <p className="font-bold text-eco-green text-base">
                       {Math.round(student.avgGameAccuracy)}%
                     </p>
                     <p className="text-[10px] text-muted-foreground font-medium">quiz: {Math.round(student.avgQuizScore)}%</p>
@@ -293,7 +293,7 @@ export default function SchoolDashboard() {
               <div className="w-full sm:w-48 text-center sm:text-left">
                 <div className="flex items-center justify-between mb-2">
                   <p className="text-xs text-muted-foreground font-bold uppercase tracking-wider">Học sinh đã nạp</p>
-                  <p className="text-sm font-black text-eco-green">{stats.totalStudents}</p>
+                  <p className="text-sm font-bold text-eco-green">{stats.totalStudents}</p>
                 </div>
                 <Progress value={subscriptionPercent} className="h-2.5 bg-eco-green/10" indicatorClassName="bg-eco-green" />
               </div>

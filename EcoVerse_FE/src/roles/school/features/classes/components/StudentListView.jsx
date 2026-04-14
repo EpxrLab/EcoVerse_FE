@@ -169,13 +169,13 @@ export function StudentListView({
           >
             <ArrowLeft className="w-5 h-5" />
           </Button>
-          <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-eco-blue to-eco-green flex items-center justify-center shadow-lg shadow-eco-blue/20">
+          <div className="w-14 h-14 rounded-2xl bg-eco-green flex items-center justify-center shadow-lg shadow-eco-green/20">
             <Users className="w-7 h-7 text-white" />
           </div>
           <div>
-            <h1 className="text-2xl font-bold text-foreground">Lớp {selectedClass.grade}{selectedClass.name}</h1>
-            <p className="text-muted-foreground flex items-center gap-2">
-              <GraduationCap className="w-4 h-4" />
+            <h1 className="text-3xl font-bold text-foreground tracking-tight">Lớp {selectedClass.grade}{selectedClass.name}</h1>
+            <p className="text-base text-muted-foreground font-medium flex items-center gap-2">
+              <GraduationCap className="w-5 h-5 text-eco-green" />
               Khối {selectedClass.grade} • GV: {selectedClass.teacher_name || 'Chưa phân công'}
             </p>
           </div>
@@ -186,45 +186,14 @@ export function StudentListView({
 
       {/* Stats Cards */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-        <Card className="border-2 border-eco-green/20 hover:border-eco-green/40 transition-all hover:shadow-lg hover:-translate-y-0.5">
-          <CardContent className="p-4">
-            <div className="flex items-center gap-3">
-              <div className="w-11 h-11 rounded-xl bg-eco-green/10 flex items-center justify-center">
-                <Users className="w-5 h-5 text-eco-green" />
-              </div>
-              <div>
-                <p className="text-2xl font-bold">{students.length}</p>
-                <p className="text-xs text-muted-foreground">Học sinh</p>
-              </div>
+        <Card className="border border-eco-green/20 bg-eco-green/[0.02] shadow-sm hover:shadow-md transition-all">
+          <CardContent className="p-4 flex items-center gap-3.5">
+            <div className="w-10 h-10 rounded-xl bg-eco-green/10 flex items-center justify-center shrink-0">
+              <Users className="w-5 h-5 text-eco-green" />
             </div>
-          </CardContent>
-        </Card>
-
-        <Card className="border-2 border-amber-400/20 hover:border-amber-400/40 transition-all hover:shadow-lg hover:-translate-y-0.5">
-          <CardContent className="p-4">
-            <div className="flex items-center gap-3">
-              <div className="w-11 h-11 rounded-xl bg-amber-500/10 flex items-center justify-center">
-                <Coins className="w-5 h-5 text-amber-500" />
-              </div>
-              <div>
-                <p className="text-2xl font-bold">{(selectedClass.total_coins || 0).toLocaleString()}</p>
-                <p className="text-xs text-muted-foreground">Tổng Coins</p>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-       
-
-        <Card className="border-2 border-eco-orange/20 hover:border-eco-orange/40 transition-all hover:shadow-lg hover:-translate-y-0.5">
-          <CardContent className="p-4">
-            <div className="flex items-center gap-3">
-              <div className="w-11 h-11 rounded-xl bg-eco-orange/10 flex items-center justify-center">
-                <Trophy className="w-5 h-5 text-eco-orange" />
-              </div>
-              <div>
-                <p className="text-sm font-bold truncate">{selectedClass.top_student || '-'}</p>
-                <p className="text-xs text-muted-foreground">Top 1</p>
-              </div>
+            <div>
+              <p className="text-2xl font-bold text-foreground leading-none">{students.length}</p>
+              <p className="text-xs text-muted-foreground font-semibold mt-1">Học sinh</p>
             </div>
           </CardContent>
         </Card>
@@ -252,8 +221,8 @@ export function StudentListView({
             <div className="w-20 h-20 mx-auto rounded-full bg-muted/50 flex items-center justify-center mb-4">
               <Users className="w-10 h-10 text-muted-foreground/50" />
             </div>
-            <h3 className="text-xl font-semibold mb-2">Chưa có học sinh nào</h3>
-            <p className="text-muted-foreground mb-6 max-w-sm mx-auto">
+            <h3 className="text-2xl font-bold mb-2">Chưa có học sinh nào</h3>
+            <p className="text-base text-muted-foreground mb-6 max-w-sm mx-auto">
               Thêm học sinh thủ công hoặc import nhanh từ file CSV/TXT
             </p>
             <div className="flex justify-center gap-3">
@@ -296,16 +265,9 @@ export function StudentListView({
                   <TableHeader>
                     <TableRow className="bg-muted/50 hover:bg-muted/50">
                       <TableHead className="w-12 text-center">#</TableHead>
-                      <TableHead>Học sinh</TableHead>
-                      <TableHead className="text-center">Tên đăng nhập</TableHead>
-                      <TableHead className="text-center">Giới tính</TableHead>
+                      <TableHead className="text-sm font-bold uppercase tracking-wider">Học sinh</TableHead>
+                      <TableHead className="text-center text-sm font-bold uppercase tracking-wider">Giới tính</TableHead>
 
-                      <TableHead className="text-center">
-                        <div className="flex items-center justify-center gap-1">
-                          <Coins className="w-4 h-4" />
-                          Coins
-                        </div>
-                      </TableHead>
 
                       <TableHead className="text-center">Trạng thái</TableHead>
                       <TableHead className="w-12"></TableHead>
@@ -322,15 +284,15 @@ export function StudentListView({
                         </TableCell>
                         <TableCell>
                           <div className="flex items-center gap-3">
-                            <div className="w-9 h-9 rounded-full bg-gradient-to-br from-eco-green to-eco-blue flex items-center justify-center text-white font-semibold text-sm">
+                            <div className="w-9 h-9 rounded-full bg-eco-green flex items-center justify-center text-white font-bold text-base">
                               {student.student_name.charAt(0).toUpperCase()}
                             </div>
                             <div>
-                              <p className="font-medium">{student.student_name}</p>
+                              <p className="font-semibold text-base text-foreground">{student.student_name}</p>
                               {student.parent_name && (
                                 <button 
                                   onClick={() => handleParentClick(student.id)}
-                                  className="text-xs text-eco-blue hover:underline cursor-pointer"
+                                  className="text-sm text-eco-green hover:underline cursor-pointer font-medium"
                                 >
                                   PH: {student.parent_name}
                                 </button>
@@ -338,15 +300,10 @@ export function StudentListView({
                             </div>
                           </div>
                         </TableCell>
-                        <TableCell className="text-center">
-                          <span className="font-mono text-sm text-muted-foreground">
-                            {student.student_code || '-'}
-                          </span>
-                        </TableCell>
 
                         <TableCell className="text-center">
                           <Badge variant="outline" className={cn(
-                            "text-xs",
+                            "text-sm font-medium",
                             student.gender === 'male' && "border-blue-500/50 text-blue-600 bg-blue-50 dark:bg-blue-950/30",
                             student.gender === 'female' && "border-pink-500/50 text-pink-600 bg-pink-50 dark:bg-pink-950/30",
                             student.gender === 'other' && "border-gray-500/50 text-gray-600"
@@ -355,9 +312,6 @@ export function StudentListView({
                           </Badge>
                         </TableCell>
 
-                        <TableCell className="text-center">
-                          <span className="font-semibold text-eco-orange">{(student.coins ?? 0).toLocaleString()}</span>
-                        </TableCell>
 
                         <TableCell className="text-center">
                           <Badge 
@@ -457,7 +411,6 @@ export function StudentListView({
                           Email
                         </div>
                       </TableHead>
-                      <TableHead className="text-center">Tên đăng nhập</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
@@ -466,7 +419,7 @@ export function StudentListView({
                         key={parent.id}
                         className={cn(
                           "group hover:bg-muted/30 transition-all",
-                          highlightedParentId === parent.studentId && "bg-eco-blue/10 animate-pulse"
+                          highlightedParentId === parent.studentId && "bg-eco-green/10 animate-pulse"
                         )}
                       >
                         <TableCell className="text-center font-medium text-muted-foreground">
@@ -474,10 +427,10 @@ export function StudentListView({
                         </TableCell>
                         <TableCell>
                           <div className="flex items-center gap-3">
-                            <div className="w-9 h-9 rounded-full bg-gradient-to-br from-eco-orange to-eco-leaf flex items-center justify-center text-white font-semibold text-sm">
+                            <div className="w-10 h-10 rounded-full bg-eco-green/20 flex items-center justify-center text-eco-green font-bold text-base">
                               {parent.name.charAt(0).toUpperCase()}
                             </div>
-                            <p className="font-medium">{parent.name}</p>
+                            <p className="font-semibold text-base">{parent.name}</p>
                           </div>
                         </TableCell>
                         <TableCell>
@@ -487,7 +440,7 @@ export function StudentListView({
                         </TableCell>
                         <TableCell className="text-center">
                           {parent.phone ? (
-                            <a href={`tel:${parent.phone}`} className="text-eco-blue hover:underline">
+                            <a href={`tel:${parent.phone}`} className="text-base text-eco-green hover:underline font-medium">
                               {parent.phone}
                             </a>
                           ) : (
@@ -496,17 +449,12 @@ export function StudentListView({
                         </TableCell>
                         <TableCell className="text-center">
                           {parent.email ? (
-                            <a href={`mailto:${parent.email}`} className="text-eco-blue hover:underline">
+                            <a href={`mailto:${parent.email}`} className="text-base text-eco-green hover:underline font-medium">
                               {parent.email}
                             </a>
                           ) : (
                             <span className="text-muted-foreground">-</span>
                           )}
-                        </TableCell>
-                        <TableCell className="text-center">
-                          <span className="font-mono text-sm text-muted-foreground">
-                            {parent.username || '-'}
-                          </span>
                         </TableCell>
 
                       </TableRow>
