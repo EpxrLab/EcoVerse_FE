@@ -26,7 +26,7 @@ export default function PartnershipRewards() {
   const [trackingCode, setTrackingCode] = useState('');
 
   // Local Campaigns list for the selector
-  const activeAndCompletedCampaigns = campaigns.filter(c => c.status === 'on_going' || c.status === 'completed');
+  const activeAndCompletedCampaigns = campaigns.filter(c =>c.status === 'completed');
 
   useEffect(() => {
     if (activeAndCompletedCampaigns.length > 0 && !selectedCampaignId) {
@@ -358,10 +358,6 @@ export default function PartnershipRewards() {
                   <SelectItem key={campaign.id} value={campaign.id} className="rounded-xl my-1 focus:bg-eco-blue/5 focus:text-eco-blue cursor-pointer px-4">
                     <div className="flex flex-row items-center justify-between gap-4 py-2 w-full">
                       <span className="text-base font-bold leading-tight">{campaign.campaignName}</span>
-                      <Badge variant="secondary" className={cn("whitespace-nowrap text-[10px] uppercase font-bold px-2 py-0.5 rounded-lg", 
-                        campaign.status === 'on_going' ? "bg-eco-blue/10 text-eco-blue" : "bg-eco-green/10 text-eco-green")}>
-                        {campaign.status === 'on_going' ? 'Đang diễn ra' : 'Đã kết thúc'}
-                      </Badge>
                     </div>
                   </SelectItem>
                 ))}
@@ -377,17 +373,16 @@ export default function PartnershipRewards() {
         </div>
         
         {/* Quick Stats Summary */}
-        <div className="bg-gradient-to-br from-eco-green to-eco-blue p-6 rounded-3xl text-white shadow-xl relative overflow-hidden flex flex-col justify-center min-h-[140px] group transition-all hover:scale-[1.02]">
-            <div className="absolute -top-10 -right-10 w-40 h-40 bg-white/10 rounded-full blur-3xl group-hover:bg-white/20 transition-all" />
+        <div className="bg-card p-6 rounded-3xl border-2 border-eco-blue/5 shadow-sm relative overflow-hidden flex flex-col justify-center min-h-[140px] group transition-all hover:shadow-md h-full">
             <div className="relative z-10 flex items-center gap-5">
-                <div className="p-4 bg-white/20 backdrop-blur-md rounded-2xl shadow-inner border border-white/20">
-                    <Trophy className="w-8 h-8 text-white drop-shadow-md" />
+                <div className="p-4 bg-eco-blue/10 rounded-2xl border border-eco-blue/10">
+                    <Trophy className="w-8 h-8 text-eco-blue" />
                 </div>
                 <div className="flex flex-col gap-1">
-                    <p className="text-[11px] font-black text-white/90 uppercase tracking-[0.2em]">Tổng học sinh</p>
+                    <p className="text-[11px] font-black text-muted-foreground uppercase tracking-[0.2em]">Tổng học sinh</p>
                     <div className="flex items-baseline gap-1.5">
-                        <span className="text-5xl font-black tracking-tighter">{rewardDeliveries.length}</span>
-                        <span className="text-xs font-bold text-white/70">đạt giải</span>
+                        <span className="text-5xl font-black tracking-tighter text-eco-blue">{rewardDeliveries.length}</span>
+                        <span className="text-xs font-bold text-muted-foreground">đạt giải</span>
                     </div>
                 </div>
             </div>

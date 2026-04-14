@@ -113,12 +113,12 @@ export default function SchoolClasses() {
       <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
         {/* Title */}
         <div className="flex items-center gap-3.5">
-          <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-eco-blue to-eco-green flex items-center justify-center shadow-lg shadow-eco-blue/20">
+          <div className="w-12 h-12 rounded-2xl bg-eco-green flex items-center justify-center shadow-lg shadow-eco-green/20">
             <GraduationCap className="w-6 h-6 text-white" />
           </div>
           <div>
-            <h1 className="text-2xl font-bold text-foreground">Quản lý Lớp & Học sinh</h1>
-            <p className="text-sm text-muted-foreground">Khối · Lớp · Tài khoản</p>
+            <h1 className="text-3xl font-bold text-foreground tracking-tight">Quản lý Lớp & Học sinh</h1>
+            <p className="text-base text-muted-foreground font-medium">Khối · Lớp · Tài khoản</p>
           </div>
         </div>
 
@@ -126,7 +126,7 @@ export default function SchoolClasses() {
         <div className="flex items-center gap-2.5">
           {/* Primary CTA: Add Student */}
           <Button
-            className="h-9 bg-gradient-to-r from-eco-blue to-eco-green hover:opacity-90 shadow-md shadow-eco-blue/15 text-white font-semibold gap-1.5"
+            className="h-9 bg-eco-green hover:bg-eco-green/90 shadow-md shadow-eco-green/15 text-white font-semibold gap-1.5"
             onClick={() => {
               setStudentForm(initialStudentForm);
               setIsAddStudentDialogOpen(true);
@@ -164,7 +164,7 @@ export default function SchoolClasses() {
               <Mail className="w-4 h-4" />
               Tài khoản & Email
               {allStudents.length > 0 && (
-                <Badge variant="secondary" className="ml-0.5 h-5 min-w-5 px-1.5 text-[10px] bg-eco-blue/10 text-eco-blue font-semibold">
+                <Badge variant="secondary" className="ml-0.5 h-5 min-w-5 px-1.5 text-xs bg-eco-green/10 text-eco-green font-bold">
                   {allStudents.length}
                 </Badge>
               )}
@@ -199,7 +199,7 @@ export default function SchoolClasses() {
                   </p>
                   <div className="flex flex-wrap justify-center gap-2.5">
                     <Button
-                      className="bg-gradient-to-r from-eco-blue to-eco-green hover:opacity-90 shadow-md"
+                      className="bg-eco-green hover:bg-eco-green/90 shadow-md text-white font-semibold"
                       onClick={() => setIsBulkImportOpen(true)}
                     >
                       Import File
