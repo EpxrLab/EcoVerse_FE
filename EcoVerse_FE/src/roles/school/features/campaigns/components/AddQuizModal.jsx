@@ -28,7 +28,8 @@ function AIGeneratePanel({ campaignId, roundId, onGenerated }) {
   const [isGenerating, setIsGenerating] = useState(false);
   const [isConfirming, setIsConfirming] = useState(false);
   const [isUploading, setIsUploading] = useState(false);
-  const [generatedData, setGeneratedData] = useState(null); // { aiGenerationLogId, quizPreview }
+  const [editableQuiz, setEditableQuiz] = useState(null);
+  const [isModified, setIsModified] = useState(false);
 
   React.useEffect(() => {
     fetchMyFiles();
@@ -78,13 +79,8 @@ function AIGeneratePanel({ campaignId, roundId, onGenerated }) {
   };
 
   const handleGenerate = async () => {
-    if (selectedFileIds.length === 0) {
-      toast.error('Vui lòng chọn ít nhất một tài liệu');
-      return;
-    }
-
     setIsGenerating(true);
-    setGeneratedData(null);
+    setEditableQuiz(null);
     try {
       const res = await aiQuizService.generateQuiz({
         campaignId,
@@ -96,9 +92,10 @@ function AIGeneratePanel({ campaignId, roundId, onGenerated }) {
         fileIds: selectedFileIds
       });
 
-      if (res.data?.data) {
-        setGeneratedData(res.data.data);
-        toast.success('Tạo quiz thành công! Vui lòng xem trước.');
+      if (res.data?.data?.quizPreview) {
+        setEditableQuiz(res.data.data.quizPreview);
+        setIsModified(false);
+        toast.success('Tạo quiz thành công! Bạn có thể chỉnh sửa trước khi lưu.');
       }
     } catch (error) {
       const errorMsg = error.response?.data?.message || 'Tạo quiz thất bại';
@@ -110,15 +107,23 @@ function AIGeneratePanel({ campaignId, roundId, onGenerated }) {
   };
 
   const handleConfirm = async () => {
-    if (!generatedData) return;
-
+    if (!editableQuiz) return;
+ 
     setIsConfirming(true);
     try {
       const res = await aiQuizService.confirmQuiz({
-        aiGenerationLogId: generatedData.aiGenerationLogId,
-        questions: generatedData.quizPreview.questions.map(q => ({
+        title: editableQuiz.title,
+        description: editableQuiz.description,
+        difficulty: editableQuiz.difficulty,
+        targetGrade: editableQuiz.targetGrade,
+        coinOnPass: editableQuiz.coinsOnPass,
+        timePerQuestion: editableQuiz.timePerQuestion,
+        passScorePercentage: editableQuiz.passScorePercentage,
+        createdBy: isModified ? 'USER' : 'AI',
+        source: 'AI_GENERATED',
+        questions: editableQuiz.questions.map(q => ({
           questionOrder: q.questionOrder,
-          questionType: q.questionType,
+          questionType: q.questionType || "MULTIPLE_CHOICE",
           questionText: q.questionText,
           answers: q.answers.map(a => ({
             answerText: a.answerText,
@@ -126,11 +131,11 @@ function AIGeneratePanel({ campaignId, roundId, onGenerated }) {
           }))
         }))
       });
-
+ 
       if (res.data?.data) {
         toast.success('Đã lưu quiz vào hệ thống');
-        onGenerated(res.data.data); // This passes the confirmed quiz back
-        setGeneratedData(null);
+        onGenerated(res.data.data);
+        setEditableQuiz(null);
       }
     } catch (error) {
       toast.error('Lưu quiz thất bại');
@@ -140,62 +145,200 @@ function AIGeneratePanel({ campaignId, roundId, onGenerated }) {
     }
   };
 
-  if (generatedData) {
-    const quiz = generatedData.quizPreview;
+  if (editableQuiz) {
+    const quiz = editableQuiz;
     return (
-      <div className="space-y-4 animate-in fade-in slide-in-from-bottom-2 duration-300">
+      <div className="space-y-6 animate-in fade-in slide-in-from-bottom-2 duration-300">
         <div className="flex items-center justify-between pb-2 border-b">
           <div className="flex items-center gap-2">
-            <Sparkles className="w-5 h-5 text-purple-500" />
-            <h3 className="font-bold text-lg">Xem trước Quiz</h3>
+            <Sparkles className="w-5 h-5 text-eco-green" />
+            <h3 className="font-bold text-lg">Chỉnh sửa Quiz AI</h3>
           </div>
-          <Button variant="ghost" size="sm" onClick={() => setGeneratedData(null)}>
+          <Button variant="ghost" size="sm" onClick={() => setEditableQuiz(null)}>
             <RotateCcw className="w-4 h-4 mr-2" />
             Tạo lại
           </Button>
         </div>
 
-        <div className="bg-purple-50/50 rounded-2xl p-4 border border-purple-100 space-y-3">
-          <div>
-            <h4 className="font-bold text-purple-900">{quiz.title}</h4>
-            <p className="text-sm text-purple-700">{quiz.description}</p>
+        {/* Editable Metadata */}
+        <div className="bg-eco-green/5 rounded-2xl p-4 border border-eco-green/10 space-y-4">
+          <div className="grid grid-cols-1 gap-3">
+            <div className="space-y-1.5">
+              <Label className="text-[11px] font-bold text-eco-green uppercase">Tiêu đề Quiz</Label>
+              <Input 
+                value={quiz.title} 
+                onChange={(e) => {
+                  setEditableQuiz({...quiz, title: e.target.value});
+                  setIsModified(true);
+                }}
+                className="bg-white border-eco-green/10 focus-visible:ring-eco-green font-bold"
+              />
+            </div>
+            <div className="space-y-1.5">
+              <Label className="text-[11px] font-bold text-eco-green uppercase">Mô tả</Label>
+              <Input 
+                value={quiz.description || ''} 
+                onChange={(e) => {
+                  setEditableQuiz({...quiz, description: e.target.value});
+                  setIsModified(true);
+                }}
+                className="bg-white border-eco-green/10 focus-visible:ring-eco-green text-sm"
+                placeholder="Nhập mô tả..."
+              />
+            </div>
           </div>
           
-          <div className="flex flex-wrap gap-2">
-            <Badge variant="outline" className="bg-white">Lớp {quiz.targetGrade}</Badge>
-            <Badge variant="outline" className="bg-white">{quiz.questions.length} câu hỏi</Badge>
-            <Badge variant="outline" className="bg-white">{quiz.timePerQuestion}s / câu</Badge>
-            <Badge variant="outline" className="bg-white">{quiz.coinsOnPass} điểm thưởng</Badge>
-            <Badge className="bg-eco-green/10 text-eco-green border-0 uppercase text-[10px]">{quiz.difficulty}</Badge>
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+            <div className="space-y-1">
+              <Label className="text-[10px] font-bold text-gray-500 uppercase">Độ khó</Label>
+              <Select 
+                value={quiz.difficulty} 
+                onValueChange={(v) => {
+                  setEditableQuiz({...quiz, difficulty: v});
+                  setIsModified(true);
+                }}
+              >
+                <SelectTrigger className="h-8 text-xs bg-white border-eco-green/10">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="EASY">Dễ</SelectItem>
+                  <SelectItem value="MEDIUM">Trung bình</SelectItem>
+                  <SelectItem value="HARD">Khó</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="space-y-1">
+              <Label className="text-[10px] font-bold text-gray-500 uppercase">Lớp</Label>
+              <Select 
+                value={String(quiz.targetGrade)} 
+                onValueChange={(v) => {
+                  setEditableQuiz({...quiz, targetGrade: parseInt(v)});
+                  setIsModified(true);
+                }}
+              >
+                <SelectTrigger className="h-8 text-xs bg-white border-eco-green/10">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                   {[1,2,3,4,5].map(g => (
+                     <SelectItem key={g} value={String(g)}>Lớp {g}</SelectItem>
+                   ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="space-y-1">
+              <Label className="text-[10px] font-bold text-gray-500 uppercase">Điểm đạt (%)</Label>
+              <Input 
+                type="number"
+                value={quiz.passScorePercentage || 0} 
+                onChange={(e) => {
+                  setEditableQuiz({...quiz, passScorePercentage: parseInt(e.target.value)});
+                  setIsModified(true);
+                }}
+                className="h-8 text-xs bg-white border-eco-green/10"
+              />
+            </div>
+            <div className="space-y-1">
+              <Label className="text-[10px] font-bold text-gray-500 uppercase">Điểm thưởng</Label>
+              <Input 
+                type="number"
+                value={quiz.coinsOnPass || 0} 
+                onChange={(e) => {
+                  setEditableQuiz({...quiz, coinsOnPass: parseInt(e.target.value)});
+                  setIsModified(true);
+                }}
+                className="h-8 text-xs bg-white border-eco-green/10"
+              />
+            </div>
+          </div>
+
+          <div className="flex flex-wrap gap-2 pt-1 border-t border-eco-green/10 mt-2">
+            <Badge variant="outline" className="bg-white/50 text-[10px]">{quiz.questions.length} câu hỏi</Badge>
+            <Badge variant="outline" className="bg-white/50 text-[10px]">{quiz.timePerQuestion}s / câu</Badge>
+            {quiz.source && <Badge variant="secondary" className="text-[10px] opacity-70 border-0">{quiz.source}</Badge>}
+            {quiz.createdBy && <Badge variant="secondary" className="text-[10px] opacity-70 border-0">Bởi: {quiz.createdBy}</Badge>}
           </div>
         </div>
 
-        <div className="space-y-3">
-          <p className="text-sm font-semibold text-gray-700">Danh sách câu hỏi:</p>
+        <div className="space-y-4">
+          <p className="text-sm font-bold text-gray-700 flex items-center gap-2">
+            <Bot className="w-4 h-4 text-eco-green" />
+            Nội dung câu hỏi:
+          </p>
           {quiz.questions.map((q, idx) => (
-            <div key={`question-${idx}`} className="p-3 rounded-xl border bg-white space-y-2">
-              <p className="text-sm font-medium"><span className="text-purple-600 font-bold mr-2">#{idx + 1}</span>{q.questionText}</p>
-              <div className="grid grid-cols-2 gap-2">
-                {q.answers.map((a, aidx) => (
-                  <div key={`answer-${idx}-${aidx}`} className={cn(
-                    "text-xs p-2 rounded-lg border",
-                    a.correct ? "bg-eco-green/10 border-eco-green/30 text-eco-green-dark font-medium" : "bg-gray-50 text-gray-600"
-                  )}>
-                    {a.answerText}
-                    {a.correct && " ✓"}
+            <div key={`question-${idx}`} className="p-4 rounded-2xl border bg-white shadow-sm hover:shadow-md transition-all space-y-3 relative group">
+              <div className="flex items-start gap-3">
+                <span className="flex-shrink-0 w-6 h-6 rounded-full bg-eco-green/10 text-eco-green flex items-center justify-center text-xs font-bold">
+                  {idx + 1}
+                </span>
+                <div className="flex-1 space-y-2">
+                  <Input 
+                    value={q.questionText}
+                    onChange={(e) => {
+                      const newQs = [...quiz.questions];
+                      newQs[idx].questionText = e.target.value;
+                      setEditableQuiz({...quiz, questions: newQs});
+                      setIsModified(true);
+                    }}
+                    className="text-sm font-medium border-gray-100 focus:border-eco-green/20"
+                  />
+                  
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                    {q.answers.map((a, aidx) => (
+                      <div key={`answer-${idx}-${aidx}`} className={cn(
+                        "flex items-center gap-2 p-2 rounded-xl border text-xs",
+                        a.correct ? "bg-eco-green/5 border-eco-green/20" : "bg-gray-50/50 border-gray-100"
+                      )}>
+                        <Checkbox 
+                          checked={a.correct} 
+                          onCheckedChange={(checked) => {
+                             const newQs = [...quiz.questions];
+                             newQs[idx].answers = newQs[idx].answers.map((ans, i) => ({
+                               ...ans,
+                               correct: i === aidx ? !!checked : (checked ? false : ans.correct)
+                             }));
+                             setEditableQuiz({...quiz, questions: newQs});
+                             setIsModified(true);
+                          }}
+                        />
+                        <Input 
+                           value={a.answerText}
+                           onChange={(e) => {
+                             const newQs = [...quiz.questions];
+                             newQs[idx].answers[aidx].answerText = e.target.value;
+                             setEditableQuiz({...quiz, questions: newQs});
+                             setIsModified(true);
+                           }}
+                           className="h-7 border-0 bg-transparent focus-visible:ring-0 p-0 text-xs"
+                        />
+                      </div>
+                    ))}
                   </div>
-                ))}
+                </div>
+                <Button 
+                   variant="ghost" 
+                   size="icon" 
+                   className="h-8 w-8 text-gray-400 hover:text-destructive opacity-0 group-hover:opacity-100 transition-opacity"
+                   onClick={() => {
+                     const newQs = quiz.questions.filter((_, i) => i !== idx);
+                     setEditableQuiz({...quiz, questions: newQs});
+                     setIsModified(true);
+                   }}
+                >
+                  <X className="w-4 h-4" />
+                </Button>
               </div>
             </div>
           ))}
         </div>
 
-        <div className="pt-4 flex gap-3 sticky bottom-0 bg-background pb-2">
-          <Button variant="outline" className="flex-1" onClick={() => setGeneratedData(null)}>
-            Hủy & Chỉnh sửa
+        <div className="pt-6 flex gap-3 sticky bottom-0 bg-background/95 backdrop-blur-sm pb-2 border-t z-10">
+          <Button variant="outline" className="flex-1 rounded-xl h-11" onClick={() => setEditableQuiz(null)}>
+            Hủy & Tạo lại
           </Button>
           <Button 
-            className="flex-1 bg-purple-600 hover:bg-purple-700 text-white font-bold"
+            className="flex-2 bg-eco-green hover:bg-eco-green/90 text-white font-bold rounded-xl h-11 px-8 shadow-lg shadow-eco-green/10"
             onClick={handleConfirm}
             disabled={isConfirming}
           >
@@ -212,13 +355,13 @@ function AIGeneratePanel({ campaignId, roundId, onGenerated }) {
       {/* Left Column: Settings */}
       <div className="md:col-span-2 space-y-6 flex flex-col">
         <div className="space-y-4">
-          <div className="flex items-center gap-2.5 p-4 rounded-xl bg-gradient-to-r from-purple-50 to-violet-50 border border-purple-100">
-            <div className="w-10 h-10 rounded-xl bg-purple-100 flex items-center justify-center shrink-0">
-              <Bot className="w-6 h-6 text-purple-600" />
+          <div className="flex items-center gap-2.5 p-4 rounded-xl bg-gradient-to-r from-eco-green/5 to-emerald-50 border border-eco-green/10">
+            <div className="w-10 h-10 rounded-xl bg-eco-green/10 flex items-center justify-center shrink-0">
+              <Bot className="w-6 h-6 text-eco-green" />
             </div>
             <div>
-              <p className="font-bold text-purple-900 leading-none">Cấu hình AI</p>
-              <p className="text-[10px] text-purple-500 mt-1">Điều chỉnh thông số cho bộ câu hỏi</p>
+              <p className="font-bold text-eco-green-dark leading-none">Cấu hình AI</p>
+              <p className="text-[10px] text-eco-green mt-1">Điều chỉnh thông số cho bộ câu hỏi</p>
             </div>
           </div>
 
@@ -282,8 +425,8 @@ function AIGeneratePanel({ campaignId, roundId, onGenerated }) {
         <div className="mt-auto pt-4">
           <Button
             onClick={handleGenerate}
-            disabled={isGenerating || selectedFileIds.length === 0}
-            className="w-full h-11 rounded-xl bg-purple-600 hover:bg-purple-700 text-white font-bold shadow-lg shadow-purple-100"
+            disabled={isGenerating}
+            className="w-full h-11 rounded-xl bg-eco-green hover:bg-eco-green/90 text-white font-bold shadow-lg shadow-eco-green/10"
           >
             {isGenerating ? (
               <><Loader2 className="w-4 h-4 mr-2 animate-spin" />Đang soạn...</>
@@ -291,11 +434,6 @@ function AIGeneratePanel({ campaignId, roundId, onGenerated }) {
               <><Wand2 className="w-4 h-4 mr-2" />Tạo Quiz ngay</>
             )}
           </Button>
-          {selectedFileIds.length === 0 && (
-            <p className="text-[10px] text-destructive text-center mt-2 font-medium italic">
-              * Vui lòng chọn ít nhất 1 tài liệu ở bên phải
-            </p>
-          )}
         </div>
       </div>
 
@@ -303,13 +441,13 @@ function AIGeneratePanel({ campaignId, roundId, onGenerated }) {
       <div className="md:col-span-3 h-full border-l pl-6 space-y-4 flex flex-col min-h-0">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">
-            <BookOpen className="w-4 h-4 text-purple-600" />
+            <BookOpen className="w-4 h-4 text-eco-green" />
             <Label className="text-sm font-bold text-gray-700">Tài liệu tham khảo ({selectedFileIds.length})</Label>
           </div>
           <Button 
             variant="outline" 
             size="sm" 
-            className="h-8 text-[11px] border-purple-200 text-purple-600 hover:bg-purple-50"
+            className="h-8 text-[11px] border-eco-green/20 text-eco-green hover:bg-eco-green/5"
             onClick={() => document.getElementById('ai-file-upload').click()}
             disabled={isUploading}
           >
@@ -335,15 +473,15 @@ function AIGeneratePanel({ campaignId, roundId, onGenerated }) {
                   className={cn(
                     "group flex items-center gap-3 p-3 rounded-xl border-2 cursor-pointer transition-all",
                     selectedFileIds.includes(file.id) 
-                      ? "border-purple-400 bg-purple-50/50" 
+                      ? "border-eco-green/40 bg-eco-green/5" 
                       : "border-gray-50 hover:border-gray-200 bg-gray-50/30"
                   )}
                 >
                   <div className={cn(
                     "w-10 h-10 rounded-xl flex items-center justify-center transition-colors",
-                    selectedFileIds.includes(file.id) ? "bg-purple-100" : "bg-white border shadow-sm"
+                    selectedFileIds.includes(file.id) ? "bg-eco-green/20" : "bg-white border shadow-sm"
                   )}>
-                    <File className={cn("w-5 h-5", selectedFileIds.includes(file.id) ? "text-purple-600" : "text-gray-400")} />
+                    <File className={cn("w-5 h-5", selectedFileIds.includes(file.id) ? "text-eco-green" : "text-gray-400")} />
                   </div>
                   <div className="flex-1 min-w-0">
                     <p className="text-xs font-bold truncate text-gray-700">
@@ -358,8 +496,8 @@ function AIGeneratePanel({ campaignId, roundId, onGenerated }) {
                   <div className={cn(
                     "w-5 h-5 rounded-full border-2 flex items-center justify-center transition-all",
                     selectedFileIds.includes(file.id) 
-                      ? "bg-purple-600 border-purple-600" 
-                      : "border-gray-200 group-hover:border-purple-300"
+                      ? "bg-eco-green border-eco-green" 
+                      : "border-gray-200 group-hover:border-eco-green/30"
                   )}>
                     {selectedFileIds.includes(file.id) && <Check className="w-3 h-3 text-white" />}
                   </div>
@@ -492,7 +630,7 @@ export function AddQuizModal({ isOpen, onClose, campaign, roundId, availableQuiz
               className={cn(
                 "flex items-center space-x-3 p-2.5 rounded-xl border-2 cursor-pointer transition-all",
                 selectedQuizIds.includes(quiz.id)
-                  ? "bg-eco-blue/5 border-eco-blue/50"
+                  ? "bg-eco-green/5 border-eco-green/50"
                   : "border-border hover:bg-muted/40"
               )}
             >
@@ -503,7 +641,7 @@ export function AddQuizModal({ isOpen, onClose, campaign, roundId, availableQuiz
               />
               <div className="flex-1 flex items-center justify-between gap-2">
                 <span className="font-medium text-sm flex items-center gap-1.5">
-                  {quiz.isAI && <Sparkles className="w-3 h-3 text-purple-500 shrink-0" />}
+                  {quiz.isAI && <Sparkles className="w-3 h-3 text-eco-green shrink-0" />}
                   {quiz.title}
                 </span>
                 <Badge variant="outline" className="shrink-0">{quiz.questions} câu</Badge>
@@ -523,8 +661,8 @@ export function AddQuizModal({ isOpen, onClose, campaign, roundId, availableQuiz
       )}>
         <DialogHeader className="shrink-0 pb-2">
           <div className="flex items-center gap-3">
-            <div className="w-9 h-9 rounded-xl bg-eco-blue/10 flex items-center justify-center">
-              <Brain className="w-5 h-5 text-eco-blue" />
+            <div className="w-9 h-9 rounded-xl bg-eco-green/10 flex items-center justify-center">
+              <Brain className="w-5 h-5 text-eco-green" />
             </div>
             <div>
               <DialogTitle className="text-xl font-bold">
@@ -548,7 +686,7 @@ export function AddQuizModal({ isOpen, onClose, campaign, roundId, availableQuiz
               <BookOpen className="w-4 h-4" />
               Thư viện
               {selectedQuizIds.length > 0 && (
-                <span className="ml-1 bg-eco-blue text-white text-[10px] rounded-full w-4 h-4 flex items-center justify-center">{selectedQuizIds.length}</span>
+                <span className="ml-1 bg-eco-green text-white text-[10px] rounded-full w-4 h-4 flex items-center justify-center">{selectedQuizIds.length}</span>
               )}
             </button>
             <button
@@ -558,10 +696,10 @@ export function AddQuizModal({ isOpen, onClose, campaign, roundId, availableQuiz
                 activeTab === 'ai' ? "bg-white shadow-sm text-foreground" : "text-muted-foreground hover:text-foreground"
               )}
             >
-              <Sparkles className="w-4 h-4 text-purple-500" />
+              <Sparkles className="w-4 h-4 text-eco-green" />
               Tạo bằng AI
               {aiGeneratedQuizzes.length > 0 && (
-                <span className="ml-1 bg-purple-500 text-white text-[10px] rounded-full w-4 h-4 flex items-center justify-center">{aiGeneratedQuizzes.length}</span>
+                <span className="ml-1 bg-eco-green text-white text-[10px] rounded-full w-4 h-4 flex items-center justify-center">{aiGeneratedQuizzes.length}</span>
               )}
             </button>
           </div>
@@ -633,7 +771,7 @@ export function AddQuizModal({ isOpen, onClose, campaign, roundId, availableQuiz
         <DialogFooter className="border-t pt-4 shrink-0 mt-auto bg-background px-1">
           <div className="mr-auto">
             <p className="text-xs text-muted-foreground">
-              Đã chọn <span className="font-bold text-eco-blue">{selectedQuizIds.length}</span> bộ Quiz
+              Đã chọn <span className="font-bold text-eco-green">{selectedQuizIds.length}</span> bộ Quiz
               {!isValid && (
                 <span className="flex items-center text-destructive mt-0.5 font-medium">
                   (Cần chọn đủ 3 độ khó)
@@ -645,7 +783,7 @@ export function AddQuizModal({ isOpen, onClose, campaign, roundId, availableQuiz
           <Button 
             onClick={handleSubmit} 
             disabled={(!isValid && !roundId) || isSubmitting} 
-            className="bg-eco-blue hover:bg-eco-blue/90 text-white min-w-[120px] shadow-md shadow-eco-blue/10"
+            className="bg-eco-green hover:bg-eco-green/90 text-white min-w-[120px] shadow-md shadow-eco-green/10"
           >
             {isSubmitting ? (
               <Loader2 className="w-4 h-4 animate-spin" />

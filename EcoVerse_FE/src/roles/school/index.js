@@ -6,6 +6,7 @@ export { default as SchoolRewards } from './pages/schoolReward/SchoolRewards';
 export { default as SchoolSubscription } from './pages/schoolSubscription/SchoolSubscription';
 export { default as SchoolLeaderboardPage } from './pages/schoolLeaderboard/SchoolLeaderboardPage';
 export { default as SchoolCampaigns } from './pages/schoolCampaign/SchoolCampaigns';
+export { default as SchoolReports } from './pages/schoolReports/SchoolReports';
 export { default as SchoolProfile } from './pages/schoolProfile/schoolProfile';
 
 // Hooks

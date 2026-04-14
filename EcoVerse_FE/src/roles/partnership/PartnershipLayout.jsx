@@ -26,6 +26,7 @@ import {
   Flag,
   Trophy,
   CreditCard,
+  BarChart3
 } from "lucide-react";
 import {
   Avatar,
@@ -48,6 +49,7 @@ const menuItems = [
   { title: "Chiến dịch", url: "/partnership/campaigns", icon: Flag },
   { title: "Bảng xếp hạng", url: "/partnership/leaderboard", icon: Trophy },
   { title: "Quiz", url: "/partnership/quizzes", icon: FileQuestion },
+  { title: "Báo cáo", url: "/partnership/reports", icon: BarChart3 },
   { title: "Phần thưởng", url: "/partnership/rewards", icon: Gift },
   { title: "Gói đăng ký", url: "/partnership/subscription", icon: CreditCard },
 ];

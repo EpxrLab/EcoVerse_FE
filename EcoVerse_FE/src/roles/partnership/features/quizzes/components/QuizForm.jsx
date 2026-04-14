@@ -104,8 +104,8 @@ export function QuizForm({
     <Dialog open={isOpen} onOpenChange={onClose}>
       <DialogContent className="max-w-4xl h-[90vh] flex flex-col p-0 gap-0 overflow-hidden">
         <DialogHeader className="px-6 pt-6 pb-4 border-b shrink-0">
-          <DialogTitle className="flex items-center gap-2 text-xl font-bold text-eco-green-dark">
-            <Leaf className="w-5 h-5 text-eco-green" />
+          <DialogTitle className="flex items-center gap-2 text-xl font-bold text-eco-blue-dark">
+            <Leaf className="w-5 h-5 text-eco-blue" />
             {isEdit ? 'Cập nhật bài Quiz' : 'Tạo Quiz mới'}
           </DialogTitle>
         </DialogHeader>
@@ -113,9 +113,9 @@ export function QuizForm({
         <div className="flex-1 min-h-0 overflow-y-auto px-6 py-4">
 
         <Tabs defaultValue="info" className="space-y-4">
-          <TabsList className="grid w-full grid-cols-2 bg-muted/50 p-1 border-2 border-eco-green/15">
-            <TabsTrigger value="info" className="data-[state=active]:bg-card data-[state=active]:text-eco-green">Thông tin Quiz</TabsTrigger>
-            <TabsTrigger value="questions" className="data-[state=active]:bg-card data-[state=active]:text-eco-green">
+          <TabsList className="grid w-full grid-cols-2 bg-muted/50 p-1 border-2 border-eco-blue/15">
+            <TabsTrigger value="info" className="data-[state=active]:bg-card data-[state=active]:text-eco-blue">Thông tin Quiz</TabsTrigger>
+            <TabsTrigger value="questions" className="data-[state=active]:bg-card data-[state=active]:text-eco-blue">
               Câu hỏi ({questions.length})
             </TabsTrigger>
           </TabsList>
@@ -200,7 +200,7 @@ export function QuizForm({
                 value={String(formData.targetGrade)} 
                 onValueChange={(val) => onFormChange({ targetGrade: parseInt(val) })}
               >
-                <SelectTrigger id="targetGrade" className="border-2 focus:ring-eco-green">
+                <SelectTrigger id="targetGrade" className="border-2 focus:ring-eco-blue">
                   <SelectValue placeholder="Chọn lớp" />
                 </SelectTrigger>
                 <SelectContent>
@@ -214,9 +214,9 @@ export function QuizForm({
 
           {/* Tab 2: Questions */}
           <TabsContent value="questions" className="space-y-4">
-            <div className="p-4 border-2 rounded-xl space-y-3 bg-muted/30 border-eco-green/20">
+            <div className="p-4 border-2 rounded-xl space-y-3 bg-muted/30 border-eco-blue/20">
               <div className="flex items-center justify-between">
-                <h3 className="font-bold text-eco-green-dark">{editingQuestionId ? 'Sửa câu hỏi' : 'Thêm câu hỏi mới'}</h3>
+                <h3 className="font-bold text-eco-blue-dark">{editingQuestionId ? 'Sửa câu hỏi' : 'Thêm câu hỏi mới'}</h3>
                 {!editingQuestionId && (
                   <>
                     <input
@@ -336,7 +336,7 @@ export function QuizForm({
                     "w-full border-2 transition-all duration-300",
                     editingQuestionId 
                         ? "bg-eco-blue hover:bg-eco-blue-dark border-eco-blue text-white shadow-md" 
-                        : "border-dashed border-eco-green text-eco-green hover:bg-eco-green/10"
+                        : "border-dashed border-eco-blue text-eco-blue hover:bg-eco-blue/10"
                 )}
                 onClick={handleAddQuestion}
               >
@@ -357,7 +357,7 @@ export function QuizForm({
 
             {/* Questions List */}
             <div className="space-y-3">
-              <h3 className="font-bold text-eco-green-dark">Danh sách câu hỏi ({questions.length})</h3>
+              <h3 className="font-bold text-eco-blue-dark">Danh sách câu hỏi ({questions.length})</h3>
               {questions.length === 0 ? (
                 <div className="text-center text-muted-foreground py-10 border-2 border-dashed rounded-xl bg-muted/5">
                   <Plus className="w-8 h-8 mx-auto mb-2 opacity-20" />
@@ -368,7 +368,7 @@ export function QuizForm({
                   <div key={q.id} className="p-4 border-2 rounded-xl bg-card hover:border-eco-green/40 transition-colors shadow-sm">
                     <div className="flex items-start justify-between gap-2">
                       <div className="flex-1">
-                        <p className="font-bold text-eco-green-dark mb-1">Câu {idx + 1}: {q.question}</p>
+                        <p className="font-bold text-eco-blue-dark mb-1">Câu {idx + 1}: {q.question}</p>
                         <p className="text-[10px] text-muted-foreground font-semibold uppercase tracking-wider mb-2">
                              {q.type === 'multiple_choice' ? 'Trắc nghiệm' : 'Đúng/Sai'}
                         </p>
@@ -449,7 +449,7 @@ export function QuizForm({
             Hủy
           </Button>
           <Button
-            className="flex-1 bg-eco-orange hover:bg-eco-orange/90 text-primary-foreground font-bold shadow-lg"
+            className="flex-1 bg-eco-blue hover:bg-eco-blue/90 text-white font-bold shadow-lg"
             onClick={onSubmit}
             disabled={!isFormValid || isSubmitting}
           >

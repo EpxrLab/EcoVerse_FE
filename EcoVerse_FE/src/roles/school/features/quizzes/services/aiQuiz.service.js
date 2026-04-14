@@ -17,13 +17,11 @@ export const aiQuizService = {
     },
 
     /**
-     * Confirms and saves the generated quiz to the database
-     * @param {Object} data
-     * @param {string} data.aiGenerationLogId
-     * @param {Array} data.questions
+     * Confirms and saves the generated quiz using the manual creation API
+     * @param {Object} data - The manual quiz payload
      */
     confirmQuiz: (data) => {
-        return axios.post('/quiz/ai/confirm', data);
+        return axios.post('/quiz/manual', data);
     },
 
     /**

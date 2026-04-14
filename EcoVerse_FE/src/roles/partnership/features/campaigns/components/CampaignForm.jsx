@@ -266,7 +266,7 @@ export function CampaignForm({
               <div className="border-t pt-4 space-y-4">
                 <div>
                   <h3 className="text-sm font-semibold flex items-center gap-2">
-                    <Users className="w-4 h-4 text-eco-green" />
+                    <Users className="w-4 h-4 text-eco-blue" />
                     Mời học sinh & Chỉ tiêu
                   </h3>
                 </div>
@@ -416,7 +416,7 @@ export function CampaignForm({
               <div className="flex items-center justify-between">
                 <div>
                   <Label className="text-base font-bold flex items-center gap-2">
-                    <Zap className="w-5 h-5 text-eco-green" />
+                    <Zap className="w-5 h-5 text-eco-blue" />
                     Cấu trúc các vòng loại
                   </Label>
                 </div>
@@ -440,7 +440,7 @@ export function CampaignForm({
                     });
                   }}
                   variant="outline" 
-                  className="gap-2 border-eco-green text-eco-green hover:bg-eco-green hover:text-white"
+                  className="gap-2 border-eco-blue text-eco-blue hover:bg-eco-blue hover:text-white"
                 >
                   <Plus className="w-4 h-4" />
                   Thêm vòng
@@ -568,7 +568,7 @@ export function CampaignForm({
               <div className="flex items-center justify-between">
                 <div>
                   <Label className="text-base font-bold flex items-center gap-2">
-                    <Package className="w-5 h-5 text-eco-orange" />
+                    <Package className="w-5 h-5 text-eco-blue" />
                     Danh sách phần thưởng cho Top {formData.topRankingCount}
                   </Label>
                   <p className="text-sm text-muted-foreground mt-1">
@@ -695,7 +695,7 @@ export function CampaignForm({
               </Button>
             ) : (
               <Button
-                className="bg-eco-green hover:bg-eco-green/90 text-white font-semibold min-w-[150px]"
+                className="bg-eco-blue hover:bg-eco-blue/90 text-white font-semibold min-w-[150px]"
                 onClick={() => onSubmit(true)}
                 disabled={currentStep !== steps.length - 1}
               >

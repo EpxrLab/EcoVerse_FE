@@ -6,11 +6,11 @@ export function QuizStats({ stats }) {
   
   return (
     <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
-      <Card className="group border-2 border-eco-green/20 hover:border-eco-green/40 transition-all duration-300 hover:shadow-lg hover:-translate-y-0.5">
+      <Card className="group border-2 border-eco-blue/15 hover:border-eco-blue/30 transition-all duration-300 hover:shadow-lg hover:-translate-y-0.5">
         <CardContent className="p-5">
           <div className="flex items-center gap-4">
-            <div className="w-12 h-12 rounded-xl bg-eco-green/10 flex items-center justify-center group-hover:scale-110 transition-transform">
-              <FileQuestion className="w-6 h-6 text-eco-green" />
+            <div className="w-12 h-12 rounded-xl bg-eco-blue/10 flex items-center justify-center group-hover:scale-110 transition-transform">
+              <FileQuestion className="w-6 h-6 text-eco-blue" />
             </div>
             <div>
               <p className="text-3xl font-bold text-foreground">{stats.totalQuizzes || 0}</p>
@@ -34,11 +34,11 @@ export function QuizStats({ stats }) {
         </CardContent>
       </Card>
 
-      <Card className="group border-2 border-eco-leaf/20 hover:border-eco-leaf/40 transition-all duration-300 hover:shadow-lg hover:-translate-y-0.5">
+      <Card className="group border-2 border-purple-100 hover:border-purple-200 transition-all duration-300 hover:shadow-lg hover:-translate-y-0.5">
         <CardContent className="p-5">
           <div className="flex items-center gap-4">
-            <div className="w-12 h-12 rounded-xl bg-eco-leaf/10 flex items-center justify-center group-hover:scale-110 transition-transform">
-              <TrendingUp className="w-6 h-6 text-eco-leaf" />
+            <div className="w-12 h-12 rounded-xl bg-purple-50 flex items-center justify-center group-hover:scale-110 transition-transform">
+              <TrendingUp className="w-6 h-6 text-purple-600" />
             </div>
             <div>
               <p className="text-3xl font-bold text-foreground">{stats.avgScore || 0}%</p>

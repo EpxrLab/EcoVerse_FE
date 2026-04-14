@@ -1,23 +1,32 @@
-import {
-  weeklyActivityData,
-  classPerformanceData,
-  topStudentsData,
-  recentRewardsData,
-  dashboardStats,
-  subscriptionInfo,
-  leaderboardStudentsData,
-  leaderboardClassesData
-} from '../data/dashboard.data';
+import { useState, useEffect } from 'react';
+import { reportService } from '../services/report.service';
 
-export function useDashboard() {
+export function useDashboard(period = 'THIS_MONTH') {
+  const [data, setData] = useState(null);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState(null);
+
+  const fetchDashboardData = async () => {
+    setIsLoading(true);
+    try {
+      const response = await reportService.getSchoolSummary({ period });
+      setData(response.data.data);
+    } catch (err) {
+      console.error('Failed to fetch dashboard data:', err);
+      setError(err);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchDashboardData();
+  }, [period]);
+
   return {
-    weeklyActivity: weeklyActivityData,
-    classPerformance: classPerformanceData,
-    topStudents: topStudentsData,
-    recentRewards: recentRewardsData,
-    stats: dashboardStats,
-    subscription: subscriptionInfo,
-    leaderboardStudents: leaderboardStudentsData,
-    leaderboardClasses: leaderboardClassesData,
+    data,
+    isLoading,
+    error,
+    refresh: fetchDashboardData
   };
 }

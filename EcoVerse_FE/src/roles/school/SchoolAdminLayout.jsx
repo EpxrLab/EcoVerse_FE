@@ -33,22 +33,24 @@ import {
   AvatarImage,
 } from "@/shared/components/ui/avatar";
 import { cn } from "@/shared/lib/utils";
+import { reportService } from "./services";
+import { logoutFunction } from "../../features/auth/services";
+import toast from "react-hot-toast";
+import { useProfile } from "./hooks";
 import { NotificationDropdown } from "@/shared/components/NotificationDropdown";
 import {
   Tooltip,
   TooltipContent,
   TooltipTrigger,
 } from "@/shared/components/ui/tooltip";
-import { logoutFunction } from "../../features/auth/services";
-import toast from "react-hot-toast";
-import { useProfile } from "./hooks";
-import { studentService } from "./services";
 import { useState, useEffect } from "react";
+import { BarChart3 } from "lucide-react";
 
 const menuItems = [
   { title: "Tổng quan", url: "/school", icon: LayoutDashboard },
-  { title: "Lớp & Học sinh", url: "/school/classes", icon: GraduationCap },
   { title: "Chiến dịch", url: "/school/campaigns", icon: Flag },
+  { title: "Báo cáo", url: "/school/reports", icon: BarChart3 },
+  { title: "Lớp & Học sinh", url: "/school/classes", icon: GraduationCap },
   { title: "Xếp hạng", url: "/school/leaderboard", icon: Trophy },
   { title: "Quiz", url: "/school/quizzes", icon: FileQuestion },
   { title: "Phần thưởng", url: "/school/rewards", icon: Gift },
@@ -65,11 +67,9 @@ function SchoolAdminSidebar({ schoolInfo, isProfileLoading }) {
   useEffect(() => {
     const fetchStats = async () => {
       try {
-        const response = await studentService.getStudents({ pageSize: 1 });
-        if (response?.data?.data?.totalElements !== undefined) {
-          setTotalStudents(response.data.data.totalElements);
-        } else if (response?.data?.totalElements !== undefined) {
-          setTotalStudents(response.data.totalElements);
+        const response = await reportService.getSchoolSummary({ period: 'THIS_MONTH' });
+        if (response?.data?.data?.totalStudents !== undefined) {
+          setTotalStudents(response.data.data.totalStudents);
         }
       } catch (error) {
         console.error("Error fetching student stats:", error);

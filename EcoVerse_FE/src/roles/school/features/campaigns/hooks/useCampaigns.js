@@ -120,9 +120,9 @@ export function useCampaigns() {
       invitation_deadline: toLocalISO(inv.invitationDeadline),
       registration_date: toLocalISO(inv.registrationDate),
       registration_deadline: toLocalISO(inv.registrationDeadline),
-      status: inv.status === 'APPROVED' ? mapCampaignStatus(inv.campaignCampaignStatus) : 'invitation_pending',
+      status: inv.status === 'APPROVED' ? mapCampaignStatus(inv.campaignPartnershipStatus) : 'invitation_pending',
       invitation_status: inv.status,
-      campaignCampaignStatus: inv.campaignCampaignStatus, // Pass raw status for logic checks
+      campaignPartnershipStatus: inv.campaignPartnershipStatus,
       origin: 'partnership',
       partnership_name: inv.partnershipName || 'Đối tác chưa xác định',
       student_limit: inv.maxStudentsPerSchool || 0,
@@ -482,7 +482,7 @@ export function useCampaigns() {
         code: data.campaignCode || data.code,
         description: data.description,
         status: origin === 'partnership'
-          ? (data.campaignCampaignStatus ? mapCampaignStatus(data.campaignCampaignStatus) : (data.status?.toLowerCase() || 'invitation_pending'))
+          ? (data.campaignPartnershipStatus ? mapCampaignStatus(data.campaignPartnershipStatus) : (data.status?.toLowerCase() || 'invitation_pending'))
           : (data.status?.toLowerCase() || 'draft'),
         start_date: data.startDate || data.start_date,
         end_date: data.endDate || data.end_date,
@@ -500,7 +500,7 @@ export function useCampaigns() {
         students_enrolled: data.studentsEnrolled || data.students_enrolled || 0,
         invitation_sent_at: data.invitationSentAt,
         participation_confirmed_at: data.participationConfirmedAt,
-        campaignCampaignStatus: data.campaignCampaignStatus,
+        campaignPartnershipStatus: data.campaignPartnershipStatus,
         // Map rounds
         rounds: data.rounds?.map(r => ({
           id: r.id,
