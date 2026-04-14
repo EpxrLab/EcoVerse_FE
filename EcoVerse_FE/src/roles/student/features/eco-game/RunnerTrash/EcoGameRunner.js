@@ -108,8 +108,13 @@ export default class EcoGameRunner {
       "/assets/rock.glb",
       (gltf) => {
         this.rockModel = gltf.scene;
-        // Pre-normalize the rock model for the runner path scale
-        this.rockModel.scale.setScalar(0.25);
+        // Optimization: Pre-calculate normalization for obstacles
+        const box = new THREE.Box3().setFromObject(this.rockModel);
+        const size = box.getSize(new THREE.Vector3());
+        const maxDim = Math.max(size.x, size.y, size.z);
+        if (maxDim > 0) {
+          this.rockModel.scale.setScalar(1.5 / maxDim); // Target standard width
+        }
         this.rockModel.traverse((child) => {
           if (child.isMesh) {
             child.castShadow = true;
@@ -543,6 +548,7 @@ export default class EcoGameRunner {
           color: 0x2196f3,
           imageUrl: apiItem.imageUrl || apiItem.imagePresignedUrl,
           preloadedModel: apiItem.imagePresignedUrl,
+          funFact: apiItem.funFact, // Captured for result display
         },
         wasteItemId: apiItem.wasteItemId,
         wasteCategory: apiItem.wasteCategory,
@@ -689,20 +695,18 @@ export default class EcoGameRunner {
     let mesh;
     if (this.rockModel) {
       mesh = this.rockModel.clone(true);
+      
       // Randomize rotation for variety
       mesh.rotation.y = Math.random() * Math.PI * 2;
-      mesh.rotation.x = (Math.random() - 0.5) * 0.2;
       
-      // Slight scale variation (0.8x to 1.2x of the base 0.25 scale)
-      const scaleVar = 0.8 + Math.random() * 0.4;
+      // Scale variation (0.8x to 1.1x of the already normalized base)
+      const scaleVar = 0.8 + Math.random() * 0.3;
       mesh.scale.multiplyScalar(scaleVar);
 
-      // Positioning - rocks sit on the ground (y=0 in their local space usually)
-      // but we need them slightly raised or lowered based on their pivot.
-      // 0.2 seems like a safe bet for the rock model pivot.
-      mesh.position.set(LANES[lane], 0.2, -60);
+      // Positioning - sit on ground
+      mesh.position.set(LANES[lane], 0.0, -60);
     } else {
-      // Fallback to primitive if model not loaded
+      // Fallback to primitive
       const geo = new THREE.BoxGeometry(obsType.w, obsType.h, obsType.d);
       const mat = new THREE.MeshStandardMaterial({
         color: obsType.color,
@@ -716,7 +720,8 @@ export default class EcoGameRunner {
     mesh.userData = { 
       type: "obstacle", 
       obsType,
-      collisionTarget: mesh // For Box3 calculation
+      lane: lane, // Critical for lane-aware collision
+      collisionTarget: mesh 
     };
     
     this.scene.add(mesh);
@@ -825,9 +830,19 @@ export default class EcoGameRunner {
     }
 
     // Check obstacle collisions (only if not jumping high enough)
-    if (!this.isJumping || this.player.position.y < 1.2) {
+    if (!this.isJumping || this.player.position.y < 1.0) {
       for (const obstacle of this.obstacles) {
+        // PERFORMANCE & BUG FIX: Only check items close to player
+        if (obstacle.position.z < -5) continue;
+
+        // LANE-AWARE COLLISION: Only collide if in the same lane
+        // This stops rocks in adjacent lanes from ending the game.
+        if (obstacle.userData.lane !== this.currentLane) continue;
+
         const obsBox = new THREE.Box3().setFromObject(obstacle);
+        // Shrink obstacle box for more forgiving gameplay
+        obsBox.expandByScalar(-0.15);
+
         if (playerBox.intersectsBox(obsBox)) {
           this._handleGameOver();
           return;

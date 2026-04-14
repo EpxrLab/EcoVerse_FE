@@ -342,45 +342,44 @@ export default function StudentQuiz() {
               <div className="absolute top-0 right-0 w-72 h-72 bg-gradient-to-br from-blue-300/20 to-transparent rounded-full blur-3xl pointer-events-none" />
               <div className="absolute bottom-0 left-0 w-56 h-56 bg-gradient-to-tr from-purple-400/15 to-transparent rounded-full blur-3xl pointer-events-none" />
 
+              {/* Title */}
               <div className="relative flex flex-col sm:flex-row items-start sm:items-center justify-between gap-6">
-                {/* Title */}
                 <div className="flex-1">
                   <div className="flex items-center gap-3 mb-2">
-                    <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-blue-500 to-purple-500 flex items-center justify-center shadow-lg">
+                    <div className="w-12 h-12 rounded-2xl bg-gradient-mint-eco flex items-center justify-center shadow-lg">
                       <BookOpen className="w-6 h-6 text-white" />
                     </div>
                     <div>
-                      <h1 className="text-3xl font-extrabold text-gray-800 leading-none">
+                      <h1 className="text-3xl font-black text-foreground leading-none">
                         Làm Quiz
                       </h1>
                       {campaign?.campaignName && (
-                        <p className="text-blue-600 font-medium text-sm mt-1">
+                        <p className="text-primary font-bold text-sm mt-1 uppercase tracking-wider">
                           {campaign.campaignName}
                         </p>
                       )}
                     </div>
                   </div>
-                  <p className="text-gray-500 text-base max-w-md">
-                    Trả lời câu hỏi để kiểm tra kiến thức và nhận xu bảo vệ môi
-                    trường.
+                  <p className="text-muted-foreground text-base max-w-md font-medium">
+                    Thử thách kiến thức để tích lũy xu bảo vệ hành tinh xanh của chúng ta.
                   </p>
                 </div>
 
                 {/* Stats */}
                 <div className="flex gap-4 flex-wrap">
                   <Card
-                    className="border-2 border-blue-200 rounded-2xl shadow-sm"
+                    className="border-2 border-primary/20 rounded-2xl shadow-sm bg-primary/5"
                     bodyStyle={{ padding: "16px 20px" }}
                   >
                     <div className="flex items-center gap-3">
-                      <div className="w-11 h-11 rounded-xl bg-blue-100 flex items-center justify-center">
-                        <CheckCircle className="w-5 h-5 text-blue-500" />
+                      <div className="w-11 h-11 rounded-xl bg-primary/10 flex items-center justify-center">
+                        <CheckCircle className="w-5 h-5 text-primary" />
                       </div>
                       <div>
-                        <p className="text-xs text-gray-400">Hoàn thành vòng</p>
-                        <p className="text-2xl font-bold text-gray-800">
+                        <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider mb-0.5">Tiến độ vòng</p>
+                        <p className="text-2xl font-black text-foreground">
                           {completedQuizzes.length}
-                          <span className="text-gray-400 text-base font-normal">
+                          <span className="text-muted-foreground/40 text-base font-normal">
                             /{quizzes.length}
                           </span>
                         </p>
@@ -397,8 +396,8 @@ export default function StudentQuiz() {
                         <Coins className="w-5 h-5 text-white" />
                       </div>
                       <div>
-                        <p className="text-xs text-gray-400">Xu có thể nhận</p>
-                        <p className="text-2xl font-bold bg-gradient-to-r from-amber-600 to-orange-500 bg-clip-text text-transparent">
+                        <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider mb-0.5">Xu tích lũy</p>
+                        <p className="text-2xl font-black bg-gradient-to-r from-amber-600 to-orange-500 bg-clip-text text-transparent">
                           {totalCoinsEarned}
                         </p>
                       </div>
@@ -422,13 +421,13 @@ export default function StudentQuiz() {
                 transition={{ delay: 0.2 }}
               >
                 <Card
-                  className="border-2 border-blue-100 rounded-2xl shadow-sm hover:border-blue-200 transition-colors"
+                  className="border-2 border-primary/20 rounded-2xl shadow-sm hover:border-primary/40 transition-colors bg-white"
                   bodyStyle={{ padding: "20px" }}
                 >
                   <Space direction="vertical" className="w-full" size="middle">
-                    <div className="flex items-center gap-2 text-blue-600 font-bold px-1">
-                      <Layers className="w-5 h-5" />
-                      <span className="text-base">Chọn vòng thi đấu</span>
+                    <div className="flex items-center gap-2 text-primary font-black px-1 uppercase tracking-wider text-xs">
+                      <Layers className="w-4 h-4" />
+                      <span>Vòng thi đấu</span>
                     </div>
                     <Select
                       className="w-full h-12"
@@ -438,33 +437,7 @@ export default function StudentQuiz() {
                       size="large"
                       suffixIcon={<ChevronRight className="w-4 h-4" />}
                       dropdownClassName="rounded-xl overflow-hidden shadow-xl"
-                    >
-                      {campaign.rounds.map((round) => (
-                        <Select.Option key={round.id} value={round.id}>
-                          <div className="flex items-center justify-between py-1 px-1">
-                            <span className="font-semibold text-gray-700">
-                              {round.roundName || `Vòng ${round.roundNumber}`}
-                            </span>
-                            <Badge
-                              status={
-                                round.status === "ACTIVE"
-                                  ? "processing"
-                                  : "default"
-                              }
-                              text={
-                                <span className="text-[10px] text-gray-400">
-                                  {round.status}
-                                </span>
-                              }
-                            />
-                          </div>
-                        </Select.Option>
-                      ))}
-                    </Select>
-                    <div className="px-2 pt-1 text-xs text-gray-400 italic flex items-center gap-2">
-                      <div className="w-1.5 h-1.5 rounded-full bg-blue-400" />
-                      Mỗi vòng thi sẽ có bộ câu đố kiến thức riêng biệt.
-                    </div>
+                    />
                   </Space>
                 </Card>
               </motion.div>
@@ -483,29 +456,24 @@ export default function StudentQuiz() {
             transition={{ delay: 0.15 }}
           >
             <Card
-              className="border-2 border-gray-100 rounded-2xl shadow-sm h-full"
+              className="border-2 border-border rounded-2xl shadow-sm h-full bg-white"
               bodyStyle={{ padding: "22px 24px" }}
             >
               <div className="flex items-center gap-6 flex-wrap h-full">
-                <div className="flex items-center gap-2 pr-2 border-r border-gray-100">
-                  <Statistic
-                    title={
-                      <span className="text-xs uppercase tracking-wider font-bold text-gray-400">
-                        Độ khó
-                      </span>
-                    }
-                    value=" "
-                  />
+                <div className="flex items-center gap-2 pr-6 border-r border-border">
+                  <span className="text-[10px] uppercase font-black text-muted-foreground tracking-widest">
+                    Lọc theo độ khó
+                  </span>
                 </div>
                 <div className="flex gap-2 flex-wrap">
                   {FILTER_OPTIONS.map(({ key, label, activeClass }) => (
                     <button
                       key={key}
                       onClick={() => setSelectedDifficulty(key)}
-                      className={`px-5 py-2 text-sm font-bold rounded-xl border-2 transition-all duration-300 ${
+                      className={`px-6 py-2.5 text-xs font-black rounded-xl border-2 transition-all duration-300 uppercase tracking-wider ${
                         selectedDifficulty === key
-                          ? `${activeClass} shadow-lg scale-105`
-                          : "bg-white text-gray-500 border-gray-100 hover:border-gray-300"
+                          ? key === "all" ? "bg-primary text-white border-primary shadow-lg shadow-primary/20 scale-105" : `${activeClass} shadow-lg scale-105`
+                          : "bg-white text-muted-foreground border-border hover:border-primary/30"
                       }`}
                     >
                       {label}

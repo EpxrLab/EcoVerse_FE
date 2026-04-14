@@ -214,42 +214,45 @@ export default function StudentLeaderboard() {
         transition={{ duration: 0.42 }}
       >
         <Card
-          className="border-2 shadow-lg overflow-hidden rounded-3xl"
+          className="border-0 shadow-lg overflow-hidden rounded-3xl"
           bodyStyle={{ padding: 0 }}
         >
-          <div className="relative bg-gradient-to-br from-amber-50 via-orange-50 to-green-50 p-7">
-            <div className="absolute top-0 right-0 w-64 h-64 bg-gradient-to-br from-amber-200/25 to-transparent rounded-full blur-3xl pointer-events-none" />
-            <div className="relative flex flex-col sm:flex-row items-start sm:items-center justify-between gap-5">
+          <div className="relative bg-gradient-mint-eco p-8 text-white">
+            <div className="absolute top-0 right-0 w-64 h-64 bg-white/10 rounded-full blur-3xl pointer-events-none" />
+            <div className="relative flex flex-col sm:flex-row items-start sm:items-center justify-between gap-6">
               <div>
-                <h1 className="text-3xl font-extrabold text-gray-800 flex items-center gap-3 mb-1">
-                  <div className="w-11 h-11 rounded-2xl bg-gradient-to-br from-amber-500 to-orange-500 flex items-center justify-center shadow-lg">
-                    <TrophyOutlined className="text-xl text-white" />
+                <h1 className="text-3xl font-black text-white flex items-center gap-4 mb-2">
+                  <div className="w-14 h-14 rounded-2xl bg-white/20 backdrop-blur-md border border-white/30 flex items-center justify-center shadow-xl">
+                    <TrophyOutlined className="text-2xl text-white" />
                   </div>
                   Bảng xếp hạng
                 </h1>
-                <p className="text-gray-500">
+                <p className="text-white/80 font-medium">
                   {campaign.campaignName ?? campaign.name}
                 </p>
-                <p className="text-xs text-gray-400 mt-1">
-                  {entries.length} người tham gia
-                </p>
+                <div className="flex items-center gap-2 mt-2">
+                  <span className="w-2 h-2 rounded-full bg-white animate-pulse" />
+                  <p className="text-xs text-white/60 font-bold uppercase tracking-widest">
+                    {entries.length} người tham gia
+                  </p>
+                </div>
               </div>
 
               {/* Xếp hạng của tôi */}
               {myEntry && (
                 <Card
-                  className="border-2 border-green-200 rounded-2xl bg-gradient-to-br from-green-50 to-blue-50 flex-shrink-0 shadow-sm"
-                  bodyStyle={{ padding: "16px 20px" }}
+                  className="border-0 rounded-2xl bg-white/10 backdrop-blur-md flex-shrink-0 shadow-2xl border-white/20"
+                  bodyStyle={{ padding: "20px" }}
                 >
-                  <p className="text-xs text-gray-400 mb-1.5 text-center font-medium">
+                  <p className="text-[10px] text-white/60 mb-2 text-center font-black uppercase tracking-widest">
                     Xếp hạng của bạn
                   </p>
-                  <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-amber-400 to-orange-500 flex items-center justify-center">
-                      <TrophyOutlined className="text-white text-lg" />
+                  <div className="flex items-center gap-4">
+                    <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-amber-400 to-orange-500 flex items-center justify-center shadow-lg border-2 border-white/30">
+                      <TrophyOutlined className="text-white text-xl" />
                     </div>
                     <div>
-                      <p className="text-2xl font-black text-gray-800 leading-none">
+                      <p className="text-3xl font-black text-white leading-none">
                         #{myEntry.rank}
                       </p>
                       <div className="flex items-center gap-1 mt-0.5">
@@ -334,26 +337,26 @@ export default function StudentLeaderboard() {
               return (
                 <motion.div key={entry.studentId} variants={row}>
                   <div
-                    className={`flex items-center gap-3 px-4 py-3 rounded-2xl border-2 transition-all
+                    className={`flex items-center gap-4 px-5 py-4 rounded-2xl border-2 transition-all duration-200
                     ${
                       isMe
-                        ? "border-green-300 bg-green-50/60 shadow-md"
+                        ? "border-primary bg-primary/5 shadow-lg shadow-primary/10"
                         : entry.rank <= 3
                           ? "border-amber-100 bg-amber-50/30 hover:shadow-sm"
-                          : "border-gray-100 bg-white hover:shadow-sm"
+                          : "border-border bg-white hover:border-primary/20 hover:shadow-sm"
                     }`}
                   >
                     {/* Rank */}
-                    <div className="w-10 flex-shrink-0 flex flex-col items-center">
+                    <div className="w-12 flex-shrink-0 flex flex-col items-center">
                       {entry.rank <= 3 ? (
                         <>
                           <RankIcon rank={entry.rank} />
-                          <span className="text-[11px] font-bold text-gray-500 mt-0.5">
+                          <span className="text-[10px] font-black text-muted-foreground mt-1 uppercase">
                             #{entry.rank}
                           </span>
                         </>
                       ) : (
-                        <span className="text-xl font-black text-gray-400">
+                        <span className="text-xl font-black text-muted-foreground/30">
                           #{entry.rank}
                         </span>
                       )}
@@ -361,8 +364,8 @@ export default function StudentLeaderboard() {
 
                     {/* Avatar */}
                     <div
-                      className={`w-11 h-11 rounded-full flex items-center justify-center font-black text-white text-lg flex-shrink-0
-                      shadow-sm bg-gradient-to-br ${avatarGrad}`}
+                      className={`w-12 h-12 rounded-full flex items-center justify-center font-black text-white text-xl flex-shrink-0
+                      shadow-inner bg-gradient-to-br ${avatarGrad}`}
                     >
                       {initial}
                     </div>
@@ -371,11 +374,11 @@ export default function StudentLeaderboard() {
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center gap-2">
                         <p
-                          className={`font-bold text-gray-800 truncate ${isMe ? "text-green-700" : ""}`}
+                          className={`font-black text-foreground truncate ${isMe ? "text-primary" : "text-sm"}`}
                         >
                           {entry.studentName}
                           {isMe && (
-                            <span className="ml-1.5 text-[11px] bg-green-500 text-white px-1.5 py-0.5 rounded-full font-bold">
+                            <span className="ml-2 text-[9px] bg-primary text-white px-2 py-0.5 rounded-full font-black uppercase tracking-widest">
                               Bạn
                             </span>
                           )}

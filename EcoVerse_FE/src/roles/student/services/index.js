@@ -178,6 +178,33 @@ const getAttemptHistory = async (attemptId) => {
   }
 };
 
+const getStudentReport = async (period) => {
+  try {
+    const res = await axios.get(`/report/student/summary?period=${period}`);
+    return res.data;
+  } catch (error) {
+    console.log(error);
+  }
+};
+
+const getStudentPerformance = async (period) => {
+  try {
+    const res = await axios.get(`/report/student/performance?period=${period}`);
+    return res.data;
+  } catch (error) {
+    console.log(error);
+  }
+};
+
+const getStudentCoinHistory = async (period) => {
+  try {
+    const res = await axios.get(`/report/student/coins?period=${period}`);
+    return res.data;
+  } catch (error) {
+    console.log(error);
+  }
+};
+
 export {
   getAuthenticatedStudentProfile,
   getAllRewards,
@@ -196,4 +223,7 @@ export {
   getMyRewardDeliveries,
   getQuizHistory,
   getAttemptHistory,
+  getStudentReport,
+  getStudentPerformance,
+  getStudentCoinHistory,
 };

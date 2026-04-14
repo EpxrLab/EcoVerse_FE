@@ -165,56 +165,56 @@ export default function StudentDashboardLayout() {
   // ─── Sidebar Content ───────────────────────────────────────────────────────
 
   const SidebarContent = () => (
-    <div className="flex flex-col h-full">
+    <div className="flex flex-col h-full bg-sidebar-background">
       {/* Campaign Header */}
-      <div className="p-4 border-b border-gray-100">
+      <div className="p-4 border-b border-border">
         <Button
           type="text"
           icon={<ArrowLeftOutlined />}
           onClick={() => navigate("/student")}
-          className="w-full justify-start mb-3 text-gray-600 hover:text-gray-800"
+          className="w-full justify-start mb-3 text-muted-foreground hover:text-primary transition-colors"
         >
           Đổi chiến dịch
         </Button>
         <div className="space-y-2">
-          <h3 className="font-bold text-sm text-gray-800 line-clamp-2">
+          <h3 className="font-bold text-sm text-foreground line-clamp-2">
             {campaign.name}
           </h3>
-          <span className="inline-block px-2 py-0.5 rounded-full text-xs font-semibold bg-blue-100 text-blue-600">
+          <span className="inline-block px-3 py-1 rounded-full text-xs font-bold bg-primary/10 text-primary border border-primary/20">
             {campaign.type === "school" ? "Trường học" : "Đối tác"}
           </span>
         </div>
       </div>
 
       {/* Student Info */}
-      <div className="p-4 border-b border-gray-100">
+      <div className="p-4 border-b border-border">
         <div className="flex items-center gap-3 mb-3">
-          <div className="text-4xl">{currentStudent?.imagePresignedUrl}</div>
+          <div className="text-4xl filter drop-shadow-sm">{currentStudent?.imagePresignedUrl}</div>
           <div className="flex-1 min-w-0">
-            <p className="font-semibold text-sm text-gray-800 truncate">
+            <p className="font-bold text-sm text-foreground truncate">
               {currentStudent?.fullName}
             </p>
-            <p className="text-xs text-gray-400">
+            <p className="text-xs text-muted-foreground">
               Lớp {currentStudent?.className} •{" "}
               {currentStudent?.school.schoolName}
             </p>
           </div>
         </div>
-        <div className="space-y-2">
-          <div className="flex items-center justify-between p-2 rounded-lg bg-amber-50">
+        <div className="space-y-3">
+          <div className="flex items-center justify-between p-3 rounded-xl bg-muted/30 border border-border/50">
             <div className="flex items-center gap-2">
               <CoinIcon />
               <span className="font-bold text-amber-600">
                 {currentStudent?.totalCoins}
               </span>
             </div>
-            <span className="text-xs text-gray-400">xu</span>
+            <span className="text-xs font-medium text-muted-foreground uppercase tracking-wider">xu</span>
           </div>
           <Button
             block
             icon={<GiftOutlined />}
             onClick={() => navigate("/student/rewards")}
-            className="rounded-xl bg-gradient-to-r from-amber-50 to-orange-50 border border-amber-200 text-amber-600 hover:border-amber-300"
+            className="rounded-xl bg-gradient-mint-eco text-white border-0 shadow-sm hover:opacity-90 transition-all font-semibold"
           >
             Đổi quà
           </Button>
@@ -223,9 +223,9 @@ export default function StudentDashboardLayout() {
 
       {/* Navigation Menu */}
       <div className="flex-1 overflow-y-auto">
-        <div className="px-3 py-2">
-          <p className="px-3 py-2 text-xs font-semibold text-gray-400 uppercase tracking-wider">
-            Menu
+        <div className="px-3 py-4">
+          <p className="px-4 py-2 text-[10px] font-bold text-muted-foreground uppercase tracking-[0.2em] opacity-60">
+            Menu Chính
           </p>
           <Menu
             mode="inline"
@@ -234,22 +234,21 @@ export default function StudentDashboardLayout() {
             items={menuItems.map((item) => ({
               key: item.key,
               icon: item.icon,
-              label: item.label,
+              label: <span className="font-medium">{item.label}</span>,
               disabled: item.disabled,
             }))}
             className="border-0"
-            style={{ background: "transparent" }}
           />
         </div>
       </div>
 
       {/* Logout */}
-      <div className="mt-auto p-4 border-t border-gray-100">
+      <div className="mt-auto p-4 border-t border-border">
         <Button
           type="text"
           icon={<LogoutOutlined />}
           onClick={handleLogout}
-          className="w-full justify-start text-gray-400 hover:text-gray-700"
+          className="w-full justify-start text-muted-foreground hover:text-destructive transition-colors"
         >
           Đăng xuất
         </Button>
@@ -260,7 +259,7 @@ export default function StudentDashboardLayout() {
   // ─── Render ────────────────────────────────────────────────────────────────
 
   return (
-    <Layout className="min-h-screen">
+    <Layout className="min-h-screen bg-background">
       {/* Desktop Sidebar */}
       <Sider
         width={280}
@@ -270,7 +269,7 @@ export default function StudentDashboardLayout() {
         breakpoint="lg"
         collapsedWidth={0}
         trigger={null}
-        className="hidden lg:block bg-white border-r border-gray-100"
+        className="hidden lg:block bg-card border-r border-border"
         style={{
           position: "fixed",
           left: 0,
@@ -300,7 +299,7 @@ export default function StudentDashboardLayout() {
       >
         {/* Top Bar */}
         <Header
-          className="sticky top-0 z-10 bg-white border-b border-gray-100 px-6 flex items-center gap-4"
+          className="sticky top-0 z-10 bg-card border-b border-border px-6 flex items-center gap-4"
           style={{ height: 64, lineHeight: "64px", padding: "0 24px" }}
         >
           <Button
@@ -314,7 +313,7 @@ export default function StudentDashboardLayout() {
         </Header>
 
         {/* Page Content */}
-        <Content className="p-6 bg-gradient-to-b from-white to-gray-50">
+        <Content className="p-6">
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
