@@ -2,7 +2,6 @@ import { useState, lazy, Suspense, useEffect } from "react";
 import {
   Card,
   Button,
-  Badge,
   Skeleton,
   Tag,
   Modal,
@@ -12,8 +11,6 @@ import {
 } from "antd";
 import {
   HomeOutlined,
-  TrophyOutlined,
-  AimOutlined,
   BookOutlined,
   RocketOutlined,
   CrownOutlined,
@@ -24,7 +21,6 @@ import {
   ManOutlined,
   WomanOutlined,
   EnvironmentOutlined,
-  UserOutlined,
   LockOutlined,
   KeyOutlined,
 } from "@ant-design/icons";
@@ -64,6 +60,14 @@ const ACTIVITY_COLORS = {
   quiz: { bg: "bg-blue-50", text: "text-blue-500" },
   game: { bg: "bg-purple-50", text: "text-purple-500" },
   reward: { bg: "bg-amber-50", text: "text-amber-500" },
+};
+ 
+const ACHIEVEMENT_IMAGES = {
+  MOST_GAMES_COMPLETED: "/image/MOST_COMPLETED.png",
+  BEST_ACCURACY_AND_TIME: "/image/BEST_ACCURACY_TIME.png",
+  HIGHEST_ACCURACY: "/image/HIGHEST_ACCURACY.png",
+  FASTEST_COMPLETION: "/image/FASTEST_COMPETION.png",
+  MOST_QUIZZES_PASSED: "/image/MOST_QUIZ_PASSED.png",
 };
 
 // ─── CoinIcon ────────────────────────────────────────────────────────────────
@@ -123,18 +127,37 @@ const AchievementCard = lazy(() =>
         transition={{ duration: 0.2 }}
       >
         <Card
-          className="border-2 border-green-200 rounded-2xl bg-gradient-to-br from-green-50 to-blue-50 hover:shadow-lg transition-shadow"
-          bodyStyle={{ padding: "16px", textAlign: "center" }}
+          className="border-2 border-green-200 rounded-2xl bg-gradient-to-br from-green-50 to-blue-50 hover:shadow-lg transition-shadow overflow-hidden"
+          bodyStyle={{ padding: "0px", textAlign: "center" }}
         >
-          <div className="space-y-2">
-            <div className="text-4xl">{achievement.icon}</div>
-            <h3 className="font-bold text-sm text-gray-800">
-              {achievement.name}
-            </h3>
-            <p className="text-xs text-gray-500">{achievement.description}</p>
-            <span className="inline-block px-2 py-0.5 rounded-full text-xs font-semibold bg-green-500 text-white">
-              {achievement.earned}
-            </span>
+          <div className="relative group">
+            {/* Image display based on criteriaType */}
+            <div className="h-44 w-full bg-white flex items-center justify-center p-0 overflow-hidden relative">
+              <div className="absolute inset-0 bg-gradient-to-b from-transparent to-black/5 z-10" />
+              <img 
+                src={ACHIEVEMENT_IMAGES[achievement.criteriaType] || "/image/MOST_COMPLETED.png"} 
+                alt={achievement.titleName}
+                onError={(e) => {
+                  e.target.onerror = null;
+                  e.target.src = "https://www.svgrepo.com/show/452030/avatar-default.svg";
+                }}
+                className="h-full w-full object-cover filter brightness-105 group-hover:scale-110 transition-all duration-500 transform"
+              />
+            </div>
+            
+            <div className="p-4 space-y-1">
+              <h3 className="font-bold text-sm text-gray-800 line-clamp-1">
+                {achievement.titleName}
+              </h3>
+              <p className="text-[10px] text-gray-500 font-medium">
+                {achievement.campaignName}
+              </p>
+              <div className="pt-2">
+                <span className="inline-block px-3 py-1 rounded-full text-[10px] font-bold bg-green-500 text-white shadow-sm shadow-green-100 italic">
+                   {formatDate(achievement.earnedAt?.split('T')[0])}
+                </span>
+              </div>
+            </div>
           </div>
         </Card>
       </motion.div>
@@ -370,9 +393,9 @@ export default function StudentProfile() {
               bodyStyle={{ padding: "24px" }}
             >
               <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
-                {student?.achievements?.map((achievement) => (
+                {student?.earnedTitles?.map((achievement) => (
                   <Suspense
-                    key={achievement.id}
+                    key={achievement.studentTitleId}
                     fallback={
                       <Card
                         className="rounded-2xl border-2"
@@ -390,6 +413,12 @@ export default function StudentProfile() {
                     <AchievementCard achievement={achievement} />
                   </Suspense>
                 ))}
+                {(!student?.earnedTitles || student.earnedTitles.length === 0) && (
+                   <div className="col-span-full py-12 text-center space-y-3">
+                     <div className="text-4xl opacity-20">🏆</div>
+                     <p className="text-gray-400 text-sm">Chưa có thành tựu nào đạt được</p>
+                   </div>
+                )}
               </div>
             </Card>
           </motion.div>

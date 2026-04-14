@@ -85,12 +85,12 @@ export function CampaignDetail({ isOpen, onClose, campaign, availableQuizzes = [
             
             <div className="bg-white rounded-xl p-4 border shadow-sm flex flex-col items-center justify-center text-center">
               <span className="text-sm font-medium text-muted-foreground mb-1">Tổng học sinh</span>
-              <span className="text-3xl font-bold text-eco-green">{approvedStudentsCount}</span>
+              <span className="text-3xl font-bold text-eco-blue">{approvedStudentsCount}</span>
             </div>
 
             <div className="bg-white rounded-xl p-4 border shadow-sm flex flex-col items-center justify-center text-center">
               <span className="text-sm font-medium text-muted-foreground mb-1">Tỷ lệ tham gia</span>
-               <span className="text-3xl font-bold text-eco-orange">
+               <span className="text-3xl font-bold text-eco-blue">
                 {participationRate}%
               </span>
             </div>
@@ -178,7 +178,7 @@ export function CampaignDetail({ isOpen, onClose, campaign, availableQuizzes = [
                             <span className="font-semibold">{round.roundName}</span>
                           </div>
                           {round.isFinalRound && (
-                            <Badge className="bg-eco-green text-white">Chung kết</Badge>
+                            <Badge className="bg-eco-blue text-white">Chung kết</Badge>
                           )}
                         </div>
 
@@ -285,7 +285,7 @@ export function CampaignDetail({ isOpen, onClose, campaign, availableQuizzes = [
                     </div>
                     <div className="flex justify-between items-center text-sm">
                       <span className="text-muted-foreground">Tổng chỉ tiêu HS:</span>
-                      <span className="font-bold text-eco-green">{campaign.totalStudentQuota || "N/A"}</span>
+                      <span className="font-bold text-eco-blue">{campaign.totalStudentQuota || "N/A"}</span>
                     </div>
                   </div>
                 </div>

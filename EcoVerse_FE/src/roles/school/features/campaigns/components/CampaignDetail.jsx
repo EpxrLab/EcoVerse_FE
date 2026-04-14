@@ -111,15 +111,11 @@ export function CampaignDetail({ campaign, isLoading }) {
             </div>
           )}
           <div className="flex items-center gap-2 mt-1">
-            {!isPendingInvitation ? (
-              <Badge className={statusConfig[campaign.status]?.color || 'bg-muted'} variant="secondary">
-                {statusConfig[campaign.status]?.label || campaign.status}
+            {isPendingInvitation && deadline && (
+              <Badge variant="outline" className="bg-red-50 text-red-700 border-red-200 gap-1">
+                <Clock className="w-3 h-3" />
+                Hạn đăng ký của trường: {safeDateFormat(deadline)}
               </Badge>
-            ) : deadline && (
-               <Badge variant="outline" className="bg-red-50 text-red-700 border-red-200 gap-1">
-                 <Clock className="w-3 h-3" />
-                  Hạn đăng ký của trường: {safeDateFormat(deadline)}
-               </Badge>
             )}
             <span className="text-sm text-muted-foreground ml-1">
               Thời gian: {safeDateFormat(campaign.start_date)} -{' '}

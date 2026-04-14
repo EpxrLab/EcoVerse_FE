@@ -117,6 +117,16 @@ const resetPassword = async (payload) => {
   }
 };
 
+const refreshTokenFunction = async (refreshToken) => {
+  try {
+    const res = await axios.post("/auth/refresh", { refreshToken });
+    return res.data;
+  } catch (error) {
+    console.log(error);
+    throw error;
+  }
+};
+
 export {
   getProvinces,
   getWards,
@@ -130,6 +140,7 @@ export {
   changePassword,
   sendOtpResetPass,
   resetPassword,
+  refreshTokenFunction,
 };
 
 // Re-export auth services as needed

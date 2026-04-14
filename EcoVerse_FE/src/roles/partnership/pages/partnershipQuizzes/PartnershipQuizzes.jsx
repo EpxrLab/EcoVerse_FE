@@ -219,6 +219,8 @@ export default function PartnershipQuizzes() {
         coinOnPass: quizForm.coinsOnPass,
         timePerQuestion: quizForm.timeLimit,
         passScorePercentage: quizForm.passingScore,
+        createdBy: 'USER',
+        source: 'MANUAL',
         questions: questions.map((q, index) => ({
           questionOrder: index + 1,
           questionType: q.type?.toUpperCase() === 'TRUE_FALSE' ? 'TRUE_FALSE' : 'MULTIPLE_CHOICE',
@@ -328,12 +330,12 @@ export default function PartnershipQuizzes() {
   };
 
   return (
-    <div className="space-y-6 animate-fade-in text-eco-green-dark">
+    <div className="space-y-6 animate-fade-in text-eco-blue-dark">
       {/* Header */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div className="flex items-center gap-4">
-          <div className="w-14 h-14 rounded-2xl bg-eco-orange flex items-center justify-center">
-            <FileQuestion className="w-7 h-7 text-primary-foreground" />
+          <div className="w-14 h-14 rounded-2xl bg-eco-blue flex items-center justify-center">
+            <FileQuestion className="w-7 h-7 text-white shadow-sm" />
           </div>
           <div>
             <h1 className="text-2xl font-bold text-foreground">Quản lý Quiz</h1>
@@ -344,7 +346,7 @@ export default function PartnershipQuizzes() {
         <div className="flex items-center gap-3">
           {/* Create Quiz Button & Dialog */}
           <Button 
-            className="bg-eco-orange hover:bg-eco-orange/90 text-primary-foreground font-semibold"
+            className="bg-eco-blue hover:bg-eco-blue/90 text-white font-semibold shadow-lg shadow-eco-blue/20 transition-all"
             onClick={handleOpenCreate}
           >
             <Plus className="w-4 h-4 mr-2" />
@@ -399,18 +401,18 @@ export default function PartnershipQuizzes() {
 
       {isLoading ? (
         <div className="flex flex-col items-center justify-center py-20 gap-4">
-          <div className="w-12 h-12 border-4 border-eco-green/30 border-t-eco-green rounded-full animate-spin" />
+          <div className="w-12 h-12 border-4 border-eco-blue/30 border-t-eco-blue rounded-full animate-spin" />
           <p className="text-muted-foreground font-medium">Đang tải danh sách bài quiz...</p>
         </div>
       ) : (
         /* Quiz List */
         <Tabs defaultValue="published" className="space-y-5">
-          <TabsList className="bg-muted/50 p-1 border-2 border-eco-orange/15 grid w-full grid-cols-2">
-            <TabsTrigger value="published" className="gap-2 font-medium data-[state=active]:bg-card data-[state=active]:text-eco-green">
+          <TabsList className="bg-muted/50 p-1 border-2 border-eco-blue/15 grid w-full grid-cols-2">
+            <TabsTrigger value="published" className="gap-2 font-medium data-[state=active]:bg-card data-[state=active]:text-eco-blue">
               <Globe className="w-4 h-4" />
               Đã xuất bản ({(defaultQuizzes.length + publishedQuizzes.length)})
             </TabsTrigger>
-            <TabsTrigger value="draft" className="gap-2 font-medium data-[state=active]:bg-card data-[state=active]:text-eco-orange">
+            <TabsTrigger value="draft" className="gap-2 font-medium data-[state=active]:bg-card data-[state=active]:text-eco-blue">
               <Pencil className="w-4 h-4" />
               Bản nháp ({draftQuizzes.length})
             </TabsTrigger>
@@ -419,7 +421,7 @@ export default function PartnershipQuizzes() {
           <TabsContent value="published" className="space-y-4 animate-fade-in">
              <div className="flex items-center justify-between">
                <div>
-                 <h3 className="text-lg font-semibold text-eco-green flex items-center gap-2">
+                 <h3 className="text-lg font-semibold text-eco-blue flex items-center gap-2">
                    <Globe className="w-5 h-5" />
                    Thư viện Quiz
                  </h3>
@@ -438,7 +440,7 @@ export default function PartnershipQuizzes() {
         <TabsContent value="draft" className="space-y-4 animate-fade-in">
            <div className="flex items-center justify-between">
              <div>
-               <h3 className="text-lg font-semibold text-eco-orange flex items-center gap-2">
+               <h3 className="text-lg font-semibold text-eco-blue flex items-center gap-2">
                  <Pencil className="w-5 h-5" />
                  Bản nháp
                </h3>

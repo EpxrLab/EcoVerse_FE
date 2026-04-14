@@ -8,7 +8,6 @@ import {
 import { Badge } from '@/shared/components/ui/badge';
 import { 
   Clock, 
-  Trophy, 
   Star, 
   Layout, 
   FileQuestion, 
@@ -50,7 +49,7 @@ export function QuizDetailDialog({ isOpen, onClose, quizId, getDifficultyStars, 
       <DialogContent className="max-w-4xl p-0 gap-0 overflow-hidden" style={{ maxHeight: '90vh' }}>
         <DialogHeader className="px-6 pt-5 pb-4 border-b bg-muted/20">
           <DialogTitle className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-xl bg-eco-orange flex items-center justify-center shrink-0">
+            <div className="w-10 h-10 rounded-xl bg-eco-blue flex items-center justify-center shrink-0 shadow-sm shadow-eco-blue/20">
               <FileQuestion className="w-6 h-6 text-white" />
             </div>
             <div className="flex-1 min-w-0">
@@ -71,13 +70,13 @@ export function QuizDetailDialog({ isOpen, onClose, quizId, getDifficultyStars, 
         <div className="overflow-y-auto px-6 py-6" style={{ maxHeight: 'calc(90vh - 80px)' }}>
           {isLoading ? (
             <div className="flex flex-col items-center justify-center py-20 gap-3">
-              <Loader2 className="w-10 h-10 text-eco-green animate-spin" />
+              <Loader2 className="w-10 h-10 text-eco-blue animate-spin" />
               <p className="text-sm font-medium text-muted-foreground">Đang tải chi tiết...</p>
             </div>
           ) : quiz ? (
             <div className="space-y-8">
-              {/* Info Cards */}
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+               {/* Info Cards */}
+              <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
                 <div className="p-3 rounded-2xl border bg-white shadow-sm">
                   <div className="flex items-center gap-2 mb-2">
                     <div className="w-7 h-7 rounded-lg bg-eco-blue/10 flex items-center justify-center">
@@ -91,8 +90,8 @@ export function QuizDetailDialog({ isOpen, onClose, quizId, getDifficultyStars, 
 
                 <div className="p-3 rounded-2xl border bg-white shadow-sm">
                   <div className="flex items-center gap-2 mb-2">
-                    <div className="w-7 h-7 rounded-lg bg-eco-green/10 flex items-center justify-center">
-                      <Star className="w-4 h-4 text-eco-green" />
+                    <div className="w-7 h-7 rounded-lg bg-eco-blue/10 flex items-center justify-center">
+                      <Star className="w-4 h-4 text-eco-blue" />
                     </div>
                     <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Độ khó</span>
                   </div>
@@ -106,17 +105,6 @@ export function QuizDetailDialog({ isOpen, onClose, quizId, getDifficultyStars, 
                       {quiz.difficulty === 'EASY' ? 'Dễ' : quiz.difficulty === 'MEDIUM' ? 'TB' : 'Khó'}
                     </span>
                   </div>
-                </div>
-
-                <div className="p-3 rounded-2xl border bg-white shadow-sm">
-                  <div className="flex items-center gap-2 mb-2">
-                    <div className="w-7 h-7 rounded-lg bg-eco-orange/10 flex items-center justify-center">
-                      <Trophy className="w-4 h-4 text-eco-orange" />
-                    </div>
-                    <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Phần thưởng</span>
-                  </div>
-                  <p className="text-xl font-bold">+{quiz.coinsOnPass}</p>
-                  <p className="text-[11px] text-muted-foreground">Eco Points</p>
                 </div>
 
                 <div className="p-3 rounded-2xl border bg-white shadow-sm">

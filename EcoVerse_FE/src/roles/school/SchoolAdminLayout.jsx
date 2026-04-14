@@ -33,20 +33,24 @@ import {
   AvatarImage,
 } from "@/shared/components/ui/avatar";
 import { cn } from "@/shared/lib/utils";
+import { reportService } from "./services";
+import { logoutFunction } from "../../features/auth/services";
+import toast from "react-hot-toast";
+import { useProfile } from "./hooks";
 import { NotificationDropdown } from "@/shared/components/NotificationDropdown";
 import {
   Tooltip,
   TooltipContent,
   TooltipTrigger,
 } from "@/shared/components/ui/tooltip";
-import { logoutFunction } from "../../features/auth/services";
-import toast from "react-hot-toast";
-import { useProfile } from "./hooks";
+import { useState, useEffect } from "react";
+import { BarChart3 } from "lucide-react";
 
 const menuItems = [
   { title: "Tổng quan", url: "/school", icon: LayoutDashboard },
-  { title: "Lớp & Học sinh", url: "/school/classes", icon: GraduationCap },
   { title: "Chiến dịch", url: "/school/campaigns", icon: Flag },
+  { title: "Báo cáo", url: "/school/reports", icon: BarChart3 },
+  { title: "Lớp & Học sinh", url: "/school/classes", icon: GraduationCap },
   { title: "Xếp hạng", url: "/school/leaderboard", icon: Trophy },
   { title: "Quiz", url: "/school/quizzes", icon: FileQuestion },
   { title: "Phần thưởng", url: "/school/rewards", icon: Gift },
@@ -58,6 +62,21 @@ function SchoolAdminSidebar({ schoolInfo, isProfileLoading }) {
   const location = useLocation();
   const { state } = useSidebar();
   const isCollapsed = state === "collapsed";
+  const [totalStudents, setTotalStudents] = useState(0);
+
+  useEffect(() => {
+    const fetchStats = async () => {
+      try {
+        const response = await reportService.getSchoolSummary({ period: 'THIS_MONTH' });
+        if (response?.data?.data?.totalStudents !== undefined) {
+          setTotalStudents(response.data.data.totalStudents);
+        }
+      } catch (error) {
+        console.error("Error fetching student stats:", error);
+      }
+    };
+    fetchStats();
+  }, []);
 
   const handleLogout = async () => {
     try {
@@ -139,19 +158,11 @@ function SchoolAdminSidebar({ schoolInfo, isProfileLoading }) {
 
           {/* Quick Stats - hide when collapsed */}
           {!isCollapsed && (
-            <div className="grid grid-cols-2 gap-2">
-              <div className="p-3 rounded-xl bg-eco-green/8 border border-eco-green/20 text-center">
-                <p className="text-lg font-bold text-eco-green">156</p>
-                <p className="text-[10px] text-muted-foreground font-medium">
-                  Học sinh
-                </p>
-              </div>
-              <div className="p-3 rounded-xl bg-eco-blue/8 border border-eco-blue/20 text-center">
-                <p className="text-lg font-bold text-eco-blue">87%</p>
-                <p className="text-[10px] text-muted-foreground font-medium">
-                  Độ chính xác
-                </p>
-              </div>
+            <div className="p-3 rounded-xl bg-eco-green/8 border border-eco-green/20 text-center">
+              <p className="text-lg font-bold text-eco-green">{totalStudents}</p>
+              <p className="text-[10px] text-muted-foreground font-medium">
+                Học sinh
+              </p>
             </div>
           )}
         </div>

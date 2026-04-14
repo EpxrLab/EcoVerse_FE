@@ -82,8 +82,8 @@ export default function SchoolCampaigns() {
   const invitationsAccepted = allCampaigns
     .filter(c => c.origin === 'partnership' && c.invitation_status === 'APPROVED')
     .sort((a, b) => {
-      if (a.campaignCampaignStatus === 'JOINING' && b.campaignCampaignStatus !== 'JOINING') return -1;
-      if (a.campaignCampaignStatus !== 'JOINING' && b.campaignCampaignStatus === 'JOINING') return 1;
+      if (a.campaignPartnershipStatus === 'JOINING' && b.campaignPartnershipStatus !== 'JOINING') return -1;
+      if (a.campaignPartnershipStatus !== 'JOINING' && b.campaignPartnershipStatus === 'JOINING') return 1;
       return 0;
     });
   const invitationsRejected = allCampaigns.filter(c => c.origin === 'partnership' && (c.invitation_status === 'REJECTED' || c.invitation_status === 'DECLINED'));

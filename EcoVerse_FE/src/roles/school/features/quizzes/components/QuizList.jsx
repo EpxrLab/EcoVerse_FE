@@ -1,7 +1,7 @@
 import { Card } from '@/shared/components/ui/card';
 import { Button } from '@/shared/components/ui/button';
 import { Badge } from '@/shared/components/ui/badge';
-import { Eye, Edit, Trash2, Lock, Star, MoreHorizontal, Globe } from 'lucide-react';
+import { Eye, Edit, Trash2, Lock, Star, MoreHorizontal, Globe, User } from 'lucide-react';
 import {
   Table,
   TableBody,
@@ -42,6 +42,7 @@ export function QuizList({
             <TableHead className="w-[300px] font-bold">Tên Quiz</TableHead>
             <TableHead className="font-bold">Độ khó</TableHead>
             <TableHead className="font-bold">Trạng thái</TableHead>
+            <TableHead className="font-bold">Tạo bởi</TableHead>
             <TableHead className="text-center font-bold">Thống kê</TableHead>
             <TableHead className="text-right font-bold">Thao tác</TableHead>
           </TableRow>
@@ -92,6 +93,21 @@ export function QuizList({
                     {quiz.status === 'published' ? 'Đã xuất bản' : 'Nháp'}
                   </Badge>
                 )}
+              </TableCell>
+              <TableCell>
+                <div className="flex items-center gap-2">
+                  <div className="w-7 h-7 rounded-full bg-muted flex items-center justify-center border shrink-0">
+                    <User className="w-4 h-4 text-muted-foreground" />
+                  </div>
+                  <span className="text-sm font-medium truncate max-w-[120px]" title={quiz.createdBy || 'Hệ thống'}>
+                    {(() => {
+                      const creator = quiz.createdBy?.toUpperCase();
+                      if (creator === 'USER' || creator === 'IMPORT') return 'Người dùng';
+                      if (creator === 'AI') return 'AI';
+                      return quiz.createdBy || 'Hệ thống';
+                    })()}
+                  </span>
+                </div>
               </TableCell>
               <TableCell>
                 <div className="flex items-center justify-center gap-4 text-sm text-muted-foreground">
