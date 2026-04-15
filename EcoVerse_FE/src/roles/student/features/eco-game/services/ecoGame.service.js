@@ -9,6 +9,7 @@
  *   GET /api/campaigns/:campaignId/game-levels     → list of levels for a campaign
  *   GET /api/game-levels/:levelId                  → single level config
  */
+import { getCampaignDetails } from "../../../services";
 import { mergeLevelConfig, DIFFICULTY_PRESETS } from "../gameConfig";
 
 // ─── Config ──────────────────────────────────────────────────────────────────
@@ -191,9 +192,12 @@ const MOCK_GAME_LEVELS = [
  *   return data.map(level => mergeLevelConfig(level));
  */
 export async function fetchGameLevels(campaignId) {
-  // ── Mock implementation (remove when API is ready) ──
-  await new Promise((resolve) => setTimeout(resolve, 500)); // simulate latency
-  return MOCK_GAME_LEVELS.map((level) => mergeLevelConfig(level));
+  try {
+    const res = await getCampaignDetails(campaignId);
+    return res.data?.rounds;
+  } catch (error) {
+    console.log(error);
+  }
 }
 
 /**

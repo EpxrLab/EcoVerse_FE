@@ -361,7 +361,8 @@ export default function StudentQuiz() {
                     </div>
                   </div>
                   <p className="text-muted-foreground text-base max-w-md font-medium">
-                    Thử thách kiến thức để tích lũy xu bảo vệ hành tinh xanh của chúng ta.
+                    Thử thách kiến thức để tích lũy xu bảo vệ hành tinh xanh của
+                    chúng ta.
                   </p>
                 </div>
 
@@ -376,7 +377,9 @@ export default function StudentQuiz() {
                         <CheckCircle className="w-5 h-5 text-primary" />
                       </div>
                       <div>
-                        <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider mb-0.5">Tiến độ vòng</p>
+                        <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider mb-0.5">
+                          Tiến độ vòng
+                        </p>
                         <p className="text-2xl font-black text-foreground">
                           {completedQuizzes.length}
                           <span className="text-muted-foreground/40 text-base font-normal">
@@ -396,7 +399,9 @@ export default function StudentQuiz() {
                         <Coins className="w-5 h-5 text-white" />
                       </div>
                       <div>
-                        <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider mb-0.5">Xu tích lũy</p>
+                        <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider mb-0.5">
+                          Xu tích lũy
+                        </p>
                         <p className="text-2xl font-black text-amber-600">
                           {totalCoinsEarned}
                         </p>
@@ -476,7 +481,9 @@ export default function StudentQuiz() {
                       onClick={() => setSelectedDifficulty(key)}
                       className={`px-6 py-2.5 text-xs font-black rounded-xl border-2 transition-all duration-300 uppercase tracking-wider ${
                         selectedDifficulty === key
-                          ? key === "all" ? "bg-primary text-white border-primary shadow-lg shadow-primary/20 scale-105" : `${activeClass} shadow-lg scale-105`
+                          ? key === "all"
+                            ? "bg-primary text-white border-primary shadow-lg shadow-primary/20 scale-105"
+                            : `${activeClass} shadow-lg scale-105`
                           : "bg-white text-muted-foreground border-border hover:border-primary/30"
                       }`}
                     >
