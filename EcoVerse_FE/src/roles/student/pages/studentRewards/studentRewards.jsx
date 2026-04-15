@@ -1,6 +1,6 @@
-import { useState, useMemo, useEffect } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate } from "react-router";
-import { Card, Button, Tabs, Tag, Empty, Spin, Modal } from "antd";
+import { Card, Button, Tabs, Tag, Spin, Modal } from "antd";
 import {
   GiftOutlined,
   HomeOutlined,
