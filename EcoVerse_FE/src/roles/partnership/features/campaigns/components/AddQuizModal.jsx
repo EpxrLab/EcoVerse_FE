@@ -500,6 +500,11 @@ export function AddQuizModal({ isOpen, onClose, campaign, availableQuizzes, setA
   const [aiGeneratedQuizzes, setAiGeneratedQuizzes] = useState([]);
   const [activeTab, setActiveTab] = useState('library');
 
+  const isUpdateMode = useMemo(() => {
+    const rounds = campaign?.qualifying_rounds || campaign?.rounds || [];
+    return rounds.some(r => (r.quizzes?.length || 0) > 0 || (r.quiz_ids?.length || 0) > 0);
+  }, [campaign]);
+
   useEffect(() => {
     const rounds = campaign?.qualifying_rounds || campaign?.rounds;
     if (isOpen && rounds) {
@@ -594,7 +599,9 @@ export function AddQuizModal({ isOpen, onClose, campaign, availableQuizzes, setA
               <Brain className="w-5 h-5 text-eco-blue" />
             </div>
             <div>
-              <DialogTitle className="text-xl font-bold">Thêm Quiz vào vòng thi</DialogTitle>
+              <DialogTitle className="text-xl font-bold">
+                {isUpdateMode ? 'Cập nhật Quiz vào vòng thi' : 'Thêm Quiz vào vòng thi'}
+              </DialogTitle>
               <p className="text-xs text-muted-foreground mt-0.5">Chọn từ thư viện hoặc tạo mới bằng AI</p>
             </div>
           </div>
@@ -705,7 +712,7 @@ export function AddQuizModal({ isOpen, onClose, campaign, availableQuizzes, setA
         <DialogFooter className="border-t pt-4">
           <Button variant="ghost" onClick={onClose} className="mr-auto">Hủy</Button>
           <Button onClick={handleSubmit} className="bg-eco-blue hover:bg-eco-blue/90 text-white min-w-[140px]">
-            Lưu cấu hình Quiz
+            {isUpdateMode ? 'Cập nhật Quiz' : 'Lưu cấu hình Quiz'}
           </Button>
         </DialogFooter>
       </DialogContent>

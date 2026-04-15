@@ -1,4 +1,4 @@
-import { motion, AnimatePresence } from "framer-motion";
+import { motion } from "framer-motion";
 export function RunnerHUD({ distance, speed, trashCount, totalTrash }) {
   return (
     <motion.div
@@ -19,7 +19,7 @@ export function RunnerHUD({ distance, speed, trashCount, totalTrash }) {
         </div>
 
         {/* Trash collected */}
-        <div className="bg-green-500/80 backdrop-blur-md rounded-2xl px-4 py-2 text-white">
+        <div className="bg-primary/80 backdrop-blur-md rounded-2xl px-4 py-2 text-white">
           <div className="text-xs opacity-90 uppercase tracking-wider">
             🗑️ Rác thu gom
           </div>

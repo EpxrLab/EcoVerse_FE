@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router";
-import { Card, Button, Tag, Progress } from "antd";
+import { Card, Button, Progress } from "antd";
 import {
   BookOutlined,
   PlayCircleOutlined,
@@ -8,16 +8,12 @@ import {
   CalendarOutlined,
   CheckCircleOutlined,
   ClockCircleOutlined,
-  CloseCircleOutlined,
   CodeOutlined,
-  TeamOutlined,
   StarOutlined,
   RightOutlined,
-  FireOutlined,
   UnorderedListOutlined,
 } from "@ant-design/icons";
 import { motion } from "framer-motion";
-import { useCampaignContext } from "../../context";
 import { getCampaignDetails } from "../../services";
 
 // ─── Constants ────────────────────────────────────────────────────────────────
@@ -36,8 +32,8 @@ const ROUND_STATUS_CFG = {
   },
   ACTIVE: {
     label: "Đang diễn ra",
-    tw: "bg-green-50 text-green-600 border-green-200",
-    dot: "bg-green-500",
+    tw: "bg-primary/10 text-primary border-primary/20",
+    dot: "bg-primary",
   },
   COMPLETED: {
     label: "Đã kết thúc",
@@ -53,7 +49,7 @@ const ROUND_STATUS_CFG = {
 const CAMPAIGN_STATUS_CFG = {
   ON_GOING: {
     label: "Đang diễn ra",
-    tw: "bg-green-50 text-green-600 border-green-200",
+    tw: "bg-primary/10 text-primary border-primary/20",
   },
   INVITED: {
     label: "Được mời",
@@ -66,7 +62,7 @@ const CAMPAIGN_STATUS_CFG = {
 };
 
 const DIFFICULTY_COLOR = {
-  EASY: "text-green-600 bg-green-50",
+  EASY: "text-primary bg-primary/10",
   MEDIUM: "text-amber-600 bg-amber-50",
   HARD: "text-red-600 bg-red-50",
 };
@@ -125,7 +121,7 @@ function RoundCard({ round, campaignId, navigate }) {
       <Card
         className={`rounded-2xl border-2 transition-all duration-200 ${
           isActive
-            ? "border-green-300 shadow-md hover:shadow-xl"
+            ? "border-primary/30 shadow-md hover:shadow-xl"
             : "border-gray-100 opacity-80"
         }`}
         bodyStyle={{ padding: "18px 20px" }}
@@ -232,7 +228,7 @@ function RoundCard({ round, campaignId, navigate }) {
           type={isActive ? "primary" : "default"}
           size="middle"
           disabled={round.status === "UPCOMING"}
-          className={`rounded-xl font-semibold ${isActive ? "bg-green-500 border-green-500 hover:bg-green-600 shadow-sm shadow-green-200" : ""}`}
+          className={`rounded-xl font-semibold ${isActive ? "bg-primary border-primary hover:opacity-90 shadow-sm shadow-primary/20" : ""}`}
           icon={
             isActive ? (
               <RightOutlined />
@@ -468,7 +464,7 @@ export default function CampaignDashboard() {
                 type="primary"
                 size="large"
                 onClick={() => navigate(`/student/campaign/${campaignId}/game`)}
-                className="rounded-xl bg-green-500 border-green-500 hover:bg-green-600 shadow-md shadow-green-200 font-bold"
+                className="rounded-xl bg-primary border-primary hover:opacity-90 shadow-md shadow-primary/20 font-bold"
                 icon={<RightOutlined />}
                 iconPosition="end"
               >

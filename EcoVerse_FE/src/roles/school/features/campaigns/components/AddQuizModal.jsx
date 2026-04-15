@@ -587,6 +587,10 @@ export function AddQuizModal({ isOpen, onClose, campaign, roundId, availableQuiz
       const round = campaign.rounds.find(r => r.id === roundId);
       return (round?.quizzes?.length || 0) > 0;
     }
+    // Fallback: check first round if no roundId is provided (e.g. from campaign list)
+    if (campaign?.rounds && campaign.rounds.length > 0) {
+      return (campaign.rounds[0].quizzes?.length || 0) > 0;
+    }
     return (campaign?.selected_quizzes?.length || 0) > 0;
   }, [campaign, roundId]);
 
@@ -666,7 +670,7 @@ export function AddQuizModal({ isOpen, onClose, campaign, roundId, availableQuiz
             </div>
             <div>
               <DialogTitle className="text-xl font-bold">
-                {isUpdateMode ? 'Cập nhật bộ Quiz' : 'Thêm Quiz cho chiến dịch'}
+                {isUpdateMode ? 'Cập nhật Quiz vào vòng thi' : 'Thêm Quiz cho chiến dịch'}
               </DialogTitle>
               <p className="text-xs text-muted-foreground mt-0.5">
                 {roundId ? 'Chọn các bộ câu hỏi để học sinh giải đố trong vòng này' : 'Cần chọn ít nhất 1 quiz Dễ, Trung bình và Khó'}

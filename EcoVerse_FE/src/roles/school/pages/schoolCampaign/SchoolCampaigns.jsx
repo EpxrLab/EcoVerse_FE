@@ -163,16 +163,21 @@ export default function SchoolCampaigns() {
   };
 
   const handleOpenAddGame = async (campaign) => {
-    // Fetch full detail to ensure rounds are present (needed for roundId in game config)
-    if (!campaign.rounds || campaign.rounds.length === 0) {
-      setIsDetailLoading(true);
+    setIsDetailLoading(true);
+    try {
       const detail = await fetchCampaignDetail(campaign.id, campaign.origin);
-      setGameConfigCampaign(detail || campaign);
-      setIsDetailLoading(false);
-    } else {
+      if (detail) {
+        setGameConfigCampaign(detail);
+      } else {
+        setGameConfigCampaign(campaign);
+      }
+    } catch (error) {
+      console.error("Error fetching detail for game config:", error);
       setGameConfigCampaign(campaign);
+    } finally {
+      setIsDetailLoading(false);
+      setIsAddGameOpen(true);
     }
-    setIsAddGameOpen(true);
   };
 
   const handleSubmitGame = () => {
@@ -183,23 +188,22 @@ export default function SchoolCampaigns() {
   };
 
   const handleOpenAddQuiz = async (campaign, roundId = null) => {
-    // If opening from list view (no rounds in the campaign object),
-    // fetch details to get the rounds and currently bound quizzes
-    if (!campaign.rounds || campaign.rounds.length === 0) {
-      setIsDetailLoading(true);
+    setIsDetailLoading(true);
+    try {
       const detail = await fetchCampaignDetail(campaign.id, campaign.origin);
       if (detail) {
         setQuizConfigCampaign(detail);
       } else {
         setQuizConfigCampaign(campaign);
       }
-      setIsDetailLoading(false);
-    } else {
+    } catch (error) {
+      console.error("Error fetching detail for quiz config:", error);
       setQuizConfigCampaign(campaign);
+    } finally {
+      setIsDetailLoading(false);
+      setTargetRoundId(roundId);
+      setIsAddQuizOpen(true);
     }
-
-    setTargetRoundId(roundId);
-    setIsAddQuizOpen(true);
   };
 
   const handleSubmitQuiz = async (

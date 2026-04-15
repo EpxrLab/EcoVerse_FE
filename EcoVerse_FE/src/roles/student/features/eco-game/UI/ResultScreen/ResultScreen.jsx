@@ -1,4 +1,4 @@
-import { motion, AnimatePresence } from "framer-motion";
+import { motion } from "framer-motion";
 export function ResultScreen({ result, onReplay, onBack }) {
   if (!result) return null;
 
@@ -36,42 +36,42 @@ export function ResultScreen({ result, onReplay, onBack }) {
           <span className="ml-2">🎉</span>
         </h2>
         {feedbackMessage && (
-          <p className="text-center font-medium text-emerald-600 mb-6 bg-emerald-50 py-2 rounded-lg">
+          <p className="text-center font-medium text-primary mb-6 bg-primary/10 py-2 rounded-lg">
             {feedbackMessage}
           </p>
         )}
 
         {/* Stats Grid */}
         <div className="grid grid-cols-2 md:grid-cols-3 gap-3 mb-6">
-          <div className="bg-blue-50 rounded-2xl p-4 text-center">
-            <div className="text-xs font-semibold text-blue-600 mb-1 uppercase tracking-wider">
+          <div className="bg-primary/5 rounded-2xl p-4 text-center">
+            <div className="text-xs font-semibold text-primary/60 mb-1 uppercase tracking-wider">
               🏃 Quãng đường
             </div>
-            <div className="text-xl font-bold text-blue-700">
+            <div className="text-xl font-bold text-primary">
               {Math.floor(distance || 0)}m
             </div>
           </div>
-          <div className="bg-green-50 rounded-2xl p-4 text-center">
-            <div className="text-xs font-semibold text-green-600 mb-1 uppercase tracking-wider">
+          <div className="bg-primary/5 rounded-2xl p-4 text-center">
+            <div className="text-xs font-semibold text-primary/60 mb-1 uppercase tracking-wider">
               🗑️ Thu gom
             </div>
-            <div className="text-xl font-bold text-green-700">
+            <div className="text-xl font-bold text-primary">
               {trashCollected || 0}
             </div>
           </div>
-          <div className="bg-purple-50 rounded-2xl p-4 text-center">
-            <div className="text-xs font-semibold text-purple-600 mb-1 uppercase tracking-wider">
+          <div className="bg-primary/5 rounded-2xl p-4 text-center">
+            <div className="text-xs font-semibold text-primary/60 mb-1 uppercase tracking-wider">
               ⏱️ Thời gian
             </div>
-            <div className="text-xl font-bold text-purple-700">
+            <div className="text-xl font-bold text-primary">
               {timeTaken}s
             </div>
           </div>
-          <div className="bg-emerald-50 rounded-2xl p-4 text-center">
-            <div className="text-xs font-semibold text-emerald-600 mb-1 uppercase tracking-wider">
+          <div className="bg-primary/5 rounded-2xl p-4 text-center">
+            <div className="text-xs font-semibold text-primary/60 mb-1 uppercase tracking-wider">
               ✅ Đúng
             </div>
-            <div className="text-xl font-bold text-emerald-700">
+            <div className="text-xl font-bold text-primary">
               {correct} / {totalItems}
             </div>
           </div>
@@ -105,8 +105,8 @@ export function ResultScreen({ result, onReplay, onBack }) {
                 >
                   <div className="flex justify-between items-center text-sm">
                     <span className="text-gray-700 font-medium">{item.type.name}</span>
-                    <span className="font-bold text-emerald-600 ml-2">
-                      ×{item.count}
+                    <span className="font-bold text-primary ml-2">
+                       ×{item.count}
                     </span>
                   </div>
                   {item.type.funFact && (
@@ -124,7 +124,7 @@ export function ResultScreen({ result, onReplay, onBack }) {
         <div className="flex gap-3">
           <button
             onClick={onReplay}
-            className="flex-1 py-3 px-4 bg-gradient-to-r from-green-500 to-emerald-600 text-white rounded-xl font-semibold hover:from-green-600 hover:to-emerald-700 transition-all duration-200 shadow-lg shadow-green-500/30"
+            className="flex-1 py-3 px-4 bg-primary text-white rounded-xl font-semibold hover:opacity-90 transition-all duration-200 shadow-lg shadow-primary/30"
           >
             🔄 Chơi lại
           </button>

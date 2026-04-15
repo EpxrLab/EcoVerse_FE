@@ -1,4 +1,4 @@
-import { motion, AnimatePresence } from "framer-motion";
+import { motion } from "framer-motion";
 export function SorterHUD({ itemsRemaining, correct, wrong, timeRemaining }) {
   const total = correct + wrong;
   const accuracy = total > 0 ? Math.round((correct / total) * 100) : 100;
@@ -14,7 +14,7 @@ export function SorterHUD({ itemsRemaining, correct, wrong, timeRemaining }) {
     >
       <div className="flex justify-between items-start max-w-2xl mx-auto">
         {/* Items remaining */}
-        <div className="bg-blue-500/80 backdrop-blur-md rounded-2xl px-4 py-2 text-white">
+        <div className="bg-primary/80 backdrop-blur-md rounded-2xl px-4 py-2 text-white">
           <div className="text-xs opacity-90 uppercase tracking-wider">
             Còn lại
           </div>
@@ -24,7 +24,7 @@ export function SorterHUD({ itemsRemaining, correct, wrong, timeRemaining }) {
         </div>
 
         {/* Score */}
-        <div className="bg-green-500/80 backdrop-blur-md rounded-2xl px-4 py-2 text-white">
+        <div className="bg-primary/80 backdrop-blur-md rounded-2xl px-4 py-2 text-white">
           <div className="text-xs opacity-90 uppercase tracking-wider">
             ✅ Đúng
           </div>
@@ -51,7 +51,7 @@ export function SorterHUD({ itemsRemaining, correct, wrong, timeRemaining }) {
         {hasTimer && (
           <div
             className={`backdrop-blur-md rounded-2xl px-4 py-2 text-white ${
-              isLowTime ? "bg-red-600/90 animate-pulse" : "bg-orange-500/80"
+              isLowTime ? "bg-red-600/90 animate-pulse" : "bg-primary/80"
             }`}
           >
             <div className="text-xs opacity-90 uppercase tracking-wider">

@@ -1,20 +1,9 @@
-import { useEffect, useRef, useState } from "react";
-import { useNavigate, useParams } from "react-router";
+import { useEffect, useState } from "react";
+import { useNavigate } from "react-router";
 import * as THREE from "three";
 import {
   PLAYER_CAPACITY,
-  PLAYER_MAX_HP,
-  GAME_TIME,
-  REQUIRED_PERCENTAGE,
   isMobileDevice,
-  initScene,
-  initWorld,
-  initStorage,
-  initPlayer,
-  initTrash,
-  initObstacles,
-  initZones,
-  gameTick,
 } from "./RecycleGameLogic";
 
 /* ===================== SUB-COMPONENTS ===================== */
@@ -46,8 +35,8 @@ function ZoneIndicator({ currentZone }) {
         left: "50%",
         transform: "translateX(-50%)",
         background: isSpeed
-          ? "linear-gradient(135deg, rgba(6,182,212,0.9), rgba(34,211,238,0.9))"
-          : "linear-gradient(135deg, rgba(99,102,241,0.9), rgba(139,92,246,0.9))",
+          ? "linear-gradient(135deg, #FFEB3B, #CDDC39)" // Yellow/Lime for speed
+          : "linear-gradient(135deg, #616161, #424242)", // Dark gray for storm/slow
         color: "white",
         padding: "12px 24px",
         borderRadius: 12,
@@ -100,7 +89,7 @@ function HUD({
         transition: "transform 0.15s ease",
         background: inventoryFull
           ? "linear-gradient(135deg, rgba(185,28,28,0.95), rgba(239,68,68,0.95))"
-          : "linear-gradient(135deg, rgba(20,83,45,0.95), rgba(34,197,94,0.95))",
+          : "rgba(139, 195, 74, 0.9)", // leaf green (#8BC34A) with opacity
         color: "white",
         padding: "16px 32px",
         borderRadius: 20,
@@ -109,7 +98,8 @@ function HUD({
           : "0 8px 32px rgba(0,0,0,0.3)",
         border: inventoryFull
           ? "3px solid rgba(255,100,100,0.9)"
-          : "3px solid rgba(255,255,255,0.3)",
+          : "3px solid rgba(255,255,255,0.4)",
+        backdropFilter: "blur(10px)",
         minWidth: 320,
         textAlign: "center",
         zIndex: 99999,
@@ -149,14 +139,14 @@ function HUD({
             background: "rgba(0,0,0,0.3)",
             borderRadius: 12,
             overflow: "hidden",
-            border: "2px solid rgba(255,255,255,0.4)",
+            border: "2px solid rgba(255,255,255,0.5)",
           }}
         >
           <div
             style={{
               width: `${progressPercent}%`,
               height: "100%",
-              background: "linear-gradient(90deg, #fbbf24, #facc15, #fde047)",
+              background: "linear-gradient(90deg, #d9f99d, #bef264, #a3e635)",
               transition: "width 0.3s ease",
               display: "flex",
               alignItems: "center",
@@ -249,9 +239,9 @@ function GameOverScreen({
         <div
           style={{
             background: canProceed
-              ? "rgba(34,197,94,0.2)"
+              ? "rgba(139, 195, 74, 0.2)"
               : "rgba(239,68,68,0.2)",
-            border: canProceed ? "2px solid #22c55e" : "2px solid #ef4444",
+            border: canProceed ? "2px solid #8BC34A" : "2px solid #ef4444",
             borderRadius: 16,
             padding: 24,
             marginBottom: 24,
@@ -289,7 +279,7 @@ function GameOverScreen({
           padding: "16px 48px",
           fontSize: 24,
           background: isWin
-            ? "linear-gradient(135deg, #22c55e, #16a34a)"
+            ? "linear-gradient(135deg, #8BC34A, #689F38)"
             : "linear-gradient(135deg, #ef4444, #dc2626)",
           color: "white",
           border: "none",

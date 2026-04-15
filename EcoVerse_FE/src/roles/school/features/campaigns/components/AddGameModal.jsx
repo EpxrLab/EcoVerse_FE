@@ -128,7 +128,8 @@ export function AddGameModal({ isOpen, onClose, campaign, onSubmit }) {
     (async () => {
       try {
         const res = await campaignService.getAvailableSubCategories(roundId, selectedGameTypeId, selectedPresetIds);
-        setSubCategoryData(res.data?.data || []);
+        const rawData = res.data?.data || res.data || [];
+        setSubCategoryData(rawData);
         // If we have pending IDs to restore (from a previous config), apply them now
         if (Object.keys(pendingSubCategoryIdsRef.current).length > 0) {
           setSelectedSubCategoryIds(pendingSubCategoryIdsRef.current);
@@ -144,6 +145,7 @@ export function AddGameModal({ isOpen, onClose, campaign, onSubmit }) {
 
   // ── Derived ───────────────────────────────────────────────────────────────
   const selectedGameType = gameTypes.find(g => g.id === selectedGameTypeId);
+  const isUpdateMode = !!existingRound?.game_type_id;
   
 
   const canGoNext = { 
@@ -227,7 +229,7 @@ export function AddGameModal({ isOpen, onClose, campaign, onSubmit }) {
         <DialogHeader className="px-6 pt-5 pb-0 shrink-0">
           <DialogTitle className="flex items-center gap-2 text-lg font-bold">
             <Gamepad2 className="w-5 h-5 text-eco-green" />
-            Thêm Game
+            {isUpdateMode ? 'Cập nhật Game' : 'Thêm Game'}
             {campaign?.name && <span className="font-normal text-muted-foreground text-sm">— {campaign.name}</span>}
           </DialogTitle>
         </DialogHeader>
@@ -523,7 +525,11 @@ export function AddGameModal({ isOpen, onClose, campaign, onSubmit }) {
             </Button>
           ) : (
             <Button onClick={handleSubmit} disabled={isSubmitting} className="bg-eco-green hover:bg-eco-green/90 text-white">
-              {isSubmitting ? <><Loader2 className="w-4 h-4 mr-2 animate-spin" /> Đang lưu...</> : <><Save className="w-4 h-4 mr-2" /> Lưu cấu hình ✓</>}
+              {isSubmitting ? (
+                <><Loader2 className="w-4 h-4 mr-2 animate-spin" /> Đang lưu...</>
+              ) : (
+                <><Save className="w-4 h-4 mr-2" /> {isUpdateMode ? 'Cập nhật' : 'Lưu cấu hình'} ✓</>
+              )}
             </Button>
           )}
         </div>

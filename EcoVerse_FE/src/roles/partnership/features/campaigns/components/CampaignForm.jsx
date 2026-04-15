@@ -6,8 +6,10 @@ import { Label } from '@/shared/components/ui/label';
 import { Textarea } from '@/shared/components/ui/textarea';
 import { Checkbox } from '@/shared/components/ui/checkbox';
 import { Badge } from '@/shared/components/ui/badge';
-import { School, Users, MapPin, Package, Zap, Image as ImageIcon, Upload, X, Calendar, Sparkles, Settings2, Bot, ChevronDown, ChevronUp, Plus } from 'lucide-react';
+import { School, Users, MapPin, Package, Zap, Image as ImageIcon, Upload, X, Calendar, Plus } from 'lucide-react';
 import { cn } from '@/shared/lib/utils';
+import { ConfigProvider, DatePicker } from 'antd';
+import dayjs from 'dayjs';
 import { partnershipCampaignService } from '../../../services/partnershipCampaign.service';
 
 export function CampaignForm({
@@ -32,8 +34,6 @@ export function CampaignForm({
     }
   };
 
-  const selectedSchools = availableSchools.filter(s => formData.schoolIds.includes(s.schoolId || s.id));
-
   const [currentStep, setCurrentStep] = React.useState(0);
 
   const steps = [
@@ -42,28 +42,7 @@ export function CampaignForm({
     { id: 'rounds', label: 'Vòng loại' },
     { id: 'rewards', label: 'Phần thưởng' },
   ];
-
-  const addReward = () => {
-    onFormChange({
-      rewards: [
-        ...formData.rewards,
-        {
-          rankPosition: formData.rewards.length + 1,
-          rewardName: '',
-          description: '',
-          imageUrl: '',
-          sponsorName: ''
-        }
-      ]
-    });
-  };
-
-  const removeReward = (index) => {
-    if (formData.rewards.length === 1) return;
-    const newRewards = formData.rewards.filter((_, i) => i !== index);
-    onFormChange({ rewards: newRewards });
-  };
-
+;
   const handleRewardImageUpload = async (index, file) => {
     try {
       const formDataUpload = new FormData();
@@ -133,7 +112,25 @@ export function CampaignForm({
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
       <DialogContent className="max-w-5xl max-h-[90vh] overflow-y-auto flex flex-col">
-        <DialogHeader>
+        <ConfigProvider
+          theme={{
+            token: {
+              colorPrimary: '#2d6a4f',
+              borderRadius: 12,
+              colorBorder: '#d8e2dc',
+              colorBgContainer: 'transparent',
+              colorBgElevated: '#ffffff',
+            },
+            components: {
+              DatePicker: {
+                activeBorderColor: '#2d6a4f',
+                hoverBorderColor: '#40916c',
+                cellActiveWithRangeBg: '#d8f3dc',
+              }
+            }
+          }}
+        >
+          <DialogHeader>
           <DialogTitle className="text-xl font-bold">
             {isEditing ? 'Cập nhật chiến dịch' : 'Tạo chiến dịch mới'}
           </DialogTitle>
@@ -206,12 +203,15 @@ export function CampaignForm({
                 <div className="grid grid-cols-2 gap-4">
                   <div className="space-y-2">
                     <Label htmlFor="startDate">Ngày bắt đầu chiến dịch *</Label>
-                    <Input
+                    <DatePicker
                       id="startDate"
-                      type="datetime-local"
-                      value={formData.startDate}
-                      onChange={(e) => {
-                        const newStartDate = e.target.value;
+                      showTime
+                      format="DD/MM/YYYY HH:mm"
+                      className="w-full h-10"
+                      placeholder="Chọn ngày bắt đầu"
+                      value={formData.startDate ? dayjs(formData.startDate) : null}
+                      onChange={(date) => {
+                        const newStartDate = date ? date.format('YYYY-MM-DDTHH:mm') : '';
                         const newRounds = formData.rounds.map((r, idx) => ({
                           ...r,
                           startTime: idx === 0 ? newStartDate : r.startTime
@@ -225,12 +225,15 @@ export function CampaignForm({
                   </div>
                   <div className="space-y-2">
                     <Label htmlFor="endDate">Ngày kết thúc chiến dịch *</Label>
-                    <Input
+                    <DatePicker
                       id="endDate"
-                      type="datetime-local"
-                      value={formData.endDate}
-                      onChange={(e) => {
-                        const newEndDate = e.target.value;
+                      showTime
+                      format="DD/MM/YYYY HH:mm"
+                      className="w-full h-10"
+                      placeholder="Chọn ngày kết thúc"
+                      value={formData.endDate ? dayjs(formData.endDate) : null}
+                      onChange={(date) => {
+                        const newEndDate = date ? date.format('YYYY-MM-DDTHH:mm') : '';
                         const newRounds = formData.rounds.map(r => ({
                           ...r,
                           endTime: r.isFinalRound ? newEndDate : r.endTime
@@ -244,20 +247,26 @@ export function CampaignForm({
                   </div>
                   <div className="space-y-2">
                     <Label htmlFor="registrationDate">Ngày mở đăng ký *</Label>
-                    <Input
+                    <DatePicker
                       id="registrationDate"
-                      type="datetime-local"
-                      value={formData.registrationDate}
-                      onChange={(e) => onFormChange({ registrationDate: e.target.value })}
+                      showTime
+                      format="DD/MM/YYYY HH:mm"
+                      className="w-full h-10"
+                      placeholder="Chọn ngày mở đăng ký"
+                      value={formData.registrationDate ? dayjs(formData.registrationDate) : null}
+                      onChange={(date) => onFormChange({ registrationDate: date ? date.format('YYYY-MM-DDTHH:mm') : '' })}
                     />
                   </div>
                   <div className="space-y-2">
                     <Label htmlFor="registrationDeadline">Hạn chót đăng ký *</Label>
-                    <Input
+                    <DatePicker
                       id="registrationDeadline"
-                      type="datetime-local"
-                      value={formData.registrationDeadline}
-                      onChange={(e) => onFormChange({ registrationDeadline: e.target.value })}
+                      showTime
+                      format="DD/MM/YYYY HH:mm"
+                      className="w-full h-10"
+                      placeholder="Chọn hạn chót đăng ký"
+                      value={formData.registrationDeadline ? dayjs(formData.registrationDeadline) : null}
+                      onChange={(date) => onFormChange({ registrationDeadline: date ? date.format('YYYY-MM-DDTHH:mm') : '' })}
                     />
                   </div>
                 </div>
@@ -273,20 +282,26 @@ export function CampaignForm({
                 <div className="grid grid-cols-2 gap-4">
                   <div className="space-y-2">
                     <Label htmlFor="invitationDate">Ngày gửi lời mời *</Label>
-                    <Input
+                    <DatePicker
                       id="invitationDate"
-                      type="datetime-local"
-                      value={formData.invitationDate}
-                      onChange={(e) => onFormChange({ invitationDate: e.target.value })}
+                      showTime
+                      format="DD/MM/YYYY HH:mm"
+                      className="w-full h-10"
+                      placeholder="Chọn ngày gửi lời mời"
+                      value={formData.invitationDate ? dayjs(formData.invitationDate) : null}
+                      onChange={(date) => onFormChange({ invitationDate: date ? date.format('YYYY-MM-DDTHH:mm') : '' })}
                     />
                   </div>
                   <div className="space-y-2">
                     <Label htmlFor="invitationDeadline">Hạn chót xác nhận lời mời *</Label>
-                    <Input
+                    <DatePicker
                       id="invitationDeadline"
-                      type="datetime-local"
-                      value={formData.invitationDeadline}
-                      onChange={(e) => onFormChange({ invitationDeadline: e.target.value })}
+                      showTime
+                      format="DD/MM/YYYY HH:mm"
+                      className="w-full h-10"
+                      placeholder="Chọn hạn chót xác nhận"
+                      value={formData.invitationDeadline ? dayjs(formData.invitationDeadline) : null}
+                      onChange={(date) => onFormChange({ invitationDeadline: date ? date.format('YYYY-MM-DDTHH:mm') : '' })}
                     />
                   </div>
                   <div className="space-y-2">
@@ -509,23 +524,29 @@ export function CampaignForm({
                       </div>
                       <div className="space-y-2">
                         <Label>Thời gian bắt đầu *</Label>
-                        <Input
-                          type="datetime-local"
-                          value={round.startTime}
-                          onChange={(e) => {
+                        <DatePicker
+                          showTime
+                          format="DD/MM/YYYY HH:mm"
+                          className="w-full h-10"
+                          placeholder="Chọn ngày bắt đầu"
+                          value={round.startTime ? dayjs(round.startTime) : null}
+                          onChange={(date) => {
                             const newRounds = [...formData.rounds];
-                            newRounds[index].startTime = e.target.value;
+                            newRounds[index].startTime = date ? date.format('YYYY-MM-DDTHH:mm') : '';
                             onFormChange({ rounds: newRounds });
                           }}
                         />
                       </div>
                       <div className="space-y-2">
                         <Label>Thời gian kết thúc *</Label>
-                        <Input
-                          type="datetime-local"
-                          value={round.endTime}
-                          onChange={(e) => {
-                            const newEndTime = e.target.value;
+                        <DatePicker
+                          showTime
+                          format="DD/MM/YYYY HH:mm"
+                          className="w-full h-10"
+                          placeholder="Chọn ngày kết thúc"
+                          value={round.endTime ? dayjs(round.endTime) : null}
+                          onChange={(date) => {
+                            const newEndTime = date ? date.format('YYYY-MM-DDTHH:mm') : '';
                             const newRounds = [...formData.rounds];
                             newRounds[index].endTime = newEndTime;
                             
@@ -699,11 +720,12 @@ export function CampaignForm({
                 onClick={() => onSubmit(true)}
                 disabled={currentStep !== steps.length - 1}
               >
-                Tạo chiến dịch
+                {isEditing ? 'Cập nhật' : 'Tạo chiến dịch'}
               </Button>
             )}
           </div>
         </div>
+        </ConfigProvider>
       </DialogContent>
     </Dialog>
   );

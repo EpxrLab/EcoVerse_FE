@@ -52,7 +52,7 @@ const QuizCard = lazy(() =>
         >
           <Card
             className={`border-2 transition-all duration-300 hover:shadow-2xl rounded-2xl overflow-hidden relative ${
-              isCompleted ? "border-green-400/40" : "border-gray-200"
+              isCompleted ? "border-primary/40" : "border-gray-200"
             }`}
             bodyStyle={{ padding: 0 }}
           >
@@ -84,7 +84,7 @@ const QuizCard = lazy(() =>
                       {config.label}
                     </span>
                     {isCompleted && (
-                      <span className="inline-flex items-center gap-1 text-xs font-semibold px-2.5 py-0.5 rounded-full bg-green-100 text-green-700 border border-green-300">
+                      <span className="inline-flex items-center gap-1 text-xs font-semibold px-2.5 py-0.5 rounded-full bg-primary/10 text-primary border border-primary/20">
                         <CheckCircle className="w-3 h-3" />
                         Hoàn thành
                       </span>
@@ -128,8 +128,8 @@ const QuizCard = lazy(() =>
                 </div>
                 {isCompleted && (
                   <div className="flex items-center gap-2">
-                    <Trophy className="w-4 h-4 text-green-500" />
-                    <span className="text-sm font-semibold text-green-600">
+                    <Trophy className="w-4 h-4 text-primary" />
+                    <span className="text-sm font-semibold text-primary">
                       Đã đạt
                     </span>
                   </div>
@@ -151,7 +151,7 @@ const QuizCard = lazy(() =>
                 className={`w-full h-10 font-semibold flex items-center justify-center gap-2 rounded-xl transition-all duration-200 ${
                   isCompleted
                     ? "bg-gray-100 text-gray-700 hover:bg-gray-200 border-gray-200"
-                    : "bg-blue-500 hover:bg-blue-600 border-blue-500 text-white shadow-md shadow-blue-100"
+                    : "bg-primary hover:opacity-90 border-primary text-white shadow-md shadow-primary/10"
                 }`}
               >
                 {isCompleted ? "Làm lại" : "Bắt đầu"}
@@ -170,8 +170,8 @@ function getDifficultyConfig(difficulty) {
     case "EASY":
       return {
         label: "Dễ",
-        badge: "bg-green-50 text-green-700 border-green-300",
-        bar: "bg-emerald-400",
+        badge: "bg-primary/10 text-primary border-primary/20",
+        bar: "bg-primary",
       };
     case "MEDIUM":
       return {
@@ -204,7 +204,7 @@ const FILTER_OPTIONS = [
   {
     key: "EASY",
     label: "Dễ",
-    activeClass: "bg-green-500 text-white border-green-500",
+    activeClass: "bg-primary text-white border-primary",
   },
   {
     key: "MEDIUM",
@@ -308,7 +308,7 @@ export default function StudentQuiz() {
   };
 
   return (
-    <div className="min-h-screen bg-emerald-50/30">
+    <div className="min-h-screen bg-background">
       <div className="max-w-6xl mx-auto px-4 py-8 space-y-6">
         {/* Breadcrumb */}
         <motion.div
@@ -334,13 +334,13 @@ export default function StudentQuiz() {
           transition={{ duration: 0.5 }}
         >
           <Card
-            className="border-2 border-blue-100 shadow-xl rounded-3xl overflow-hidden"
+            className="border-2 border-primary/10 shadow-xl rounded-3xl overflow-hidden"
             bodyStyle={{ padding: 0 }}
           >
-            <div className="relative bg-emerald-50/60 p-8">
+            <div className="relative bg-primary/5 p-8">
               {/* Decorative blobs */}
-              <div className="absolute top-0 right-0 w-72 h-72 bg-blue-300/10 rounded-full blur-3xl pointer-events-none" />
-              <div className="absolute bottom-0 left-0 w-56 h-56 bg-emerald-300/10 rounded-full blur-3xl pointer-events-none" />
+              <div className="absolute top-0 right-0 w-72 h-72 bg-primary/10 rounded-full blur-3xl pointer-events-none" />
+              <div className="absolute bottom-0 left-0 w-56 h-56 bg-primary/10 rounded-full blur-3xl pointer-events-none" />
 
               {/* Title */}
               <div className="relative flex flex-col sm:flex-row items-start sm:items-center justify-between gap-6">
@@ -548,7 +548,7 @@ export default function StudentQuiz() {
         <Modal
           title={
             <div className="flex items-center gap-2 text-lg font-bold">
-              <History className="w-5 h-5 text-blue-500" />
+              <History className="w-5 h-5 text-primary" />
               <span>Lịch sử làm bài: {selectedQuiz?.title}</span>
             </div>
           }
@@ -587,7 +587,7 @@ export default function StudentQuiz() {
                         Điểm số
                       </span>
                       <span
-                        className={`font-extrabold ${item.scorePercentage >= 80 ? "text-green-600" : "text-amber-600"}`}
+                        className={`font-extrabold ${item.scorePercentage >= 80 ? "text-primary" : "text-amber-600"}`}
                       >
                         {item.scorePercentage}%
                       </span>
@@ -610,7 +610,7 @@ export default function StudentQuiz() {
                       {item.isPassed ? (
                         <Tag
                           color="success"
-                          className="rounded-lg font-bold border-0 bg-green-100 text-green-700"
+                          className="rounded-lg font-bold border-0 bg-primary/10 text-primary"
                         >
                           ĐẠT
                         </Tag>
@@ -635,7 +635,7 @@ export default function StudentQuiz() {
                         `/student/campaign/${campaignId}/round/${selectedRoundId}/quiz/${selectedQuiz.quizId}/history/${item.attemptId}`,
                       )
                     }
-                    className="rounded-xl font-semibold border-blue-200 text-blue-600 hover:bg-blue-50 ml-4 opacity-0 group-hover:opacity-100 transition-opacity"
+                    className="rounded-xl font-semibold border-primary/20 text-primary hover:bg-primary/5 ml-4 opacity-0 group-hover:opacity-100 transition-opacity"
                   >
                     Xem chi tiết
                   </Button>

@@ -66,8 +66,8 @@ const STATUS_CONFIG = {
   COMPLETED: {
     icon: <CheckCircleOutlined />,
     text: "Hoàn thành",
-    tw: "bg-green-50 text-green-600 border-green-200",
-    stripe: "bg-green-500",
+    tw: "bg-primary/10 text-primary border-primary/20",
+    stripe: "bg-primary",
   },
   CANCELLED: {
     icon: <CloseCircleOutlined />,
@@ -101,16 +101,16 @@ const DELIVERY_STATUS_CONFIG = {
   },
   DELIVERED: {
     text: "Đã trao",
-    color: "green",
+    color: "success",
     icon: <CheckCircleOutlined />,
-    stripe: "bg-green-500",
+    stripe: "bg-primary",
     description: "Bạn đã nhận được phần quà này."
   },
   CONFIRMED: {
     text: "Đã xác nhận",
     color: "success",
     icon: <CheckCircleOutlined />,
-    stripe: "bg-emerald-600",
+    stripe: "bg-primary",
     description: "Phụ huynh đã xác nhận nhận quà thành công."
   }
 };
@@ -451,7 +451,7 @@ function RequestCard({ request, onCancel }) {
             )}
 
             {request.status === "COMPLETED" && (
-              <div className="flex items-center gap-1.5 text-xs text-green-600 font-medium mt-1">
+              <div className="flex items-center gap-1.5 text-xs text-primary font-medium mt-1">
                 <CheckCircleOutlined />
                 <span>
                   Hoàn thành vào{" "}
@@ -768,7 +768,7 @@ export default function StudentRewards() {
   ];
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-white via-gray-50 to-gray-100">
+    <div className="min-h-screen bg-background">
       <div className="max-w-7xl mx-auto px-4 py-6 space-y-6">
         {/* Breadcrumb */}
         <motion.div
@@ -799,13 +799,13 @@ export default function StudentRewards() {
             className="border-2 shadow-lg overflow-hidden rounded-3xl"
             bodyStyle={{ padding: 0 }}
           >
-            <div className="relative bg-gradient-to-br from-green-50 via-blue-50 to-purple-50 p-6">
+            <div className="relative bg-primary/5 p-6">
               <div className="absolute top-0 right-0 w-64 h-64 bg-gradient-to-br from-green-200/30 to-transparent rounded-full blur-3xl" />
               <div className="absolute bottom-0 left-0 w-48 h-48 bg-gradient-to-tr from-purple-200/30 to-transparent rounded-full blur-3xl" />
               <div className="relative flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
                 <div className="space-y-1">
                   <h1 className="text-3xl font-bold text-gray-800 flex items-center gap-3">
-                    <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-green-400 to-blue-500 flex items-center justify-center shadow-lg">
+                    <div className="w-12 h-12 rounded-2xl bg-primary flex items-center justify-center shadow-lg">
                       <GiftOutlined className="text-2xl text-white" />
                     </div>
                     Cửa hàng phần thưởng

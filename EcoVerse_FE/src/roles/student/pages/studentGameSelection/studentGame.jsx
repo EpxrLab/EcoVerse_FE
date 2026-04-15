@@ -40,15 +40,15 @@ const CoinIcon = ({ className = "w-6 h-6 text-white" }) => (
 const DIFFICULTY_LABELS = {
   EASY: {
     label: "Dễ",
-    bg: "bg-green-50",
-    text: "text-green-600",
-    border: "border-green-200",
+    bg: "bg-primary/10",
+    text: "text-primary",
+    border: "border-primary/20",
   },
   MEDIUM: {
     label: "Trung bình",
-    bg: "bg-blue-50",
-    text: "text-blue-600",
-    border: "border-blue-200",
+    bg: "bg-secondary/10",
+    text: "text-secondary",
+    border: "border-secondary/20",
   },
   HARD: {
     label: "Khó",
@@ -69,12 +69,12 @@ const FILTER_OPTIONS = [
   {
     key: "EASY",
     label: "Dễ",
-    activeClass: "bg-green-500 text-white border-green-500",
+    activeClass: "bg-primary text-white border-primary",
   },
   {
     key: "MEDIUM",
     label: "Trung bình",
-    activeClass: "bg-blue-500 text-white border-blue-500",
+    activeClass: "bg-secondary text-white border-secondary",
   },
   {
     key: "HARD",
@@ -266,9 +266,9 @@ export default function StudentGame() {
           className="border-2 shadow-lg overflow-hidden rounded-3xl"
           bodyStyle={{ padding: 0 }}
         >
-          <div className="relative bg-emerald-50/60 p-8">
-            <div className="absolute top-0 right-0 w-64 h-64 bg-emerald-200/20 rounded-full blur-3xl" />
-            <div className="absolute bottom-0 left-0 w-48 h-48 bg-blue-200/20 rounded-full blur-3xl" />
+          <div className="relative bg-primary/5 p-8">
+            <div className="absolute top-0 right-0 w-64 h-64 bg-primary/10 rounded-full blur-3xl" />
+            <div className="absolute bottom-0 left-0 w-48 h-48 bg-primary/5 rounded-full blur-3xl" />
 
             <div className="relative flex flex-col lg:flex-row items-start lg:items-center justify-between gap-6">
               <div>
@@ -286,12 +286,12 @@ export default function StudentGame() {
               {/* Stats */}
               <div className="flex flex-wrap gap-4">
                 <Card
-                  className="border-2 border-green-200 rounded-2xl"
+                  className="border-2 border-primary/20 rounded-2xl"
                   bodyStyle={{ padding: "16px" }}
                 >
                   <div className="flex items-center gap-3">
-                    <div className="w-12 h-12 rounded-xl bg-green-50 flex items-center justify-center">
-                      <CheckCircleOutlined className="text-xl text-green-500" />
+                    <div className="w-12 h-12 rounded-xl bg-primary/10 flex items-center justify-center">
+                      <CheckCircleOutlined className="text-xl text-primary" />
                     </div>
                     <div className="text-left">
                       <p className="text-sm text-gray-500">Level hoàn thành</p>
@@ -373,7 +373,7 @@ export default function StudentGame() {
               <span className="text-sm font-medium text-gray-700">
                 Tiến độ hoàn thành
               </span>
-              <span className="text-sm font-bold text-green-600">
+              <span className="text-sm font-bold text-primary">
                 {gameLevels.length > 0
                   ? Math.round(
                       (completedLevels.length / gameLevels.length) * 100,
@@ -390,8 +390,8 @@ export default function StudentGame() {
                     )
                   : 0
               }
-              strokeColor="#22c55e"
-              trailColor="#e5e7eb"
+              strokeColor="var(--primary)"
+              trailColor="var(--primary-light)"
               strokeWidth={12}
             />
           </div>
@@ -458,7 +458,7 @@ export default function StudentGame() {
               <Card
                 className={`rounded-2xl border-2 transition-all ${
                   level.locked ? "opacity-50" : "hover:shadow-xl"
-                } ${level.completed ? "border-green-200" : "border-gray-100"}`}
+                } ${level.completed ? "border-primary/20" : "border-gray-100"}`}
                 bodyStyle={{ padding: "24px" }}
               >
                 <div className="space-y-4">
@@ -487,7 +487,7 @@ export default function StudentGame() {
                           : "Sea Rescue"}
                       </p>
                     </div>
-                    <div className="w-16 h-16 rounded-2xl bg-green-50 flex items-center justify-center text-3xl">
+                    <div className="w-16 h-16 rounded-2xl bg-primary/10 flex items-center justify-center text-3xl">
                       🎮
                     </div>
                   </div>
@@ -541,9 +541,7 @@ export default function StudentGame() {
                     className={`rounded-xl font-semibold ${
                       level.locked
                         ? "bg-gray-100 text-gray-400 cursor-not-allowed"
-                        : level.completed
-                          ? "bg-green-500 border-green-500 hover:bg-green-600"
-                          : "bg-blue-500 border-blue-500 hover:bg-blue-600"
+                        : "bg-primary border-primary hover:opacity-90"
                     }`}
                   >
                     {level.locked
