@@ -12,7 +12,9 @@ import {
 } from "@ant-design/icons";
 import { Star, Lock, Play } from "lucide-react";
 import { motion } from "framer-motion";
-import { fetchGameLevels } from "../../features/eco-game/services/ecoGame.service";
+import { Select, Space } from "antd";
+import { Layers, ChevronRight } from "lucide-react";
+import { getCampaignDetails } from "../../services";
 
 // ─── CoinIcon ─────────────────────────────────────────────────────────────────
 
@@ -36,10 +38,50 @@ const CoinIcon = ({ className = "w-6 h-6 text-white" }) => (
 // ─── Difficulty badge color mapping ───────────────────────────────────────────
 
 const DIFFICULTY_LABELS = {
-  easy: { label: "Dễ", bg: "bg-green-50", text: "text-green-600", border: "border-green-200" },
-  medium: { label: "Trung bình", bg: "bg-blue-50", text: "text-blue-600", border: "border-blue-200" },
-  hard: { label: "Khó", bg: "bg-red-50", text: "text-red-600", border: "border-red-200" },
+  EASY: {
+    label: "Dễ",
+    bg: "bg-green-50",
+    text: "text-green-600",
+    border: "border-green-200",
+  },
+  MEDIUM: {
+    label: "Trung bình",
+    bg: "bg-blue-50",
+    text: "text-blue-600",
+    border: "border-blue-200",
+  },
+  HARD: {
+    label: "Khó",
+    bg: "bg-red-50",
+    text: "text-red-600",
+    border: "border-red-200",
+  },
 };
+
+// ─── Filter Categories ────────────────────────────────────────────────────────
+
+const FILTER_OPTIONS = [
+  {
+    key: "all",
+    label: "Tất cả",
+    activeClass: "bg-gray-800 text-white border-gray-800",
+  },
+  {
+    key: "EASY",
+    label: "Dễ",
+    activeClass: "bg-green-500 text-white border-green-500",
+  },
+  {
+    key: "MEDIUM",
+    label: "Trung bình",
+    activeClass: "bg-blue-500 text-white border-blue-500",
+  },
+  {
+    key: "HARD",
+    label: "Khó",
+    activeClass: "bg-red-500 text-white border-red-500",
+  },
+];
 
 // ─── Animation Variants ───────────────────────────────────────────────────────
 
@@ -64,43 +106,109 @@ export default function StudentGame() {
   const navigate = useNavigate();
   const { campaignId } = useParams();
 
+  const [campaign, setCampaign] = useState(null);
+  const [selectedRoundId, setSelectedRoundId] = useState(null);
+  const [selectedDifficulty, setSelectedDifficulty] = useState("all");
   const [gameLevels, setGameLevels] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
-  // Fetch game levels from API
   useEffect(() => {
     let cancelled = false;
 
-    async function loadLevels() {
+    async function loadCampaign() {
       try {
         setLoading(true);
         setError(null);
-        const levels = await fetchGameLevels(campaignId);
+        const res = await getCampaignDetails(campaignId);
         if (!cancelled) {
-          setGameLevels(levels);
+          const campaignData = res.data;
+          setCampaign(campaignData);
+          if (campaignData?.rounds?.length > 0) {
+            setSelectedRoundId(campaignData.rounds[0].id);
+          }
         }
       } catch (err) {
         if (!cancelled) {
-          setError("Không thể tải danh sách level. Vui lòng thử lại.");
-          console.error("[StudentGame] Failed to fetch game levels:", err);
+          setError("Không thể tải thông tin chiến dịch. Vui lòng thử lại.");
+          console.error("[StudentGame] Failed to fetch campaign:", err);
         }
       } finally {
         if (!cancelled) setLoading(false);
       }
     }
 
-    loadLevels();
-    return () => { cancelled = true; };
+    loadCampaign();
+    return () => {
+      cancelled = true;
+    };
   }, [campaignId]);
+
+  useEffect(() => {
+    if (campaign && selectedRoundId) {
+      const round = campaign.rounds.find((r) => r.id === selectedRoundId);
+      if (round && round.games) {
+        const flattenedLevels = [];
+        round.games.forEach((game) => {
+          if (game.presets) {
+            game.presets.forEach((preset) => {
+              if (preset.items) {
+                preset.items.forEach((item) => {
+                  flattenedLevels.push({
+                    id: `${game.roundGameConfigId}-${preset.presetId}-${item.levelNumber}`,
+                    roundGameConfigId: game.roundGameConfigId,
+                    typeCode: game.typeCode,
+                    gameTypeName: game.gameTypeName,
+                    presetId: preset.presetId,
+                    difficulty: preset.difficulty,
+                    levelNumber: item.levelNumber,
+                    name: `Level ${item.levelNumber}`, // Or format based on type
+                    itemsCount: item.itemCount,
+                    sorter: { timeLimit: item.timeLimitSeconds },
+                    coinReward: game.coinPerSession,
+                    completed: item.coinReceived === true,
+                    locked: false, // Determine your lock logic if any
+                    stars: 0, // Not explicitly provided in new API payload without attempt result
+                  });
+                });
+              }
+            });
+          }
+        });
+        // Sort levels by levelNumber
+        flattenedLevels.sort((a, b) => a.levelNumber - b.levelNumber);
+        setGameLevels(flattenedLevels);
+      } else {
+        setGameLevels([]);
+      }
+    }
+  }, [selectedRoundId, campaign]);
+  console.log(gameLevels);
 
   const completedLevels = gameLevels.filter((l) => l.completed);
   const totalStars = gameLevels.reduce((sum, l) => sum + (l.stars || 0), 0);
   const maxStars = gameLevels.length * 3;
-  const totalCoins = completedLevels.reduce((sum, l) => sum + (l.coinReward || 0), 0);
+  const totalCoins = completedLevels.reduce(
+    (sum, l) => sum + (l.coinReward || 0),
+    0,
+  );
 
-  const handlePlayLevel = (levelId) => {
-    navigate(`/student/campaign/${campaignId}/game/play?levelId=${levelId}`);
+  const filteredLevels =
+    selectedDifficulty === "all"
+      ? gameLevels
+      : gameLevels.filter((l) => l.difficulty === selectedDifficulty);
+
+  const handlePlayLevel = (level) => {
+    navigate(
+      `/student/campaign/${campaignId}/round/${selectedRoundId}/game/${level.roundGameConfigId}/play`,
+      {
+        state: {
+          levelNumber: level.levelNumber,
+          presetId: level.presetId,
+          typeCode: level.typeCode,
+        },
+      },
+    );
   };
 
   // ─── Loading State ──────────────────────────────────────────────────────────
@@ -195,23 +303,6 @@ export default function StudentGame() {
                 </Card>
 
                 <Card
-                  className="border-2 border-amber-200 rounded-2xl"
-                  bodyStyle={{ padding: "16px" }}
-                >
-                  <div className="flex items-center gap-3">
-                    <div className="w-12 h-12 rounded-xl bg-amber-50 flex items-center justify-center">
-                      <StarOutlined className="text-xl text-amber-500" />
-                    </div>
-                    <div className="text-left">
-                      <p className="text-sm text-gray-500">Sao đạt được</p>
-                      <p className="text-2xl font-bold text-amber-500">
-                        {totalStars}/{maxStars}
-                      </p>
-                    </div>
-                  </div>
-                </Card>
-
-                <Card
                   className="border-2 border-amber-200 rounded-2xl bg-amber-50"
                   bodyStyle={{ padding: "16px" }}
                 >
@@ -233,6 +324,40 @@ export default function StudentGame() {
         </Card>
       </motion.div>
 
+      {/* Round Selection */}
+      {campaign?.campaignType !== "SCHOOL_INTERNAL" && (
+        <motion.div
+          initial={{ opacity: 0, y: 10 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.15 }}
+        >
+          <Card
+            className="border-2 border-primary/20 rounded-2xl shadow-sm hover:border-primary/40 transition-colors bg-white max-w-sm"
+            bodyStyle={{ padding: "20px" }}
+          >
+            <Space direction="vertical" className="w-full" size="middle">
+              <div className="flex items-center gap-2 text-primary font-black px-1 uppercase tracking-wider text-xs">
+                <Layers className="w-4 h-4" />
+                <span>Vòng thi đấu</span>
+              </div>
+              <Select
+                className="w-full h-12"
+                placeholder="Chọn vòng"
+                value={selectedRoundId}
+                onChange={setSelectedRoundId}
+                size="large"
+                suffixIcon={<ChevronRight className="w-4 h-4" />}
+                dropdownClassName="rounded-xl overflow-hidden shadow-xl"
+                options={campaign?.rounds?.map((round) => ({
+                  label: `Vòng ${round.roundNumber}: ${round.roundName}`,
+                  value: round.id,
+                }))}
+              />
+            </Space>
+          </Card>
+        </motion.div>
+      )}
+
       {/* Progress Overview */}
       <motion.div
         initial={{ opacity: 0, y: 20 }}
@@ -250,7 +375,9 @@ export default function StudentGame() {
               </span>
               <span className="text-sm font-bold text-green-600">
                 {gameLevels.length > 0
-                  ? Math.round((completedLevels.length / gameLevels.length) * 100)
+                  ? Math.round(
+                      (completedLevels.length / gameLevels.length) * 100,
+                    )
                   : 0}
                 %
               </span>
@@ -258,13 +385,52 @@ export default function StudentGame() {
             <Progress
               percent={
                 gameLevels.length > 0
-                  ? Math.round((completedLevels.length / gameLevels.length) * 100)
+                  ? Math.round(
+                      (completedLevels.length / gameLevels.length) * 100,
+                    )
                   : 0
               }
               strokeColor="#22c55e"
               trailColor="#e5e7eb"
               strokeWidth={12}
             />
+          </div>
+        </Card>
+      </motion.div>
+
+      {/* Difficulty Filters */}
+      <motion.div
+        initial={{ opacity: 0, y: 10 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: 0.15 }}
+      >
+        <Card
+          className="border-2 border-gray-100 rounded-2xl shadow-sm bg-white"
+          bodyStyle={{ padding: "16px 24px" }}
+        >
+          <div className="flex items-center gap-6 flex-wrap">
+            <div className="flex items-center gap-2 pr-6 border-r border-gray-200">
+              <span className="text-[10px] uppercase font-black text-gray-500 tracking-widest">
+                Lọc độ khó
+              </span>
+            </div>
+            <div className="flex gap-2 flex-wrap">
+              {FILTER_OPTIONS.map(({ key, label, activeClass }) => (
+                <button
+                  key={key}
+                  onClick={() => setSelectedDifficulty(key)}
+                  className={`px-6 py-2.5 text-xs font-black rounded-xl border-2 transition-all duration-300 uppercase tracking-wider ${
+                    selectedDifficulty === key
+                      ? key === "all"
+                        ? "bg-gray-800 text-white border-gray-800 shadow-lg scale-105"
+                        : `${activeClass} shadow-lg scale-105`
+                      : "bg-white text-gray-400 border-gray-200 hover:border-gray-300"
+                  }`}
+                >
+                  {label}
+                </button>
+              ))}
+            </div>
           </div>
         </Card>
       </motion.div>
@@ -276,8 +442,10 @@ export default function StudentGame() {
         initial="hidden"
         animate="visible"
       >
-        {gameLevels.map((level, index) => {
-          const diffStyle = DIFFICULTY_LABELS[level.difficulty] || DIFFICULTY_LABELS.medium;
+        {filteredLevels.length > 0 ? (
+          filteredLevels.map((level, index) => {
+            const diffStyle =
+              DIFFICULTY_LABELS[level.difficulty] || DIFFICULTY_LABELS.medium;
 
           return (
             <motion.div
@@ -311,25 +479,17 @@ export default function StudentGame() {
                         )}
                       </div>
                       <h3 className="text-xl font-bold text-gray-800 mb-1">
-                        Level {index + 1}
+                        {level.gameTypeName} - Level {level.levelNumber}
                       </h3>
                       <p className="text-lg font-semibold text-gray-500">
-                        {level.name}
+                        {level.typeCode === "RUN_SORTING"
+                          ? "Eco Runner"
+                          : "Sea Rescue"}
                       </p>
                     </div>
                     <div className="w-16 h-16 rounded-2xl bg-green-50 flex items-center justify-center text-3xl">
                       🎮
                     </div>
-                  </div>
-
-                  {/* Stars */}
-                  <div className="flex items-center justify-center gap-2 p-4 rounded-xl bg-gray-50">
-                    {[1, 2, 3].map((star) => (
-                      <Star
-                        key={star}
-                        className={`w-8 h-8 ${star <= (level.stars || 0) ? "fill-amber-500 text-amber-500" : "text-gray-300"}`}
-                      />
-                    ))}
                   </div>
 
                   {/* Info */}
@@ -354,7 +514,9 @@ export default function StudentGame() {
                     </div>
                     {level.sorter?.timeLimit > 0 && (
                       <div className="flex items-center justify-between text-sm">
-                        <span className="text-gray-500">⏱️ Thời gian phân loại</span>
+                        <span className="text-gray-500">
+                          ⏱️ Thời gian phân loại
+                        </span>
                         <span className="font-semibold text-gray-800">
                           {level.sorter.timeLimit}s
                         </span>
@@ -367,7 +529,7 @@ export default function StudentGame() {
                     block
                     type={level.locked ? "default" : "primary"}
                     size="large"
-                    onClick={() => !level.locked && handlePlayLevel(level.id)}
+                    onClick={() => !level.locked && handlePlayLevel(level)}
                     disabled={level.locked}
                     icon={
                       level.locked ? (
@@ -394,7 +556,15 @@ export default function StudentGame() {
               </Card>
             </motion.div>
           );
-        })}
+        })
+        ) : (
+          <div className="col-span-full py-20 text-center bg-gray-50 rounded-3xl border-2 border-dashed border-gray-200">
+            <Play className="w-12 h-12 text-gray-300 mx-auto mb-4" />
+            <p className="text-gray-500 text-lg">
+              Không tìm thấy game nào trong độ khó này.
+            </p>
+          </div>
+        )}
       </motion.div>
     </div>
   );

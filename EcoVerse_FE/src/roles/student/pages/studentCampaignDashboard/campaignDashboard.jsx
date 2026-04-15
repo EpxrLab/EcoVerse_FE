@@ -367,24 +367,6 @@ export default function CampaignDashboard() {
                   <span className="text-white/40">→</span>
                   <span>{fmtDate(c.endDate)}</span>
                 </div>
-
-                {showDeadline && (
-                  <div
-                    className={`flex items-center gap-2 text-sm px-3 py-1.5 rounded-xl border font-medium ${
-                      deadlineWarn
-                        ? "bg-red-50 border-red-200 text-red-600"
-                        : "bg-amber-50 border-amber-200 text-amber-600"
-                    }`}
-                  >
-                    <ClockCircleOutlined />
-                    Hạn đăng ký: {fmtDate(c.invitationDeadline)}
-                    <span className="font-bold">
-                      {deadlineDays === 0
-                        ? "(Hôm nay!)"
-                        : `(còn ${deadlineDays} ngày)`}
-                    </span>
-                  </div>
-                )}
               </div>
 
               {/* Round progress */}
@@ -453,8 +435,7 @@ export default function CampaignDashboard() {
               Vòng đang diễn ra
             </p>
           </div>
-          <Card
-          >
+          <Card>
             <div className="flex items-center justify-between gap-4 flex-wrap">
               <div>
                 <p className="text-xs text-gray-400 mb-0.5">

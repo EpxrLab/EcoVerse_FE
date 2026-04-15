@@ -275,10 +275,28 @@ const deleteGameLevel = async (gameId, id) => {
   }
 };
 
-//====================Get Transactions Analytics===============
+//====================Get Analytics===============
 const getAllTransactions = async () => {
   try {
     const res = await axios.get("/subscriptions/admin/all?page=0&size=10");
+    return res.data;
+  } catch (error) {
+    console.log(error);
+  }
+};
+
+const getAdminReport = async (period) => {
+  try {
+    const res = await axios.get(`/admin/report/summary?period=${period}`);
+    return res.data;
+  } catch (error) {
+    console.log(error);
+  }
+};
+
+const getCampaignAnalytics = async () => {
+  try {
+    const res = await axios.get("/admin/campaign-analytics");
     return res.data;
   } catch (error) {
     console.log(error);
@@ -315,4 +333,6 @@ export {
   updateGameLevel,
   deleteGameLevel,
   getAllTransactions,
+  getAdminReport,
+  getCampaignAnalytics,
 };

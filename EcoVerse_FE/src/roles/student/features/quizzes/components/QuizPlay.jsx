@@ -26,6 +26,7 @@ import {
 
 import { submitQuiz, getAttemptResult } from "../../../services";
 import toast from "react-hot-toast";
+import { useStudentContext } from "../../../context";
 
 const { Title, Text } = Typography;
 
@@ -269,6 +270,8 @@ export default function QuizPlay({ quiz: _quiz, onFinish, onCancel }) {
   const [quizResult, setQuizResult] = useState(null);
   const [isSidebarOpen, setIsSidebarOpen] = useState(true);
 
+  const { refreshStudentData } = useStudentContext();
+
   const questions = useMemo(() => quiz?.questions || [], [quiz?.questions]);
   const currentQuestion = questions[currentQuestionIndex];
   const currentAnswer = answers.find(
@@ -332,6 +335,12 @@ export default function QuizPlay({ quiz: _quiz, onFinish, onCancel }) {
       } else {
         setQuizResult(resultRes);
       }
+
+      // Refresh sidebar coins
+      if (refreshStudentData) {
+        refreshStudentData();
+      }
+
       setShowResult(true);
     } catch (error) {
       console.log(error);
