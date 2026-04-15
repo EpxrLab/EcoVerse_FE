@@ -83,7 +83,7 @@ function PodiumSlot({ entry, isFirst }) {
       {/* Avatar */}
       <div
         className={`rounded-full flex items-center justify-center font-black shadow-xl border-4 border-white mb-3
-        ${AVATAR_GRADIENT[entry.rank] ?? "bg-blue-400 text-white"}
+        ${AVATAR_GRADIENT[entry.rank] ?? "bg-primary text-white"}
         ${isFirst ? "w-24 h-24 text-4xl" : "w-20 h-20 text-3xl"}`}
       >
         {initial}
@@ -332,7 +332,7 @@ export default function StudentLeaderboard() {
                 .charAt(0)
                 .toUpperCase();
               const avatarColor =
-                AVATAR_GRADIENT[entry.rank] ?? "bg-blue-400 text-white";
+                AVATAR_GRADIENT[entry.rank] ?? "bg-primary text-white";
 
               return (
                 <motion.div key={entry.studentId} variants={row}>
@@ -404,7 +404,7 @@ export default function StudentLeaderboard() {
 
                       {/* Độ chính xác */}
                       <div className="text-center min-w-[52px] hidden sm:block">
-                        <p className="font-bold text-blue-500 text-sm flex items-center justify-center gap-0.5">
+                        <p className="font-bold text-primary text-sm flex items-center justify-center gap-0.5">
                           <AimOutlined className="text-xs" />
                           {entry.combinedAccuracyPercentage?.toFixed(1)}%
                         </p>
@@ -413,7 +413,7 @@ export default function StudentLeaderboard() {
 
                       {/* Thời gian TB */}
                       <div className="text-center min-w-[52px] hidden md:block">
-                        <p className="font-bold text-purple-500 text-sm flex items-center justify-center gap-0.5">
+                        <p className="font-bold text-primary text-sm flex items-center justify-center gap-0.5">
                           <ClockCircleOutlined className="text-xs" />
                           {fmtTime(entry.avgTimeSeconds)}
                         </p>

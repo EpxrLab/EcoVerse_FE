@@ -1,6 +1,5 @@
 import * as THREE from "three";
 import { GLTFLoader } from "three/examples/jsm/loaders/GLTFLoader";
-import gsap from "gsap";
 import { SPAWNABLE_TRASH } from "../EcoGameStateManager";
 
 /* ===================== CONSTANTS ===================== */
@@ -169,7 +168,7 @@ export function initWorld(scene, state) {
       skyboxContainer.add(model);
       scene.add(skyboxContainer);
       state.skybox = skyboxContainer;
-      
+
       console.log("[Skybox Debug] Added to scene at current camera far range.");
     },
     undefined,

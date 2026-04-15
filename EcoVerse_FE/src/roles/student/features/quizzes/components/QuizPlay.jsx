@@ -47,7 +47,7 @@ function ResultModal({ result, onClose }) {
       icon: (
         <CheckCircle2
           size={18}
-          className={passed ? "text-green-500" : "text-red-400"}
+          className={passed ? "text-primary" : "text-red-400"}
         />
       ),
       label: "Câu đúng",
@@ -55,7 +55,7 @@ function ResultModal({ result, onClose }) {
       highlight: passed,
     },
     {
-      icon: <TrendingUp size={18} className="text-blue-500" />,
+      icon: <TrendingUp size={18} className="text-primary" />,
       label: "Điểm lần này",
       value:
         result.scorePercentage != null ? `${result.scorePercentage}%` : "—",
@@ -99,7 +99,7 @@ function ResultModal({ result, onClose }) {
       >
         {/* Banner */}
         <div
-          className={`px-8 pt-8 pb-6 text-center ${passed ? "bg-gradient-to-br from-emerald-500 to-green-600" : "bg-gradient-to-br from-slate-700 to-slate-800"}`}
+          className={`px-8 pt-8 pb-6 text-center ${passed ? "bg-primary" : "bg-gradient-to-br from-slate-700 to-slate-800"}`}
         >
           <motion.div
             initial={{ scale: 0, rotate: -10 }}
@@ -179,7 +179,7 @@ function ResultModal({ result, onClose }) {
                 key={i}
                 className={`flex items-center gap-3 px-4 py-3 rounded-xl ${
                   s.highlight
-                    ? "bg-green-50 border border-green-100"
+                    ? "bg-primary/5 border border-primary/10"
                     : "bg-gray-50 border border-gray-100"
                 }`}
               >
@@ -218,7 +218,7 @@ function ResultModal({ result, onClose }) {
               size="large"
               type="primary"
               onClick={onClose}
-              className={`rounded-xl h-12 font-bold text-base ${passed ? "bg-emerald-600 border-emerald-600 hover:bg-emerald-700" : "bg-slate-800 border-slate-800 hover:bg-slate-900"}`}
+              className={`rounded-xl h-12 font-bold text-base ${passed ? "bg-primary border-primary hover:opacity-90" : "bg-slate-800 border-slate-800 hover:bg-slate-900"}`}
             >
               {passed ? "Tiếp tục" : "Đóng"}
             </Button>
@@ -432,7 +432,7 @@ export default function QuizPlay({ quiz: _quiz, onFinish, onCancel }) {
                 </Text>
                 <Progress
                   percent={progressPercent}
-                  strokeColor="#4f46e5"
+                  strokeColor="var(--primary)"
                   size="small"
                   className="mb-5"
                 />
@@ -450,7 +450,7 @@ export default function QuizPlay({ quiz: _quiz, onFinish, onCancel }) {
                         className={`h-9 rounded-lg text-xs font-semibold border transition-all
                           ${
                             isCurrent
-                              ? "border-indigo-600 text-indigo-600 bg-indigo-50 ring-1 ring-indigo-400"
+                              ? "border-primary text-primary bg-primary/10 ring-1 ring-primary/40"
                               : isAnswered
                                 ? "bg-slate-800 text-white border-slate-800"
                                 : "bg-white text-slate-400 border-slate-200 hover:border-slate-400"
@@ -468,7 +468,7 @@ export default function QuizPlay({ quiz: _quiz, onFinish, onCancel }) {
                     <span>Đã trả lời</span>
                   </div>
                   <div className="flex items-center gap-2">
-                    <div className="w-4 h-4 rounded border-2 border-indigo-400 bg-indigo-50" />
+                    <div className="w-4 h-4 rounded border-2 border-primary/40 bg-primary/10" />
                     <span>Câu hiện tại</span>
                   </div>
                   <div className="flex items-center gap-2">
@@ -485,7 +485,7 @@ export default function QuizPlay({ quiz: _quiz, onFinish, onCancel }) {
             <div className="max-w-[700px] mx-auto">
               {/* Question header */}
               <div className="flex items-center justify-between mb-5">
-                <span className="text-xs font-bold text-indigo-600 uppercase tracking-widest">
+                <span className="text-xs font-bold text-primary uppercase tracking-widest">
                   Câu hỏi {currentQuestionIndex + 1} / {questions.length}
                 </span>
                 {currentAnswer && (
@@ -527,11 +527,11 @@ export default function QuizPlay({ quiz: _quiz, onFinish, onCancel }) {
                             key={option.id}
                             value={option.id}
                             className={`!h-auto !py-3.5 !px-5 !rounded-xl !border-2 !flex !items-center !w-full !transition-all
-                              ${selected ? "!border-indigo-500 !bg-indigo-50/40" : "!border-slate-200 hover:!border-slate-300 !bg-white"}`}
+                              ${selected ? "!border-primary !bg-primary/10" : "!border-slate-200 hover:!border-slate-300 !bg-white"}`}
                           >
                             <div
                               className={`w-8 h-8 rounded-full border-2 flex items-center justify-center mr-4 text-xs font-bold flex-shrink-0 transition-all
-                              ${selected ? "bg-indigo-600 border-indigo-600 text-white" : "bg-white border-slate-300 text-slate-400"}`}
+                              ${selected ? "bg-primary border-primary text-white" : "bg-white border-slate-300 text-slate-400"}`}
                             >
                               {String.fromCharCode(65 + idx)}
                             </div>
@@ -583,7 +583,7 @@ export default function QuizPlay({ quiz: _quiz, onFinish, onCancel }) {
                         ? handleFinish
                         : () => setCurrentQuestionIndex((p) => p + 1)
                     }
-                    className="bg-indigo-600 border-indigo-600 hover:bg-indigo-700 rounded-xl px-8 font-bold disabled:bg-slate-200 disabled:border-slate-200 disabled:text-slate-400"
+                    className="bg-primary border-primary hover:opacity-90 rounded-xl px-8 font-bold disabled:bg-slate-200 disabled:border-slate-200 disabled:text-slate-400"
                   >
                     {currentQuestionIndex === questions.length - 1
                       ? "Gửi bài"

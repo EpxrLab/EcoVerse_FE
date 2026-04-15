@@ -14,9 +14,8 @@ import {
   HeartOutlined,
   ThunderboltOutlined,
 } from "@ant-design/icons";
-import { motion, AnimatePresence } from "framer-motion";
+import { motion } from "framer-motion";
 import { getCurrentRoundContent } from "../../services";
-import { ClippingGroup } from "three/webgpu";
 import { RotateCcw } from "lucide-react";
 
 // ─── Constants ────────────────────────────────────────────────────────────────
@@ -24,9 +23,9 @@ import { RotateCcw } from "lucide-react";
 const DIFFICULTY_CFG = {
   EASY: {
     label: "Dễ",
-    color: "bg-green-500",
-    badge: "bg-green-50 text-green-700 border-green-200",
-    tab: "text-green-600",
+    color: "bg-primary",
+    badge: "bg-primary/10 text-primary border-primary/20",
+    tab: "text-primary",
   },
   MEDIUM: {
     label: "Trung bình",
@@ -87,7 +86,7 @@ function LevelCard({ item, isUnlocked, isCompleted, onPlay, campaignId }) {
         className={`relative rounded-2xl border-2 overflow-hidden transition-all duration-200
         ${
           isCompleted
-            ? "border-green-300 bg-green-50/40"
+            ? "border-primary/30 bg-primary/5"
             : isUnlocked
               ? isOutOfAttempts
                 ? "border-orange-200 bg-orange-50/30"
@@ -98,7 +97,7 @@ function LevelCard({ item, isUnlocked, isCompleted, onPlay, campaignId }) {
         {/* Left accent bar */}
         <div
           className={`absolute inset-y-0 left-0 w-1.5
-          ${isCompleted ? "bg-green-500" : isUnlocked ? (isOutOfAttempts ? "bg-orange-400" : "bg-blue-400") : "bg-gray-300"}`}
+          ${isCompleted ? "bg-primary" : isUnlocked ? (isOutOfAttempts ? "bg-orange-400" : "bg-blue-400") : "bg-gray-300"}`}
         />
 
         <div className="pl-5 pr-4 py-4">
@@ -110,7 +109,7 @@ function LevelCard({ item, isUnlocked, isCompleted, onPlay, campaignId }) {
                 className={`w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0 font-black text-sm
                 ${
                   isCompleted
-                    ? "bg-green-500 text-white shadow-sm shadow-green-200"
+                  ? "bg-primary text-white shadow-sm shadow-primary/20"
                     : isUnlocked
                       ? isOutOfAttempts
                         ? "bg-orange-500 text-white"
@@ -133,7 +132,7 @@ function LevelCard({ item, isUnlocked, isCompleted, onPlay, campaignId }) {
                     Màn {item.levelNumber}
                   </span>
                   {isCompleted && (
-                    <span className="text-[11px] bg-green-100 text-green-700 px-2 py-0.5 rounded-full font-semibold">
+                    <span className="text-[11px] bg-primary/10 text-primary px-2 py-0.5 rounded-full font-semibold">
                       ✓ Hoàn thành
                     </span>
                   )}
@@ -214,7 +213,7 @@ function LevelCard({ item, isUnlocked, isCompleted, onPlay, campaignId }) {
                       onClick={() => onPlay(item.levelNumber)}
                       className={`rounded-xl font-semibold px-4 ${
                         isCompleted
-                          ? "bg-green-500 border-green-500 hover:bg-green-600 shadow-sm shadow-green-100"
+                          ? "bg-primary border-primary hover:opacity-90 shadow-sm shadow-primary/10"
                           : "bg-blue-500 border-blue-500 hover:bg-blue-600 shadow-sm shadow-blue-100"
                       }`}
                       icon={
@@ -394,7 +393,7 @@ export default function StudentRoundDetails() {
           <span
             className={`text-[11px] px-1.5 py-0.5 rounded-full font-bold ${
               completed === total && total > 0
-                ? "bg-green-100 text-green-700"
+                ? "bg-primary/10 text-primary"
                 : "bg-gray-100 text-gray-500"
             }`}
           >
@@ -421,7 +420,7 @@ export default function StudentRoundDetails() {
         icon={<ArrowLeftOutlined />}
         onClick={() => navigate(`/student/campaign/${campaignId}`)}
         type="text"
-        className="text-gray-500 hover:text-green-600 -ml-1"
+        className="text-gray-500 hover:text-primary -ml-1"
       >
         Quay lại chiến dịch
       </Button>
@@ -436,11 +435,11 @@ export default function StudentRoundDetails() {
           className="rounded-3xl border-2 border-gray-100 shadow-sm overflow-hidden"
           bodyStyle={{ padding: 0 }}
         >
-          <div className="relative bg-gradient-to-br from-green-50 via-blue-50 to-purple-50 px-6 py-5">
+          <div className="relative bg-primary/5 px-6 py-5">
             <div className="absolute top-0 right-0 w-64 h-64 bg-gradient-to-br from-green-200/20 to-transparent rounded-full blur-3xl pointer-events-none" />
             <div className="relative flex flex-col sm:flex-row sm:items-center justify-between gap-4">
               <div>
-                <span className="text-xs font-bold text-green-600 uppercase tracking-widest">
+                <span className="text-xs font-bold text-primary uppercase tracking-widest">
                   Vòng {roundData.roundNumber}
                 </span>
                 <h1 className="text-2xl font-extrabold text-gray-800 mt-0.5">
@@ -609,7 +608,7 @@ export default function StudentRoundDetails() {
                               </span>
                             </div>
                             {isPassed && (
-                              <p className="text-xs text-green-600 font-semibold mt-1.5 flex items-center gap-1">
+                              <p className="text-xs text-primary font-semibold mt-1.5 flex items-center gap-1">
                                 <CheckCircleOutlined /> Đã hoàn thành (Làm lại
                                 sẽ không nhận thêm xu)
                               </p>

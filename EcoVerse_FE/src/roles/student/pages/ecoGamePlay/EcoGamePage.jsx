@@ -7,7 +7,6 @@ import {
 } from "react-router";
 import { Spin, Progress } from "antd";
 import { LoadingOutlined } from "@ant-design/icons";
-import * as THREE from "three";
 import { GLTFLoader } from "three/examples/jsm/loaders/GLTFLoader";
 import EcoGame from "../../features/eco-game/EcoGame";
 import EcoGameHUD from "../../features/eco-game/EcoGameHUD";
@@ -28,7 +27,6 @@ export default function EcoGamePage() {
   const pauseStartTimeRef = useRef(null);
   const navigate = useNavigate();
   const { campaignId, roundId, roundGameConfigId } = useParams();
-  const [searchParams] = useSearchParams();
   const location = useLocation();
   const levelNumber = location.state?.levelNumber;
   const presetId = location.state?.presetId;
@@ -292,7 +290,7 @@ export default function EcoGamePage() {
               <Progress
                 percent={loadingProgress}
                 size="small"
-                strokeColor="#4caf50"
+                strokeColor="var(--primary)"
               />
             </div>
           )}

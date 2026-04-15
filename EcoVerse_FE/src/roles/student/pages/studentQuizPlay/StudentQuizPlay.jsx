@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate, useParams, useSearchParams } from "react-router";
 import { Spin, Result, Button, Modal } from "antd";
 import { LoadingOutlined } from "@ant-design/icons";
@@ -8,7 +8,6 @@ import { startQuiz } from "../../services";
 export default function StudentQuizPlay() {
   const navigate = useNavigate();
   const { campaignId, roundId, quizId } = useParams();
-  const [searchParams] = useSearchParams();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   const [quizInfo, setQuizInfo] = useState(null);
@@ -52,11 +51,11 @@ export default function StudentQuizPlay() {
     return (
       <div className="fixed inset-0 bg-white flex flex-col items-center justify-center z-[10000]">
         <div className="relative">
-          <div className="absolute inset-0 bg-indigo-500/10 blur-3xl rounded-full" />
+          <div className="absolute inset-0 bg-primary/10 blur-3xl rounded-full" />
           <Spin
             indicator={
               <LoadingOutlined
-                style={{ fontSize: 64, color: "#6366f1" }}
+                style={{ fontSize: 64, color: "var(--primary)" }}
                 spin
               />
             }
@@ -82,7 +81,7 @@ export default function StudentQuizPlay() {
               size="large"
               key="back"
               onClick={handleCancel}
-              className="h-14 px-10 rounded-2xl font-black bg-indigo-600 border-none shadow-lg"
+              className="h-14 px-10 rounded-2xl font-black bg-primary border-none shadow-lg"
             >
               Quay về Dashboard
             </Button>,

@@ -67,7 +67,7 @@ const TX_TYPE_CFG = {
     label: "Thắng game",
     icon: <RocketOutlined />,
     pos: true,
-    cls: "bg-green-50 text-green-600",
+    cls: "bg-primary/10 text-primary",
   },
   EARN_QUIZ: {
     label: "Hoàn thành quiz",
@@ -135,7 +135,7 @@ const AchievementCard = ({ achievement }) => (
     transition={{ duration: 0.2 }}
   >
     <Card
-      className="border-2 border-green-200 rounded-2xl bg-emerald-50 hover:shadow-lg transition-shadow overflow-hidden"
+      className="border-2 border-primary/20 rounded-2xl bg-primary/5 hover:shadow-lg transition-shadow overflow-hidden"
       bodyStyle={{ padding: "0px", textAlign: "center" }}
     >
       <div className="relative group">
@@ -161,7 +161,7 @@ const AchievementCard = ({ achievement }) => (
             {achievement.campaignName}
           </p>
           <div className="pt-2">
-            <span className="inline-block px-3 py-1 rounded-full text-[10px] font-bold bg-green-500 text-white shadow-sm shadow-green-100 italic">
+            <span className="inline-block px-3 py-1 rounded-full text-[10px] font-bold bg-primary text-white shadow-sm shadow-primary/10 italic">
                {fmtDate(achievement.earnedAt?.split('T')[0])}
             </span>
           </div>
@@ -300,15 +300,15 @@ function SummaryTab() {
                 </p>
               </div>
             </div>
-            <div className="flex items-center gap-3 p-4 rounded-2xl bg-emerald-50 border border-emerald-100">
-              <div className="w-10 h-10 rounded-xl bg-emerald-100 flex items-center justify-center text-emerald-600 text-base">
+            <div className="flex items-center gap-3 p-4 rounded-2xl bg-primary/5 border border-primary/20">
+              <div className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center text-primary text-base">
                 <DollarOutlined />
               </div>
               <div>
                 <p className="text-[10px] font-bold text-gray-400 uppercase tracking-wider">
                   Đã kiếm
                 </p>
-                <p className="text-xl font-black text-emerald-600">
+                <p className="text-xl font-black text-primary">
                   {s.totalCoinsEarned > 0 ? "+" : ""}
                   {fmtN(s.totalCoinsEarned)}
                 </p>
@@ -344,7 +344,7 @@ function SummaryTab() {
               value={pct(s.avgGameAccuracy)}
               sub={`Tốt nhất: ${pct(s.bestGameAccuracy)}`}
               icon={<AimOutlined />}
-              accent="bg-green-50 text-green-600"
+              accent="bg-primary/10 text-primary"
             />
             <StatTile
               label="Điểm quiz"
@@ -406,7 +406,7 @@ function SummaryTab() {
               value={pct(s.avgGameAccuracy)}
               sub={`Tốt nhất: ${pct(s.bestGameAccuracy)}`}
               icon={<AimOutlined />}
-              accent="bg-green-50 text-green-600"
+              accent="bg-primary/10 text-primary"
             />
             <StatTile
               label="Điểm quiz"
@@ -506,11 +506,11 @@ function CoinsTab() {
                 {fmtN(data.totalSpentAllTime)}
               </p>
             </div>
-            <div className="p-4 rounded-2xl bg-emerald-50 border border-emerald-100">
+            <div className="p-4 rounded-2xl bg-primary/5 border border-primary/20">
               <p className="text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-1">
                 Kiếm (Kỳ này)
               </p>
-              <p className="text-2xl font-black text-emerald-600">
+              <p className="text-2xl font-black text-primary">
                 {data.totalEarnedInPeriod > 0 ? "+" : ""}
                 {fmtN(data.totalEarnedInPeriod)}
               </p>
@@ -571,7 +571,7 @@ function CoinsTab() {
                         </p>
                       </div>
                       <span
-                        className={`text-sm font-black flex-shrink-0 ${cfg.pos ? "text-emerald-600" : "text-red-500"}`}
+                        className={`text-sm font-black flex-shrink-0 ${cfg.pos ? "text-primary" : "text-red-500"}`}
                       >
                         {cfg.pos ? "+" : ""}
                         {fmtN(tx.amount)}
@@ -676,7 +676,7 @@ function PerformanceSection() {
                     <p className="text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-0.5">
                       Độ chính xác
                     </p>
-                    <p className="text-2xl font-black text-emerald-600">
+                    <p className="text-2xl font-black text-primary">
                       {pct(d.avgGameAccuracyInPeriod)}
                     </p>
                     <p className="text-[11px] text-gray-400">
@@ -694,8 +694,8 @@ function PerformanceSection() {
                       (d.avgGameAccuracy ?? 0).toFixed(1),
                     )}
                     showInfo={false}
-                    strokeColor="#14b8a6"
-                    trailColor="#e0e7ff"
+                    strokeColor="var(--primary)"
+                    trailColor="var(--primary-light)"
                     strokeWidth={6}
                   />
                 </div>
@@ -741,8 +741,8 @@ function PerformanceSection() {
                   <Progress
                     percent={Number((d.avgQuizScore ?? 0).toFixed(1))}
                     showInfo={false}
-                    strokeColor="#10b981"
-                    trailColor="#d1fae5"
+                    strokeColor="var(--primary)"
+                    trailColor="var(--primary-light)"
                     strokeWidth={6}
                   />
                 </div>
@@ -777,7 +777,7 @@ function PerformanceSection() {
                               <span
                                 className={`text-[10px] px-2 py-0.5 rounded-full font-semibold ${
                                   c.campaignStatus === "ON_GOING"
-                                    ? "bg-green-100 text-green-700"
+                                    ? "bg-primary/10 text-primary"
                                     : "bg-gray-100 text-gray-500"
                                 }`}
                               >
@@ -806,7 +806,7 @@ function PerformanceSection() {
                               <span className="text-gray-500">
                                 Độ chính xác tổng hợp
                               </span>
-                              <span className="font-bold text-teal-600">
+                              <span className="font-bold text-primary">
                                 {pct(c.combinedAccuracy)}
                               </span>
                             </div>
@@ -815,11 +815,8 @@ function PerformanceSection() {
                                 ((c.combinedAccuracy ?? 0) * 100).toFixed(1),
                               )}
                               showInfo={false}
-                              strokeColor={{
-                                "0%": "#14b8a6",
-                                "100%": "#10b981",
-                              }}
-                              trailColor="#f0fdf4"
+                              strokeColor="var(--primary)"
+                              trailColor="var(--primary-light)"
                               strokeWidth={5}
                             />
                           </div>
@@ -930,7 +927,7 @@ export default function StudentProfile() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-white to-teal-50/30">
+    <div className="min-h-screen bg-background">
       <div className="max-w-6xl mx-auto px-4 py-7 space-y-6">
         {/* Breadcrumb */}
         <motion.div
@@ -943,7 +940,7 @@ export default function StudentProfile() {
             size="small"
             icon={<HomeOutlined />}
             onClick={() => navigate("/student")}
-            className="text-gray-400 hover:text-teal-600"
+            className="text-gray-400 hover:text-primary"
           >
             Home
           </Button>
@@ -961,10 +958,10 @@ export default function StudentProfile() {
             className="rounded-3xl border-0 shadow-xl overflow-hidden"
             bodyStyle={{ padding: 0 }}
           >
-            <div className="relative bg-gradient-to-br from-white via-teal-50/30 to-indigo-50/20 p-7 lg:p-9">
+            <div className="relative bg-primary/5 p-7 lg:p-9">
               {/* Decorative blobs */}
-              <div className="absolute top-0 right-0 w-72 h-72 bg-teal-100/30 rounded-full blur-3xl pointer-events-none" />
-              <div className="absolute bottom-0 left-24 w-48 h-48 bg-indigo-100/20 rounded-full blur-3xl pointer-events-none" />
+              <div className="absolute top-0 right-0 w-72 h-72 bg-primary/10 rounded-full blur-3xl pointer-events-none" />
+              <div className="absolute bottom-0 left-24 w-48 h-48 bg-primary/5 rounded-full blur-3xl pointer-events-none" />
 
               <div className="relative flex flex-col lg:flex-row items-center lg:items-start gap-8">
                 {/* Avatar */}
@@ -972,7 +969,7 @@ export default function StudentProfile() {
                   <Skeleton.Avatar size={130} shape="square" active />
                 ) : (
                   <div className="relative flex-shrink-0">
-                    <div className="absolute -inset-2 bg-gradient-to-br from-teal-300/30 to-indigo-300/30 rounded-[2rem] blur-xl" />
+                    <div className="absolute -inset-2 bg-primary/20 rounded-[2rem] blur-xl" />
                     {student?.avatarPresignedUrl ? (
                       <img
                         src={student.avatarPresignedUrl}
@@ -980,7 +977,7 @@ export default function StudentProfile() {
                         className="relative w-32 h-32 rounded-[1.75rem] object-cover border-4 border-white shadow-xl"
                       />
                     ) : (
-                      <div className="relative w-32 h-32 rounded-[1.75rem] bg-gradient-to-br from-teal-500 to-indigo-500 flex items-center justify-center text-5xl font-black text-white border-4 border-white shadow-xl uppercase">
+                      <div className="relative w-32 h-32 rounded-[1.75rem] bg-primary flex items-center justify-center text-5xl font-black text-white border-4 border-white shadow-xl uppercase">
                         {student?.fullName?.charAt(0) ?? "?"}
                       </div>
                     )}

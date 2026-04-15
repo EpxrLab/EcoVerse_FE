@@ -1,4 +1,4 @@
-import { useState, useMemo, lazy, Suspense } from "react";
+import { useMemo, lazy, Suspense } from "react";
 import { Card, Button, Tabs, Spin, Modal } from "antd";
 import {
   CalendarOutlined,
@@ -9,7 +9,6 @@ import {
   UserOutlined,
   LoadingOutlined,
   ClockCircleOutlined,
-  TagOutlined,
   CodeOutlined,
   LogoutOutlined,
 } from "@ant-design/icons";
@@ -28,8 +27,8 @@ const STATUS_CONFIG = {
   },
   ON_GOING: {
     label: "Đang diễn ra",
-    tw: "bg-green-50 text-green-600 border-green-200",
-    dot: "bg-green-500",
+    tw: "bg-primary/10 text-primary border-primary/20",
+    dot: "bg-primary",
   },
   COMPLETED: {
     label: "Đã kết thúc",
@@ -112,7 +111,7 @@ const CampaignCard = lazy(() =>
         >
           <Card
             className={`relative overflow-hidden rounded-2xl border-2 transition-all duration-300 h-full
-              ${active ? "border-green-300 hover:shadow-xl" : "border-gray-200 hover:shadow-md"}
+              ${active ? "border-primary/30 hover:shadow-xl" : "border-gray-200 hover:shadow-md"}
               ${!active && !isInvited ? "opacity-80" : ""}`}
             bodyStyle={{
               padding: "22px",
@@ -123,14 +122,14 @@ const CampaignCard = lazy(() =>
           >
             {/* Top accent bar */}
             <div
-              className={`absolute top-0 inset-x-0 h-1 ${active ? "bg-gradient-to-r from-green-400 to-blue-400" : "bg-gray-200"}`}
+              className={`absolute top-0 inset-x-0 h-1 ${active ? "bg-primary" : "bg-gray-200"}`}
             />
 
             {/* Active pulse dot */}
             {active && (
               <span className="absolute top-3 right-3 flex h-2.5 w-2.5">
-                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75" />
-                <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-green-500" />
+                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-primary/40 opacity-75" />
+                <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-primary" />
               </span>
             )}
 
@@ -218,7 +217,7 @@ const CampaignCard = lazy(() =>
                 disabled={isInvited}
                 className={`rounded-xl font-semibold transition-all ${
                   active
-                    ? "bg-green-500 border-green-500 hover:bg-green-600 shadow-md shadow-green-200"
+                    ? "bg-primary border-primary hover:opacity-90 shadow-md shadow-primary/20"
                     : ""
                 }`}
                 icon={<ArrowRightOutlined />}
@@ -337,7 +336,7 @@ export default function CampaignSelection() {
         <span className="flex items-center gap-2">
           Đang diễn ra
           {active.length > 0 && (
-            <span className="px-1.5 py-0.5 rounded-full text-xs font-bold bg-green-100 text-green-600">
+            <span className="px-1.5 py-0.5 rounded-full text-xs font-bold bg-primary/10 text-primary">
               {active.length}
             </span>
           )}
@@ -364,17 +363,17 @@ export default function CampaignSelection() {
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center min-h-screen bg-gradient-to-b from-white to-gray-50">
+      <div className="flex items-center justify-center min-h-screen bg-background">
         <div className="text-center space-y-4">
           <Spin size="large" />
-          <p className="text-gray-400">Đang tải chiến dịch...</p>
+          <p className="text-muted-foreground">Đang tải chiến dịch...</p>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-white to-gray-50 p-6">
+    <div className="min-h-screen bg-background p-6">
       <div className="max-w-7xl mx-auto space-y-8">
         {/* Header */}
         <motion.div
@@ -421,12 +420,10 @@ export default function CampaignSelection() {
               initial={{ scale: 0.9, opacity: 0 }}
               animate={{ scale: 1, opacity: 1 }}
               transition={{ delay: 0.2 }}
-              className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-green-50 text-green-600"
+              className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-primary/10 text-primary font-bold"
             >
               <StarOutlined />
-              <span className="text-sm font-semibold">
-                Chọn chiến dịch để bắt đầu
-              </span>
+              <span className="text-sm">Chọn chiến dịch để bắt đầu</span>
             </motion.div>
 
             <motion.h1

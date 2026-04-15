@@ -516,6 +516,17 @@ export function useCampaigns() {
           game_type_name: r.gameTypeName || r.game_type_name,
           difficulty: r.resolvedDifficulty || r.difficulty,
           coin_per_session: r.coinPerSession || r.coin_per_session,
+          selected_preset_ids: r.selectedPresetIds || r.selected_preset_ids || [],
+          preset_sub_category_config: (() => {
+            const config = r.presetSubCategoryConfigs || r.preset_sub_category_config || r.presetSubCategoryConfig;
+            if (Array.isArray(config)) {
+              return config.reduce((acc, item) => {
+                acc[item.presetId] = item.selectedSubCategoryIds || [];
+                return acc;
+              }, {});
+            }
+            return config || {};
+          })(),
           quizzes: r.quizzes?.map(q => ({
             id: q.quizId || q.id,
             title: q.title,

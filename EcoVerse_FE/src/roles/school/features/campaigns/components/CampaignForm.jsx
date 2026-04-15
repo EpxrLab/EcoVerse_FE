@@ -1,4 +1,6 @@
 import { useMemo, useState } from 'react';
+import { ConfigProvider, DatePicker } from 'antd';
+import dayjs from 'dayjs';
 import { Button } from '@/shared/components/ui/button';
 import { Input } from '@/shared/components/ui/input';
 import { Label } from '@/shared/components/ui/label';
@@ -10,7 +12,7 @@ import { ScrollArea } from '@/shared/components/ui/scroll-area';
 import { Calendar, Send, Users, UserPlus, Clock } from 'lucide-react';
 import { StudentSelectionDialog } from './StudentSelectionDialog';
 import { useStudents } from '@/roles/school/hooks';
-import { getLocalNow } from '@/utils/dateUtils';
+import { cn } from '@/shared/lib/utils';
 
 export function CampaignForm({
   mode,
@@ -26,8 +28,6 @@ export function CampaignForm({
   const { students: allStudents, isLoading: isStudentsLoading } = useStudents();
   const [studentSelectionClass, setStudentSelectionClass] = useState(null);
   
-  const today = getLocalNow();
-
   const handleOpenStudentSelection = (cls, e) => {
     e.preventDefault();
     e.stopPropagation();
@@ -55,7 +55,25 @@ export function CampaignForm({
   return (
     <div className="flex-1 flex flex-col min-h-0 overflow-hidden">
       {/* Scrollable Content Area */}
-      <div className="flex-1 overflow-y-auto pr-4 -mr-4 px-4 scrollbar-thin">
+      <ConfigProvider
+        theme={{
+          token: {
+            colorPrimary: '#2d6a4f',
+            borderRadius: 12,
+            colorBorder: '#d8e2dc',
+            colorBgContainer: 'transparent',
+            colorBgElevated: '#ffffff',
+          },
+          components: {
+            DatePicker: {
+              activeBorderColor: '#2d6a4f',
+              hoverBorderColor: '#40916c',
+              cellActiveWithRangeBg: '#d8f3dc',
+            }
+          }
+        }}
+      >
+        <div className="flex-1 overflow-y-auto pr-4 -mr-4 px-4 scrollbar-thin">
         <div className="space-y-6 py-4">
           {/* Basic Info */}
           <div className="space-y-4">
@@ -86,13 +104,17 @@ export function CampaignForm({
                   <Calendar className="w-4 h-4 inline mr-1 text-eco-green" />
                   Ngày bắt đầu *
                 </Label>
-                <Input
+                <DatePicker
                   id={`${mode}-start-date`}
-                  type="datetime-local"
-                  value={formData.start_date}
-                  min={today}
-                  onChange={(e) => onFormChange({ start_date: e.target.value })}
-                  className={dateValidation.errors.start_date ? 'border-destructive' : ''}
+                  showTime
+                  format="DD/MM/YYYY HH:mm"
+                  className={cn(
+                    "w-full h-10",
+                    dateValidation.errors.start_date ? 'border-destructive' : ''
+                  )}
+                  placeholder="Chọn ngày bắt đầu"
+                  value={formData.start_date ? dayjs(formData.start_date) : null}
+                  onChange={(date) => onFormChange({ start_date: date ? date.format('YYYY-MM-DDTHH:mm') : '' })}
                 />
                 {dateValidation.errors.start_date && (
                   <p className="text-[10px] text-destructive mt-1">{dateValidation.errors.start_date}</p>
@@ -104,13 +126,17 @@ export function CampaignForm({
                   <Calendar className="w-4 h-4 inline mr-1 text-red-500" />
                   Ngày kết thúc *
                 </Label>
-                <Input
+                <DatePicker
                   id={`${mode}-end-date`}
-                  type="datetime-local"
-                  value={formData.end_date}
-                  min={formData.start_date || today}
-                  onChange={(e) => onFormChange({ end_date: e.target.value })}
-                  className={dateValidation.errors.end_date ? 'border-destructive' : ''}
+                  showTime
+                  format="DD/MM/YYYY HH:mm"
+                  className={cn(
+                    "w-full h-10",
+                    dateValidation.errors.end_date ? 'border-destructive' : ''
+                  )}
+                  placeholder="Chọn ngày kết thúc"
+                  value={formData.end_date ? dayjs(formData.end_date) : null}
+                  onChange={(date) => onFormChange({ end_date: date ? date.format('YYYY-MM-DDTHH:mm') : '' })}
                 />
                 {dateValidation.errors.end_date && (
                   <p className="text-[10px] text-destructive mt-1">{dateValidation.errors.end_date}</p>
@@ -122,14 +148,17 @@ export function CampaignForm({
                   <Send className="w-4 h-4 inline mr-1 text-eco-blue" />
                   Ngày gửi mời
                 </Label>
-                <Input
+                <DatePicker
                   id={`${mode}-invite-date`}
-                  type="datetime-local"
-                  value={formData.invitation_send_date}
-                  min={today}
-                  max={formData.invitation_deadline || formData.start_date}
-                  onChange={(e) => onFormChange({ invitation_send_date: e.target.value })}
-                  className={dateValidation.errors.invitation_send_date ? 'border-destructive' : ''}
+                  showTime
+                  format="DD/MM/YYYY HH:mm"
+                  className={cn(
+                    "w-full h-10",
+                    dateValidation.errors.invitation_send_date ? 'border-destructive' : ''
+                  )}
+                  placeholder="Chọn ngày gửi mời"
+                  value={formData.invitation_send_date ? dayjs(formData.invitation_send_date) : null}
+                  onChange={(date) => onFormChange({ invitation_send_date: date ? date.format('YYYY-MM-DDTHH:mm') : '' })}
                 />
                 {dateValidation.errors.invitation_send_date && (
                   <p className="text-[10px] text-destructive mt-1">{dateValidation.errors.invitation_send_date}</p>
@@ -141,14 +170,17 @@ export function CampaignForm({
                   <Clock className="w-4 h-4 inline mr-1 text-eco-orange" />
                   Hạn chấp nhận
                 </Label>
-                <Input
+                <DatePicker
                   id={`${mode}-invite-deadline`}
-                  type="datetime-local"
-                  value={formData.invitation_deadline}
-                  min={formData.invitation_send_date || today}
-                  max={formData.start_date}
-                  onChange={(e) => onFormChange({ invitation_deadline: e.target.value })}
-                  className={dateValidation.errors.invitation_deadline ? 'border-destructive' : ''}
+                  showTime
+                  format="DD/MM/YYYY HH:mm"
+                  className={cn(
+                    "w-full h-10",
+                    dateValidation.errors.invitation_deadline ? 'border-destructive' : ''
+                  )}
+                  placeholder="Chọn hạn chấp nhận"
+                  value={formData.invitation_deadline ? dayjs(formData.invitation_deadline) : null}
+                  onChange={(date) => onFormChange({ invitation_deadline: date ? date.format('YYYY-MM-DDTHH:mm') : '' })}
                 />
                 {dateValidation.errors.invitation_deadline && (
                   <p className="text-[10px] text-destructive mt-1">{dateValidation.errors.invitation_deadline}</p>
@@ -232,8 +264,9 @@ export function CampaignForm({
             <p className="font-medium text-foreground mb-1">📋 Sau khi tạo chiến dịch</p>
             <p>Chiến dịch sẽ ở trạng thái <strong>Nháp</strong>. Bạn có thể thêm <strong>Game</strong> và <strong>Quiz</strong> từ menu hành động trong danh sách chiến dịch.</p>
           </div>
+          </div>
         </div>
-      </div>
+      </ConfigProvider>
 
       {/* Form Actions - Fixed at bottom */}
       <div className="flex justify-end gap-3 pt-6 border-t mt-auto bg-background">

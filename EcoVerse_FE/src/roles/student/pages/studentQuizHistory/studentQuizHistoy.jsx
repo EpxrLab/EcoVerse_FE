@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router";
-import { motion, AnimatePresence } from "framer-motion";
+import { motion } from "framer-motion";
 import { Card, Button, Spin, Tag, Typography, Progress } from "antd";
 import {
   ArrowLeft,
@@ -10,7 +10,6 @@ import {
   XCircle,
   RotateCcw,
   Coins,
-  History,
   TrendingUp,
   Target,
   ChevronRight,
@@ -114,7 +113,7 @@ function StudentQuizHistory() {
           <div
             className={`relative p-8 text-center ${
               passed
-                ? "bg-gradient-to-br from-emerald-500 via-green-600 to-teal-700"
+                ? "bg-primary"
                 : "bg-gradient-to-br from-slate-700 via-gray-800 to-slate-900"
             }`}
           >
@@ -150,7 +149,7 @@ function StudentQuizHistory() {
                 <div
                   className={`relative w-40 h-40 rounded-full flex items-center justify-center border-[8px] ${
                     passed
-                      ? "border-emerald-400/30 bg-white/10 shadow-[0_0_40px_rgba(52,211,153,0.3)]"
+                      ? "border-primary/30 bg-white/10 shadow-[0_0_40px_rgba(var(--primary-rgb),0.3)]"
                       : "border-slate-500/30 bg-white/5"
                   }`}
                 >
@@ -185,12 +184,12 @@ function StudentQuizHistory() {
           <div className="grid grid-cols-2 lg:grid-cols-4 divide-x divide-gray-100 bg-white">
             {[
               {
-                icon: <CheckCircle2 size={18} className="text-emerald-500" />,
+                icon: <CheckCircle2 size={18} className="text-primary" />,
                 label: "Trả lời đúng",
                 value: `${history.correctAnswers} / ${history.totalQuestions}`,
               },
               {
-                icon: <Clock size={18} className="text-indigo-500" />,
+                icon: <Clock size={18} className="text-primary" />,
                 label: "Thời gian",
                 value: fmtTime(history.timeTakenSeconds),
               },
@@ -200,7 +199,7 @@ function StudentQuizHistory() {
                 value: `${history.attemptsUsed} / ${history.maxAttempts}`,
               },
               {
-                icon: <TrendingUp size={18} className="text-blue-500" />,
+                icon: <TrendingUp size={18} className="text-primary" />,
                 label: "Điểm cao nhất",
                 value: `${history.bestScorePercentage}%`,
               },
@@ -226,7 +225,7 @@ function StudentQuizHistory() {
       <div className="space-y-6">
         <div className="flex items-center justify-between">
           <Title level={4} className="!mb-0 !font-bold flex items-center gap-2">
-            <RotateCcw className="text-indigo-500 w-5 h-5" />
+            <RotateCcw className="text-primary w-5 h-5" />
             Chi tiết các câu hỏi
           </Title>
           <Tag className="rounded-full px-3 py-1 font-bold bg-gray-100 border-0 text-gray-500">
@@ -254,7 +253,7 @@ function StudentQuizHistory() {
                   <div
                     className={`w-10 h-10 rounded-xl flex items-center justify-center font-black text-lg shrink-0 ${
                       item.isCorrect
-                        ? "bg-emerald-100 text-emerald-600"
+                        ? "bg-primary/10 text-primary"
                         : "bg-rose-100 text-rose-600 shadow-sm shadow-rose-100"
                     }`}
                   >
@@ -282,14 +281,14 @@ function StudentQuizHistory() {
                           <span
                             className={`font-bold ${
                               item.isCorrect
-                                ? "text-emerald-700"
+                                ? "text-primary"
                                 : "text-rose-700"
                             }`}
                           >
                             {item.selectedAnswerText}
                           </span>
                           {item.isCorrect ? (
-                            <CheckCircle2 size={18} className="text-emerald-500" />
+                            <CheckCircle2 size={18} className="text-primary" />
                           ) : (
                             <XCircle size={18} className="text-rose-500" />
                           )}
@@ -298,17 +297,17 @@ function StudentQuizHistory() {
 
                       {/* Correct Answer (if wrong) */}
                       {!item.isCorrect && (
-                        <div className="p-4 rounded-xl border-2 border-emerald-200 bg-emerald-50/30 flex flex-col gap-1">
-                          <span className="text-[10px] font-bold uppercase tracking-widest text-emerald-400">
-                            Đáp án đúng
-                          </span>
-                          <div className="flex items-center justify-between">
-                            <span className="font-bold text-emerald-700">
-                              {item.correctAnswerText}
+                          <div className="p-4 rounded-xl border-2 border-primary/20 bg-primary/5 flex flex-col gap-1">
+                            <span className="text-[10px] font-bold uppercase tracking-widest text-primary/60">
+                              Đáp án đúng
                             </span>
-                            <CheckCircle2 size={18} className="text-emerald-500" />
+                            <div className="flex items-center justify-between">
+                              <span className="font-bold text-primary">
+                                {item.correctAnswerText}
+                              </span>
+                              <CheckCircle2 size={18} className="text-primary" />
+                            </div>
                           </div>
-                        </div>
                       )}
                     </div>
                   </div>
@@ -331,7 +330,7 @@ function StudentQuizHistory() {
           }
           icon={<RotateCcw size={18} />}
           disabled={history.attemptsUsed >= history.maxAttempts}
-          className="h-14 px-12 rounded-2xl font-black bg-indigo-600 border-none shadow-xl shadow-indigo-200 hover:scale-105 transition-transform"
+          className="h-14 px-12 rounded-2xl font-black bg-primary border-none shadow-xl shadow-primary/20 hover:scale-105 transition-transform"
         >
           {history.attemptsUsed >= history.maxAttempts
             ? "ĐÃ HẾT LƯỢT THỬ"

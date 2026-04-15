@@ -4,8 +4,6 @@ import { partnershipCampaignService } from '../../../services/partnershipCampaig
 import { quizzesService } from '../../quizzes/services/quizzes.service';
 import { toLocalISO, toUTCISO } from '@/utils/dateUtils';
 
-const mockQuizzes = [];
-
 const adminPartnershipLevels = getGameLevelsForPartnership().map(level => ({
   id: level.id.toString(),
   name: level.name,
@@ -35,7 +33,7 @@ export function usePartnershipCampaigns() {
     title: '',
     description: '',
     confirmText: 'Xác nhận',
-    onConfirm: () => {},
+    onConfirm: () => { },
     variant: 'default'
   });
 
@@ -62,8 +60,19 @@ export function usePartnershipCampaigns() {
         rounds: (campaign.rounds || campaign.qualifying_rounds || []).map(r => ({
           ...r,
           startTime: toLocalISO(r.startTime),
-          endTime: toLocalISO(r.endTime)
-        }))
+          endTime: toLocalISO(r.endTime),
+          selected_preset_ids: r.selectedPresetIds || r.selected_preset_ids || [],
+          preset_sub_category_config: (() => {
+            const config = r.presetSubCategoryConfigs || r.preset_sub_category_config || r.presetSubCategoryConfig;
+            if (Array.isArray(config)) {
+              return config.reduce((acc, item) => {
+                acc[item.presetId] = item.selectedSubCategoryIds || [];
+                return acc;
+              }, {});
+            }
+            return config || {};
+          })(),
+        })),
       }));
       setCampaigns(normalizedData);
     } catch (error) {
@@ -88,7 +97,7 @@ export function usePartnershipCampaigns() {
       // Handle both { data: [...] } and { data: { data: [...] } }
       const rawData = res.data?.data || res.data || [];
       const published = (Array.isArray(rawData) ? rawData : []).filter(q => q.published);
-      
+
       console.log('Fetched Quizzes (published):', published.length);
 
       const quizzesWithDetails = await Promise.all(
@@ -113,7 +122,7 @@ export function usePartnershipCampaigns() {
           }
         })
       );
-      
+
       setAvailableQuizzes(quizzesWithDetails);
     } catch (error) {
       console.error('Failed to fetch quizzes', error);
@@ -169,7 +178,7 @@ export function usePartnershipCampaigns() {
     const on_going = campaigns.filter(c => c.status === 'on_going').length;
     const completed = campaigns.filter(c => c.status === 'completed').length;
     const cancelled = campaigns.filter(c => c.status === 'cancelled').length;
-    
+
     const total_schools = campaigns.reduce((sum, c) => sum + c.schools_count, 0);
     const total_students = campaigns.reduce((sum, c) => sum + c.students_count, 0);
 
@@ -285,7 +294,7 @@ export function usePartnershipCampaigns() {
   const handleSubmit = async () => {
     try {
       setLoading(true);
-      
+
       // Explicitly construct payload to match schema exactly
       const payload = {
         campaignName: formData.campaignName,
@@ -302,6 +311,7 @@ export function usePartnershipCampaigns() {
         bannerImageUrl: formData.bannerImageUrl || '',
         schoolIds: formData.schoolIds,
         rewards: formData.rewards.map(r => ({
+          ...(r.id ? { id: r.id } : {}),
           rankPosition: parseInt(r.rankPosition) || 1,
           rewardName: r.rewardName || '',
           description: r.description || '',
@@ -309,6 +319,7 @@ export function usePartnershipCampaigns() {
           sponsorName: r.sponsorName || ''
         })),
         rounds: formData.rounds.map(r => ({
+          ...(r.id ? { id: r.id } : {}),
           roundNumber: parseInt(r.roundNumber),
           roundName: r.roundName,
           startTime: toUTCISO(r.startTime),
@@ -362,6 +373,7 @@ export function usePartnershipCampaigns() {
           topRankingCount: detail.topRankingCount || 0,
           schoolIds: (detail.invitedSchools || []).map(s => s.schoolId),
           rewards: rewards.length > 0 ? rewards.map(r => ({
+            id: r.id,
             rankPosition: r.rankPosition,
             rewardName: r.rewardName,
             description: r.description,
@@ -498,7 +510,7 @@ export function usePartnershipCampaigns() {
         const res = await partnershipCampaignService.getCampaignById(campaign.id);
         fullDetail = res.data?.data;
       }
-      
+
       if (fullDetail) {
         // Normalize rounds for modal consistency
         const normalized = {
@@ -507,7 +519,18 @@ export function usePartnershipCampaigns() {
             ...r,
             id: r.id || r._id, // Ensure id is present
             startTime: toLocalISO(r.startTime),
-            endTime: toLocalISO(r.endTime)
+            endTime: toLocalISO(r.endTime),
+            selected_preset_ids: r.selectedPresetIds || r.selected_preset_ids || [],
+            preset_sub_category_config: (() => {
+              const config = r.presetSubCategoryConfigs || r.preset_sub_category_config || r.presetSubCategoryConfig;
+              if (Array.isArray(config)) {
+                return config.reduce((acc, item) => {
+                  acc[item.presetId] = item.selectedSubCategoryIds || [];
+                  return acc;
+                }, {});
+              }
+              return config || {};
+            })(),
           }))
         };
         setSelectedCampaignForConfig(normalized);
@@ -523,7 +546,7 @@ export function usePartnershipCampaigns() {
       setLoading(false);
     }
   };
-  
+
   const handleCloseAddGame = () => {
     setIsAddGameOpen(false);
     setSelectedCampaignForConfig(null);
@@ -567,7 +590,7 @@ export function usePartnershipCampaigns() {
       setLoading(false);
     }
   };
-  
+
   const handleCloseAddQuiz = () => {
     setIsAddQuizOpen(false);
     setSelectedCampaignForConfig(null);
@@ -601,10 +624,10 @@ export function usePartnershipCampaigns() {
           ];
           return partnershipCampaignService.bindQuizzesToRound(r.id, payload);
         });
-      
+
       await Promise.all(bindPromises);
       console.log('Quizzes bound to rounds successfully');
-      
+
       await fetchCampaigns();
       handleCloseAddQuiz();
     } catch (error) {
@@ -647,7 +670,7 @@ export function usePartnershipCampaigns() {
     handleCancel,
     handleActivate,
     handleRevertToDraft,
-    
+
     isCreateOpen,
     handleOpenCreate,
     handleCloseCreate,
@@ -658,6 +681,7 @@ export function usePartnershipCampaigns() {
     setAvailableQuizzes,
     availableGameLevels,
     handleSubmit,
+    isEditing,
 
     confirmConfig,
     setConfirmConfig,
