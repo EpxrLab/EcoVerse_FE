@@ -553,6 +553,11 @@ export function useCampaigns() {
           approval_status: p.parentApprovalStatus || p.approval_status
         })),
         student_ids: data.participants?.map(p => p.studentId || p.id) || [],
+        class_ids: Array.from(new Set(data.participants?.map(p => {
+          const grade = p.gradeLevel || p.grade || '';
+          const name = p.className || p.class_name || '';
+          return (grade || name) ? `${grade}${name}` : null;
+        }).filter(Boolean) || [])),
       };
 
       return mappedDetail;

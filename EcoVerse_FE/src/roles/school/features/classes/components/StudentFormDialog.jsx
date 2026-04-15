@@ -2,7 +2,8 @@ import { useState, useEffect } from "react";
 import { Button } from "@/shared/components/ui/button";
 import { Input } from "@/shared/components/ui/input";
 import { Label } from "@/shared/components/ui/label";
-import { Textarea } from "@/shared/components/ui/textarea";
+import { DatePicker } from "antd";
+import dayjs from "dayjs";
 import {
   Dialog,
   DialogContent,
@@ -10,7 +11,6 @@ import {
   DialogTitle,
   DialogFooter,
 } from "@/shared/components/ui/dialog";
-import { toLocalISO } from '@/utils/dateUtils';
 import {
   Select,
   SelectContent,
@@ -25,7 +25,7 @@ import {
   Phone,
   MapPin,
   Calendar,
-  FileText,
+
   AlertCircle,
 } from "lucide-react";
 
@@ -119,9 +119,10 @@ export function StudentFormDialog({
               <User className="w-4 h-4 text-eco-green" />
               Thông tin cơ bản
             </div>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 p-4 rounded-xl bg-muted/30 border border-border/50">
-              <div className="space-y-2">
-                <Label className="flex items-center gap-1.5 font-medium">
+            <div className="grid grid-cols-4 gap-4 p-4 rounded-xl bg-muted/30 border border-border/50">
+              {/* Họ và tên – span 2 */}
+              <div className="col-span-4 md:col-span-2 flex flex-col justify-end gap-2">
+                <Label className="font-medium">
                   Họ và tên <span className="text-destructive">*</span>
                 </Label>
                 <Input
@@ -131,56 +132,62 @@ export function StudentFormDialog({
                   className={errors.student_name ? "border-destructive bg-destructive/5" : "bg-background"}
                 />
                 {errors.student_name && (
-                  <p className="text-[11px] text-destructive flex items-center gap-1 mt-1 font-medium">
+                  <p className="text-[11px] text-destructive flex items-center gap-1 font-medium">
                     <AlertCircle className="w-3 h-3" />
                     {errors.student_name}
                   </p>
                 )}
               </div>
 
-              <div className="grid grid-cols-2 gap-3">
-                <div className="space-y-2">
-                  <Label className="font-medium">Lớp <span className="text-destructive">*</span></Label>
-                  <Select
-                    value={form.gradeLevel}
-                    onValueChange={(v) => onFormChange({ ...form, gradeLevel: v })}
-                  >
-                    <SelectTrigger className={errors.gradeLevel ? "border-destructive bg-destructive/5" : "bg-background"}>
-                      <SelectValue placeholder="Lớp" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {[1, 2, 3, 4, 5].map(g => (
-                        <SelectItem key={g} value={String(g)}>Lớp {g}</SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-                <div className="space-y-2">
-                  <Label className="font-medium">Tên lớp <span className="text-destructive">*</span></Label>
-                  <Input
-                    placeholder="VD: A, B"
-                    value={form.className}
-                    onChange={(e) => onFormChange({ ...form, className: e.target.value })}
-                    className={errors.className ? "border-destructive bg-destructive/5" : "bg-background"}
-                  />
-                </div>
+              {/* Lớp – span 1 */}
+              <div className="col-span-2 md:col-span-1 flex flex-col justify-end gap-2">
+                <Label className="font-medium">Lớp <span className="text-destructive">*</span></Label>
+                <Select
+                  value={form.gradeLevel}
+                  onValueChange={(v) => onFormChange({ ...form, gradeLevel: v })}
+                >
+                  <SelectTrigger className={errors.gradeLevel ? "border-destructive bg-destructive/5" : "bg-background"}>
+                    <SelectValue placeholder="Lớp" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {[1, 2, 3, 4, 5].map(g => (
+                      <SelectItem key={g} value={String(g)}>Lớp {g}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
               </div>
 
-              <div className="space-y-2">
-                <Label className="font-medium flex items-center gap-1.5">
-                  <Calendar className="w-3.5 h-3.5 text-muted-foreground font-medium" />
-                  Ngày sinh <span className="text-destructive">*</span>
-                </Label>
+              {/* Tên lớp – span 1 */}
+              <div className="col-span-2 md:col-span-1 flex flex-col justify-end gap-2">
+                <Label className="font-medium">Tên lớp <span className="text-destructive">*</span></Label>
                 <Input
-                  type="date"
-                  value={form.date_of_birth}
-                  max={toLocalISO(new Date()).split('T')[0]}
-                  onChange={(e) => onFormChange({ ...form, date_of_birth: e.target.value })}
-                  className={errors.date_of_birth ? "border-destructive bg-destructive/5" : "bg-background"}
+                  placeholder="VD: A, B"
+                  value={form.className}
+                  onChange={(e) => onFormChange({ ...form, className: e.target.value })}
+                  className={errors.className ? "border-destructive bg-destructive/5" : "bg-background"}
                 />
               </div>
 
-              <div className="space-y-2">
+              {/* Ngày sinh – span 2 */}
+              <div className="col-span-4 md:col-span-2 flex flex-col justify-end gap-2">
+                <Label className="font-medium">
+                  Ngày sinh <span className="text-destructive">*</span>
+                </Label>
+                <DatePicker
+                  className={`w-full h-10 rounded-md border px-3 text-sm ${
+                    errors.date_of_birth ? "border-destructive bg-destructive/5" : "border-input bg-background"
+                  }`}
+                  format="DD/MM/YYYY"
+                  placeholder="Ngày/Tháng/Năm"
+                  disabledDate={(d) => d && d.isAfter(dayjs(), 'day')}
+                  value={form.date_of_birth ? dayjs(form.date_of_birth, 'YYYY-MM-DD') : null}
+                  onChange={(date) => onFormChange({ ...form, date_of_birth: date ? date.format('YYYY-MM-DD') : '' })}
+                  style={{ width: '100%' }}
+                />
+              </div>
+
+              {/* Giới tính – span 2 */}
+              <div className="col-span-4 md:col-span-2 flex flex-col justify-end gap-2">
                 <Label className="font-medium">Giới tính <span className="text-destructive">*</span></Label>
                 <Select
                   value={form.gender}
@@ -248,36 +255,23 @@ export function StudentFormDialog({
             )}
           </div>
 
-          {/* Additional Info Section */}
-          <div className="space-y-4">
-            <div className="flex items-center gap-2 text-sm font-semibold text-foreground">
-              <FileText className="w-4 h-4 text-eco-green" />
-              Thông tin bổ sung
-            </div>
-            <div className="space-y-4 p-4 rounded-xl bg-muted/30 border border-border/50">
-              <div className="space-y-2">
-                <Label className="font-medium flex items-center gap-1.5">
-                  <MapPin className="w-3.5 h-3.5 text-muted-foreground" />
-                  Địa chỉ <span className="text-destructive">*</span>
-                </Label>
-                <Input
-                  placeholder="Địa chỉ nhà"
-                  value={form.address}
-                  onChange={(e) => onFormChange({ ...form, address: e.target.value })}
-                  className={errors.address ? "border-destructive bg-destructive/5" : "bg-background"}
-                />
-              </div>
-              <div className="space-y-2">
-                <Label className="font-medium">Ghi chú</Label>
-                <Textarea
-                  placeholder="Ghi chú thêm về học sinh (sức khỏe, sở thích, điểm mạnh...)"
-                  value={form.notes}
-                  onChange={(e) => onFormChange({ ...form, notes: e.target.value })}
-                  className="bg-background resize-none"
-                  rows={3}
-                />
-              </div>
-            </div>
+          {/* Address */}
+          <div className="space-y-2">
+            <Label className="font-medium flex items-center gap-1.5">
+              <MapPin className="w-3.5 h-3.5 text-muted-foreground" />
+              Địa chỉ <span className="text-destructive">*</span>
+            </Label>
+            <Input
+              placeholder="Địa chỉ nhà"
+              value={form.address}
+              onChange={(e) => onFormChange({ ...form, address: e.target.value })}
+              className={errors.address ? "border-destructive bg-destructive/5" : "bg-background"}
+            />
+            {errors.address && (
+              <p className="text-[11px] text-destructive flex items-center gap-1 font-medium">
+                <AlertCircle className="w-3 h-3" />{errors.address}
+              </p>
+            )}
           </div>
         </div>
 

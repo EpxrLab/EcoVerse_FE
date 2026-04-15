@@ -176,7 +176,7 @@ export function StudentListView({
             <h1 className="text-3xl font-bold text-foreground tracking-tight">Lớp {selectedClass.grade}{selectedClass.name}</h1>
             <p className="text-base text-muted-foreground font-medium flex items-center gap-2">
               <GraduationCap className="w-5 h-5 text-eco-green" />
-              Khối {selectedClass.grade} • GV: {selectedClass.teacher_name || 'Chưa phân công'}
+              Khối {selectedClass.grade}
             </p>
           </div>
         </div>
