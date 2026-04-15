@@ -51,7 +51,13 @@ export function StudentProvider({ children }) {
 
   return (
     <StudentContext.Provider
-      value={{ currentStudent, updateCoins, updateStats, updateRank }}
+      value={{
+        currentStudent,
+        updateCoins,
+        updateStats,
+        updateRank,
+        refreshStudentData: fetchAuthenticatedStudent,
+      }}
     >
       {children}
     </StudentContext.Provider>

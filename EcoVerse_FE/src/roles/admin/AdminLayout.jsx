@@ -16,6 +16,7 @@ import {
   UserOutlined,
   GlobalOutlined,
   ControlOutlined,
+  LineChartOutlined,
 } from "@ant-design/icons";
 import { Outlet, useNavigate } from "react-router";
 import { logoutFunction } from "../../features/auth/services";
@@ -25,6 +26,11 @@ const { Sider, Header, Content } = Layout;
 
 const menuItems = [
   { key: "/admin", label: "Dashboard", icon: <DashboardOutlined /> },
+  {
+    key: "/admin/analytics",
+    label: "Phân tích chuyên sâu",
+    icon: <LineChartOutlined />,
+  },
   { key: "/admin/schools", label: "Quản lý trường", icon: <BankOutlined /> },
   {
     key: "/admin/partnerships",

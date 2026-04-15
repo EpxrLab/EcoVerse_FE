@@ -323,7 +323,7 @@ export default class EcoGameSorter {
           const box = new THREE.Box3().setFromObject(model);
           const size = box.getSize(new THREE.Vector3());
           const maxDim = Math.max(size.x, size.y, size.z);
-          if (maxDim > 0) model.scale.multiplyScalar(0.4 / maxDim);
+          if (maxDim > 0) model.scale.multiplyScalar(0.6 / maxDim); // Scaled up from 0.4
 
           const box2 = new THREE.Box3().setFromObject(model);
           const center = box2.getCenter(new THREE.Vector3());
@@ -331,10 +331,27 @@ export default class EcoGameSorter {
 
           wrapper.add(model);
 
+          // Add invisible hitbox for easier picking
+          const hitboxGeo = new THREE.BoxGeometry(0.8, 0.8, 0.8);
+          const hitboxMat = new THREE.MeshBasicMaterial({
+            transparent: true,
+            opacity: 0,
+            depthWrite: false,
+          });
+          const hitbox = new THREE.Mesh(hitboxGeo, hitboxMat);
+          hitbox.name = "hitbox";
+          wrapper.add(hitbox);
+
           wrapper.traverse((child) => {
             if (child.isMesh) {
-              child.castShadow = true;
-              child.receiveShadow = true;
+              // Only allow actual models to cast/receive shadows, not the invisible hitbox
+              if (child.name !== "hitbox") {
+                child.castShadow = true;
+                child.receiveShadow = true;
+              } else {
+                child.castShadow = false;
+                child.receiveShadow = false;
+              }
             }
           });
 
@@ -391,7 +408,7 @@ export default class EcoGameSorter {
 
   _createBottle(color) {
     const group = new THREE.Group();
-    const bodyGeo = new THREE.CylinderGeometry(0.12, 0.15, 0.5, 8);
+    const bodyGeo = new THREE.CylinderGeometry(0.18, 0.22, 0.7, 8);
     const bodyMat = new THREE.MeshStandardMaterial({
       color,
       transparent: true,
@@ -412,7 +429,7 @@ export default class EcoGameSorter {
   }
 
   _createCan(color) {
-    const geo = new THREE.CylinderGeometry(0.14, 0.14, 0.4, 12);
+    const geo = new THREE.CylinderGeometry(0.2, 0.2, 0.6, 12);
     const mat = new THREE.MeshStandardMaterial({
       color,
       metalness: 0.6,
@@ -424,7 +441,7 @@ export default class EcoGameSorter {
   }
 
   _createBoxItem(color) {
-    const geo = new THREE.BoxGeometry(0.35, 0.25, 0.35);
+    const geo = new THREE.BoxGeometry(0.5, 0.4, 0.5);
     const mat = new THREE.MeshStandardMaterial({ color, roughness: 0.5 });
     const mesh = new THREE.Mesh(geo, mat);
     mesh.castShadow = true;

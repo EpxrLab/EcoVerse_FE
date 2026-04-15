@@ -82,6 +82,7 @@ import PaymentResult from "./features/payment/pages/paymentResult/paymentResult"
 import StudentRoundDetails from "./roles/student/pages/studentRoundDetail/studentRoundDetails";
 import ForgotPassword from "./features/auth/pages/forgot-password/forgotPassword";
 import StudentQuizHistory from "./roles/student/pages/studentQuizHistory/studentQuizHistoy";
+import AdminAnalytics from "./roles/admin/pages/adminAnalytics/adminAnalytics";
 
 const queryClient = new QueryClient();
 
@@ -199,6 +200,7 @@ const App = () => (
                 }
               >
                 <Route index element={<AdminDashboard />} />
+                <Route path="analytics" element={<AdminAnalytics />} />
                 <Route path="schools" element={<AdminSchool />} />
                 <Route path="partnerships" element={<AdminPartnership />} />
                 <Route path="game-levels" element={<AdminGameLevels />} />

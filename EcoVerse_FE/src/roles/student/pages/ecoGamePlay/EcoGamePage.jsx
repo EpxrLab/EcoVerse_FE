@@ -13,6 +13,7 @@ import EcoGame from "../../features/eco-game/EcoGame";
 import EcoGameHUD from "../../features/eco-game/EcoGameHUD";
 import { startGame, submitGame } from "../../services";
 import toast from "react-hot-toast";
+import { useStudentContext } from "../../context";
 
 export default function EcoGamePage() {
   const containerRef = useRef(null);
@@ -32,6 +33,8 @@ export default function EcoGamePage() {
   const levelNumber = location.state?.levelNumber;
   const presetId = location.state?.presetId;
   const typeCode = location.state?.typeCode;
+
+  const { refreshStudentData } = useStudentContext();
 
   // Cảnh báo người dùng khi họ cố gắng tải lại trang hoặc đóng tab
   useEffect(() => {
@@ -233,6 +236,12 @@ export default function EcoGamePage() {
       try {
         const res = await submitGame(sessionId, payload);
         console.log("[EcoGamePage] Submit result:", res);
+
+        // Refresh sidebar coins
+        if (refreshStudentData) {
+          refreshStudentData();
+        }
+
         return res?.data; // Return API response back to HUD
       } catch (err) {
         console.error("[EcoGamePage] Failed to submit game result:", err);
