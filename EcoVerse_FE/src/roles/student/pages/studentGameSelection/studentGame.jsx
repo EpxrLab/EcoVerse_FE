@@ -177,6 +177,17 @@ export default function StudentGame() {
         });
         // Sort levels by levelNumber
         flattenedLevels.sort((a, b) => a.levelNumber - b.levelNumber);
+
+        // Lock logic: level is unlocked if it's the first one, or if the previous one is completed (Per difficulty)
+        const difficulties = ["EASY", "MEDIUM", "HARD"];
+        difficulties.forEach(diff => {
+            const diffLevels = flattenedLevels.filter(l => l.difficulty === diff);
+            diffLevels.forEach((level, index) => {
+               if (index === 0) level.locked = false;
+               else level.locked = !diffLevels[index - 1].completed;
+            });
+        });
+
         setGameLevels(flattenedLevels);
       } else {
         setGameLevels([]);
@@ -436,126 +447,158 @@ export default function StudentGame() {
       </motion.div>
 
       {/* Game Levels */}
-      <motion.div
-        className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6"
-        variants={containerVariants}
-        initial="hidden"
-        animate="visible"
-      >
-        {filteredLevels.length > 0 ? (
-          filteredLevels.map((level, index) => {
-            const diffStyle =
-              DIFFICULTY_LABELS[level.difficulty] || DIFFICULTY_LABELS.medium;
+      <div className="space-y-12">
+        {["EASY", "MEDIUM", "HARD"]
+          .filter(
+            (diff) =>
+              selectedDifficulty === "all" || selectedDifficulty === diff,
+          )
+          .map((diff) => {
+            const diffLevels = filteredLevels.filter(
+              (l) => l.difficulty === diff,
+            );
+            if (diffLevels.length === 0) return null;
+            const diffStyle = DIFFICULTY_LABELS[diff];
 
-          return (
-            <motion.div
-              key={level.id}
-              variants={cardVariants}
-              whileHover={
-                !level.locked ? { y: -6, transition: { duration: 0.2 } } : {}
-              }
-            >
-              <Card
-                className={`rounded-2xl border-2 transition-all ${
-                  level.locked ? "opacity-50" : "hover:shadow-xl"
-                } ${level.completed ? "border-primary/20" : "border-gray-100"}`}
-                bodyStyle={{ padding: "24px" }}
-              >
-                <div className="space-y-4">
-                  {/* Header */}
-                  <div className="flex items-start justify-between">
-                    <div className="flex-1">
-                      <div className="flex items-center gap-2 mb-2">
-                        <span
-                          className={`inline-flex px-2.5 py-0.5 rounded-full text-xs font-semibold border-2 ${diffStyle.bg} ${diffStyle.text} ${diffStyle.border}`}
+            return (
+              <div key={diff} className="space-y-6">
+                {selectedDifficulty === "all" && (
+                  <div className="flex items-center gap-3">
+                    <div
+                      className={`w-3 h-8 rounded-full ${diffStyle.bg} border-2 ${diffStyle.border}`}
+                    />
+                    <h2
+                      className={`text-2xl font-black uppercase tracking-wider ${diffStyle.text}`}
+                    >
+                      Độ Khó: {diffStyle.label}
+                    </h2>
+                  </div>
+                )}
+                <motion.div
+                  className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6"
+                  variants={containerVariants}
+                  initial="hidden"
+                  animate="visible"
+                >
+                  {diffLevels.map((level, index) => {
+                    return (
+                      <motion.div
+                        key={level.id}
+                        variants={cardVariants}
+                        whileHover={
+                          !level.locked
+                            ? { y: -6, transition: { duration: 0.2 } }
+                            : {}
+                        }
+                      >
+                        <Card
+                          className={`rounded-2xl border-2 transition-all ${
+                            level.locked ? "opacity-50" : "hover:shadow-xl"
+                          } ${level.completed ? "border-primary/20" : "border-gray-100"}`}
+                          bodyStyle={{ padding: "24px" }}
                         >
-                          {diffStyle.label}
-                        </span>
-                        {level.locked && (
-                          <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-semibold bg-gray-100 text-gray-500 border border-gray-200">
-                            <Lock className="w-3 h-3" />
-                            Khoá
-                          </span>
-                        )}
-                      </div>
-                      <h3 className="text-xl font-bold text-gray-800 mb-1">
-                        {level.gameTypeName} - Level {level.levelNumber}
-                      </h3>
-                      <p className="text-lg font-semibold text-gray-500">
-                        {level.typeCode === "RUN_SORTING"
-                          ? "Eco Runner"
-                          : "Sea Rescue"}
-                      </p>
-                    </div>
-                    <div className="w-16 h-16 rounded-2xl bg-primary/10 flex items-center justify-center text-3xl">
-                      🎮
-                    </div>
-                  </div>
+                          <div className="space-y-4">
+                            {/* Header */}
+                            <div className="flex items-start justify-between">
+                              <div className="flex-1">
+                                <div className="flex items-center gap-2 mb-2">
+                                  <span
+                                    className={`inline-flex px-2.5 py-0.5 rounded-full text-xs font-semibold border-2 ${diffStyle.bg} ${diffStyle.text} ${diffStyle.border}`}
+                                  >
+                                    {diffStyle.label}
+                                  </span>
+                                  {level.locked && (
+                                    <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-semibold bg-gray-100 text-gray-500 border border-gray-200">
+                                      <Lock className="w-3 h-3" />
+                                      Khoá
+                                    </span>
+                                  )}
+                                </div>
+                                <h3 className="text-xl font-bold text-gray-800 mb-1">
+                                  {level.gameTypeName} - Level{" "}
+                                  {level.levelNumber}
+                                </h3>
+                                <p className="text-lg font-semibold text-gray-500">
+                                  {level.typeCode === "RUN_SORTING"
+                                    ? "Eco Runner"
+                                    : "Sea Rescue"}
+                                </p>
+                              </div>
+                              <div className="w-16 h-16 rounded-2xl bg-primary/10 flex items-center justify-center text-3xl">
+                                🎮
+                              </div>
+                            </div>
 
-                  {/* Info */}
-                  <div className="space-y-2">
-                    <div className="flex items-center justify-between text-sm">
-                      <span className="text-gray-500 flex items-center gap-2">
-                        <AimOutlined />
-                        Số vật phẩm
-                      </span>
-                      <span className="font-semibold text-gray-800">
-                        {level.itemsCount || "—"}
-                      </span>
-                    </div>
-                    <div className="flex items-center justify-between text-sm">
-                      <span className="text-gray-500 flex items-center gap-2">
-                        <CoinIcon className="w-4 h-4 text-amber-500" />
-                        Phần thưởng
-                      </span>
-                      <span className="font-semibold text-amber-600">
-                        +{level.coinReward || 0} xu
-                      </span>
-                    </div>
-                    {level.sorter?.timeLimit > 0 && (
-                      <div className="flex items-center justify-between text-sm">
-                        <span className="text-gray-500">
-                          ⏱️ Thời gian phân loại
-                        </span>
-                        <span className="font-semibold text-gray-800">
-                          {level.sorter.timeLimit}s
-                        </span>
-                      </div>
-                    )}
-                  </div>
+                            {/* Info */}
+                            <div className="space-y-2">
+                              <div className="flex items-center justify-between text-sm">
+                                <span className="text-gray-500 flex items-center gap-2">
+                                  <AimOutlined />
+                                  Số vật phẩm
+                                </span>
+                                <span className="font-semibold text-gray-800">
+                                  {level.itemsCount || "—"}
+                                </span>
+                              </div>
+                              <div className="flex items-center justify-between text-sm">
+                                <span className="text-gray-500 flex items-center gap-2">
+                                  <CoinIcon className="w-4 h-4 text-amber-500" />
+                                  Phần thưởng
+                                </span>
+                                <span className="font-semibold text-amber-600">
+                                  +{level.coinReward || 0} xu
+                                </span>
+                              </div>
+                              {level.sorter?.timeLimit > 0 && (
+                                <div className="flex items-center justify-between text-sm">
+                                  <span className="text-gray-500">
+                                    ⏱️ Thời gian phân loại
+                                  </span>
+                                  <span className="font-semibold text-gray-800">
+                                    {level.sorter.timeLimit}s
+                                  </span>
+                                </div>
+                              )}
+                            </div>
 
-                  {/* Action Button */}
-                  <Button
-                    block
-                    type={level.locked ? "default" : "primary"}
-                    size="large"
-                    onClick={() => !level.locked && handlePlayLevel(level)}
-                    disabled={level.locked}
-                    icon={
-                      level.locked ? (
-                        <LockOutlined />
-                      ) : (
-                        <Play className="w-4 h-4" />
-                      )
-                    }
-                    className={`rounded-xl font-semibold ${
-                      level.locked
-                        ? "bg-gray-100 text-gray-400 cursor-not-allowed"
-                        : "bg-primary border-primary hover:opacity-90"
-                    }`}
-                  >
-                    {level.locked
-                      ? "Đã khoá"
-                      : level.completed
-                        ? "Chơi lại"
-                        : "Chơi ngay"}
-                  </Button>
-                </div>
-              </Card>
-            </motion.div>
-          );
-        })
-        ) : (
+                            {/* Action Button */}
+                            <Button
+                              block
+                              type={level.locked ? "default" : "primary"}
+                              size="large"
+                              onClick={() =>
+                                !level.locked && handlePlayLevel(level)
+                              }
+                              disabled={level.locked}
+                              icon={
+                                level.locked ? (
+                                  <LockOutlined />
+                                ) : (
+                                  <Play className="w-4 h-4" />
+                                )
+                              }
+                              className={`rounded-xl font-semibold ${
+                                level.locked
+                                  ? "bg-gray-100 text-gray-400 cursor-not-allowed"
+                                  : "bg-primary border-primary hover:opacity-90"
+                              }`}
+                            >
+                              {level.locked
+                                ? "Đã khoá"
+                                : level.completed
+                                  ? "Chơi lại"
+                                  : "Chơi ngay"}
+                            </Button>
+                          </div>
+                        </Card>
+                      </motion.div>
+                    );
+                  })}
+                </motion.div>
+              </div>
+            );
+          })}
+        {filteredLevels.length === 0 && (
           <div className="col-span-full py-20 text-center bg-gray-50 rounded-3xl border-2 border-dashed border-gray-200">
             <Play className="w-12 h-12 text-gray-300 mx-auto mb-4" />
             <p className="text-gray-500 text-lg">
@@ -563,7 +606,7 @@ export default function StudentGame() {
             </p>
           </div>
         )}
-      </motion.div>
+      </div>
     </div>
   );
 }

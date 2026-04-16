@@ -25,7 +25,6 @@ import PartnershipRejected from "./features/auth/pages/partnership/partnershipRe
 
 //======================Admin Routes==============================
 import AdminLayout from "./roles/admin/AdminLayout";
-import AdminDashboard from "./roles/admin/pages/adminDashboard/adminDashboard";
 import AdminSchool from "./roles/admin/pages/adminSchool/adminSchool";
 import AdminPartnership from "./roles/admin/pages/adminPartnership/adminPartnership";
 import AdminGameLevels from "./roles/admin/pages/adminGameLevel/adminGameLevels";
@@ -199,8 +198,7 @@ const App = () => (
                   </ProtectedRoute>
                 }
               >
-                <Route index element={<AdminDashboard />} />
-                <Route path="analytics" element={<AdminAnalytics />} />
+                <Route index element={<AdminAnalytics />} />
                 <Route path="schools" element={<AdminSchool />} />
                 <Route path="partnerships" element={<AdminPartnership />} />
                 <Route path="game-levels" element={<AdminGameLevels />} />
