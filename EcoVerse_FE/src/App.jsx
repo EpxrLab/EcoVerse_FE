@@ -82,6 +82,7 @@ import StudentRoundDetails from "./roles/student/pages/studentRoundDetail/studen
 import ForgotPassword from "./features/auth/pages/forgot-password/forgotPassword";
 import StudentQuizHistory from "./roles/student/pages/studentQuizHistory/studentQuizHistoy";
 import AdminAnalytics from "./roles/admin/pages/adminAnalytics/adminAnalytics";
+import AdminDashboard from "./roles/admin/pages/adminAnalytics/adminAnalytics";
 
 const queryClient = new QueryClient();
 
@@ -198,7 +199,7 @@ const App = () => (
                   </ProtectedRoute>
                 }
               >
-                <Route index element={<AdminAnalytics />} />
+                <Route index element={<AdminDashboard />} />
                 <Route path="schools" element={<AdminSchool />} />
                 <Route path="partnerships" element={<AdminPartnership />} />
                 <Route path="game-levels" element={<AdminGameLevels />} />

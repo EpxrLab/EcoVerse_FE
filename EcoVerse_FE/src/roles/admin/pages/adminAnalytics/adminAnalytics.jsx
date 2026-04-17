@@ -268,7 +268,7 @@ const RevenueTooltip = ({ active, payload, label }) => {
 
 // ─── Main Component ───────────────────────────────────────────────────────────
 
-function AdminAnalytics() {
+function AdminDashboard() {
   const [report, setReport] = useState(null);
   const [cAnalytics, setCAnalytics] = useState(null);
   const [period, setPeriod] = useState("THIS_MONTH");
@@ -814,4 +814,4 @@ function Divider({ className = "" }) {
   return <hr className={`border-0 border-t border-slate-100 ${className}`} />;
 }
 
-export default AdminAnalytics;
+export default AdminDashboard;
