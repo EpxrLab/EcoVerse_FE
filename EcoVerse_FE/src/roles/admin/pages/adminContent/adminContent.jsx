@@ -402,17 +402,23 @@ function WasteItemsTab({ wasteItems, subCategories, onRefresh }) {
       isActive: item.isActive,
     });
     setEditModelUrl(item.imageUrl ?? null);
-    setEditUploadedUrl(item.imageUrl ?? null);
+    const presignedUrl = item.imageUrl?.split("?X-Amz-Algorithm")[0];
+    setEditUploadedUrl(presignedUrl ?? null);
     setIsEditOpen(true);
   };
 
   const handleSaveEdit = async () => {
     try {
       const vals = await editForm.validateFields();
+
       const payload = {
         ...vals,
-        imageUrl: editUploadedUrl,
+        imageUrl:
+          typeof editUploadedUrl === "string"
+            ? editUploadedUrl
+            : (editUploadedUrl?.data?.url ?? null),
       };
+      console.log(payload);
       const res = await updateWasteItem(editingItem.id, payload);
       if (res) {
         toast.success("Cập nhật rác thành công!");
@@ -792,7 +798,8 @@ function SubCategoriesTab({ subCategories, onRefresh }) {
       isActive: item.isActive,
     });
     setEditImageUrl(item.iconUrl ?? null);
-    setEditUploadedUrl(item.iconUrl ?? null);
+    const presignedUrl = item.iconUrl?.split("?X-Amz-Algorithm")[0];
+    setEditUploadedUrl(presignedUrl ?? null);
     setIsEditOpen(true);
   };
 
@@ -804,7 +811,10 @@ function SubCategoriesTab({ subCategories, onRefresh }) {
         subCategoryCode: (vals.subCategoryCode ?? "").toUpperCase(),
         displayName: vals.displayName,
         description: vals.description ?? "",
-        iconUrl: editUploadedUrl?.data?.url,
+        iconUrl:
+          typeof editUploadedUrl === "string"
+            ? editUploadedUrl
+            : (editUploadedUrl?.data?.url ?? null),
         displayOrder: vals.displayOrder ?? 1,
         isActive: vals.isActive ?? true,
       };

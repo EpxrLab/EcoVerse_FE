@@ -180,12 +180,14 @@ export default function StudentGame() {
 
         // Lock logic: level is unlocked if it's the first one, or if the previous one is completed (Per difficulty)
         const difficulties = ["EASY", "MEDIUM", "HARD"];
-        difficulties.forEach(diff => {
-            const diffLevels = flattenedLevels.filter(l => l.difficulty === diff);
-            diffLevels.forEach((level, index) => {
-               if (index === 0) level.locked = false;
-               else level.locked = !diffLevels[index - 1].completed;
-            });
+        difficulties.forEach((diff) => {
+          const diffLevels = flattenedLevels.filter(
+            (l) => l.difficulty === diff,
+          );
+          diffLevels.forEach((level, index) => {
+            if (index === 0) level.locked = false;
+            else level.locked = !diffLevels[index - 1].completed;
+          });
         });
 
         setGameLevels(flattenedLevels);
@@ -194,7 +196,6 @@ export default function StudentGame() {
       }
     }
   }, [selectedRoundId, campaign]);
-  console.log(gameLevels);
 
   const completedLevels = gameLevels.filter((l) => l.completed);
   const totalStars = gameLevels.reduce((sum, l) => sum + (l.stars || 0), 0);

@@ -142,7 +142,12 @@ export function initWorld(scene, state) {
         -center.z * scaleFactor,
       );
 
-      console.log(`[Skybox Debug] Name: ${model.name || "skybox"}, size:`, size, "scale:", scaleFactor);
+      console.log(
+        `[Skybox Debug] Name: ${model.name || "skybox"}, size:`,
+        size,
+        "scale:",
+        scaleFactor,
+      );
 
       model.traverse((child) => {
         if (child.isMesh) {
@@ -209,7 +214,6 @@ export function initWorld(scene, state) {
       state.fallbackPlane = fallback;
     },
   );
-
 
   // Buoy Perimeter (Physical indicator)
   const buoyCount = 36;
