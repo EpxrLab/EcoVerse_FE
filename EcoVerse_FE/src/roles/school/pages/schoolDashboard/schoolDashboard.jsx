@@ -25,7 +25,7 @@ import { useNavigate } from "react-router";
 
 export default function SchoolDashboard() {
   const [period, setPeriod] = useState('THIS_MONTH');
-  const { data: stats, isLoading, error } = useDashboard(period);
+  const { data: stats, subscription, isLoading, error } = useDashboard(period);
   const navigate = useNavigate();
 
   if (isLoading) {
@@ -50,7 +50,10 @@ export default function SchoolDashboard() {
     );
   }
 
-  const subscriptionPercent = Math.min(100, Math.round((stats.totalStudents / 1000) * 100)); // Mock max base or from API if possible
+  const maxStudents = subscription?.maxStudents || 0;
+  const subscriptionPercent = maxStudents > 0 
+    ? Math.min(100, Math.round((stats.totalStudents / maxStudents) * 100))
+    : 0;
 
   return (
     <div className="space-y-6 animate-fade-in">
@@ -293,7 +296,9 @@ export default function SchoolDashboard() {
               <div className="w-full sm:w-48 text-center sm:text-left">
                 <div className="flex items-center justify-between mb-2">
                   <p className="text-xs text-muted-foreground font-bold uppercase tracking-wider">Học sinh đã nạp</p>
-                  <p className="text-sm font-bold text-eco-green">{stats.totalStudents}</p>
+                  <p className="text-sm font-bold text-eco-green">
+                    {stats.totalStudents} / {maxStudents}
+                  </p>
                 </div>
                 <Progress value={subscriptionPercent} className="h-2.5 bg-eco-green/10" indicatorClassName="bg-eco-green" />
               </div>

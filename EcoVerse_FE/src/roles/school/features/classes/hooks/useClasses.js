@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback, useMemo } from 'react';
 import { toast } from 'sonner';
 import { classesService } from '../services/classes.service';
+import { subscriptionService } from '@/roles/school/services/subscription.service';
 
 export function useClasses() {
   const [gradeGroups, setGradeGroups] = useState([]);
@@ -8,7 +9,17 @@ export function useClasses() {
   const [allStudents, setAllStudents] = useState([]); // All students in the school
   const [selectedClass, setSelectedClass] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [currentSubscription, setCurrentSubscription] = useState(null);
   const schoolId = 1;
+
+  const fetchSubscription = useCallback(async () => {
+    try {
+      const res = await subscriptionService.getMySubscription();
+      setCurrentSubscription(res.data?.data || null);
+    } catch (error) {
+      console.error('Failed to fetch subscription:', error);
+    }
+  }, []);
 
   // Fetch classes and school-level data
   const fetchClasses = useCallback(async () => {
@@ -17,7 +28,7 @@ export function useClasses() {
       // Fetch account info which contains all parents and their nested students
       const accountsRes = await classesService.getAccounts();
       const accountsData = accountsRes?.data?.data?.accounts || [];
-      
+
       const mappedStudents = [];
       const uniqueClasses = {};
 
@@ -30,21 +41,21 @@ export function useClasses() {
           parent_password: acc.password, // Might be null
           credentialEmailSent: acc.credentialEmailSent || false, // Use credentialEmailSent from account
         };
-        
+
         acc.children?.forEach(child => {
           // Generate a synthetic class ID if missing
           const classGrade = child.gradeLevel || 6;
           const className = child.className || 'Unknown';
           const syntheticClassId = `${classGrade}_${className}`;
-          
+
           if (!uniqueClasses[syntheticClassId]) {
-             uniqueClasses[syntheticClassId] = {
-               id: syntheticClassId,
-               school_id: schoolId,
-               name: className,
-               grade: parseInt(classGrade),
-               teacher_name: '',
-             };
+            uniqueClasses[syntheticClassId] = {
+              id: syntheticClassId,
+              school_id: schoolId,
+              name: className,
+              grade: parseInt(classGrade),
+              teacher_name: '',
+            };
           }
 
           mappedStudents.push({
@@ -103,18 +114,18 @@ export function useClasses() {
       const yearStudents = mappedStudents
         .filter(s => yearClassIds.includes(s.class_id) || yearClassIds.includes(s.class?.id))
         .map(s => {
-           let matchedClass = data.find(c =>
-             c.id === s.class_id ||
-             (c.name === s.className && c.grade === parseInt(s.grade))
-           );
-           return {
-             ...s,
-             className: matchedClass?.name || s.className || '',
-             grade: matchedClass?.grade || s.grade || '',
-           };
+          let matchedClass = data.find(c =>
+            c.id === s.class_id ||
+            (c.name === s.className && c.grade === parseInt(s.grade))
+          );
+          return {
+            ...s,
+            className: matchedClass?.name || s.className || '',
+            grade: matchedClass?.grade || s.grade || '',
+          };
         })
         .sort((a, b) => (a.grade - b.grade) || (a.student_name || '').localeCompare(b.student_name || ''));
-        
+
       setAllStudents(yearStudents);
 
       const groupedByGrade = classesWithStats.reduce((acc, classItem) => {
@@ -149,7 +160,8 @@ export function useClasses() {
 
   useEffect(() => {
     fetchClasses();
-  }, [fetchClasses]);
+    fetchSubscription();
+  }, [fetchClasses, fetchSubscription]);
 
   useEffect(() => {
     if (selectedClass) {
@@ -169,6 +181,14 @@ export function useClasses() {
 
   // Student CRUD operations
   const createStudent = async (formData) => {
+    // Check subscription limit
+    if (currentSubscription && currentSubscription.maxStudents !== null) {
+      if (allStudents.length >= currentSubscription.maxStudents) {
+        toast.error(`Giới hạn gói đăng ký: Trường của bạn đã đạt tối đa ${currentSubscription.maxStudents} học sinh. Vui lòng nâng cấp gói để thêm mới.`);
+        return false;
+      }
+    }
+
     // We use the className and gradeLevel from formData
     const className = formData.className;
     const gradeLevel = formData.gradeLevel;
@@ -189,7 +209,7 @@ export function useClasses() {
 
       await classesService.addStudent(payload);
       toast.success('Thêm học sinh thành công');
-      
+
       await fetchClasses();
       return true;
     } catch (error) {
@@ -217,7 +237,7 @@ export function useClasses() {
 
       await classesService.updateStudent(studentId, payload);
       toast.success('Cập nhật học sinh thành công');
-      
+
       await fetchClasses();
       return true;
     } catch (error) {
@@ -269,15 +289,28 @@ export function useClasses() {
     const formData = new FormData();
     formData.append('file', file);
 
+    // Check subscription limit
+    if (currentSubscription && currentSubscription.maxStudents !== null) {
+      const availableSlots = currentSubscription.maxStudents - allStudents.length;
+      if (availableSlots <= 0) {
+        toast.error(`Giới hạn gói đăng ký: Trường của bạn đã đạt tối đa ${currentSubscription.maxStudents} học sinh. Vui lòng nâng cấp gói để import.`);
+        return null;
+      }
+      if (parsedRows && parsedRows.length > availableSlots) {
+        toast.error(`Bạn chỉ còn ${availableSlots} chỗ trống, nhưng file import có ${parsedRows.length} học sinh. Vui lòng giảm số lượng hoặc nâng cấp gói.`);
+        return null;
+      }
+    }
+
     try {
       const response = await classesService.importAccounts(formData, onProgress);
 
       // Refetch data after successful import
       await fetchClasses();
-      
+
       // Calculate mock results based on parsed rows if backend doesn't return counts
       const classes = [...new Set((parsedRows || []).map(r => r.class_name).filter(Boolean))];
-      
+
       return {
         createdClasses: response.data?.createdClasses || classes,
         createdStudents: response.data?.createdStudents || (parsedRows?.length || 0),
