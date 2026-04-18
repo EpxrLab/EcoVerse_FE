@@ -1,4 +1,5 @@
 import React from 'react';
+import toast from 'react-hot-toast';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/shared/components/ui/dialog';
 import { Button } from '@/shared/components/ui/button';
 import { Input } from '@/shared/components/ui/input';
@@ -20,6 +21,7 @@ export function CampaignForm({
   availableSchools,
   onSubmit,
   isEditing,
+  currentSubscription,
 }) {
   const toggleSchool = (schoolId) => {
     const exists = formData.schoolIds.includes(schoolId);
@@ -435,31 +437,35 @@ export function CampaignForm({
                     Cấu trúc các vòng loại
                   </Label>
                 </div>
-                <Button 
-                   onClick={() => {
-                    const nextRoundNumber = formData.rounds.length + 1;
-                    const lastRound = formData.rounds[formData.rounds.length - 1];
-                    onFormChange({
-                      rounds: [
-                        ...formData.rounds,
-                        {
-                          roundNumber: nextRoundNumber,
-                          roundName: `Vòng ${nextRoundNumber}`,
-                          startTime: lastRound ? lastRound.endTime : '',
-                          endTime: '',
-                          maxParticipants: lastRound ? lastRound.advanceCount : (formData.totalStudentQuota || 0),
-                          advanceCount: 0,
-                          isFinalRound: false
-                        }
-                      ]
-                    });
-                  }}
-                  variant="outline" 
-                  className="gap-2 border-eco-blue text-eco-blue hover:bg-eco-blue hover:text-white"
-                >
-                  <Plus className="w-4 h-4" />
-                  Thêm vòng
-                </Button>
+                  <Button 
+                    onClick={() => {
+                      if (currentSubscription && currentSubscription.maxRoundsPerCampaign !== null && formData.rounds.length >= currentSubscription.maxRoundsPerCampaign) {
+                        toast.error(`Gói đăng ký của bạn chỉ cho phép tối đa ${currentSubscription.maxRoundsPerCampaign} vòng trên mỗi chiến dịch.`);
+                        return;
+                      }
+                      const nextRoundNumber = formData.rounds.length + 1;
+                      const lastRound = formData.rounds[formData.rounds.length - 1];
+                      onFormChange({
+                        rounds: [
+                          ...formData.rounds,
+                          {
+                            roundNumber: nextRoundNumber,
+                            roundName: `Vòng ${nextRoundNumber}`,
+                            startTime: lastRound ? lastRound.endTime : '',
+                            endTime: '',
+                            maxParticipants: lastRound ? lastRound.advanceCount : (formData.totalStudentQuota || 0),
+                            advanceCount: 0,
+                            isFinalRound: false
+                          }
+                        ]
+                      });
+                    }}
+                    variant="outline" 
+                    className="gap-2 border-eco-blue text-eco-blue hover:bg-eco-blue hover:text-white"
+                  >
+                    <Plus className="w-4 h-4" />
+                    Thêm vòng
+                  </Button>
               </div>
 
               <div className="space-y-4">

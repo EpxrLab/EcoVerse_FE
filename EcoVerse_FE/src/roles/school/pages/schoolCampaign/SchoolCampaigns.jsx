@@ -38,7 +38,8 @@ export default function SchoolCampaigns() {
     fetchCampaignDetail,
     bindQuizzesToRound,
     getCampaigns,
-    isLoading
+    currentSubscription,
+    isLoadingSubscription,
   } = useCampaigns();
 
   const {
@@ -416,13 +417,23 @@ export default function SchoolCampaigns() {
             Tạo và quản lý các chiến dịch thu gom rác tái chế
           </p>
         </div>
-        <Button
-          onClick={() => setIsCreateOpen(true)}
-          className="bg-eco-green hover:bg-eco-green/90"
-        >
-          <Plus className="w-4 h-4 mr-2" />
-          Tạo chiến dịch mới
-        </Button>
+        <div className="flex flex-col sm:flex-row sm:items-center gap-3">
+          {currentSubscription && (
+            <div className="text-right mr-4 hidden md:block">
+              <div className="text-lg font-bold text-eco-green">
+                Chiến dịch: {currentSubscription.usedCampaignsCurrentMonth}/{currentSubscription.maxCampaignsPerMonth || '∞'}
+              </div>
+            </div>
+          )}
+          <Button 
+            className="bg-eco-green hover:bg-eco-green/90 text-primary-foreground font-semibold"
+            onClick={() => setIsCreateOpen(true)}
+            disabled={isLoadingSubscription}
+          >
+            <Plus className="w-4 h-4 mr-2" />
+            Tạo chiến dịch
+          </Button>
+        </div>
       </div>
 
       {/* Stats */}
@@ -811,6 +822,8 @@ export default function SchoolCampaigns() {
           roundId={targetRoundId}
           availableQuizzes={availableQuizzes}
           onSubmit={handleSubmitQuiz}
+          currentSubscription={currentSubscription}
+          isLoadingSubscription={isLoadingSubscription}
         />
       )}
 
