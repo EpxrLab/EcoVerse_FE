@@ -1,4 +1,4 @@
-import { useState, useMemo, useEffect } from "react";
+import { useState, useMemo, useEffect, useRef } from "react";
 import {
   Table,
   Button,
@@ -37,6 +37,8 @@ import {
   uploadModel3D,
 } from "../../services";
 import toast from "react-hot-toast";
+import * as THREE from "three";
+import { GLTFLoader } from "three/examples/jsm/loaders/GLTFLoader";
 
 const { TextArea } = Input;
 
@@ -75,6 +77,89 @@ const itemVariants = {
     transition: { duration: 0.38, ease: "easeOut" },
   },
 };
+
+function ModelPreview({ url }) {
+  const containerRef = useRef(null);
+
+  useEffect(() => {
+    if (!url || !containerRef.current) return;
+
+    let animationId = null;
+    let model = null;
+
+    const renderer = new THREE.WebGLRenderer({ alpha: true, antialias: true });
+    renderer.setSize(
+      containerRef.current.clientWidth,
+      containerRef.current.clientHeight,
+    );
+    containerRef.current.appendChild(renderer.domElement);
+
+    const scene = new THREE.Scene();
+    const camera = new THREE.PerspectiveCamera(45, 1, 0.1, 100);
+    camera.position.set(0, 0, 5);
+
+    const ambientLight = new THREE.AmbientLight(0xffffff, 1.2);
+    scene.add(ambientLight);
+    const directionalLight = new THREE.DirectionalLight(0xffffff, 1);
+    directionalLight.position.set(5, 5, 5);
+    scene.add(directionalLight);
+
+    const loader = new GLTFLoader();
+    loader.load(
+      url,
+      (gltf) => {
+        model = gltf.scene;
+
+        // Center and scale model
+        const box = new THREE.Box3().setFromObject(model);
+        const center = box.getCenter(new THREE.Vector3());
+        const size = box.getSize(new THREE.Vector3());
+
+        const maxDim = Math.max(size.x, size.y, size.z);
+        const scale = 3.5 / maxDim; // Fit within camera distance
+        model.scale.setScalar(scale);
+        model.position.sub(center.multiplyScalar(scale));
+
+        scene.add(model);
+      },
+      undefined,
+      (err) => console.error("Error loading model preview", err),
+    );
+
+    const animate = () => {
+      animationId = requestAnimationFrame(animate);
+      if (model) {
+        model.rotation.y += 0.01;
+      }
+      renderer.render(scene, camera);
+    };
+    animate();
+
+    return () => {
+      cancelAnimationFrame(animationId);
+      if (model) scene.remove(model);
+      model?.traverse?.((child) => {
+        if (child.geometry) child.geometry.dispose();
+        if (child.material) {
+          if (Array.isArray(child.material))
+            child.material.forEach((m) => m.dispose());
+          else child.material.dispose();
+        }
+      });
+      renderer.dispose();
+      if (containerRef.current) {
+        containerRef.current.innerHTML = "";
+      }
+    };
+  }, [url]);
+
+  return (
+    <div
+      ref={containerRef}
+      className="w-full h-full cursor-grab active:cursor-grabbing pointer-events-auto"
+    />
+  );
+}
 
 function ImageUploadInput({
   previewUrl,
@@ -127,6 +212,8 @@ function ImageUploadInput({
               <div className="w-full h-full flex items-center justify-center bg-gray-50">
                 <Spin size="small" />
               </div>
+            ) : isModel ? (
+              <ModelPreview url={previewUrl} />
             ) : (
               <img
                 src={previewUrl}
@@ -401,7 +488,7 @@ function WasteItemsTab({ wasteItems, subCategories, onRefresh }) {
       recyclingTips: item.recyclingTips,
       isActive: item.isActive,
     });
-    setEditModelUrl(item.imageUrl ?? null);
+    setEditModelUrl(item?.imagePresignedUrl ?? null);
     const presignedUrl = item.imageUrl?.split("?X-Amz-Algorithm")[0];
     setEditUploadedUrl(presignedUrl ?? null);
     setIsEditOpen(true);

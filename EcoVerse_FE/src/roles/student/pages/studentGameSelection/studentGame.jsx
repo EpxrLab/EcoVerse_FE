@@ -112,6 +112,7 @@ export default function StudentGame() {
   const [gameLevels, setGameLevels] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [isPreviewMode, setIsPreviewMode] = useState(false);
 
   useEffect(() => {
     let cancelled = false;
@@ -147,7 +148,13 @@ export default function StudentGame() {
   useEffect(() => {
     if (campaign && selectedRoundId) {
       const round = campaign.rounds.find((r) => r.id === selectedRoundId);
-      if (round && round.games) {
+      if (round) {
+        // Evaluate preview mode if startTime is in the future
+        const now = new Date();
+        const start = round.startTime ? new Date(round.startTime) : null;
+        setIsPreviewMode(campaign.rounds.length > 1 && start && start > now);
+        
+        if (round.games) {
         const flattenedLevels = [];
         round.games.forEach((game) => {
           if (game.presets) {
@@ -191,8 +198,9 @@ export default function StudentGame() {
         });
 
         setGameLevels(flattenedLevels);
-      } else {
-        setGameLevels([]);
+        } else {
+          setGameLevels([]);
+        }
       }
     }
   }, [selectedRoundId, campaign]);
@@ -360,13 +368,60 @@ export default function StudentGame() {
                 size="large"
                 suffixIcon={<ChevronRight className="w-4 h-4" />}
                 dropdownClassName="rounded-xl overflow-hidden shadow-xl"
-                options={campaign?.rounds?.map((round) => ({
-                  label: `Vòng ${round.roundNumber}: ${round.roundName}`,
-                  value: round.id,
-                }))}
+                options={campaign?.rounds?.map((round) => {
+                  const now = new Date();
+                  const start = round.startTime ? new Date(round.startTime) : null;
+                  const isUpcoming = start && start > now;
+                  return {
+                    label: isUpcoming ? `${round.roundName || `Vòng ${round.roundNumber}`} (Chưa mở)` : (round.roundName || `Vòng ${round.roundNumber}`),
+                    value: round.id,
+                  };
+                })}
               />
+              {(() => {
+                const selectedRound = campaign?.rounds?.find(r => r.id === selectedRoundId);
+                if (!selectedRound) return null;
+                return (
+                  <div className="mt-1 text-sm flex flex-col gap-2 bg-gray-50 border border-gray-100 rounded-xl p-3">
+                    <div className="flex justify-between items-center">
+                      <span className="text-gray-500 font-medium">Bắt đầu:</span>
+                      <span className="text-primary font-bold">
+                        {new Date(selectedRound.startTime).toLocaleString('vi-VN', { hour: '2-digit', minute: '2-digit', day: '2-digit', month: '2-digit', year: 'numeric' })}
+                      </span>
+                    </div>
+                    <div className="flex justify-between items-center">
+                      <span className="text-gray-500 font-medium">Kết thúc:</span>
+                      <span className="text-gray-800 font-bold">
+                        {new Date(selectedRound.endTime).toLocaleString('vi-VN', { hour: '2-digit', minute: '2-digit', day: '2-digit', month: '2-digit', year: 'numeric' })}
+                      </span>
+                    </div>
+                  </div>
+                );
+              })()}
             </Space>
           </Card>
+        </motion.div>
+      )}
+
+      {/* Preview Mode Notification */}
+      {isPreviewMode && (
+        <motion.div
+          initial={{ opacity: 0, y: 10 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.15 }}
+          className="mb-6"
+        >
+          <div className="bg-amber-50 border-2 border-amber-200 rounded-2xl p-4 flex items-center gap-4">
+            <div className="w-12 h-12 shrink-0 rounded-xl bg-amber-100 flex items-center justify-center">
+              <LockOutlined className="text-amber-500 text-2xl" />
+            </div>
+            <div>
+              <h3 className="text-amber-800 text-lg font-bold m-0">Vòng đấu chưa mở</h3>
+              <p className="text-amber-700 m-0 mt-1">
+                Bạn đang ở chế độ xem trước. Vòng đấu này hiện chưa tới thời gian bắt đầu nên bạn chưa thể tham gia.
+              </p>
+            </div>
+          </div>
         </motion.div>
       )}
 
@@ -565,30 +620,34 @@ export default function StudentGame() {
                             {/* Action Button */}
                             <Button
                               block
-                              type={level.locked ? "default" : "primary"}
+                              type={level.locked ? "default" : isPreviewMode ? "default" : "primary"}
                               size="large"
                               onClick={() =>
-                                !level.locked && handlePlayLevel(level)
+                                !level.locked && !isPreviewMode && handlePlayLevel(level)
                               }
-                              disabled={level.locked}
+                              disabled={level.locked || isPreviewMode}
                               icon={
                                 level.locked ? (
+                                  <LockOutlined />
+                                ) : isPreviewMode ? (
                                   <LockOutlined />
                                 ) : (
                                   <Play className="w-4 h-4" />
                                 )
                               }
                               className={`rounded-xl font-semibold ${
-                                level.locked
-                                  ? "bg-gray-100 text-gray-400 cursor-not-allowed"
-                                  : "bg-primary border-primary hover:opacity-90"
+                                level.locked || isPreviewMode
+                                  ? "bg-gray-100 text-gray-400 cursor-not-allowed border-transparent"
+                                  : "bg-primary border-primary hover:opacity-90 text-white"
                               }`}
                             >
                               {level.locked
                                 ? "Đã khoá"
-                                : level.completed
-                                  ? "Chơi lại"
-                                  : "Chơi ngay"}
+                                : isPreviewMode
+                                  ? "Chưa mở"
+                                  : level.completed
+                                    ? "Chơi lại"
+                                    : "Chơi ngay"}
                             </Button>
                           </div>
                         </Card>

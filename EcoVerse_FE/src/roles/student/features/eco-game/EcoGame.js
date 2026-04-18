@@ -157,7 +157,8 @@ export default class EcoGame {
       const percentage = totalTrash > 0 ? (recycledCount / totalTrash) * 100 : 0;
 
       // SUCCESS: Hit the win target OR collected >= required %
-      const isWin = reason === "win" && percentage >= reqPercent;
+      // Either game type can "timeout" and still win if they collected enough
+      const isWin = (reason === "win" || reason === "timeout") && percentage >= reqPercent;
 
       if (isWin) {
         this.switchToStage2();
@@ -174,11 +175,13 @@ export default class EcoGame {
               : "Bạn đã va chạm! Bạn cần nhặt đủ ít nhất " +
                 reqPercent +
                 "% rác để tiếp tục.";
-        } else {
+        } else if (reason === "timeout") {
           failMessage =
-            gameType === "runner"
-              ? "Bạn buộc phải nhặt đủ số lượng rác tại stage 1 để qua màn phân loại (stage 2)"
-              : `Bạn mới thu gom được ${Math.round(percentage)}%, cần đạt ${reqPercent}% để tiếp tục!`;
+            gameType === "searescue"
+              ? `Hết giờ! Bạn mới thu gom được ${Math.round(percentage)}%, cần đạt ${reqPercent}% để tiếp tục.`
+              : "Bạn buộc phải nhặt đủ rác trong thời gian quy định tại stage 1 để qua màn phân loại.";
+        } else {
+          failMessage = `Bạn mới thu gom được ${Math.round(percentage)}%, cần đạt ${reqPercent}% để tiếp tục!`;
         }
 
         this._showResult(
@@ -190,6 +193,8 @@ export default class EcoGame {
               totalItems: totalTrash,
               correctItems: recycledCount,
               accuracyPercentage: Math.round(percentage),
+              timeTakenSeconds: this.levelConfig?.searescue?.gameTime || 0,
+              coinAwarded: 0
             },
           },
         );
