@@ -30,6 +30,14 @@ export function CampaignForm({
         schoolIds: formData.schoolIds.filter(id => id !== schoolId)
       });
     } else {
+      // Check subscription limit for inviting schools
+      if (currentSubscription && currentSubscription.maxSchoolsPerCampaign !== null) {
+        if (formData.schoolIds.length >= currentSubscription.maxSchoolsPerCampaign) {
+          toast.error(`Gói đăng ký của bạn chỉ cho phép mời tối đa ${currentSubscription.maxSchoolsPerCampaign} trường tham gia mỗi chiến dịch.`);
+          return;
+        }
+      }
+
       onFormChange({
         schoolIds: [...formData.schoolIds, schoolId]
       });
