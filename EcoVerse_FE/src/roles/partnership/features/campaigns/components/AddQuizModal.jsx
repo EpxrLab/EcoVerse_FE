@@ -19,7 +19,7 @@ const difficultyConfig = {
 
 // ─── AI Generate Panel (Ported from School) ───────────────────────────────────
 
-function AIGeneratePanel({ campaignId, rounds, onGenerated }) {
+function AIGeneratePanel({ campaignId, rounds, onGenerated, currentSubscription, isLoadingSubscription }) {
   const [selectedRoundId, setSelectedRoundId] = useState(rounds[0]?.id || '');
   const [questionCount, setQuestionCount] = useState(15);
   const [targetGrade, setTargetGrade] = useState(1);
@@ -80,6 +80,16 @@ function AIGeneratePanel({ campaignId, rounds, onGenerated }) {
   };
 
   const handleGenerate = async () => {
+    if (currentSubscription) {
+      const { maxAiQuizGenerations, usedAiQuizGenerations } = currentSubscription;
+      if (maxAiQuizGenerations !== null && usedAiQuizGenerations >= maxAiQuizGenerations) {
+        toast.error('Giới hạn gói đăng ký', {
+          description: `Bạn đã đạt giới hạn ${maxAiQuizGenerations} lượt tạo AI của gói hiện tại.`,
+        });
+        return;
+      }
+    }
+
     setIsGenerating(true);
     setEditableQuiz(null);
     try {
@@ -414,10 +424,21 @@ function AIGeneratePanel({ campaignId, rounds, onGenerated }) {
           </div>
         </div>
 
-        <div className="mt-auto pt-4">
+        <div className="mt-auto pt-4 space-y-2">
+           {currentSubscription && (
+            <div className="flex justify-between items-center text-[10px] text-muted-foreground px-1">
+              <span>Lượt tạo AI hàng tháng:</span>
+              <span className={cn(
+                "font-bold",
+                currentSubscription.usedAiQuizGenerations >= currentSubscription.maxAiQuizGenerations ? "text-destructive" : "text-purple-600"
+              )}>
+                {currentSubscription.usedAiQuizGenerations}/{currentSubscription.maxAiQuizGenerations}
+              </span>
+            </div>
+          )}
           <Button
             onClick={handleGenerate}
-            disabled={isGenerating}
+            disabled={isGenerating || isLoadingSubscription}
             className="w-full h-11 rounded-xl bg-purple-600 hover:bg-purple-700 text-white font-bold shadow-lg shadow-purple-100"
           >
             {isGenerating ? (
@@ -495,7 +516,16 @@ function AIGeneratePanel({ campaignId, rounds, onGenerated }) {
 
 // ─── Main Modal ───────────────────────────────────────────────────────────────
 
-export function AddQuizModal({ isOpen, onClose, campaign, availableQuizzes, setAvailableQuizzes, onSubmit }) {
+export function AddQuizModal({ 
+  isOpen, 
+  onClose, 
+  campaign, 
+  availableQuizzes, 
+  setAvailableQuizzes, 
+  onSubmit,
+  currentSubscription,
+  isLoadingSubscription
+}) {
   const [configs, setConfigs] = useState({});
   const [aiGeneratedQuizzes, setAiGeneratedQuizzes] = useState([]);
   const [activeTab, setActiveTab] = useState('library');
@@ -705,6 +735,8 @@ export function AddQuizModal({ isOpen, onClose, campaign, availableQuizzes, setA
               campaignId={campaign?.id} 
               rounds={campaign?.qualifying_rounds || campaign?.rounds || []}
               onGenerated={handleAIGenerated} 
+              currentSubscription={currentSubscription}
+              isLoadingSubscription={isLoadingSubscription}
             />
           )}
         </div>

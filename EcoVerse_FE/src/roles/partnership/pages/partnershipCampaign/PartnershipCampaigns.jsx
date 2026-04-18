@@ -52,6 +52,8 @@ export default function PartnershipCampaigns() {
 
     confirmConfig,
     setConfirmConfig,
+    currentSubscription,
+    isLoadingSubscription,
   } = usePartnershipCampaigns();
 
   return (
@@ -67,13 +69,23 @@ export default function PartnershipCampaigns() {
             <p className="text-muted-foreground">Theo dõi và quản lý các chiến dịch môi trường</p>
           </div>
         </div>
-        <Button 
-          className="bg-eco-blue hover:bg-eco-blue/90 text-primary-foreground font-semibold"
-          onClick={handleOpenCreate}
-        >
-          <Plus className="w-4 h-4 mr-2" />
-          Tạo chiến dịch
-        </Button>
+        <div className="flex flex-col sm:flex-row sm:items-center gap-3">
+          {currentSubscription && (
+            <div className="text-right mr-4 hidden md:block">
+              <div className="text-lg font-bold text-eco-blue">
+                Chiến dịch: {currentSubscription.usedCampaignsCurrentMonth}/{currentSubscription.maxCampaignsPerMonth || '∞'}
+              </div>
+            </div>
+          )}
+          <Button 
+            className="bg-eco-blue hover:bg-eco-blue/90 text-primary-foreground font-semibold"
+            onClick={handleOpenCreate}
+            disabled={isLoadingSubscription}
+          >
+            <Plus className="w-4 h-4 mr-2" />
+            Tạo chiến dịch
+          </Button>
+        </div>
       </div>
 
       {/* Stats */}
@@ -205,6 +217,7 @@ export default function PartnershipCampaigns() {
         availableGameLevels={availableGameLevels}
         onSubmit={handleSubmit}
         isEditing={isEditing}
+        currentSubscription={currentSubscription}
       />
 
       <AddGameModal
@@ -221,6 +234,8 @@ export default function PartnershipCampaigns() {
         availableQuizzes={availableQuizzes}
         setAvailableQuizzes={setAvailableQuizzes}
         onSubmit={handleAddQuizSubmit}
+        currentSubscription={currentSubscription}
+        isLoadingSubscription={isLoadingSubscription}
       />
 
       {/* Campaign Detail Dialog */}

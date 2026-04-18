@@ -12,5 +12,8 @@ export const subscriptionService = {
   },
   getMySubscriptionHistory: (params) => {
     return axios.get('/subscriptions/my/history', { params });
+  },
+  getMySubscription: () => {
+    return axios.get('/subscriptions/my');
   }
 };
