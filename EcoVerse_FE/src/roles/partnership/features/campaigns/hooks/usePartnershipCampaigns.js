@@ -1,6 +1,8 @@
 import { useState, useMemo, useEffect } from 'react';
+import toast from 'react-hot-toast';
 import { getGameLevelsForPartnership } from '@/shared/data/admin-game-levels.data';
 import { partnershipCampaignService } from '../../../services/partnershipCampaign.service';
+import { subscriptionService } from '@/roles/school/services/subscription.service';
 import { quizzesService } from '../../quizzes/services/quizzes.service';
 import { toLocalISO, toUTCISO } from '@/utils/dateUtils';
 
@@ -17,6 +19,8 @@ export function usePartnershipCampaigns() {
   const [isAddQuizOpen, setIsAddQuizOpen] = useState(false);
   const [selectedCampaignForConfig, setSelectedCampaignForConfig] = useState(null);
   const [loading, setLoading] = useState(false);
+  const [currentSubscription, setCurrentSubscription] = useState(null);
+  const [isLoadingSubscription, setIsLoadingSubscription] = useState(true);
 
   const [campaigns, setCampaigns] = useState([]);
   const [availableSchools, setAvailableSchools] = useState([]);
@@ -129,10 +133,23 @@ export function usePartnershipCampaigns() {
     }
   };
 
+  const fetchSubscription = async () => {
+    try {
+      setIsLoadingSubscription(true);
+      const res = await subscriptionService.getMySubscription();
+      setCurrentSubscription(res.data?.data || null);
+    } catch (error) {
+      console.error('Failed to fetch subscription', error);
+    } finally {
+      setIsLoadingSubscription(false);
+    }
+  };
+
   useEffect(() => {
     fetchCampaigns();
     fetchEligibleSchools();
     fetchQuizzes();
+    fetchSubscription();
   }, []);
 
   const [formData, setFormData] = useState({
@@ -434,6 +451,15 @@ export function usePartnershipCampaigns() {
   };
 
   const handleActivate = async (campaign) => {
+    // Check campaign limits before activation
+    if (currentSubscription) {
+      const { maxCampaignsPerMonth, usedCampaignsCurrentMonth } = currentSubscription;
+      if (maxCampaignsPerMonth !== null && usedCampaignsCurrentMonth >= maxCampaignsPerMonth) {
+        toast.error(`Giới hạn gói đăng ký: Bạn đã đạt giới hạn ${maxCampaignsPerMonth} chiến dịch/tháng. Vui lòng nâng cấp gói hoặc chờ đến tháng sau để kích hoạt chiến dịch này.`);
+        return;
+      }
+    }
+
     setConfirmConfig({
       isOpen: true,
       title: 'Kích hoạt chiến dịch',
@@ -697,5 +723,8 @@ export function usePartnershipCampaigns() {
     handleAddQuizSubmit,
     fetchRewardDeliveries,
     markRewardShipped,
+    currentSubscription,
+    isLoadingSubscription,
+    fetchSubscription
   };
 }

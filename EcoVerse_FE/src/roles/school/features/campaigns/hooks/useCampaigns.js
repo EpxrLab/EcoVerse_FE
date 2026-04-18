@@ -2,7 +2,7 @@ import { useState, useMemo, useEffect, useCallback } from 'react';
 import { mockStudentInvitations, mockSchoolInvitations } from '../../../data/campaign.data';
 import { defaultQuizzesData } from '../../../data/quiz.data';
 import { toast } from '@/shared/hooks/use-toast';
-import { campaignService } from '@/roles/school/services';
+import { campaignService, subscriptionService } from '@/roles/school/services';
 import { quizzesService } from '../../quizzes/services/quizzes.service';
 import { toLocalISO, toUTCISO } from '@/utils/dateUtils';
 
@@ -12,6 +12,8 @@ export function useCampaigns() {
   const [apiQuizzes, setApiQuizzes] = useState([]);
   const [partnershipInvitations, setPartnershipInvitations] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [currentSubscription, setCurrentSubscription] = useState(null);
+  const [isLoadingSubscription, setIsLoadingSubscription] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedCampaign, setSelectedCampaign] = useState(null);
 
@@ -45,11 +47,24 @@ export function useCampaigns() {
     }
   }, []);
 
+  const fetchSubscription = useCallback(async () => {
+    try {
+      setIsLoadingSubscription(true);
+      const res = await subscriptionService.getMySubscription();
+      setCurrentSubscription(res.data?.data || null);
+    } catch (error) {
+      console.error('Failed to fetch subscription:', error);
+    } finally {
+      setIsLoadingSubscription(false);
+    }
+  }, []);
+
   useEffect(() => {
     fetchCampaigns();
     fetchQuizzes();
     fetchPartnershipInvitations();
-  }, [fetchCampaigns, fetchQuizzes, fetchPartnershipInvitations]);
+    fetchSubscription();
+  }, [fetchCampaigns, fetchQuizzes, fetchPartnershipInvitations, fetchSubscription]);
 
   // Format and link invitations
   const allFormattedCampaigns = useMemo(() => {
@@ -413,6 +428,18 @@ export function useCampaigns() {
   };
 
   const activateCampaign = async (id) => {
+    // Check campaign limits before activation
+    if (currentSubscription) {
+      const { maxCampaignsPerMonth, usedCampaignsCurrentMonth } = currentSubscription;
+      if (maxCampaignsPerMonth !== null && usedCampaignsCurrentMonth >= maxCampaignsPerMonth) {
+        toast({
+          title: "Giới hạn gói đăng ký",
+          description: `Bạn đã đạt giới hạn ${maxCampaignsPerMonth} chiến dịch/tháng của gói hiện tại. Vui lòng nâng cấp gói hoặc chờ đến tháng sau để kích hoạt chiến dịch này.`,
+          variant: "destructive",
+        });
+        return;
+      }
+    }
     try {
       await campaignService.activateCampaign(id);
       toast({
@@ -553,6 +580,11 @@ export function useCampaigns() {
           approval_status: p.parentApprovalStatus || p.approval_status
         })),
         student_ids: data.participants?.map(p => p.studentId || p.id) || [],
+        class_ids: Array.from(new Set(data.participants?.map(p => {
+          const grade = p.gradeLevel || p.grade || '';
+          const name = p.className || p.class_name || '';
+          return (grade || name) ? `${grade}${name}` : null;
+        }).filter(Boolean) || [])),
       };
 
       return mappedDetail;
@@ -615,6 +647,9 @@ export function useCampaigns() {
     fetchCampaignDetail,
     bindQuizzesToRound,
     getCampaigns: fetchCampaigns,
-    isLoading
+    isLoading,
+    currentSubscription,
+    isLoadingSubscription,
+    fetchSubscription
   };
 }

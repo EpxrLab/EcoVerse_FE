@@ -95,5 +95,4 @@ export const campaignService = {
   getCampaignLeaderboard: (id) => {
     return axios.get(`/school/campaigns/${id}/leaderboard`);
   }
-
 };
