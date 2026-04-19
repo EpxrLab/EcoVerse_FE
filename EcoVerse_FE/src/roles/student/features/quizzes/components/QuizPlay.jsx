@@ -194,21 +194,6 @@ function ResultModal({ result, onClose }) {
                 </div>
               </div>
             ))}
-
-            {/* attemptId / mã bài làm — chiếm full width nếu có */}
-            {result.attemptId && (
-              <div className="col-span-2 flex items-center gap-3 px-4 py-3 rounded-xl bg-gray-50 border border-gray-100">
-                <Hash size={16} className="text-gray-400 flex-shrink-0" />
-                <div className="min-w-0">
-                  <p className="text-[11px] text-gray-400 leading-none mb-0.5">
-                    Mã bài làm
-                  </p>
-                  <p className="text-xs font-mono text-gray-500 truncate">
-                    {result.attemptId}
-                  </p>
-                </div>
-              </div>
-            )}
           </div>
 
           {/* CTA */}

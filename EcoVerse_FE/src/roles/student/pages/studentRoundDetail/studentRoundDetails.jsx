@@ -109,7 +109,7 @@ function LevelCard({ item, isUnlocked, isCompleted, onPlay, campaignId }) {
                 className={`w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0 font-black text-sm
                 ${
                   isCompleted
-                  ? "bg-primary text-white shadow-sm shadow-primary/20"
+                    ? "bg-primary text-white shadow-sm shadow-primary/20"
                     : isUnlocked
                       ? isOutOfAttempts
                         ? "bg-orange-500 text-white"
@@ -274,13 +274,13 @@ function PresetTabContent({ preset, onPlay, campaignId }) {
     (a, b) => a.levelNumber - b.levelNumber,
   );
 
-  const completedCount = items.filter((i) => i.coinReceived).length;
+  const completedCount = items.filter((i) => i.isPassed).length;
   const progressPct =
     items.length > 0 ? Math.round((completedCount / items.length) * 100) : 0;
 
   const isUnlocked = (idx) => {
     if (idx === 0) return true; // màn đầu luôn mở
-    return items[idx - 1]?.coinReceived === true; // mở nếu màn trước đã xong
+    return items[idx - 1]?.isPassed === true; // mở nếu màn trước đã xong
   };
 
   return (
@@ -322,7 +322,7 @@ function PresetTabContent({ preset, onPlay, campaignId }) {
           <LevelCard
             key={item.levelNumber}
             item={item}
-            isCompleted={item.coinReceived === true}
+            isCompleted={item.isPassed === true}
             isUnlocked={isUnlocked(idx)}
             onPlay={onPlay}
             campaignId={campaignId}
@@ -383,7 +383,7 @@ export default function StudentRoundDetails() {
 
   const gameTabItems = sortedPresets.map((preset) => {
     const cfg = DIFFICULTY_CFG[preset.difficulty] ?? DIFFICULTY_CFG.EASY;
-    const completed = (preset.items ?? []).filter((i) => i.coinReceived).length;
+    const completed = (preset.items ?? []).filter((i) => i.isPassed).length;
     const total = (preset.items ?? []).length;
     return {
       key: preset.presetId,

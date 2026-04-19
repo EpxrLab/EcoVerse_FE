@@ -22,6 +22,7 @@ export default function EcoGamePage() {
   const [loadingProgress, setLoadingProgress] = useState(0);
   const [loadingText, setLoadingText] = useState("");
   const [levelConfig, setLevelConfig] = useState(null);
+  const [replayKey, setReplayKey] = useState(0);
   const gameStartTimeRef = useRef(null);
   const deadTimeRef = useRef(0);
   const pauseStartTimeRef = useRef(null);
@@ -81,7 +82,7 @@ export default function EcoGamePage() {
               if (!modelUrl) {
                 loadedCount++;
                 setLoadingProgress(
-                  Math.round((loadedCount / wasteItems.length) * 100),
+                  Math.round((loadedCount / wasteItems.length) * 50),
                 );
                 resolve({ ...item, preloadedModel: null });
                 return;
@@ -91,7 +92,7 @@ export default function EcoGamePage() {
                 (gltf) => {
                   loadedCount++;
                   setLoadingProgress(
-                    Math.round((loadedCount / wasteItems.length) * 100),
+                    Math.round((loadedCount / wasteItems.length) * 50),
                   );
 
                   // Setup shading
@@ -108,7 +109,7 @@ export default function EcoGamePage() {
                   console.warn("Failed to load model for", item.itemName, err);
                   loadedCount++;
                   setLoadingProgress(
-                    Math.round((loadedCount / wasteItems.length) * 100),
+                    Math.round((loadedCount / wasteItems.length) * 50),
                   );
                   resolve({ ...item, preloadedModel: null });
                 },
@@ -146,18 +147,31 @@ export default function EcoGamePage() {
         };
 
         setLevelConfig(finalConfig);
-        console.log(apiData);
-        setLoading(false);
+        console.log("Config ready, starting game environment load...");
 
-        requestAnimationFrame(() => {
-          if (cancelled || !containerRef.current) return;
+        if (cancelled || !containerRef.current) return;
 
-          const game = new EcoGame();
-          game.init(containerRef.current, finalConfig);
-          gameRef.current = game;
-          gameStartTimeRef.current = Date.now();
-          setGameInstance(game);
+        setLoadingText("Đang thiết lập môi trường game...");
+        const game = new EcoGame();
+        gameRef.current = game;
+
+        // Initialize game with progress tracking (Phase 2: 50% - 100%)
+        await game.init(containerRef.current, finalConfig, (prog) => {
+          setLoadingProgress(50 + Math.round(prog * 0.5));
+          if (prog >= 100) {
+            setLoadingText("Chuẩn bị bắt đầu...");
+          }
         });
+
+        if (cancelled) return;
+
+        gameStartTimeRef.current = Date.now();
+        setGameInstance(game);
+
+        // All done!
+        setTimeout(() => {
+          if (!cancelled) setLoading(false);
+        }, 500);
       } catch (err) {
         const serverMessage =
           err.response?.data?.message || err?.message || "Lỗi không xác định";
@@ -173,6 +187,10 @@ export default function EcoGamePage() {
     }
 
     if (campaignId && roundId && roundGameConfigId && levelNumber) {
+      deadTimeRef.current = 0;
+      pauseStartTimeRef.current = null;
+      setLoading(true);
+      setLoadingProgress(0);
       initGame();
     }
 
@@ -183,7 +201,11 @@ export default function EcoGamePage() {
         gameRef.current = null;
       }
     };
-  }, [campaignId, roundId, roundGameConfigId, levelNumber, typeCode]);
+  }, [campaignId, roundId, roundGameConfigId, levelNumber, typeCode, replayKey]);
+
+  const handleReplay = useCallback(() => {
+    setReplayKey((prev) => prev + 1);
+  }, []);
 
   const handleBack = useCallback(() => {
     navigate(-1);
@@ -246,7 +268,7 @@ export default function EcoGamePage() {
         return null;
       }
     },
-    [levelConfig],
+    [levelConfig, refreshStudentData],
   );
 
   return (
@@ -290,7 +312,9 @@ export default function EcoGamePage() {
               <Progress
                 percent={loadingProgress}
                 size="small"
-                strokeColor="var(--primary)"
+                strokeColor="#ffffff"
+                trailColor="rgba(255, 255, 255, 0.2)"
+                showInfo={false}
               />
             </div>
           )}
@@ -327,6 +351,7 @@ export default function EcoGamePage() {
               gameType={typeCode}
               onGameResult={handleGameResult}
               onPauseChange={handlePauseChange}
+              onReplay={handleReplay}
             />
           </div>
         </div>

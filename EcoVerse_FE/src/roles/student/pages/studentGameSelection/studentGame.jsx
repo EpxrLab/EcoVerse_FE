@@ -113,6 +113,7 @@ export default function StudentGame() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [isPreviewMode, setIsPreviewMode] = useState(false);
+  const [isCompletedMode, setIsCompletedMode] = useState(false);
 
   useEffect(() => {
     let cancelled = false;
@@ -149,10 +150,10 @@ export default function StudentGame() {
     if (campaign && selectedRoundId) {
       const round = campaign.rounds.find((r) => r.id === selectedRoundId);
       if (round) {
-        // Evaluate preview mode if startTime is in the future
-        const now = new Date();
-        const start = round.startTime ? new Date(round.startTime) : null;
-        setIsPreviewMode(campaign.rounds.length > 1 && start && start > now);
+        // Evaluate access based on round status
+        const status = round.status;
+        setIsPreviewMode(status === "UPCOMING");
+        setIsCompletedMode(status === "COMPLETED");
         
         if (round.games) {
         const flattenedLevels = [];
@@ -369,11 +370,15 @@ export default function StudentGame() {
                 suffixIcon={<ChevronRight className="w-4 h-4" />}
                 dropdownClassName="rounded-xl overflow-hidden shadow-xl"
                 options={campaign?.rounds?.map((round) => {
-                  const now = new Date();
-                  const start = round.startTime ? new Date(round.startTime) : null;
-                  const isUpcoming = start && start > now;
+                  const status = round.status;
+                  const statusLabel =
+                    status === "UPCOMING"
+                      ? " (Chưa mở)"
+                      : status === "COMPLETED"
+                        ? " (Đã kết thúc)"
+                        : "";
                   return {
-                    label: isUpcoming ? `${round.roundName || `Vòng ${round.roundNumber}`} (Chưa mở)` : (round.roundName || `Vòng ${round.roundNumber}`),
+                    label: `${round.roundName || `Vòng ${round.roundNumber}`}${statusLabel}`,
                     value: round.id,
                   };
                 })}
@@ -416,9 +421,37 @@ export default function StudentGame() {
               <LockOutlined className="text-amber-500 text-2xl" />
             </div>
             <div>
-              <h3 className="text-amber-800 text-lg font-bold m-0">Vòng đấu chưa mở</h3>
+              <h3 className="text-amber-800 text-lg font-bold m-0">
+                Vòng đấu chưa mở
+              </h3>
               <p className="text-amber-700 m-0 mt-1">
-                Bạn đang ở chế độ xem trước. Vòng đấu này hiện chưa tới thời gian bắt đầu nên bạn chưa thể tham gia.
+                Vòng đấu này hiện chưa tới thời gian bắt đầu nên bạn chưa thể
+                tham gia. Hãy quay lại sau nhé!
+              </p>
+            </div>
+          </div>
+        </motion.div>
+      )}
+
+      {/* Completed Mode Notification */}
+      {isCompletedMode && (
+        <motion.div
+          initial={{ opacity: 0, y: 10 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.15 }}
+          className="mb-6"
+        >
+          <div className="bg-blue-50 border-2 border-blue-200 rounded-2xl p-4 flex items-center gap-4">
+            <div className="w-12 h-12 shrink-0 rounded-xl bg-blue-100 flex items-center justify-center">
+              <Star className="text-blue-500 w-6 h-6" />
+            </div>
+            <div>
+              <h3 className="text-blue-800 text-lg font-bold m-0">
+                Vòng đấu đã kết thúc
+              </h3>
+              <p className="text-blue-700 m-0 mt-1">
+                Vòng đấu này đã hoàn thành. Bạn có thể xem lại các level nhưng
+                không thể tham gia chơi mới hoặc chơi lại.
               </p>
             </div>
           </div>
@@ -620,23 +653,34 @@ export default function StudentGame() {
                             {/* Action Button */}
                             <Button
                               block
-                              type={level.locked ? "default" : isPreviewMode ? "default" : "primary"}
+                              type={
+                                level.locked
+                                  ? "default"
+                                  : isPreviewMode || isCompletedMode
+                                    ? "default"
+                                    : "primary"
+                              }
                               size="large"
                               onClick={() =>
-                                !level.locked && !isPreviewMode && handlePlayLevel(level)
+                                !level.locked &&
+                                !isPreviewMode &&
+                                !isCompletedMode &&
+                                handlePlayLevel(level)
                               }
-                              disabled={level.locked || isPreviewMode}
+                              disabled={
+                                level.locked || isPreviewMode || isCompletedMode
+                              }
                               icon={
-                                level.locked ? (
-                                  <LockOutlined />
-                                ) : isPreviewMode ? (
+                                level.locked ||
+                                isPreviewMode ||
+                                isCompletedMode ? (
                                   <LockOutlined />
                                 ) : (
                                   <Play className="w-4 h-4" />
                                 )
                               }
                               className={`rounded-xl font-semibold ${
-                                level.locked || isPreviewMode
+                                level.locked || isPreviewMode || isCompletedMode
                                   ? "bg-gray-100 text-gray-400 cursor-not-allowed border-transparent"
                                   : "bg-primary border-primary hover:opacity-90 text-white"
                               }`}
@@ -645,9 +689,11 @@ export default function StudentGame() {
                                 ? "Đã khoá"
                                 : isPreviewMode
                                   ? "Chưa mở"
-                                  : level.completed
-                                    ? "Chơi lại"
-                                    : "Chơi ngay"}
+                                  : isCompletedMode
+                                    ? "Đã kết thúc"
+                                    : level.completed
+                                      ? "Chơi lại"
+                                      : "Chơi ngay"}
                             </Button>
                           </div>
                         </Card>

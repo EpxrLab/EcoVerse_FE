@@ -40,8 +40,10 @@ export default class EcoGame {
    * Initialize the game and attach to a DOM container
    * @param {HTMLElement} container - The DOM element to render into
    * @param {object} levelConfig - Level configuration from API (optional)
+   * @param {function} onProgress - Callback for loading progress (0-100)
+   * @returns {Promise} Resolves when the game and its initial stage are fully loaded
    */
-  init(container, levelConfig = null) {
+  async init(container, levelConfig = null, onProgress = null) {
     this.container = container;
     this.levelConfig = levelConfig
       ? mergeLevelConfig(levelConfig)
@@ -74,8 +76,8 @@ export default class EcoGame {
     // Resize listener
     window.addEventListener("resize", this._onResize);
 
-    // Start with Stage 1 directly
-    this.startStage1();
+    // Start with Stage 1 directly - wait for it to load
+    await this.startStage1(onProgress);
 
     // Start game loop
     this.clock.start();
@@ -87,7 +89,7 @@ export default class EcoGame {
    * 'runner'     → EcoGameRunner (endless runner mặc định)
    * 'searescue'  → EcoSeaRescue  (game tàu thu gom rác biển)
    */
-  startStage1() {
+  async startStage1(onProgress = null) {
     // Clean up any existing stage
     if (this.sorter) {
       this.sorter.dispose();
@@ -114,11 +116,11 @@ export default class EcoGame {
         this.stateManager,
         this.levelConfig.runner,
         this.levelConfig.wasteItems ?? [],
-        this.levelConfig.runner.itemCount || 20,
+        this.levelConfig.runner?.itemCount || 20,
       );
     }
 
-    this.stage1Game.init();
+    await this.stage1Game.init(onProgress);
     this.activeStage = this.stage1Game;
 
     // Register callbacks — Both Stage 1 games share the same interface

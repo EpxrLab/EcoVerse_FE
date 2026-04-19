@@ -75,6 +75,9 @@ export default class EcoGameSorter {
     this._onPointerDown = this._onPointerDown.bind(this);
     this._onPointerMove = this._onPointerMove.bind(this);
     this._onPointerUp = this._onPointerUp.bind(this);
+    this._onResize = this._onResize.bind(this);
+
+    this.domRect = null;
   }
 
   // ─── Initialization ─────────────────────────────────────────────────────────
@@ -87,6 +90,7 @@ export default class EcoGameSorter {
     this._createTrashItems();
     this._setupCamera();
     this._addEventListeners();
+    this._onResize(); // Initial rect cache
   }
 
   _clearScene() {
@@ -177,7 +181,14 @@ export default class EcoGameSorter {
 
     this.wasteCategories.forEach((catCode, index) => {
       const binType = DynamicBinTypes[catCode] || DynamicBinTypes.GENERAL;
-      const x = startX + spacing * index;
+      
+      // Responsive bin layout: use a narrower spread if the screen is portrait
+      const aspect = window.innerWidth / window.innerHeight;
+      const responsiveWidth = aspect < 1 ? 6 : 14; 
+      const responsiveSpacing = numBins === 1 ? 0 : responsiveWidth / (numBins - 1);
+      const responsiveStartX = -responsiveWidth / 2;
+      
+      const x = responsiveStartX + responsiveSpacing * index;
       const z = -4;
 
       const group = new THREE.Group();
@@ -363,6 +374,7 @@ export default class EcoGameSorter {
       };
 
       const modelUrl =
+        item.model3dPresignedUrl ||
         (typeof item.preloadedModel === "string" && item.preloadedModel) ||
         item.modelUrl ||
         item.imageUrl;
@@ -472,6 +484,7 @@ export default class EcoGameSorter {
     domElement.addEventListener("pointerdown", this._onPointerDown);
     domElement.addEventListener("pointermove", this._onPointerMove);
     domElement.addEventListener("pointerup", this._onPointerUp);
+    window.addEventListener("resize", this._onResize);
   }
 
   _removeEventListeners() {
@@ -479,10 +492,18 @@ export default class EcoGameSorter {
     domElement.removeEventListener("pointerdown", this._onPointerDown);
     domElement.removeEventListener("pointermove", this._onPointerMove);
     domElement.removeEventListener("pointerup", this._onPointerUp);
+    window.removeEventListener("resize", this._onResize);
+  }
+
+  _onResize() {
+    if (this.renderer.domElement) {
+      this.domRect = this.renderer.domElement.getBoundingClientRect();
+    }
   }
 
   _getPointerPosition(event) {
-    const rect = this.renderer.domElement.getBoundingClientRect();
+    if (!this.domRect) this._onResize();
+    const rect = this.domRect;
     this.mouse.x = ((event.clientX - rect.left) / rect.width) * 2 - 1;
     this.mouse.y = -((event.clientY - rect.top) / rect.height) * 2 + 1;
   }
@@ -542,9 +563,9 @@ export default class EcoGameSorter {
     this.raycaster.setFromCamera(this.mouse, this.camera);
 
     const intersection = new THREE.Vector3();
-    this.raycaster.ray.intersectPlane(this.dragPlane, intersection);
-
-    if (intersection) {
+    const result = this.raycaster.ray.intersectPlane(this.dragPlane, intersection);
+ 
+    if (result) {
       this.selectedObject.position.x = intersection.x;
       this.selectedObject.position.z = intersection.z;
     }
@@ -565,8 +586,9 @@ export default class EcoGameSorter {
       const dx = itemPos.x - bin.position.x;
       const dz = itemPos.z - bin.position.z;
       const distance = Math.sqrt(dx * dx + dz * dz);
-
-      if (distance < 1.2) {
+ 
+      // Increased hitbox for mobile: 2.0 instead of 1.2
+      if (distance < 2.0) {
         droppedOnBin = bin;
         break;
       }

@@ -27,6 +27,7 @@ import {
   History,
   Clock,
   ExternalLink,
+  Lock,
 } from "lucide-react";
 import { getCampaignDetails, getQuizHistory } from "../../services";
 
@@ -250,6 +251,7 @@ export default function StudentQuiz() {
   const [selectedQuiz, setSelectedQuiz] = useState(null);
   const [historyLoading, setHistoryLoading] = useState(false);
   const [isPreviewMode, setIsPreviewMode] = useState(false);
+  const [isCompletedMode, setIsCompletedMode] = useState(false);
 
   const fetchQuizHistoryData = async (quizId) => {
     setHistoryLoading(true);
@@ -305,11 +307,10 @@ export default function StudentQuiz() {
     if (campaign && selectedRoundId) {
       const round = campaign.rounds.find((r) => r.id === selectedRoundId);
       if (round) {
-        // Evaluate preview mode if startTime is in the future
-        const now = new Date();
-        const start = round.startTime ? new Date(round.startTime) : null;
-        console.log(start);
-        setIsPreviewMode(campaign.rounds.length > 1 && start && start > now);
+        // Evaluate access based on round status
+        const status = round.status;
+        setIsPreviewMode(status === "UPCOMING");
+        setIsCompletedMode(status === "COMPLETED");
 
         setQuizzes(round.quizzes || []);
       }
@@ -469,34 +470,58 @@ export default function StudentQuiz() {
                       suffixIcon={<ChevronRight className="w-4 h-4" />}
                       dropdownClassName="rounded-xl overflow-hidden shadow-xl"
                       options={campaign?.rounds?.map((round) => {
-                        const now = new Date();
-                        const start = round.startTime
-                          ? new Date(round.startTime)
-                          : null;
-                        const isUpcoming = start && start > now;
+                        const status = round.status;
+                        const statusLabel =
+                          status === "UPCOMING"
+                            ? " (Chưa mở)"
+                            : status === "COMPLETED"
+                              ? " (Đã kết thúc)"
+                              : "";
                         return {
-                          label: isUpcoming
-                            ? `${round.roundName || `Vòng ${round.roundNumber}`} (Chưa mở)`
-                            : round.roundName || `Vòng ${round.roundNumber}`,
+                          label: `${round.roundName || `Vòng ${round.roundNumber}`}${statusLabel}`,
                           value: round.id,
                         };
                       })}
                     />
                     {(() => {
-                      const selectedRound = campaign?.rounds?.find(r => r.id === selectedRoundId);
+                      const selectedRound = campaign?.rounds?.find(
+                        (r) => r.id === selectedRoundId,
+                      );
                       if (!selectedRound) return null;
                       return (
                         <div className="mt-1 text-sm flex flex-col gap-2 bg-gray-50 border border-gray-100 rounded-xl p-3">
                           <div className="flex justify-between items-center">
-                            <span className="text-gray-500 font-medium">Bắt đầu:</span>
+                            <span className="text-gray-500 font-medium">
+                              Bắt đầu:
+                            </span>
                             <span className="text-primary font-bold">
-                              {new Date(selectedRound.startTime).toLocaleString('vi-VN', { hour: '2-digit', minute: '2-digit', day: '2-digit', month: '2-digit', year: 'numeric' })}
+                              {new Date(selectedRound.startTime).toLocaleString(
+                                "vi-VN",
+                                {
+                                  hour: "2-digit",
+                                  minute: "2-digit",
+                                  day: "2-digit",
+                                  month: "2-digit",
+                                  year: "numeric",
+                                },
+                              )}
                             </span>
                           </div>
                           <div className="flex justify-between items-center">
-                            <span className="text-gray-500 font-medium">Kết thúc:</span>
+                            <span className="text-gray-500 font-medium">
+                              Kết thúc:
+                            </span>
                             <span className="text-gray-800 font-bold">
-                              {new Date(selectedRound.endTime).toLocaleString('vi-VN', { hour: '2-digit', minute: '2-digit', day: '2-digit', month: '2-digit', year: 'numeric' })}
+                              {new Date(selectedRound.endTime).toLocaleString(
+                                "vi-VN",
+                                {
+                                  hour: "2-digit",
+                                  minute: "2-digit",
+                                  day: "2-digit",
+                                  month: "2-digit",
+                                  year: "numeric",
+                                },
+                              )}
                             </span>
                           </div>
                         </div>
@@ -564,9 +589,37 @@ export default function StudentQuiz() {
                 <Lock className="text-amber-500 w-6 h-6" />
               </div>
               <div>
-                <h3 className="text-amber-800 text-lg font-bold m-0">Vòng đấu chưa mở</h3>
+                <h3 className="text-amber-800 text-lg font-bold m-0">
+                  Vòng đấu chưa mở
+                </h3>
                 <p className="text-amber-700 m-0 mt-1">
-                  Bạn đang ở chế độ xem trước. Vòng đấu này hiện chưa tới thời gian bắt đầu nên bạn chưa thể tham gia làm quiz.
+                  Vòng đấu này hiện chưa tới thời gian bắt đầu nên bạn chưa thể
+                  tham gia làm quiz. Hãy quay lại sau nhé!
+                </p>
+              </div>
+            </div>
+          </motion.div>
+        )}
+
+        {/* Completed Mode Notification */}
+        {isCompletedMode && (
+          <motion.div
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.15 }}
+            className="mb-8"
+          >
+            <div className="bg-blue-50 border-2 border-blue-200 rounded-2xl p-4 flex items-center gap-4">
+              <div className="w-12 h-12 shrink-0 rounded-xl bg-blue-100 flex items-center justify-center">
+                <Trophy className="text-blue-500 w-6 h-6" />
+              </div>
+              <div>
+                <h3 className="text-blue-800 text-lg font-bold m-0">
+                  Vòng đấu đã kết thúc
+                </h3>
+                <p className="text-blue-700 m-0 mt-1">
+                  Vòng đấu này đã hoàn thành. Bạn có thể xem lại lịch sử làm bài
+                  nhưng không thể tham gia làm mới hoặc làm lại.
                 </p>
               </div>
             </div>
@@ -606,7 +659,7 @@ export default function StudentQuiz() {
                         getDifficultyConfig={getDifficultyConfig}
                         onStart={() => handleStartQuiz(quiz)}
                         onOpenHistory={handleOpenHistory}
-                        isPreviewMode={isPreviewMode}
+                        isPreviewMode={isPreviewMode || isCompletedMode}
                       />
                     </motion.div>
                   ))

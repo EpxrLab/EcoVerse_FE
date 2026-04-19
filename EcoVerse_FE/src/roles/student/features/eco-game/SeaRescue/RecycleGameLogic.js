@@ -34,9 +34,9 @@ export const WORLD_SAFE_RADIUS = 55;
 export const isMobileDevice = () =>
   /Android|iPhone|iPad|iPod|Opera Mini|IEMobile/i.test(navigator.userAgent);
 
-const loadModel = (url) =>
+const loadModel = (url, manager) =>
   new Promise((resolve, reject) => {
-    const loader = new GLTFLoader();
+    const loader = new GLTFLoader(manager);
     loader.load(url, (gltf) => resolve(gltf.scene), undefined, reject);
   });
 
@@ -109,12 +109,12 @@ function createBuoyMesh(isRed) {
 }
 
 /* ===================== INIT WORLD ===================== */
-export function initWorld(scene, state) {
+export function initWorld(scene, state, manager) {
   // Set sea background (Blue fallback while 3D Skybox loads)
   scene.background = new THREE.Color(0x7dd3fc);
 
   // 3D Skybox Loading
-  const skyboxLoader = new GLTFLoader();
+  const skyboxLoader = new GLTFLoader(manager);
   skyboxLoader.load(
     "/assets/skybox.glb",
     (gltf) => {
@@ -181,7 +181,7 @@ export function initWorld(scene, state) {
   );
 
   // Ocean ground
-  const gltfLoaderGround = new GLTFLoader();
+  const gltfLoaderGround = new GLTFLoader(manager);
   gltfLoaderGround.load(
     "/assets/ocean__water_perfect_loop.glb",
     (gltf) => {
@@ -237,12 +237,12 @@ export function initWorld(scene, state) {
 }
 
 /* ===================== INIT STORAGE (LIGHTHOUSE) ===================== */
-export function initStorage(scene) {
+export function initStorage(scene, manager) {
   const storage = new THREE.Group();
   storage.position.set(0, 0, -15);
   scene.add(storage);
 
-  loadModel("/assets/the_lighthouse.glb")
+  loadModel("/assets/the_lighthouse.glb", manager)
     .then((model) => {
       const box = new THREE.Box3().setFromObject(model);
       const size = new THREE.Vector3();
@@ -272,13 +272,13 @@ export function initStorage(scene) {
 }
 
 /* ===================== INIT PLAYER (BOAT) ===================== */
-export function initPlayer(scene) {
+export function initPlayer(scene, manager) {
   const player = new THREE.Group();
   scene.add(player);
 
   const playerState = { mixer: null, actions: {}, activeAction: null };
 
-  loadModel("/assets/boat.glb").then((model) => {
+  loadModel("/assets/boat.glb", manager).then((model) => {
     const box = new THREE.Box3().setFromObject(model);
     const size = new THREE.Vector3();
     box.getSize(size);
@@ -354,6 +354,7 @@ export function initTrash(
   scene,
   wasteItems = [],
   totalTrashCount = TOTAL_TRASH,
+  manager,
 ) {
   const trash = [];
   const count = totalTrashCount > 0 ? totalTrashCount : TOTAL_TRASH;
@@ -377,7 +378,7 @@ export function initTrash(
     sourceItems = SPAWNABLE_TRASH;
   }
 
-  const loader = new GLTFLoader();
+  const loader = new GLTFLoader(manager);
 
   const catColors = {
     RECYCLABLE: 0x2196f3,
@@ -456,6 +457,7 @@ export function initTrash(
         imageUrl: apiItem.imageUrl || apiItem.imagePresignedUrl,
         preloadedModel: apiItem.preloadedModel,
         modelUrl:
+          apiItem.model3dPresignedUrl ||
           (typeof apiItem.preloadedModel === "string" &&
             apiItem.preloadedModel) ||
           apiItem.imagePresignedUrl ||
@@ -510,6 +512,7 @@ export function initTrash(
     // Ưu tiên 2: URL từ presignedUrl hoặc preloadedModel (nếu là string)
     else {
       const modelUrl =
+        apiItem.model3dPresignedUrl ||
         (typeof apiItem.preloadedModel === "string" &&
           apiItem.preloadedModel) ||
         apiItem.imagePresignedUrl ||
@@ -538,7 +541,7 @@ export function initTrash(
 }
 
 /* ===================== INIT OBSTACLES (ROCKS) ===================== */
-export function initObstacles(scene) {
+export function initObstacles(scene, manager) {
   const obstacles = [];
   const minDistFromPlayer = 8;
   const minDistBetweenObstacles = 8;
@@ -578,7 +581,7 @@ export function initObstacles(scene) {
     scene.add(mesh);
   };
 
-  loadModel("/assets/rock.glb")
+  loadModel("/assets/rock.glb", manager)
     .then((rockModel) => {
       for (let i = 0; i < OBSTACLE_COUNT; i++) {
         const rock = rockModel.clone(true);

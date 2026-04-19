@@ -168,14 +168,30 @@ function ImageUploadInput({
   isUploading,
   setIsUploading,
   uploadFn,
+  uploadImageFn,
+  uploadModelFn,
   isModel = false,
   label = "Tải ảnh",
 }) {
   const inputId = `img-upload-${Math.random().toString(36).slice(2, 7)}`;
+  const [actualIsModel, setActualIsModel] = useState(isModel);
+
+  useEffect(() => {
+    if (previewUrl && !previewUrl.startsWith("blob:")) {
+      setActualIsModel(
+        previewUrl.includes(".glb") || previewUrl.includes(".gltf"),
+      );
+    }
+  }, [previewUrl]);
 
   const handleChange = async (e) => {
     const file = e.target.files?.[0];
     if (!file) return;
+
+    const isImageFile =
+      file.type.startsWith("image/") ||
+      file.name.match(/\.(jpg|jpeg|png|gif|webp)$/i);
+    setActualIsModel(!isImageFile);
 
     setPreviewUrl(URL.createObjectURL(file));
     setIsUploading(true);
@@ -184,7 +200,14 @@ function ImageUploadInput({
       const data = new FormData();
       data.append("file", file);
 
-      const uploadedUrl = await uploadFn(data);
+      let activeFn = uploadFn;
+      if (isImageFile && uploadImageFn) {
+        activeFn = uploadImageFn;
+      } else if (!isImageFile && uploadModelFn) {
+        activeFn = uploadModelFn;
+      }
+      
+      const uploadedUrl = activeFn ? await activeFn(data) : null;
 
       if (uploadedUrl) {
         onUploadedUrl(uploadedUrl);
@@ -212,7 +235,7 @@ function ImageUploadInput({
               <div className="w-full h-full flex items-center justify-center bg-gray-50">
                 <Spin size="small" />
               </div>
-            ) : isModel ? (
+            ) : actualIsModel ? (
               <ModelPreview url={previewUrl} />
             ) : (
               <img
@@ -253,7 +276,7 @@ function ImageUploadInput({
       <input
         id={inputId}
         type="file"
-        accept={isModel ? ".glb,.gltf" : "image/*"}
+        accept={isModel ? ".glb,.gltf,image/*" : "image/*"}
         className="hidden"
         onChange={handleChange}
         disabled={isUploading}
@@ -273,18 +296,49 @@ function WasteItemModalForm({
   return (
     <div className="space-y-1">
       <p className="text-sm font-medium text-gray-700 mb-2">
-        Hình ảnh vật phẩm
+        Hình ảnh / Model vật phẩm
       </p>
-      <ImageUploadInput
-        previewUrl={imageUrl}
-        setPreviewUrl={setImageUrl}
-        onUploadedUrl={onUploadedUrl}
-        isUploading={isUploading}
-        setIsUploading={setIsUploading}
-        uploadFn={uploadModel3D}
-        isModel={true}
-        label="Tải model 3D"
-      />
+
+      <div className="flex items-center mb-3 mt-4">
+        <Form.Item
+          name="generate3dModel"
+          valuePropName="checked"
+          noStyle
+          initialValue={false}
+        >
+          <Switch size="small" />
+        </Form.Item>
+        <span className="ml-2 text-sm text-gray-700 font-medium">
+          Dùng AI tạo Model 3D từ ảnh
+        </span>
+      </div>
+
+      <Form.Item
+        shouldUpdate={(prevValues, currentValues) =>
+          prevValues.generate3dModel !== currentValues.generate3dModel
+        }
+        noStyle
+      >
+        {({ getFieldValue }) => {
+          const isAiGen = getFieldValue("generate3dModel");
+          return (
+            <div className="mb-4">
+              <ImageUploadInput
+                previewUrl={imageUrl}
+                setPreviewUrl={setImageUrl}
+                onUploadedUrl={onUploadedUrl}
+                isUploading={isUploading}
+                setIsUploading={setIsUploading}
+                uploadImageFn={uploadIconImage}
+                uploadModelFn={uploadModel3D}
+                uploadFn={isAiGen ? uploadIconImage : uploadModel3D}
+                isModel={!isAiGen}
+                label={isAiGen ? "Tải ảnh 2D" : "Tải model 3D"}
+              />
+            </div>
+          );
+        }}
+      </Form.Item>
 
       <Form.Item
         label="Tên vật phẩm"
@@ -487,8 +541,14 @@ function WasteItemsTab({ wasteItems, subCategories, onRefresh }) {
       decompositionTime: item.decompositionTime,
       recyclingTips: item.recyclingTips,
       isActive: item.isActive,
+      generate3dModel: false,
     });
-    setEditModelUrl(item?.imagePresignedUrl ?? null);
+    setEditModelUrl(
+      item?.model3dPresignedUrl ||
+        item?.imagePresignedUrl ||
+        item?.imageUrl ||
+        null,
+    );
     const presignedUrl = item.imageUrl?.split("?X-Amz-Algorithm")[0];
     setEditUploadedUrl(presignedUrl ?? null);
     setIsEditOpen(true);
@@ -505,7 +565,6 @@ function WasteItemsTab({ wasteItems, subCategories, onRefresh }) {
             ? editUploadedUrl
             : (editUploadedUrl?.data?.url ?? null),
       };
-      console.log(payload);
       const res = await updateWasteItem(editingItem.id, payload);
       if (res) {
         toast.success("Cập nhật rác thành công!");
