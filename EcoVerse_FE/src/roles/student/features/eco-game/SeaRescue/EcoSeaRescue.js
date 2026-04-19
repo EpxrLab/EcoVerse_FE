@@ -76,11 +76,8 @@ export default class EcoSeaRescue {
   }
 
   // ─── Audio loader ─────────────────────────────────────────────────────────
-  // Dùng THREE.AudioLoader để load buffer vào đúng AudioContext của audioListener.
-  // KHÔNG dùng Web Audio API trực tiếp vì buffer được decode bởi ctx của THREE —
-  // nếu play trên ctx khác sẽ throw InvalidStateError im lặng.
-  _loadAudio() {
-    const audioLoader = new THREE.AudioLoader();
+  _loadAudio(manager) {
+    const audioLoader = new THREE.AudioLoader(manager);
 
     // ── BGM ──
     this.bgm = new THREE.Audio(this.audioListener);
@@ -172,104 +169,130 @@ export default class EcoSeaRescue {
   }
 
   // ─── init() ───────────────────────────────────────────────────────────────
-  init() {
-    this.camera.position.set(0, 8, 12);
-    this.camera.lookAt(0, 0, 0);
-    this.camera.fov = 75;
-    this.camera.updateProjectionMatrix();
+  async init(onProgress = null) {
+    return new Promise((resolve) => {
+      const manager = new THREE.LoadingManager();
 
-    // AudioListener gắn vào camera — phải làm 1 lần
-    if (!this.audioListener) {
-      this.audioListener = new THREE.AudioListener();
-      this.camera.add(this.audioListener);
-    }
-    this._loadAudio();
+      manager.onProgress = (url, itemsLoaded, itemsTotal) => {
+        if (onProgress) {
+          onProgress(Math.round((itemsLoaded / itemsTotal) * 100));
+        }
+      };
 
-    // ── Lighting ──
-    const ambient = new THREE.AmbientLight(0xffffff, 0.6);
-    this.scene.add(ambient);
+      manager.onLoad = () => {
+        console.log("--- SEA RESCUE ASSETS LOADED ---");
+        resolve();
+      };
 
-    const hemi = new THREE.HemisphereLight(0xffffff, 0x444444, 0.7);
-    this.scene.add(hemi);
+      manager.onError = (url) => {
+        console.warn("Error loading asset:", url);
+        // Still resolve to allow game to start if some assets fail
+        // resolve(); 
+      };
 
-    const dirLight = new THREE.DirectionalLight(0xffffff, 0.8);
-    dirLight.position.set(10, 20, 10);
-    dirLight.castShadow = true;
-    dirLight.shadow.mapSize.set(1024, 1024);
-    this.scene.add(dirLight);
+      this.camera.position.set(0, 8, 12);
+      this.camera.lookAt(0, 0, 0);
+      this.camera.fov = 75;
+      this.camera.updateProjectionMatrix();
 
-    const storage = initStorage(this.scene);
-    const { player, playerState } = initPlayer(this.scene);
-    const trash = initTrash(this.scene, this._wasteItems, this.config.totalTrash);
-    const obstacles = initObstacles(this.scene);
-    const { speedZones, slowZones } = initZones(this.scene, obstacles);
-
-    this._player = player;
-    this._playerState = playerState;
-
-    this._gameState = {
-      skybox: null,
-      oceanModel: null,
-      oceanMixer: null,
-      underwaterPlane: null,
-      fallbackPlane: null,
-
-      player,
-      storage,
-      trash,
-      obstacles,
-      allZones: [...speedZones, ...slowZones],
-      speedZones,
-      slowZones,
-      inventory: [],
-      velocity: new THREE.Vector3(),
-      angularVelocity: 0,
-      keys: {},
-      joystick: { x: 0, y: 0 },
-      lastDamageTime: 0,
-      lastDropTime: 0,
-      hitTime: 0,
-      stopped: false,
-      fallingItems: [],
-      scatteredItems: [],
-      recycledInStorage: 0,
-      speedMultiplier: 1,
-      lastInventoryFullWarning: 0,
-      totalTrashCount: this.config.totalTrash,
-    };
-
-    initWorld(this.scene, this._gameState);
-
-    // Countdown timer
-    this._timerId = setInterval(() => {
-      this._timeLeft = Math.max(0, this._timeLeft - 1);
-      this._hudSetters.setTimeLeft(this._timeLeft);
-      if (this._onDistanceUpdate) {
-        this._onDistanceUpdate(
-          this._gameState.recycledInStorage,
-          this._timeLeft,
-        );
+      // AudioListener gắn vào camera — phải làm 1 lần
+      if (!this.audioListener) {
+        this.audioListener = new THREE.AudioListener();
+        this.camera.add(this.audioListener);
       }
-      if (this._timeLeft <= 0) this._handleComplete("timeout");
-    }, 1000);
+      this._loadAudio(manager);
 
-    // Keyboard — resume AudioContext on first keydown (browser policy)
-    const resumeAudio = () => {
-      if (this.audioListener?.context?.state === "suspended") {
-        this.audioListener.context.resume();
-      }
-    };
+      // ── Lighting ──
+      const ambient = new THREE.AmbientLight(0xffffff, 0.6);
+      this.scene.add(ambient);
 
-    this._keyDown = (e) => {
-      resumeAudio();
-      if (this._gameState) this._gameState.keys[e.key.toLowerCase()] = true;
-    };
-    this._keyUp = (e) => {
-      if (this._gameState) this._gameState.keys[e.key.toLowerCase()] = false;
-    };
-    window.addEventListener("keydown", this._keyDown);
-    window.addEventListener("keyup", this._keyUp);
-    window.addEventListener("pointerdown", resumeAudio, { once: true });
+      const hemi = new THREE.HemisphereLight(0xffffff, 0x444444, 0.7);
+      this.scene.add(hemi);
+
+      const dirLight = new THREE.DirectionalLight(0xffffff, 0.8);
+      dirLight.position.set(10, 20, 10);
+      dirLight.castShadow = true;
+      dirLight.shadow.mapSize.set(1024, 1024);
+      this.scene.add(dirLight);
+
+      const storage = initStorage(this.scene, manager);
+      const { player, playerState } = initPlayer(this.scene, manager);
+      const trash = initTrash(
+        this.scene,
+        this._wasteItems,
+        this.config.totalTrash,
+        manager,
+      );
+      const obstacles = initObstacles(this.scene, manager);
+      const { speedZones, slowZones } = initZones(this.scene, obstacles);
+
+      this._player = player;
+      this._playerState = playerState;
+
+      this._gameState = {
+        skybox: null,
+        oceanModel: null,
+        oceanMixer: null,
+        underwaterPlane: null,
+        fallbackPlane: null,
+
+        player,
+        storage,
+        trash,
+        obstacles,
+        allZones: [...speedZones, ...slowZones],
+        speedZones,
+        slowZones,
+        inventory: [],
+        velocity: new THREE.Vector3(),
+        angularVelocity: 0,
+        keys: {},
+        joystick: { x: 0, y: 0 },
+        lastDamageTime: 0,
+        lastDropTime: 0,
+        hitTime: 0,
+        stopped: false,
+        fallingItems: [],
+        scatteredItems: [],
+        recycledInStorage: 0,
+        speedMultiplier: 1,
+        lastInventoryFullWarning: 0,
+        totalTrashCount: this.config.totalTrash,
+      };
+
+      initWorld(this.scene, this._gameState, manager);
+
+      // Countdown timer
+      this._timerId = setInterval(() => {
+        this._timeLeft = Math.max(0, this._timeLeft - 1);
+        this._hudSetters.setTimeLeft(this._timeLeft);
+        if (this._onDistanceUpdate) {
+          this._onDistanceUpdate(
+            this._gameState.recycledInStorage,
+            this._timeLeft,
+          );
+        }
+        if (this._timeLeft <= 0) this._handleComplete("timeout");
+      }, 1000);
+
+      // Keyboard — resume AudioContext on first keydown (browser policy)
+      const resumeAudio = () => {
+        if (this.audioListener?.context?.state === "suspended") {
+          this.audioListener.context.resume();
+        }
+      };
+
+      this._keyDown = (e) => {
+        resumeAudio();
+        if (this._gameState) this._gameState.keys[e.key.toLowerCase()] = true;
+      };
+      this._keyUp = (e) => {
+        if (this._gameState) this._gameState.keys[e.key.toLowerCase()] = false;
+      };
+      window.addEventListener("keydown", this._keyDown);
+      window.addEventListener("keyup", this._keyUp);
+      window.addEventListener("pointerdown", resumeAudio, { once: true });
+    });
   }
 
   // ─── update(delta) ────────────────────────────────────────────────────────

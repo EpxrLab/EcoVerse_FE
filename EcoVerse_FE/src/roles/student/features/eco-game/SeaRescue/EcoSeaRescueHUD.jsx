@@ -198,102 +198,7 @@ function MobileJoystick({ onTouchStart, onTouchMove, onTouchEnd }) {
   );
 }
 
-function GameOverScreen({
-  message,
-  recycledCount,
-  totalTrash,
-  requiredPercentage,
-  onAction,
-}) {
-  const reqPercent = requiredPercentage || 80;
-  const requiredTrash = Math.ceil((reqPercent / 100) * (totalTrash || 12));
-  const canProceed = recycledCount >= requiredTrash;
-  const isWin = message.includes("Hoàn thành") || canProceed;
-
-  return (
-    <div
-      style={{
-        position: "absolute",
-        inset: 0,
-        background: "rgba(0,0,0,0.9)",
-        display: "flex",
-        justifyContent: "center",
-        alignItems: "center",
-        flexDirection: "column",
-        color: "white",
-        padding: 20,
-      }}
-    >
-      <h1
-        style={{
-          fontSize: 48,
-          marginBottom: 20,
-          textShadow: "0 4px 16px rgba(0,0,0,0.5)",
-          textAlign: "center",
-        }}
-      >
-        {message}
-      </h1>
-
-      {!message.includes("Hoàn thành") && (
-        <div
-          style={{
-            background: canProceed
-              ? "rgba(139, 195, 74, 0.2)"
-              : "rgba(239,68,68,0.2)",
-            border: canProceed ? "2px solid #8BC34A" : "2px solid #ef4444",
-            borderRadius: 16,
-            padding: 24,
-            marginBottom: 24,
-            maxWidth: 500,
-          }}
-        >
-          <div style={{ fontSize: 20, marginBottom: 12, fontWeight: "bold" }}>
-            {canProceed ? "✅ Đủ điều kiện qua màn!" : "❌ Chưa đủ điều kiện"}
-          </div>
-          <div style={{ fontSize: 16, opacity: 0.9 }}>
-            Cần thu gom ít nhất{" "}
-            <span style={{ fontWeight: "bold", color: "#fbbf24" }}>
-              {requiredTrash}/{totalTrash}
-            </span>{" "}
-            rác vào kho (≥{reqPercent}%)
-          </div>
-          <div style={{ fontSize: 16, marginTop: 8 }}>
-            Bạn đã gom vào kho:{" "}
-            <span
-              style={{
-                fontWeight: "bold",
-                color: canProceed ? "#22c55e" : "#ef4444",
-              }}
-            >
-              {recycledCount}/{totalTrash}
-            </span>{" "}
-            rác
-          </div>
-        </div>
-      )}
-
-      <button
-        onClick={onAction}
-        style={{
-          padding: "16px 48px",
-          fontSize: 24,
-          background: isWin
-            ? "linear-gradient(135deg, #8BC34A, #689F38)"
-            : "linear-gradient(135deg, #ef4444, #dc2626)",
-          color: "white",
-          border: "none",
-          borderRadius: 12,
-          cursor: "pointer",
-          boxShadow: "0 8px 24px rgba(0,0,0,0.3)",
-          fontWeight: "bold",
-        }}
-      >
-        {isWin ? "➡️ Sang màn phân loại" : "🔁 Chơi lại"}
-      </button>
-    </div>
-  );
-}
+// Removed GameOverScreen as per request
 
 /* ===================== MAIN COMPONENT ===================== */
 export function EcoSeaRescueHUD({ game, levelConfig, onComplete }) {
@@ -304,8 +209,6 @@ export function EcoSeaRescueHUD({ game, levelConfig, onComplete }) {
   const [timeLeft, setTimeLeft] = useState(levelConfig?.searescue?.gameTime);
   const totalTrash = levelConfig?.searescue?.totalTrash;
   const requiredPercentage = levelConfig?.searescue?.requiredPercentage;
-  const [gameOver, setGameOver] = useState(false);
-  const [message, setMessage] = useState("");
   const [isMobile, setIsMobile] = useState(false);
   const [hudPulse, setHudPulse] = useState(false);
   const [damageFlash, setDamageFlash] = useState(false);
@@ -348,23 +251,7 @@ export function EcoSeaRescueHUD({ game, levelConfig, onComplete }) {
 
     logic.setEndGameCallback((reason, count) => {
       console.log("[EcoSeaRescueHUD] Game ended:", reason, count);
-
-      const reqPercent = requiredPercentage || 80;
-      const requiredTrash = Math.ceil((reqPercent / 100) * (totalTrash || 12));
-      const canProceed = reason === "win" || count >= requiredTrash;
-
-      if (canProceed) {
-        // Skip game over modal, let orchestrator handle stage transition
-        return;
-      }
-
-      setGameOver(true);
-      if (reason === "win") setMessage("🎉 Hoàn thành! Đã thu gom hết rác!");
-      else if (reason === "timeout")
-        setMessage(
-          `⏰ Hết giờ! Đã gom được ${count}/${totalTrash} rác vào kho`,
-        );
-      else setMessage("💀 Va chạm vật cản – Hết mạng!");
+      // Wait for orchestrator EcoGame to handle transitions and ResultScreen
     });
 
     return () => {
@@ -402,17 +289,7 @@ export function EcoSeaRescueHUD({ game, levelConfig, onComplete }) {
     game?.stage1Game?.resetJoystick();
   };
 
-  const handleGameOverAction = () => {
-    const reqPercent = requiredPercentage || 80;
-    const requiredTrash = Math.ceil((reqPercent / 100) * totalTrash);
-    if (message.includes("Hoàn thành") || recycledCount >= requiredTrash) {
-      onComplete?.();
-    } else {
-      // Replay is handled by the orchestrator
-      game?.restart();
-      setGameOver(false);
-    }
-  };
+  // Action functions removed as GameOverScreen was unified
 
   /* ===================== RENDER ===================== */
   return (
@@ -445,16 +322,6 @@ export function EcoSeaRescueHUD({ game, levelConfig, onComplete }) {
             onTouchStart={(e) => handleJoystick(e, true)}
             onTouchMove={(e) => handleJoystick(e, false)}
             onTouchEnd={resetJoystick}
-          />
-        )}
-
-        {gameOver && (
-          <GameOverScreen
-            message={message}
-            recycledCount={recycledCount}
-            totalTrash={totalTrash}
-            requiredPercentage={requiredPercentage}
-            onAction={handleGameOverAction}
           />
         )}
       </div>

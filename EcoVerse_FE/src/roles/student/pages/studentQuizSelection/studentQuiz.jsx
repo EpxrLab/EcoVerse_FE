@@ -27,6 +27,7 @@ import {
   History,
   Clock,
   ExternalLink,
+  Lock,
 } from "lucide-react";
 import { getCampaignDetails, getQuizHistory } from "../../services";
 
@@ -38,6 +39,7 @@ const QuizCard = lazy(() =>
       getDifficultyConfig,
       onStart,
       onOpenHistory,
+      isPreviewMode,
     }) {
       const config = getDifficultyConfig(quiz.difficulty);
       const isCompleted = quiz.isPassed;
@@ -138,10 +140,21 @@ const QuizCard = lazy(() =>
 
               {/* Action Button */}
               <Button
-                type={isCompleted ? "default" : "primary"}
-                disabled={quiz.attemptsUsed >= quiz.maxAttempts && !isCompleted}
+                type={
+                  isCompleted && !isPreviewMode
+                    ? "default"
+                    : isPreviewMode
+                      ? "default"
+                      : "primary"
+                }
+                disabled={
+                  (quiz.attemptsUsed >= quiz.maxAttempts && !isCompleted) ||
+                  isPreviewMode
+                }
                 icon={
-                  isCompleted ? (
+                  isPreviewMode ? (
+                    <Lock className="w-4 h-4" />
+                  ) : isCompleted ? (
                     <RotateCcw className="w-4 h-4" />
                   ) : (
                     <Play className="w-4 h-4" />
@@ -149,12 +162,19 @@ const QuizCard = lazy(() =>
                 }
                 onClick={() => onStart(quiz)}
                 className={`w-full h-10 font-semibold flex items-center justify-center gap-2 rounded-xl transition-all duration-200 ${
-                  isCompleted
-                    ? "bg-gray-100 text-gray-700 hover:bg-gray-200 border-gray-200"
-                    : "bg-primary hover:opacity-90 border-primary text-white shadow-md shadow-primary/10"
+                  isPreviewMode ||
+                  (quiz.attemptsUsed >= quiz.maxAttempts && !isCompleted)
+                    ? "bg-gray-100 text-gray-400 border-transparent cursor-not-allowed"
+                    : isCompleted
+                      ? "bg-gray-100 text-gray-700 hover:bg-gray-200 border-gray-200"
+                      : "bg-primary hover:opacity-90 border-primary text-white shadow-md shadow-primary/10"
                 }`}
               >
-                {isCompleted ? "Làm lại" : "Bắt đầu"}
+                {isPreviewMode
+                  ? "Chưa mở"
+                  : isCompleted
+                    ? "Làm lại"
+                    : "Bắt đầu"}
               </Button>
             </div>
           </Card>
@@ -230,6 +250,8 @@ export default function StudentQuiz() {
   const [historyModalOpen, setHistoryModalOpen] = useState(false);
   const [selectedQuiz, setSelectedQuiz] = useState(null);
   const [historyLoading, setHistoryLoading] = useState(false);
+  const [isPreviewMode, setIsPreviewMode] = useState(false);
+  const [isCompletedMode, setIsCompletedMode] = useState(false);
 
   const fetchQuizHistoryData = async (quizId) => {
     setHistoryLoading(true);
@@ -285,6 +307,11 @@ export default function StudentQuiz() {
     if (campaign && selectedRoundId) {
       const round = campaign.rounds.find((r) => r.id === selectedRoundId);
       if (round) {
+        // Evaluate access based on round status
+        const status = round.status;
+        setIsPreviewMode(status === "UPCOMING");
+        setIsCompletedMode(status === "COMPLETED");
+
         setQuizzes(round.quizzes || []);
       }
     }
@@ -442,11 +469,64 @@ export default function StudentQuiz() {
                       size="large"
                       suffixIcon={<ChevronRight className="w-4 h-4" />}
                       dropdownClassName="rounded-xl overflow-hidden shadow-xl"
-                      options={campaign?.rounds?.map((round) => ({
-                        label: `Vòng ${round.roundNumber}: ${round.roundName}`,
-                        value: round.id,
-                      }))}
+                      options={campaign?.rounds?.map((round) => {
+                        const status = round.status;
+                        const statusLabel =
+                          status === "UPCOMING"
+                            ? " (Chưa mở)"
+                            : status === "COMPLETED"
+                              ? " (Đã kết thúc)"
+                              : "";
+                        return {
+                          label: `${round.roundName || `Vòng ${round.roundNumber}`}${statusLabel}`,
+                          value: round.id,
+                        };
+                      })}
                     />
+                    {(() => {
+                      const selectedRound = campaign?.rounds?.find(
+                        (r) => r.id === selectedRoundId,
+                      );
+                      if (!selectedRound) return null;
+                      return (
+                        <div className="mt-1 text-sm flex flex-col gap-2 bg-gray-50 border border-gray-100 rounded-xl p-3">
+                          <div className="flex justify-between items-center">
+                            <span className="text-gray-500 font-medium">
+                              Bắt đầu:
+                            </span>
+                            <span className="text-primary font-bold">
+                              {new Date(selectedRound.startTime).toLocaleString(
+                                "vi-VN",
+                                {
+                                  hour: "2-digit",
+                                  minute: "2-digit",
+                                  day: "2-digit",
+                                  month: "2-digit",
+                                  year: "numeric",
+                                },
+                              )}
+                            </span>
+                          </div>
+                          <div className="flex justify-between items-center">
+                            <span className="text-gray-500 font-medium">
+                              Kết thúc:
+                            </span>
+                            <span className="text-gray-800 font-bold">
+                              {new Date(selectedRound.endTime).toLocaleString(
+                                "vi-VN",
+                                {
+                                  hour: "2-digit",
+                                  minute: "2-digit",
+                                  day: "2-digit",
+                                  month: "2-digit",
+                                  year: "numeric",
+                                },
+                              )}
+                            </span>
+                          </div>
+                        </div>
+                      );
+                    })()}
                   </Space>
                 </Card>
               </motion.div>
@@ -496,6 +576,56 @@ export default function StudentQuiz() {
           </motion.div>
         </div>
 
+        {/* Preview Mode Notification */}
+        {isPreviewMode && (
+          <motion.div
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.15 }}
+            className="mb-8"
+          >
+            <div className="bg-amber-50 border-2 border-amber-200 rounded-2xl p-4 flex items-center gap-4">
+              <div className="w-12 h-12 shrink-0 rounded-xl bg-amber-100 flex items-center justify-center">
+                <Lock className="text-amber-500 w-6 h-6" />
+              </div>
+              <div>
+                <h3 className="text-amber-800 text-lg font-bold m-0">
+                  Vòng đấu chưa mở
+                </h3>
+                <p className="text-amber-700 m-0 mt-1">
+                  Vòng đấu này hiện chưa tới thời gian bắt đầu nên bạn chưa thể
+                  tham gia làm quiz. Hãy quay lại sau nhé!
+                </p>
+              </div>
+            </div>
+          </motion.div>
+        )}
+
+        {/* Completed Mode Notification */}
+        {isCompletedMode && (
+          <motion.div
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.15 }}
+            className="mb-8"
+          >
+            <div className="bg-blue-50 border-2 border-blue-200 rounded-2xl p-4 flex items-center gap-4">
+              <div className="w-12 h-12 shrink-0 rounded-xl bg-blue-100 flex items-center justify-center">
+                <Trophy className="text-blue-500 w-6 h-6" />
+              </div>
+              <div>
+                <h3 className="text-blue-800 text-lg font-bold m-0">
+                  Vòng đấu đã kết thúc
+                </h3>
+                <p className="text-blue-700 m-0 mt-1">
+                  Vòng đấu này đã hoàn thành. Bạn có thể xem lại lịch sử làm bài
+                  nhưng không thể tham gia làm mới hoặc làm lại.
+                </p>
+              </div>
+            </div>
+          </motion.div>
+        )}
+
         {/* Quiz Grid with lazy-loaded cards */}
         <Suspense
           fallback={
@@ -529,6 +659,7 @@ export default function StudentQuiz() {
                         getDifficultyConfig={getDifficultyConfig}
                         onStart={() => handleStartQuiz(quiz)}
                         onOpenHistory={handleOpenHistory}
+                        isPreviewMode={isPreviewMode || isCompletedMode}
                       />
                     </motion.div>
                   ))

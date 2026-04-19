@@ -19,6 +19,8 @@ export function ResultScreen({ result, onReplay, onBack }) {
   const timeTaken = apiResult ? apiResult.timeTakenSeconds : 0;
   const feedbackMessage = apiResult?.feedbackMessage;
 
+  const isLoss = result.success === false;
+
   return (
     <motion.div
       initial={{ opacity: 0 }}
@@ -31,12 +33,15 @@ export function ResultScreen({ result, onReplay, onBack }) {
         transition={{ delay: 0.2, type: "spring", stiffness: 200 }}
         className="bg-white rounded-3xl p-6 max-w-lg w-full shadow-2xl"
       >
-        <h2 className="text-3xl flex items-center justify-center font-bold text-center mb-2 text-gray-800">
-          <span className="mr-2">🎉</span> Kết quả{" "}
-          <span className="ml-2">🎉</span>
+        <h2 className={`text-3xl flex items-center justify-center font-bold text-center mb-2 ${isLoss ? 'text-red-600' : 'text-gray-800'}`}>
+          {isLoss ? (
+            <><span className="mr-2">💥</span> Trò chơi kết thúc <span className="ml-2">💥</span></>
+          ) : (
+            <><span className="mr-2">🎉</span> Kết quả <span className="ml-2">🎉</span></>
+          )}
         </h2>
         {feedbackMessage && (
-          <p className="text-center font-medium text-primary mb-6 bg-primary/10 py-2 rounded-lg">
+          <p className={`text-center font-medium mb-6 py-2 rounded-lg ${isLoss ? 'text-red-700 bg-red-100' : 'text-primary bg-primary/10'}`}>
             {feedbackMessage}
           </p>
         )}

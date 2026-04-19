@@ -1,4 +1,4 @@
-import { useState, useMemo, useEffect } from "react";
+import { useState, useMemo, useEffect, useRef } from "react";
 import {
   Table,
   Button,
@@ -37,6 +37,8 @@ import {
   uploadModel3D,
 } from "../../services";
 import toast from "react-hot-toast";
+import * as THREE from "three";
+import { GLTFLoader } from "three/examples/jsm/loaders/GLTFLoader";
 
 const { TextArea } = Input;
 
@@ -76,6 +78,89 @@ const itemVariants = {
   },
 };
 
+function ModelPreview({ url }) {
+  const containerRef = useRef(null);
+
+  useEffect(() => {
+    if (!url || !containerRef.current) return;
+
+    let animationId = null;
+    let model = null;
+
+    const renderer = new THREE.WebGLRenderer({ alpha: true, antialias: true });
+    renderer.setSize(
+      containerRef.current.clientWidth,
+      containerRef.current.clientHeight,
+    );
+    containerRef.current.appendChild(renderer.domElement);
+
+    const scene = new THREE.Scene();
+    const camera = new THREE.PerspectiveCamera(45, 1, 0.1, 100);
+    camera.position.set(0, 0, 5);
+
+    const ambientLight = new THREE.AmbientLight(0xffffff, 1.2);
+    scene.add(ambientLight);
+    const directionalLight = new THREE.DirectionalLight(0xffffff, 1);
+    directionalLight.position.set(5, 5, 5);
+    scene.add(directionalLight);
+
+    const loader = new GLTFLoader();
+    loader.load(
+      url,
+      (gltf) => {
+        model = gltf.scene;
+
+        // Center and scale model
+        const box = new THREE.Box3().setFromObject(model);
+        const center = box.getCenter(new THREE.Vector3());
+        const size = box.getSize(new THREE.Vector3());
+
+        const maxDim = Math.max(size.x, size.y, size.z);
+        const scale = 3.5 / maxDim; // Fit within camera distance
+        model.scale.setScalar(scale);
+        model.position.sub(center.multiplyScalar(scale));
+
+        scene.add(model);
+      },
+      undefined,
+      (err) => console.error("Error loading model preview", err),
+    );
+
+    const animate = () => {
+      animationId = requestAnimationFrame(animate);
+      if (model) {
+        model.rotation.y += 0.01;
+      }
+      renderer.render(scene, camera);
+    };
+    animate();
+
+    return () => {
+      cancelAnimationFrame(animationId);
+      if (model) scene.remove(model);
+      model?.traverse?.((child) => {
+        if (child.geometry) child.geometry.dispose();
+        if (child.material) {
+          if (Array.isArray(child.material))
+            child.material.forEach((m) => m.dispose());
+          else child.material.dispose();
+        }
+      });
+      renderer.dispose();
+      if (containerRef.current) {
+        containerRef.current.innerHTML = "";
+      }
+    };
+  }, [url]);
+
+  return (
+    <div
+      ref={containerRef}
+      className="w-full h-full cursor-grab active:cursor-grabbing pointer-events-auto"
+    />
+  );
+}
+
 function ImageUploadInput({
   previewUrl,
   setPreviewUrl,
@@ -83,14 +168,30 @@ function ImageUploadInput({
   isUploading,
   setIsUploading,
   uploadFn,
+  uploadImageFn,
+  uploadModelFn,
   isModel = false,
   label = "Tải ảnh",
 }) {
   const inputId = `img-upload-${Math.random().toString(36).slice(2, 7)}`;
+  const [actualIsModel, setActualIsModel] = useState(isModel);
+
+  useEffect(() => {
+    if (previewUrl && !previewUrl.startsWith("blob:")) {
+      setActualIsModel(
+        previewUrl.includes(".glb") || previewUrl.includes(".gltf"),
+      );
+    }
+  }, [previewUrl]);
 
   const handleChange = async (e) => {
     const file = e.target.files?.[0];
     if (!file) return;
+
+    const isImageFile =
+      file.type.startsWith("image/") ||
+      file.name.match(/\.(jpg|jpeg|png|gif|webp)$/i);
+    setActualIsModel(!isImageFile);
 
     setPreviewUrl(URL.createObjectURL(file));
     setIsUploading(true);
@@ -99,7 +200,14 @@ function ImageUploadInput({
       const data = new FormData();
       data.append("file", file);
 
-      const uploadedUrl = await uploadFn(data);
+      let activeFn = uploadFn;
+      if (isImageFile && uploadImageFn) {
+        activeFn = uploadImageFn;
+      } else if (!isImageFile && uploadModelFn) {
+        activeFn = uploadModelFn;
+      }
+      
+      const uploadedUrl = activeFn ? await activeFn(data) : null;
 
       if (uploadedUrl) {
         onUploadedUrl(uploadedUrl);
@@ -127,6 +235,8 @@ function ImageUploadInput({
               <div className="w-full h-full flex items-center justify-center bg-gray-50">
                 <Spin size="small" />
               </div>
+            ) : actualIsModel ? (
+              <ModelPreview url={previewUrl} />
             ) : (
               <img
                 src={previewUrl}
@@ -166,7 +276,7 @@ function ImageUploadInput({
       <input
         id={inputId}
         type="file"
-        accept={isModel ? ".glb,.gltf" : "image/*"}
+        accept={isModel ? ".glb,.gltf,image/*" : "image/*"}
         className="hidden"
         onChange={handleChange}
         disabled={isUploading}
@@ -186,18 +296,49 @@ function WasteItemModalForm({
   return (
     <div className="space-y-1">
       <p className="text-sm font-medium text-gray-700 mb-2">
-        Hình ảnh vật phẩm
+        Hình ảnh / Model vật phẩm
       </p>
-      <ImageUploadInput
-        previewUrl={imageUrl}
-        setPreviewUrl={setImageUrl}
-        onUploadedUrl={onUploadedUrl}
-        isUploading={isUploading}
-        setIsUploading={setIsUploading}
-        uploadFn={uploadModel3D}
-        isModel={true}
-        label="Tải model 3D"
-      />
+
+      <div className="flex items-center mb-3 mt-4">
+        <Form.Item
+          name="generate3dModel"
+          valuePropName="checked"
+          noStyle
+          initialValue={false}
+        >
+          <Switch size="small" />
+        </Form.Item>
+        <span className="ml-2 text-sm text-gray-700 font-medium">
+          Dùng AI tạo Model 3D từ ảnh
+        </span>
+      </div>
+
+      <Form.Item
+        shouldUpdate={(prevValues, currentValues) =>
+          prevValues.generate3dModel !== currentValues.generate3dModel
+        }
+        noStyle
+      >
+        {({ getFieldValue }) => {
+          const isAiGen = getFieldValue("generate3dModel");
+          return (
+            <div className="mb-4">
+              <ImageUploadInput
+                previewUrl={imageUrl}
+                setPreviewUrl={setImageUrl}
+                onUploadedUrl={onUploadedUrl}
+                isUploading={isUploading}
+                setIsUploading={setIsUploading}
+                uploadImageFn={uploadIconImage}
+                uploadModelFn={uploadModel3D}
+                uploadFn={isAiGen ? uploadIconImage : uploadModel3D}
+                isModel={!isAiGen}
+                label={isAiGen ? "Tải ảnh 2D" : "Tải model 3D"}
+              />
+            </div>
+          );
+        }}
+      </Form.Item>
 
       <Form.Item
         label="Tên vật phẩm"
@@ -400,8 +541,14 @@ function WasteItemsTab({ wasteItems, subCategories, onRefresh }) {
       decompositionTime: item.decompositionTime,
       recyclingTips: item.recyclingTips,
       isActive: item.isActive,
+      generate3dModel: false,
     });
-    setEditModelUrl(item.imageUrl ?? null);
+    setEditModelUrl(
+      item?.model3dPresignedUrl ||
+        item?.imagePresignedUrl ||
+        item?.imageUrl ||
+        null,
+    );
     const presignedUrl = item.imageUrl?.split("?X-Amz-Algorithm")[0];
     setEditUploadedUrl(presignedUrl ?? null);
     setIsEditOpen(true);
@@ -418,7 +565,6 @@ function WasteItemsTab({ wasteItems, subCategories, onRefresh }) {
             ? editUploadedUrl
             : (editUploadedUrl?.data?.url ?? null),
       };
-      console.log(payload);
       const res = await updateWasteItem(editingItem.id, payload);
       if (res) {
         toast.success("Cập nhật rác thành công!");

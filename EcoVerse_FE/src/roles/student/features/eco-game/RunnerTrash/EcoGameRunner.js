@@ -83,54 +83,73 @@ export default class EcoGameRunner {
 
   // ─── Initialization ─────────────────────────────────────────────────────────
 
-  init() {
-    console.log("--- RUNNER START WITH CONFIG ---", this.config);
-    this._setupCamera(); // Camera first for audio listener
-    this._createGround();
-    this._createPlayer();
-    this._createEnvironment();
-    this._loadAudio(); // Load and start audio
-    this._addEventListeners();
+  async init(onProgress = null) {
+    return new Promise((resolve) => {
+      const manager = new THREE.LoadingManager();
 
-    this.isRunning = true;
-    this.gameOver = false;
-    this.speed = this.config.baseSpeed;
-    this.distance = 0;
-    this.spawnTimer = 0;
-    this.nextSpawnTime = 1.0;
-
-    // Cache for dynamically loaded 3D models from API imagePresignedUrl
-    this.modelCache = {};
-
-    // Load static obstacle model (Rock)
-    const loader = new GLTFLoader();
-    loader.load(
-      "/assets/rock.glb",
-      (gltf) => {
-        this.rockModel = gltf.scene;
-        // Optimization: Pre-calculate normalization for obstacles
-        const box = new THREE.Box3().setFromObject(this.rockModel);
-        const size = box.getSize(new THREE.Vector3());
-        const maxDim = Math.max(size.x, size.y, size.z);
-        if (maxDim > 0) {
-          this.rockModel.scale.setScalar(1.5 / maxDim); // Target standard width
+      manager.onProgress = (url, itemsLoaded, itemsTotal) => {
+        if (onProgress) {
+          onProgress(Math.round((itemsLoaded / itemsTotal) * 100));
         }
-        this.rockModel.traverse((child) => {
-          if (child.isMesh) {
-            child.castShadow = true;
-            child.receiveShadow = true;
+      };
+
+      manager.onLoad = () => {
+        console.log("--- RUNNER ASSETS LOADED ---");
+        resolve();
+      };
+
+      manager.onError = (url) => {
+        console.warn("Error loading asset:", url);
+      };
+
+      console.log("--- RUNNER START WITH CONFIG ---", this.config);
+      this._setupCamera(); // Camera first for audio listener
+      this._createGround(manager);
+      this._createPlayer(manager);
+      this._createEnvironment();
+      this._loadAudio(manager); // Load and start audio
+      this._addEventListeners();
+
+      this.isRunning = true;
+      this.gameOver = false;
+      this.speed = this.config.baseSpeed;
+      this.distance = 0;
+      this.spawnTimer = 0;
+      this.nextSpawnTime = 1.0;
+
+      // Cache for dynamically loaded 3D models from API imagePresignedUrl
+      this.modelCache = {};
+
+      // Load static obstacle model (Rock)
+      const loader = new GLTFLoader(manager);
+      loader.load(
+        "/assets/rock.glb",
+        (gltf) => {
+          this.rockModel = gltf.scene;
+          // Optimization: Pre-calculate normalization for obstacles
+          const box = new THREE.Box3().setFromObject(this.rockModel);
+          const size = box.getSize(new THREE.Vector3());
+          const maxDim = Math.max(size.x, size.y, size.z);
+          if (maxDim > 0) {
+            this.rockModel.scale.setScalar(1.5 / maxDim); // Target standard width
           }
-        });
-        console.log("--- RUNNER OBSTACLE MODEL LOADED ---");
-      },
-      undefined,
-      (err) => console.warn("Failed to load /assets/rock.glb for runner", err),
-    );
+          this.rockModel.traverse((child) => {
+            if (child.isMesh) {
+              child.castShadow = true;
+              child.receiveShadow = true;
+            }
+          });
+          console.log("--- RUNNER OBSTACLE MODEL LOADED ---");
+        },
+        undefined,
+        (err) => console.warn("Failed to load /assets/rock.glb for runner", err),
+      );
+    });
   }
 
-  _createGround() {
+  _createGround(manager) {
     // Load the 3D map model
-    const loader = new GLTFLoader();
+    const loader = new GLTFLoader(manager);
     const mapPath = "/assets/Runner_map_2.glb"; // Configured map path
 
     loader.load(
@@ -280,12 +299,12 @@ export default class EcoGameRunner {
     }
   }
 
-  _createPlayer() {
+  _createPlayer(manager) {
     this.player = new THREE.Group();
     this.player.position.set(LANES[this.currentLane], 0, 0);
     this.scene.add(this.player);
 
-    const loader = new GLTFLoader();
+    const loader = new GLTFLoader(manager);
     loader.load(
       "/assets/Chacracter.glb",
       (gltf) => {
@@ -365,8 +384,8 @@ export default class EcoGameRunner {
     }
   }
 
-  _loadAudio() {
-    const audioLoader = new THREE.AudioLoader();
+  _loadAudio(manager) {
+    const audioLoader = new THREE.AudioLoader(manager);
 
     // Background Music
     this.bgm = new THREE.Audio(this.audioListener);
@@ -533,11 +552,18 @@ export default class EcoGameRunner {
     let trashUserData;
 
     // Use API wasteItems with valid imagePresignedUrl
-    const apiItems = this.wasteItems.filter((w) => w.imagePresignedUrl);
+    const apiItems = this.wasteItems.filter(
+      (w) => w.model3dPresignedUrl || w.imagePresignedUrl || w.imageUrl,
+    );
     if (apiItems.length > 0) {
       this.totalTrashSpawned++;
       // Pick a random item from API wasteItems
       const apiItem = apiItems[Math.floor(Math.random() * apiItems.length)];
+
+      const currentModelUrl =
+        apiItem.model3dPresignedUrl ||
+        apiItem.imagePresignedUrl ||
+        apiItem.imageUrl;
 
       const trashUserData = {
         type: "trash",
@@ -547,7 +573,8 @@ export default class EcoGameRunner {
           bin: apiItem.wasteCategory?.toLowerCase() || "recycle",
           color: 0x2196f3,
           imageUrl: apiItem.imageUrl || apiItem.imagePresignedUrl,
-          preloadedModel: apiItem.imagePresignedUrl,
+          preloadedModel: currentModelUrl,
+          modelUrl: currentModelUrl,
           funFact: apiItem.funFact, // Captured for result display
         },
         wasteItemId: apiItem.wasteItemId,
@@ -632,15 +659,15 @@ export default class EcoGameRunner {
         });
       };
 
-      // Load dynamically using imagePresignedUrl if not cached
-      if (this.modelCache[apiItem.imagePresignedUrl]) {
-        finalizeMesh(this.modelCache[apiItem.imagePresignedUrl].clone());
+      // Load dynamically using the best available URL if not cached
+      if (this.modelCache[currentModelUrl]) {
+        finalizeMesh(this.modelCache[currentModelUrl].clone());
       } else {
         const loader = new GLTFLoader();
         loader.load(
-          apiItem.imagePresignedUrl,
+          currentModelUrl,
           (gltf) => {
-            this.modelCache[apiItem.imagePresignedUrl] = gltf.scene;
+            this.modelCache[currentModelUrl] = gltf.scene;
             // Only finalize if game is still active
             if (!this.gameOver) {
               finalizeMesh(gltf.scene.clone());
@@ -648,7 +675,7 @@ export default class EcoGameRunner {
           },
           undefined,
           (err) => {
-            console.error("URL gây lỗi:", apiItem.imagePresignedUrl);
+            console.error("URL gây lỗi:", currentModelUrl);
             console.error("Thông tin lỗi từ Loader:", err);
             // finalizeMesh(this._createBoxTrashMesh(0xff0000));
           },

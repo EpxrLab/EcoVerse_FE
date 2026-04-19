@@ -119,13 +119,8 @@ export default function EcoGameHUD({
   gameType,
   onGameResult,
   onPauseChange,
+  onReplay,
 }) {
-  console.log(
-    "[EcoGameHUD] Rendering. gameType:",
-    gameType,
-    "isSeaRescue:",
-    levelConfig?.stage1Game === "searescue",
-  );
   const [stage, setStage] = useState("STAGE_1");
   const [distance, setDistance] = useState(0);
   const [speed, setSpeed] = useState(levelConfig?.runner?.baseSpeed || 12);
@@ -137,12 +132,6 @@ export default function EcoGameHUD({
   const [showTransition, setShowTransition] = useState(false);
   const [showGameOver, setShowGameOver] = useState(false);
   const [showExitConfirm, setShowExitConfirm] = useState(false);
-
-  const fetchData = async () => {};
-
-  useEffect(() => {
-    fetchData();
-  }, []);
 
   useEffect(() => {
     if (onPauseChange) {
@@ -166,7 +155,6 @@ export default function EcoGameHUD({
   useEffect(() => {
     if (!game) return;
 
-    // Runner HUD data (only meaningful when stage1Game === 'runner')
     game.onDistanceUpdate((d, s) => {
       setDistance(d);
       setSpeed(s);
@@ -176,7 +164,6 @@ export default function EcoGameHUD({
       setTrashCount(count);
     });
 
-    // Stage 2 data
     game.onSortingUpdate((score, remaining) => {
       setSortScore({ ...score });
       setItemsRemaining(remaining);
@@ -186,12 +173,10 @@ export default function EcoGameHUD({
       setTimeRemaining(time);
     });
 
-    // Stage transitions
     game.onStageChange((newStage) => {
       if (newStage === "STAGE_2") {
         const tl = levelConfig?.sorter?.timeLimit || 0;
         setTimeRemaining(tl > 0 ? tl : null);
-
         setShowTransition(true);
         setTimeout(() => {
           setShowTransition(false);
@@ -204,30 +189,33 @@ export default function EcoGameHUD({
 
     game.onResult(async (res) => {
       let finalResult = res;
-      // Submit game result to API
       if (onGameResult) {
         const apiResult = await onGameResult(res);
         if (apiResult) {
-          finalResult = { ...res, apiResult }; // Merge the API result
+          finalResult = { ...res, apiResult };
         }
       }
       setResult(finalResult);
     });
-  }, [game, levelConfig]);
+  }, [game, levelConfig, onGameResult]);
 
   const handleReplay = useCallback(() => {
-    setStage("STAGE_1");
-    setDistance(0);
-    setSpeed(levelConfig?.runner?.baseSpeed || 12);
-    setTrashCount(0);
-    setSortScore({ correct: 0, wrong: 0 });
-    setItemsRemaining(0);
-    setTimeRemaining(null);
-    setResult(null);
-    setShowTransition(false);
-    setShowGameOver(false);
-    game?.restart();
-  }, [game, levelConfig]);
+    if (onReplay) {
+      onReplay();
+    } else {
+      setStage("STAGE_1");
+      setDistance(0);
+      setSpeed(levelConfig?.runner?.baseSpeed || 12);
+      setTrashCount(0);
+      setSortScore({ correct: 0, wrong: 0 });
+      setItemsRemaining(0);
+      setTimeRemaining(null);
+      setResult(null);
+      setShowTransition(false);
+      setShowGameOver(false);
+      game?.restart();
+    }
+  }, [game, levelConfig, onReplay]);
 
   return (
     <>
