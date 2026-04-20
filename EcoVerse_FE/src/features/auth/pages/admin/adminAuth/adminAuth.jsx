@@ -19,7 +19,7 @@ const validateForm = (email, password) => {
     errors.email = "Email không hợp lệ";
   }
   if (!password || password.length < 6) {
-    errors.password = "Mật khẩu phải có ít nhất 6 ký tự";
+    errors.password = "Mật khẩu phải có ít nhất 8 ký tự";
   }
   return errors;
 };
@@ -67,151 +67,157 @@ export default function AdminAuth() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-violet-50 via-white to-indigo-50 flex items-center justify-center p-4">
+    <div className="min-h-screen bg-[#0f1110] flex items-center justify-center p-4 relative overflow-hidden">
+      {/* High-security background elements */}
+      <div className="absolute inset-0 overflow-hidden pointer-events-none">
+        <div className="absolute top-[-20%] left-[-10%] w-[60%] h-[60%] bg-[#1db1d1]/10 rounded-full blur-[150px]" />
+        <div className="absolute bottom-[-10%] right-[-5%] w-[40%] h-[40%] bg-[#b1f0ce]/20 rounded-full blur-[120px]" />
+        <div className="absolute top-0 left-0 w-full h-full opacity-[0.05]" 
+             style={{ backgroundImage: 'radial-gradient(#1db1d1 1px, transparent 1px)', backgroundSize: '30px 30px' }} />
+      </div>
+
       {/* Back button */}
       <motion.button
         onClick={() => navigate("/auth")}
-        className="fixed top-6 left-6 z-50 flex items-center gap-2
-                   bg-white/80 backdrop-blur-md px-4 py-2 rounded-full shadow-lg
-                   text-gray-600 hover:text-violet-600 transition-colors"
-        whileHover={{ x: -5 }}
+        className="fixed top-8 left-8 z-50 flex items-center gap-3
+                   bg-white/5 backdrop-blur-xl px-6 py-3 rounded-full border border-white/10
+                   text-white font-black text-xs tracking-widest transition-all group hover:bg-white/10"
+        whileHover={{ x: -4 }}
         whileTap={{ scale: 0.95 }}
         initial={{ opacity: 0, x: -20 }}
         animate={{ opacity: 1, x: 0 }}
       >
-        <ArrowLeftOutlined className="text-lg" />
-        <span className="font-medium">Quay lại</span>
+        <ArrowLeftOutlined className="text-sm" />
+        <span className="font-greenhouse-heading uppercase">QUAY LẠI</span>
       </motion.button>
 
       <motion.div
-        className="w-full max-w-md"
+        className="w-full max-w-xl relative z-10"
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.5, ease: "easeOut" }}
       >
-        {/* Logo */}
+        {/* Logo Section */}
         <motion.div
-          className="text-center mb-8"
+          className="text-center mb-10"
           initial={{ opacity: 0, y: -20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.2, duration: 0.5 }}
         >
-          <div className="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-violet-100 mb-4 shadow-md">
-            <CrownOutlined className="text-3xl text-violet-600" />
+          <div className="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-gradient-to-br from-[#1db1d1] to-[#1db1d1] mb-6 shadow-2xl shadow-[#1db1d1]/40">
+            <CrownOutlined className="text-3xl text-white" />
           </div>
-          <h1 className="text-3xl font-bold text-gray-800">EcoVerse</h1>
-          <p className="text-gray-500 mt-2">Cổng quản trị hệ thống</p>
+          <h1 className="text-5xl font-black text-white font-greenhouse-heading tracking-tight mb-2">
+            EcoVerse
+          </h1>
+          <p className="text-[#1db1d1] font-black text-xs uppercase tracking-[0.3em] font-greenhouse-heading">
+            BẢO MẬT HỆ THỐNG
+          </p>
         </motion.div>
 
-        {/* Card */}
+        {/* Main Card */}
         <motion.div
           initial={{ opacity: 0, scale: 0.95 }}
           animate={{ opacity: 1, scale: 1 }}
           transition={{ duration: 0.4, ease: "easeOut" }}
         >
-          <Card
-            className="border-0 shadow-2xl rounded-3xl overflow-hidden"
-            bodyStyle={{ padding: "32px 28px" }}
-          >
-            <div className="space-y-5">
-              <div className="mb-2">
-                <h2 className="text-xl font-semibold text-gray-800">
-                  Chào mừng, Admin!
+          <div className="bg-white/5 backdrop-blur-2xl rounded-[3rem] p-12 shadow-[0_64px_128px_rgba(0,0,0,0.5)] border border-white/10 overflow-hidden relative">
+            {/* Subtle glow edge */}
+            <div className="absolute top-0 left-0 right-0 h-[1px] bg-gradient-to-r from-transparent via-[#1db1d1]/50 to-transparent shadow-[0_0_20px_rgba(29,177,209,0.3)]" />
+            
+            <div className="space-y-10">
+              <div className="text-center">
+                <h2 className="text-3xl font-black text-white mb-2 font-greenhouse-heading">
+                  Chào Quản Trị Viên
                 </h2>
-                <p className="text-gray-500 text-sm mt-1">
-                  Đăng nhập để truy cập bảng điều khiển
+                <p className="text-white/40 font-greenhouse-body font-medium">
+                  Vui lòng cung cấp danh tính để truy cập bảng điều khiển
                 </p>
               </div>
 
-              <div className="space-y-1">
-                <label className="block text-sm font-medium text-gray-700">
-                  Email
-                </label>
-                <Input
-                  prefix={<MailOutlined className="text-gray-400" />}
-                  type="email"
-                  placeholder="admin@ecoverse.vn"
-                  value={email}
-                  onChange={(e) => {
-                    setEmail(e.target.value);
-                    setErrors((p) => ({ ...p, email: "" }));
-                  }}
-                  onKeyDown={handleKeyDown}
-                  size="large"
-                  disabled={isLoading}
-                  status={errors.email ? "error" : ""}
-                  className="rounded-lg"
-                />
-                {errors.email && (
-                  <p className="text-red-500 text-xs">{errors.email}</p>
-                )}
-              </div>
+              <div className="space-y-6">
+                {/* Email Input */}
+                <div className="space-y-2">
+                  <label className="block text-xs font-black text-white/40 uppercase tracking-widest font-greenhouse-heading ml-1">
+                    ĐỊA CHỈ EMAIL
+                  </label>
+                  <Input
+                    prefix={<MailOutlined className="text-[#1db1d1]/50 mr-2" />}
+                    type="email"
+                    placeholder="admin@ecoverse.systems"
+                    value={email}
+                    onChange={(e) => {
+                      setEmail(e.target.value);
+                      setErrors((p) => ({ ...p, email: "" }));
+                    }}
+                    onKeyDown={handleKeyDown}
+                    className="h-14 rounded-2xl bg-white/5 border-white/10 text-white placeholder:text-white/20 focus:bg-white/10 transition-all font-greenhouse-body text-base"
+                    disabled={isLoading}
+                    status={errors.email ? "error" : ""}
+                  />
+                  {errors.email && (
+                    <p className="text-red-500 text-xs font-bold font-greenhouse-body ml-1">{errors.email}</p>
+                  )}
+                </div>
 
-              <div className="space-y-1">
-                <label className="block text-sm font-medium text-gray-700">
-                  Mật khẩu
-                </label>
-                <Input.Password
-                  prefix={<LockOutlined className="text-gray-400" />}
-                  placeholder="••••••••"
-                  value={password}
-                  onChange={(e) => {
-                    setPassword(e.target.value);
-                    setErrors((p) => ({ ...p, password: "" }));
-                  }}
-                  onKeyDown={handleKeyDown}
-                  size="large"
-                  disabled={isLoading}
-                  status={errors.password ? "error" : ""}
-                  iconRender={(v) =>
-                    v ? <EyeOutlined /> : <EyeInvisibleOutlined />
-                  }
-                  className="rounded-lg"
-                />
-                {errors.password && (
-                  <p className="text-red-500 text-xs">{errors.password}</p>
-                )}
-              </div>
+                {/* Password Input */}
+                <div className="space-y-2">
+                  <label className="block text-xs font-black text-white/40 uppercase tracking-widest font-greenhouse-heading ml-1">
+                    MẬT KHẨU CẤP CAO
+                  </label>
+                  <Input.Password
+                    prefix={<LockOutlined className="text-[#1db1d1]/50 mr-2" />}
+                    placeholder="••••••••"
+                    value={password}
+                    onChange={(e) => {
+                      setPassword(e.target.value);
+                      setErrors((p) => ({ ...p, password: "" }));
+                    }}
+                    onKeyDown={handleKeyDown}
+                    className="h-14 rounded-2xl bg-white/5 border-white/10 text-white placeholder:text-white/20 focus:bg-white/10 transition-all font-greenhouse-body text-base"
+                    disabled={isLoading}
+                    status={errors.password ? "error" : ""}
+                    iconRender={(v) =>
+                      v ? <EyeOutlined className="text-[#1db1d1]/50" /> : <EyeInvisibleOutlined className="text-[#1db1d1]/50" />
+                    }
+                  />
+                  {errors.password && (
+                    <p className="text-red-500 text-xs font-bold font-greenhouse-body ml-1">{errors.password}</p>
+                  )}
+                </div>
 
-              <div className="flex justify-end -mt-1">
-                <button className="text-xs text-violet-600 hover:underline">
-                  Quên mật khẩu?
-                </button>
-              </div>
+                {/* Login Button */}
+                <div className="pt-4">
+                  <motion.button
+                    whileHover={{ scale: 1.01, translateY: -2 }}
+                    whileTap={{ scale: 0.98 }}
+                    onClick={handleLogin}
+                    disabled={isLoading}
+                    className="w-full h-16 bg-gradient-to-r from-[#1db1d1] to-[#1db1d1] text-white rounded-2xl font-black text-lg shadow-xl shadow-[#1db1d1]/20 transition-all duration-300 font-greenhouse-heading flex items-center justify-center disabled:opacity-50"
+                  >
+                    {isLoading ? "XÁC MINH DANH TÍNH..." : "ĐĂNG NHẬP HỆ THỐNG"}
+                  </motion.button>
+                </div>
 
-              <Button
-                type="primary"
-                size="large"
-                block
-                onClick={handleLogin}
-                loading={isLoading}
-                className="bg-violet-600 hover:bg-violet-700 border-violet-600 hover:border-violet-700 rounded-xl h-11 font-semibold"
-              >
-                {isLoading ? "Đang xử lý..." : "Đăng nhập"}
-              </Button>
-
-              {/* Security notice */}
-              <div className="flex items-center gap-2 p-3 rounded-xl bg-violet-50 border border-violet-100">
-                <span className="text-base">🔐</span>
-                <p className="text-xs text-violet-600">
-                  Khu vực dành riêng cho quản trị viên. Mọi truy cập đều được
-                  ghi lại.
-                </p>
+                {/* Security notice */}
+                <div className="flex items-center gap-4 p-5 rounded-[2rem] bg-[#1db1d1]/10 border border-[#1db1d1]/20">
+                  <span className="text-xl">🔐</span>
+                  <p className="text-xs text-[#1db1d1] font-bold font-greenhouse-body leading-relaxed">
+                    HỆ THỐNG GIÁM SÁT: Mọi truy cập trái phép hoặc khả nghi sẽ được tự động báo cáo cho ban quản lý.
+                  </p>
+                </div>
               </div>
             </div>
-          </Card>
+          </div>
         </motion.div>
 
         <motion.p
-          className="text-center text-sm text-gray-500 mt-6"
+          className="text-center text-xs font-black text-white/40 uppercase tracking-[0.2em] mt-10 font-greenhouse-heading"
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           transition={{ delay: 0.6 }}
         >
-          Cần hỗ trợ?{" "}
-          <a href="#" className="text-violet-600 hover:underline">
-            Liên hệ với chúng tôi
-          </a>
+          © 2024 ECOVERSE SECURITY LAYER
         </motion.p>
       </motion.div>
     </div>

@@ -51,10 +51,10 @@ const wasteItems = [
 ];
 
 const bins = [
-  { type: "plastic", name: "Nhựa", color: "bg-blue-500", emoji: "♻️" },
-  { type: "paper", name: "Giấy", color: "bg-green-500", emoji: "📄" },
-  { type: "organic", name: "Hữu cơ", color: "bg-amber-500", emoji: "🍂" },
-  { type: "others", name: "Khác", color: "bg-red-500", emoji: "🗑️" },
+  { type: "plastic", name: "Nhựa", color: "bg-[#2d6a4f]", emoji: "♻️" },
+  { type: "paper", name: "Giấy", color: "bg-[#1f5e44]", emoji: "📄" },
+  { type: "organic", name: "Hữu cơ", color: "bg-[#765b07]", emoji: "🍂" },
+  { type: "others", name: "Khác", color: "bg-[#5b605c]", emoji: "🗑️" },
 ];
 
 const GameDemo = () => {
@@ -204,7 +204,7 @@ const GameDemo = () => {
   // Start Screen
   if (!gameStarted) {
     return (
-      <section className="py-24 bg-white relative overflow-hidden">
+      <section className="py-32 bg-[#f9faf6] relative overflow-hidden">
         <div className="container mx-auto px-4">
           <motion.div
             className="text-center max-w-3xl mx-auto"
@@ -212,25 +212,25 @@ const GameDemo = () => {
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.6 }}
           >
-            <h2 className="text-4xl md:text-5xl font-bold mb-6">
+            <h2 className="text-4xl md:text-6xl font-black mb-8 font-greenhouse-heading tracking-tight text-[#2e3430]">
               Thử{" "}
-              <span className="bg-gradient-to-r from-green-600 to-emerald-600 bg-clip-text text-transparent">
-                chơi game
+              <span className="bg-gradient-to-r from-[#2d6a4f] to-[#1f5e44] bg-clip-text text-transparent">
+                Chơi Game
               </span>{" "}
-              ngay!
+              Ngay!
             </h2>
-            <p className="text-lg text-gray-600 mb-8">
-              Kéo thả vật phẩm vào thùng rác phù hợp để phân loại rác thải. Học
-              nhiều điều thú vị về môi trường!
+            <p className="text-xl text-[#5b605c] mb-12 font-greenhouse-body leading-relaxed">
+              Trải nghiệm thực tế kỹ năng phân loại rác qua mini-game tương tác. 
+              Ghi điểm và nhận những huy hiệu danh dự đầu tiên của bạn!
             </p>
             <Button
               type="primary"
               size="large"
               icon={<PlayCircleOutlined />}
               onClick={() => setGameStarted(true)}
-              className="h-14 px-8 text-lg bg-green-600 hover:bg-green-700 border-none"
+              className="h-16 px-10 text-lg font-bold bg-gradient-to-r from-[#2d6a4f] to-[#1f5e44] border-none rounded-full shadow-lg shadow-green-900/20 transform transition-all active:scale-95 font-greenhouse-heading"
             >
-              Bắt đầu chơi
+              Bắt đầu trải nghiệm
             </Button>
           </motion.div>
         </div>
@@ -248,29 +248,28 @@ const GameDemo = () => {
             animate={{ scale: 1, opacity: 1 }}
             transition={{ duration: 0.5 }}
           >
-            <Card className="max-w-2xl mx-auto text-center shadow-2xl">
-              <div className="p-12">
-                <div className="text-6xl mb-6">🎊</div>
-                <h2 className="text-3xl font-bold mb-4">
-                  Hoàn thành xuất sắc!
+            <Card className="max-w-2xl mx-auto text-center border-none rounded-[3rem] shadow-[0_32px_64px_rgba(45,106,79,0.15)] bg-white overflow-hidden">
+              <div className="p-16">
+                <div className="text-7xl mb-8">🎊</div>
+                <h2 className="text-4xl font-black mb-4 font-greenhouse-heading text-[#2e3430]">
+                  Thật Tuyệt Vời!
                 </h2>
-                <p className="text-lg text-gray-600 mb-8">
-                  Bạn đã phân loại đúng {score}/{wasteItems.length} vật phẩm
+                <p className="text-xl text-[#5b605c] mb-10 font-greenhouse-body">
+                  Bạn đã xuất sắc phân loại đúng {score}/{wasteItems.length} vật phẩm.
                 </p>
 
-                <div className="flex items-center justify-center gap-8 mb-8">
+                <div className="flex items-center justify-center gap-12 mb-12">
                   <div className="text-center">
-                    <div className="flex items-center justify-center gap-2 text-3xl font-bold text-green-600 mb-2">
-                      <StarFilled />
+                    <div className="text-4xl font-black text-[#2d6a4f] mb-2 font-greenhouse-heading">
                       {Math.round((score / wasteItems.length) * 100)}%
                     </div>
-                    <div className="text-sm text-gray-600">Độ chính xác</div>
+                    <div className="text-sm font-bold text-[#5b605c] uppercase">Chính xác</div>
                   </div>
                   <div className="text-center">
-                    <div className="flex items-center justify-center gap-2 text-3xl font-bold text-orange-600 mb-2">
-                      <DollarOutlined />+{coins}
+                    <div className="text-4xl font-black text-[#765b07] mb-2 font-greenhouse-heading">
+                      +{coins}
                     </div>
-                    <div className="text-sm text-gray-600">Coins kiếm được</div>
+                    <div className="text-sm font-bold text-[#5b605c] uppercase">Huy hiệu hạt mầm</div>
                   </div>
                 </div>
 
@@ -279,7 +278,7 @@ const GameDemo = () => {
                   size="large"
                   icon={<ReloadOutlined />}
                   onClick={resetGame}
-                  className="h-12 px-6 bg-green-600 hover:bg-green-700 border-none"
+                  className="h-14 px-10 bg-gradient-to-r from-[#2d6a4f] to-[#1f5e44] border-none rounded-full font-bold shadow-lg shadow-green-900/20 font-greenhouse-heading"
                 >
                   Chơi lại
                 </Button>
@@ -293,45 +292,48 @@ const GameDemo = () => {
 
   // Game Screen
   return (
-    <section className="py-24 bg-white relative overflow-hidden">
+    <section className="py-32 bg-[#f9faf6] relative overflow-hidden">
       <div className="container mx-auto px-4">
-        <div className="text-center max-w-3xl mx-auto mb-8">
-          <h2 className="text-4xl md:text-5xl font-bold mb-4">
-            Thử{" "}
-            <span className="bg-gradient-to-r from-green-600 to-emerald-600 bg-clip-text text-transparent">
-              chơi game
-            </span>{" "}
-            ngay!
+        <div className="text-center max-w-3xl mx-auto mb-16">
+          <h2 className="text-4xl md:text-6xl font-black mb-6 font-greenhouse-heading tracking-tight text-[#2e3430]">
+            Trải Nghiệm{" "}
+            <span className="bg-gradient-to-r from-[#2d6a4f] to-[#1f5e44] bg-clip-text text-transparent">
+              Phân Loại Rác
+            </span>
           </h2>
-          <p className="text-gray-600">Kéo rác vào thùng phù hợp 👇</p>
+          <p className="text-xl text-[#5b605c] font-greenhouse-body">Kéo rác vào thùng phù hợp dưới đây 👇</p>
         </div>
 
-        <Card className="max-w-4xl mx-auto shadow-xl">
+        <Card className="max-w-4xl mx-auto border-none rounded-[3rem] shadow-[0_32px_64px_rgba(45,106,79,0.1)] bg-white/60 backdrop-blur-xl overflow-hidden">
           <div className="p-8">
             {/* Header */}
-            <div className="flex items-center justify-between mb-6">
-              <div className="flex items-center gap-4">
-                <div className="flex items-center gap-2 px-4 py-2 rounded-full bg-green-100">
-                  <StarFilled className="text-green-600" />
-                  <span className="font-bold text-green-600">
-                    {score}/{wasteItems.length}
-                  </span>
+              <div className="flex items-center justify-between mb-10">
+                <div className="flex items-center gap-6">
+                  <div className="flex items-center gap-2 px-5 py-2 rounded-full bg-[#b1f0ce]/30 text-[#2d6a4f] font-bold">
+                    <StarFilled />
+                    <span>
+                      {score}/{wasteItems.length}
+                    </span>
+                  </div>
+                  <div className="flex items-center gap-2 px-5 py-2 rounded-full bg-[#ffd97d]/30 text-[#765b07] font-bold">
+                    <DollarOutlined />
+                    <span>{coins}</span>
+                  </div>
                 </div>
-                <div className="flex items-center gap-2 px-4 py-2 rounded-full bg-orange-100">
-                  <DollarOutlined className="text-orange-600" />
-                  <span className="font-bold text-orange-600">{coins}</span>
+                <div className="text-sm font-bold text-[#5b605c] uppercase tracking-wider">
+                  Vật phẩm {currentIndex + 1}/{wasteItems.length}
                 </div>
               </div>
-              <div className="text-sm text-gray-600">
-                Vật phẩm {currentIndex + 1}/{wasteItems.length}
-              </div>
-            </div>
 
             {/* Progress */}
             <Progress
               percent={Math.round(progress)}
-              strokeColor="#16a34a"
-              className="mb-8"
+              strokeColor={{
+                '0%': '#2d6a4f',
+                '100%': '#1f5e44',
+              }}
+              strokeWidth={12}
+              className="mb-12 greenhouse-progress"
             />
 
             {/* Current Item */}
@@ -342,7 +344,7 @@ const GameDemo = () => {
                 onTouchStart={(e) => handleTouchStart(e, currentItem)}
                 onTouchMove={handleTouchMove}
                 onTouchEnd={handleTouchEnd}
-                className={`inline-flex items-center justify-center w-32 h-32 rounded-3xl bg-gray-100 text-7xl mb-4 cursor-grab active:cursor-grabbing select-none ${
+                className={`inline-flex items-center justify-center w-40 h-40 rounded-[2.5rem] bg-[#f2f4f0] text-8xl mb-6 cursor-grab active:cursor-grabbing shadow-lg shadow-gray-200/50 select-none ${
                   feedback?.type === "correct"
                     ? "scale-110"
                     : feedback?.type === "wrong"
@@ -357,7 +359,7 @@ const GameDemo = () => {
               >
                 {currentItem.emoji}
               </motion.div>
-              <h3 className="text-2xl font-bold">{currentItem.name}</h3>
+              <h3 className="text-3xl font-black text-[#2e3430] font-greenhouse-heading">{currentItem.name}</h3>
 
               {/* Feedback */}
               <AnimatePresence>

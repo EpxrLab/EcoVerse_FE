@@ -1,4 +1,4 @@
-@import url('https://fonts.googleapis.com/css2?family=Nunito:wght@400;500;600;700;800&family=Quicksand:wght@400;500;600;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Nunito:wght@400;500;600;700;800&family=Quicksand:wght@400;500;600;700&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Be+Vietnam+Pro:wght@300;400;500;600;700&display=swap');
 
 @tailwind base;
 @tailwind components;
@@ -76,6 +76,24 @@
     --sidebar-accent-foreground: 150 30% 20%;
     --sidebar-border: 120 20% 90%;
     --sidebar-ring: 120 65% 35%;
+
+    /* Digital Greenhouse Tokens */
+    --greenhouse-bg: #f9faf6;
+    --greenhouse-primary: #2d6a4f;
+    --greenhouse-primary-dim: #1f5e44;
+    --greenhouse-surface: #f9faf6;
+    --greenhouse-surface-low: #f2f4f0;
+    --greenhouse-surface-lowest: #ffffff;
+    --greenhouse-surface-highest: #dfe4de;
+    --greenhouse-on-surface: #2e3430;
+    --greenhouse-on-surface-variant: #5b605c;
+    --greenhouse-outline: #777c77;
+    --greenhouse-outline-variant: #aeb3ae;
+    --greenhouse-tertiary: #765b07;
+    --greenhouse-tertiary-container: #ffd97d;
+
+    --font-heading: 'Plus Jakarta Sans', sans-serif;
+    --font-body: 'Be Vietnam Pro', sans-serif;
   }
 
   .dark {
@@ -195,12 +213,20 @@
   }
 
   body {
-    @apply bg-background text-foreground font-sans antialiased;
-    font-family: 'Quicksand', sans-serif;
+    @apply bg-background text-foreground antialiased;
+    font-family: var(--font-body);
   }
 
   h1, h2, h3, h4, h5, h6 {
-    font-family: 'Nunito', sans-serif;
+    font-family: var(--font-heading);
+  }
+
+  .font-greenhouse-heading {
+    font-family: var(--font-heading);
+  }
+
+  .font-greenhouse-body {
+    font-family: var(--font-body);
   }
 }
 
