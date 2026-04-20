@@ -1,12 +1,10 @@
-import { useCallback, useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Input, Button, Card, Tabs, message } from "antd";
+import { Input, Tabs, message } from "antd";
 import {
   HomeOutlined,
   MailOutlined,
   LockOutlined,
-  EyeOutlined,
-  EyeInvisibleOutlined,
   KeyOutlined,
   ArrowLeftOutlined,
   LoadingOutlined,
@@ -229,243 +227,227 @@ export default function SchoolAuth() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-green-50 via-white to-blue-50 flex items-center justify-center p-4">
+    <div className="min-h-screen bg-[#f1f9f1] flex items-center justify-center p-4 relative overflow-hidden">
+      {/* Organic background blurs */}
+      <div className="absolute inset-0 overflow-hidden pointer-events-none">
+        <div className="absolute top-[-10%] left-[-5%] w-[40%] h-[40%] bg-[#1f941f]/20 rounded-full blur-[100px]" />
+        <div className="absolute bottom-[5%] right-[-10%] w-[50%] h-[50%] bg-[#1f941f]/10 rounded-full blur-[120px]" />
+        <div className="absolute top-0 left-0 w-full h-full opacity-[0.03]" 
+             style={{ backgroundImage: 'radial-gradient(#1f941f 1px, transparent 1px)', backgroundSize: '40px 40px' }} />
+      </div>
+
       <motion.button
         onClick={() => navigate("/auth")}
-        className="fixed top-6 left-6 z-50
+        className="fixed top-8 left-8 z-50
                flex items-center gap-2
                bg-white/80 backdrop-blur-md
-               px-4 py-2 rounded-full shadow-lg
-               text-gray-600 hover:text-green-600
-               transition-colors group"
+               px-5 py-2.5 rounded-full shadow-lg shadow-green-900/5
+               text-[#1f941f] hover:text-[#1f5e44]
+               transition-all group border border-white/50"
         whileHover={{ x: -5 }}
         whileTap={{ scale: 0.95 }}
         initial={{ opacity: 0, x: -20 }}
         animate={{ opacity: 1, x: 0 }}
       >
         <ArrowLeftOutlined className="text-lg" />
-        <span className="font-medium">Quay lại</span>
+        <span className="font-bold font-greenhouse-heading">Quay lại</span>
       </motion.button>
+
       <motion.div
-        className="w-full max-w-md"
+        className="w-full max-w-lg relative z-10"
         variants={containerVariants}
         initial="hidden"
         animate="visible"
       >
-        {/* Logo */}
+        {/* Logo Section */}
         <motion.div
-          className="text-center mb-8"
+          className="text-center mb-10"
           initial={{ opacity: 0, y: -20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.2, duration: 0.5 }}
         >
-          <div className="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-green-100 mb-4">
-            <HomeOutlined className="text-3xl text-green-600" />
+          <div className="inline-flex items-center justify-center w-20 h-20 rounded-[2rem] bg-gradient-to-br from-[#1f941f] to-[#1f5e44] mb-6 shadow-2xl shadow-green-900/20">
+            <HomeOutlined className="text-3xl text-white" />
           </div>
-          <h1 className="text-3xl font-bold text-gray-800">EcoVerse</h1>
-          <p className="text-gray-600 mt-2">Cổng đăng ký dành cho Trường học</p>
+          <h1 className="text-4xl md:text-5xl font-black text-[#2e3430] font-greenhouse-heading tracking-tight">
+            EcoVerse
+          </h1>
+          <p className="text-[#5b605c] mt-3 font-greenhouse-body font-medium">Cổng đăng ký dành cho Trường học</p>
         </motion.div>
 
         <motion.div variants={cardVariants}>
-          <Card className="border-0 shadow-xl">
+          <div className="bg-white/60 backdrop-blur-md rounded-[3rem] p-10 shadow-[0_32px_64px_rgba(45,106,79,0.1)] border border-white/50">
             <Tabs
               defaultActiveKey="login"
               centered
-              className="w-full"
-              tabBarStyle={{ marginBottom: "24px" }}
+              className="greenhouse-tabs w-full"
+              tabBarStyle={{ marginBottom: "32px", borderBottom: 'none' }}
             >
               {/* Login Tab */}
-              <TabPane tab="Đăng nhập" key="login">
-                <div className="space-y-4">
-                  <div className="mb-6">
-                    <h2 className="text-xl font-semibold text-gray-800">
-                      Chào mừng trở lại!
-                    </h2>
-                    <p className="text-gray-600 text-sm mt-1">
-                      Đăng nhập để quản lý trường học của bạn
-                    </p>
-                  </div>
-
+              <TabPane tab={<span className="font-greenhouse-heading text-lg px-4">Đăng nhập</span>} key="login">
+                <form className="space-y-6" onSubmit={handleLogin}>
                   <div className="space-y-2">
-                    <label className="block text-sm font-medium text-gray-700">
-                      Email
+                    <label className="block text-sm font-bold text-[#2e3430] font-greenhouse-heading ml-1">
+                      Email Trường Học
                     </label>
                     <Input
-                      prefix={<MailOutlined className="text-gray-400" />}
+                      prefix={<MailOutlined className="text-[#1f941f] mr-2" />}
                       type="email"
                       placeholder="school@example.com"
                       value={email}
                       onChange={(e) => setEmail(e.target.value)}
-                      size="large"
+                      className="greenhouse-input-premium"
                       disabled={isLoading}
                       status={errors.email ? "error" : ""}
                     />
                     {errors.email && (
-                      <p className="text-red-500 text-sm">{errors.email}</p>
+                      <p className="text-red-500 text-xs font-medium ml-1">{errors.email}</p>
                     )}
                   </div>
 
                   <div className="space-y-2">
-                    <label className="block text-sm font-medium text-gray-700">
+                    <label className="block text-sm font-bold text-[#2e3430] font-greenhouse-heading ml-1">
                       Mật khẩu
                     </label>
                     <Input.Password
-                      prefix={<LockOutlined className="text-gray-400" />}
+                      prefix={<LockOutlined className="text-[#1f941f] mr-2" />}
                       placeholder="••••••••"
                       value={password}
                       onChange={(e) => setPassword(e.target.value)}
-                      size="large"
+                      className="greenhouse-input-premium"
                       disabled={isLoading}
                       status={errors.password ? "error" : ""}
-                      iconRender={(visible) =>
-                        visible ? <EyeOutlined /> : <EyeInvisibleOutlined />
-                      }
                     />
                     {errors.password && (
-                      <p className="text-red-500 text-sm">{errors.password}</p>
+                      <p className="text-red-500 text-xs font-medium ml-1">{errors.password}</p>
                     )}
                   </div>
 
-                  <div className="flex justify-end items-center mt-[-8px]">
-                    <Button
-                      type="link"
-                      size="small"
-                      className="text-gray-400 hover:text-green-600 p-0 h-auto font-medium transition-all duration-300"
+                  <div className="flex justify-end pt-1">
+                    <button
+                      type="button"
+                      className="text-sm font-bold text-[#1f941f] hover:text-[#1f5e44] transition-colors font-greenhouse-heading"
                       onClick={() => navigate("/auth/forgot-password")}
                     >
                       Quên mật khẩu?
-                    </Button>
+                    </button>
                   </div>
 
-                  <Button
-                    type="primary"
-                    size="large"
-                    block
-                    onClick={handleLogin}
-                    loading={isLoading}
-                    className="bg-green-600 hover:bg-green-700 mt-6"
+                  <motion.button
+                    type="submit"
+                    whileHover={{ scale: 1.01, translateY: -2 }}
+                    whileTap={{ scale: 0.98 }}
+                    className="w-full h-14 bg-gradient-to-r from-[#1f941f] to-[#1f5e44] hover:from-[#1f5e44] hover:to-[#1f941f] text-white rounded-2xl font-black text-lg shadow-xl shadow-green-900/20 transition-all duration-300 disabled:opacity-50 font-greenhouse-heading flex items-center justify-center gap-3"
+                    disabled={isLoading}
                   >
-                    {isLoading ? "Đang xử lý..." : "Đăng nhập"}
-                  </Button>
-                </div>
+                    {isLoading ? <LoadingOutlined /> : "Đăng nhập ngay"}
+                  </motion.button>
+                </form>
               </TabPane>
 
               {/* Register Tab */}
               <TabPane
-                tab="Đăng ký"
+                tab={<span className="font-greenhouse-heading text-lg px-4">Đăng ký</span>}
                 key="register"
                 disabled={registerStep === "verify"}
               >
                 <AnimatePresence mode="wait">
                   {registerStep === "credentials" ? (
-                    <motion.div
+                    <motion.form
                       key="credentials"
                       initial={{ opacity: 0, x: 20 }}
                       animate={{ opacity: 1, x: 0 }}
                       exit={{ opacity: 0, x: -20 }}
-                      className="space-y-4"
+                      className="space-y-6"
+                      onSubmit={handleSendOTP}
                     >
-                      <div className="mb-6">
-                        <h2 className="text-xl font-semibold text-gray-800">
-                          Đăng ký tài khoản
-                        </h2>
-                        <p className="text-gray-600 text-sm mt-1">
-                          Nhập email để nhận mã xác thực 6 số
-                        </p>
-                      </div>
-
                       <div className="space-y-2">
-                        <label className="block text-sm font-medium text-gray-700">
-                          Email
+                        <label className="block text-sm font-bold text-[#2e3430] font-greenhouse-heading ml-1">
+                          Email Đại Diện
                         </label>
                         <Input
-                          prefix={<MailOutlined className="text-gray-400" />}
+                          prefix={<MailOutlined className="text-[#1f941f] mr-2" />}
                           type="email"
                           placeholder="school@example.com"
                           value={email}
                           onChange={(e) => setEmail(e.target.value)}
-                          size="large"
+                          className="greenhouse-input-premium"
                           disabled={isLoading}
                           status={errors.email ? "error" : ""}
                         />
                         {errors.email && (
-                          <p className="text-red-500 text-sm">{errors.email}</p>
+                          <p className="text-red-500 text-xs font-medium ml-1">{errors.email}</p>
                         )}
                       </div>
 
                       <div className="space-y-2">
-                        <label className="block text-sm font-medium text-gray-700">
-                          Mật khẩu
+                        <label className="block text-sm font-bold text-[#2e3430] font-greenhouse-heading ml-1">
+                          Thiết lập mật khẩu
                         </label>
                         <Input.Password
-                          prefix={<LockOutlined className="text-gray-400" />}
-                          placeholder="Ít nhất 8 ký tự, gồm chữ hoa, chữ thường, số và ký tự đặc biệt"
+                          prefix={<LockOutlined className="text-[#1f941f] mr-2" />}
+                          placeholder="Ít nhất 8 ký tự, bao gồm chữ hoa & số"
                           value={password}
                           onChange={(e) => setPassword(e.target.value)}
-                          size="large"
+                          className="greenhouse-input-premium"
                           disabled={isLoading}
                           status={errors.password ? "error" : ""}
-                          iconRender={(visible) =>
-                            visible ? <EyeOutlined /> : <EyeInvisibleOutlined />
-                          }
                         />
                         {errors.password && (
-                          <p className="text-red-500 text-sm">
+                          <p className="text-red-500 text-xs font-medium ml-1">
                             {errors.password}
                           </p>
                         )}
                       </div>
 
-                      <Button
-                        type="primary"
-                        size="large"
-                        block
-                        onClick={handleSendOTP}
-                        loading={isLoading}
-                        className="bg-green-600 hover:bg-green-700 mt-6"
+                      <motion.button
+                        type="submit"
+                        whileHover={{ scale: 1.01, translateY: -2 }}
+                        whileTap={{ scale: 0.98 }}
+                        className="w-full h-14 bg-gradient-to-r from-[#1f941f] to-[#1f5e44] text-white rounded-2xl font-black text-lg shadow-xl shadow-green-900/20 transition-all duration-300 disabled:opacity-50 font-greenhouse-heading mt-4 flex items-center justify-center"
+                        disabled={isLoading}
                       >
-                        {isLoading ? "Đang gửi mã..." : "Gửi mã xác thực"}
-                      </Button>
+                        {isLoading ? <LoadingOutlined /> : "Gửi mã xác thực"}
+                      </motion.button>
 
-                      <p className="text-xs text-center text-gray-500 mt-4">
-                        Mã xác thực 6 số sẽ được gửi đến email của bạn. Sau khi
-                        xác thực, bạn sẽ điền thông tin trường học.
+                      <p className="text-xs text-center text-[#5b605c] font-medium leading-relaxed px-4">
+                        Mã xác thực sẽ được gửi đến email của bạn. Đây là bước đầu để khởi tạo hồ sơ trường học trên EcoVerse.
                       </p>
-                    </motion.div>
+                    </motion.form>
                   ) : (
                     <motion.div
                       key="verify"
                       initial={{ opacity: 0, x: 20 }}
                       animate={{ opacity: 1, x: 0 }}
                       exit={{ opacity: 0, x: -20 }}
-                      className="space-y-4"
+                      className="space-y-6"
                     >
                       <button
                         onClick={handleBackToCredentials}
-                        className="flex items-center gap-1 text-sm text-gray-600 hover:text-gray-800 transition-colors mb-4"
+                        className="flex items-center gap-2 text-sm font-bold text-[#1f941f] hover:text-[#1f5e44] transition-all mb-4 font-greenhouse-heading"
                       >
                         <ArrowLeftOutlined className="text-xs" />
-                        Quay lại
+                        Trở lại thiết lập
                       </button>
 
                       <div className="text-center mb-6">
-                        <div className="inline-flex items-center justify-center w-12 h-12 rounded-full bg-green-100 mb-3">
-                          <KeyOutlined className="text-xl text-green-600" />
+                        <div className="inline-flex items-center justify-center w-14 h-14 rounded-2xl bg-[#f9faf6] mb-4 shadow-inner">
+                          <KeyOutlined className="text-2xl text-[#1f941f]" />
                         </div>
-                        <h2 className="text-xl font-semibold text-gray-800">
-                          Nhập mã xác thực
+                        <h2 className="text-2xl font-black text-[#2e3430] font-greenhouse-heading">
+                          Xác thực tài khoản
                         </h2>
-                        <p className="text-gray-600 text-sm mt-2">
-                          Nhập mã 6 số đã gửi đến
+                        <p className="text-[#5b605c] text-sm mt-2 font-greenhouse-body">
+                          EcoVerse đã gửi mã số đến:
                           <br />
-                          <span className="font-medium text-gray-800">
+                          <span className="font-black text-[#1f941f]">
                             {email}
                           </span>
                         </p>
                       </div>
 
                       {/* OTP Input */}
-                      <div className="flex justify-center gap-2 py-4">
+                      <div className="flex justify-center gap-3 py-4">
                         {otpCode.map((digit, index) => (
                           <input
                             key={index}
@@ -478,69 +460,56 @@ export default function SchoolAuth() {
                             }
                             onKeyDown={(e) => handleOtpKeyDown(index, e)}
                             disabled={isLoading}
-                            className="w-12 h-12 text-center text-xl font-semibold border-2 border-gray-300 rounded-lg focus:border-green-500 focus:outline-none transition-colors disabled:bg-gray-100"
+                            className="w-12 h-16 text-center text-2xl font-black text-[#1f941f] bg-white border-2 border-transparent border-b-[#1f941f]/20 rounded-xl focus:border-b-[#1f941f] focus:bg-[#f9faf6] focus:outline-none transition-all disabled:opacity-50 font-greenhouse-heading"
                           />
                         ))}
                       </div>
 
-                      <Button
-                        type="primary"
-                        size="large"
-                        block
+                      <motion.button
+                        whileHover={{ scale: 1.01, translateY: -2 }}
+                        whileTap={{ scale: 0.98 }}
                         onClick={handleVerifyOTP}
-                        loading={isLoading}
-                        disabled={otpCode.join("").length !== 6}
-                        className="bg-green-600 hover:bg-green-700"
+                        disabled={isLoading || otpCode.join("").length !== 6}
+                        className="w-full h-14 bg-gradient-to-r from-[#1f941f] to-[#1f5e44] text-white rounded-2xl font-black text-lg shadow-xl shadow-green-900/20 transition-all duration-300 disabled:opacity-50 font-greenhouse-heading"
                       >
-                        {isLoading
-                          ? "Đang xác thực..."
-                          : "Xác thực và tiếp tục"}
-                      </Button>
+                        {isLoading ? <LoadingOutlined /> : "Xác thực danh tính"}
+                      </motion.button>
 
-                      <div className="text-center mt-4">
-                        <p className="text-sm text-gray-600 mb-2">
-                          Không nhận được mã?
+                      <div className="text-center mt-6">
+                        <p className="text-sm text-[#5b605c] mb-2 font-medium">
+                          Chưa nhận được mã?
                         </p>
-                        <Button
-                          type="link"
-                          size="small"
+                        <button
                           onClick={handleResendOTP}
                           disabled={isResending || resendCountdown > 0}
-                          className="text-green-600 hover:text-green-700"
+                          className="text-[#1f941f] font-black text-sm hover:underline disabled:opacity-50 font-greenhouse-heading"
                         >
                           {isResending ? (
-                            <>
-                              <LoadingOutlined className="mr-2" />
-                              Đang gửi...
-                            </>
+                            <LoadingOutlined className="mr-2" />
                           ) : resendCountdown > 0 ? (
                             `Gửi lại sau ${resendCountdown}s`
                           ) : (
-                            "Gửi lại mã"
+                            "Gửi lại mã mới"
                           )}
-                        </Button>
+                        </button>
                       </div>
-
-                      <p className="text-xs text-center text-gray-500 mt-4">
-                        Mã có hiệu lực trong 10 phút. Kiểm tra cả thư mục spam.
-                      </p>
                     </motion.div>
                   )}
                 </AnimatePresence>
               </TabPane>
             </Tabs>
-          </Card>
+          </div>
         </motion.div>
 
         <motion.p
-          className="text-center text-sm text-gray-600 mt-6"
+          className="text-center text-sm font-bold text-[#5b605c] mt-10 font-greenhouse-heading uppercase tracking-widest"
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           transition={{ delay: 0.6 }}
         >
-          Cần hỗ trợ?{" "}
-          <a href="#" className="text-green-600 hover:underline">
-            Liên hệ với chúng tôi
+          Hướng dẫn & Hỗ trợ?{" "}
+          <a href="#" className="text-[#1f941f] hover:underline">
+            Trung tâm trợ giúp
           </a>
         </motion.p>
       </motion.div>

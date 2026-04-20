@@ -1,80 +1,33 @@
-import React, { lazy } from "react";
-import { Card } from "antd";
-import {
-  TrophyOutlined,
-  BookOutlined,
-  SafetyOutlined,
-  BarChartOutlined,
-  TeamOutlined,
-  PlaySquareOutlined,
-} from "@ant-design/icons";
 import { motion } from "framer-motion";
 
-// Custom Icons as SVG
-const GamepadIcon = ({ className }) => (
-  <svg
-    className={className}
-    viewBox="0 0 24 24"
-    fill="none"
-    xmlns="http://www.w3.org/2000/svg"
-  >
-    <path
-      d="M6 9h2v2H6V9zm0 4h2v2H6v-2zm10-4h2v2h-2V9zm0 4h2v2h-2v-2zm-4-8a9 9 0 1 0 0 18 9 9 0 0 0 0-18zm0 16c-3.87 0-7-3.13-7-7s3.13-7 7-7 7 3.13 7 7-3.13 7-7 7z"
-      fill="currentColor"
-    />
-  </svg>
-);
-
+// Simplified features without icons
 const features = [
   {
-    icon: GamepadIcon,
-    title: "Game Phân Loại Rác",
+    number: "01",
+    title: "Trò Chơi Tương Tác",
     description:
-      "Kéo thả vật phẩm vào đúng thùng rác. 5 cấp độ từ dễ đến khó với hàng trăm loại rác thải.",
-    color: "text-green-600",
-    bgColor: "bg-green-100",
+      "Kéo thả vật phẩm vào đúng thùng rác qua các cấp độ từ dễ đến khó, giúp các em hào hứng học tập.",
+    accent: "from-[#2d6a4f] to-[#1f5e44]",
+    lightAccent: "bg-[#b1f0ce]/30",
   },
   {
-    icon: BookOutlined,
+    number: "02",
     title: "Quiz Kiến Thức",
     description:
-      "Bộ câu hỏi đa dạng về môi trường. Nhà trường có thể tạo quiz riêng cho học sinh.",
-    color: "text-blue-600",
-    bgColor: "bg-blue-100",
+      "Thử thách bản thân với bộ câu hỏi đa dạng về môi trường và các loài sinh vật.",
+    accent: "from-[#1f5e44] to-[#2d6a4f]",
+    lightAccent: "bg-[#b5f7d2]/30",
   },
   {
-    icon: TrophyOutlined,
-    title: "Hệ Thống Phần Thưởng",
+    number: "03",
+    title: "Phần Thưởng Hấp Dẫn",
     description:
-      "Tích coin, mở khóa huy hiệu, đổi quà thật. Marketplace đa dạng với quà ảo và thực.",
-    color: "text-orange-600",
-    bgColor: "bg-orange-100",
-  },
-  {
-    icon: BarChartOutlined,
-    title: "Theo Dõi Tiến Độ",
-    description:
-      "Dashboard chi tiết cho học sinh, giáo viên và phụ huynh. Báo cáo tự động định kỳ.",
-    color: "text-purple-600",
-    bgColor: "bg-purple-100",
-  },
-  {
-    icon: TeamOutlined,
-    title: "Quản Lý Đa Cấp",
-    description:
-      "4 vai trò: Admin App, Admin Trường, Học sinh, Phụ huynh. Phân quyền rõ ràng.",
-    color: "text-teal-600",
-    bgColor: "bg-teal-100",
-  },
-  {
-    icon: SafetyOutlined,
-    title: "An Toàn & Bảo Mật",
-    description:
-      "Môi trường học tập an toàn cho trẻ em. Phụ huynh kiểm soát thời gian chơi.",
-    color: "text-amber-600",
-    bgColor: "bg-amber-100",
+      "Tích điểm, mở khóa huy hiệu Hiệp sĩ Môi trường và đổi những món quà ý nghĩa.",
+    accent: "from-[#765b07] to-[#ffd97d]/50",
+    lightAccent: "bg-[#ffd97d]/20",
   },
 ];
+
 
 const Features = () => {
   const containerVariants = {
@@ -97,67 +50,65 @@ const Features = () => {
   };
 
   return (
-    <section className="py-24 bg-white relative overflow-hidden">
-      {/* Gradient overlay top */}
-      <div className="absolute top-0 left-0 w-full h-32 bg-gradient-to-b from-gray-100 to-transparent" />
+    <section className="py-32 bg-[#f2f4f0] relative overflow-hidden">
+      {/* Visual textures */}
+      <div className="absolute top-0 left-0 w-full h-full pointer-events-none opacity-[0.03]" 
+           style={{ backgroundImage: 'radial-gradient(#2d6a4f 1px, transparent 1px)', backgroundSize: '40px 40px' }} />
 
       <div className="container mx-auto px-4 relative z-10">
         {/* Header */}
         <motion.div
-          className="text-center max-w-3xl mx-auto mb-16"
+          className="text-center max-w-3xl mx-auto mb-20"
           initial={{ opacity: 0, y: -20 }}
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true }}
           transition={{ duration: 0.6 }}
         >
-          <h2 className="text-4xl md:text-5xl font-bold mb-6">
-            Tính năng{" "}
-            <span className="bg-gradient-to-r from-green-600 via-emerald-600 to-teal-600 bg-clip-text text-transparent">
-              nổi bật
+          <h2 className="text-4xl md:text-6xl font-black mb-8 font-greenhouse-heading tracking-tight text-[#2e3430]">
+            Cách Thức{" "}
+            <span className="bg-gradient-to-r from-[#2d6a4f] to-[#1f5e44] bg-clip-text text-transparent">
+              Hoạt Động
             </span>
           </h2>
-          <p className="text-lg text-gray-600">
-            EcoVerse kết hợp gamification và giáo dục để tạo ra trải nghiệm học
-            tập thú vị, giúp học sinh yêu thích việc bảo vệ môi trường.
+          <p className="text-xl text-[#5b605c] font-greenhouse-body leading-relaxed">
+            EcoVerse kết hợp công nghệ và giáo dục để tạo ra một không gian 
+            <span className="text-[#2d6a4f] font-bold"> học mà chơi </span> đầy cảm hứng cho các em học sinh.
           </p>
         </motion.div>
 
         {/* Features Grid */}
         <motion.div
-          className="grid md:grid-cols-2 lg:grid-cols-3 gap-8"
+          className="grid md:grid-cols-2 lg:grid-cols-3 gap-12"
           variants={containerVariants}
           initial="hidden"
           whileInView="visible"
           viewport={{ once: true }}
         >
           {features.map((feature, index) => {
-            const Icon = feature.icon;
             return (
               <motion.div key={index} variants={itemVariants}>
-                <Card
-                  hoverable
-                  className="h-full border-2 border-gray-100 hover:border-green-200 hover:shadow-xl transition-all duration-300 group"
-                  bodyStyle={{ padding: "2rem" }}
+                <div
+                  className="h-full relative bg-white/60 backdrop-blur-md rounded-[3rem] p-12 shadow-[0_8px_32px_rgba(45,106,79,0.05)] hover:shadow-[0_40px_80px_-20px_rgba(45,106,79,0.15)] transition-all duration-500 overflow-hidden group"
                 >
-                  <motion.div
-                    className={`inline-flex items-center justify-center w-14 h-14 rounded-2xl ${feature.bgColor} ${feature.color} mb-6`}
-                    whileHover={{ scale: 1.1, rotate: 5 }}
-                    transition={{ duration: 0.3 }}
-                  >
-                    {typeof Icon === "function" &&
-                    Icon.name !== "BookOutlined" ? (
-                      <Icon className="w-7 h-7" />
-                    ) : (
-                      <Icon style={{ fontSize: "28px" }} />
-                    )}
-                  </motion.div>
-                  <h3 className="text-xl font-bold mb-3 text-gray-900">
-                    {feature.title}
-                  </h3>
-                  <p className="text-gray-600 leading-relaxed">
-                    {feature.description}
-                  </p>
-                </Card>
+                  {/* Background Number Decal */}
+                  <div className="absolute top-10 right-10 text-9xl font-black text-[#2d6a4f]/5 select-none transition-all duration-700 group-hover:text-[#2d6a4f]/10 group-hover:-translate-y-4">
+                    {feature.number}
+                  </div>
+
+                  <div className="relative z-10">
+                    <div className={`w-12 h-1 bg-gradient-to-r ${feature.accent} rounded-full mb-10 opacity-30 group-hover:opacity-100 group-hover:w-24 transition-all duration-500`} />
+                    
+                    <h3 className="text-3xl font-black mb-6 text-[#2e3430] font-greenhouse-heading leading-tight">
+                      {feature.title}
+                    </h3>
+                    <p className="text-xl text-[#5b605c] font-greenhouse-body leading-relaxed">
+                      {feature.description}
+                    </p>
+                  </div>
+
+                  {/* Decorative dot */}
+                  <div className={`absolute bottom-10 right-10 w-2 h-2 rounded-full ${feature.lightAccent} opacity-0 group-hover:opacity-100 transition-all duration-500`} />
+                </div>
               </motion.div>
             );
           })}

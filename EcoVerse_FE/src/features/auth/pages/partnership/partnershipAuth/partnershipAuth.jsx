@@ -22,9 +22,17 @@ import {
 
 const { TabPane } = Tabs;
 
+const passwordRegex =
+  /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,}$/;
+
 const loginSchema = z.object({
   email: z.string().trim().email({ message: "Email không hợp lệ" }),
-  password: z.string().min(6, { message: "Mật khẩu phải có ít nhất 6 ký tự" }),
+  password: z
+    .string()
+    .regex(
+      passwordRegex,
+      "Mật khẩu phải có ít nhất 8 ký tự, bao gồm chữ hoa, chữ thường, số và ký tự đặc biệt (@$!%*?&)",
+    ),
 });
 
 export default function PartnershipAuth() {
@@ -195,45 +203,56 @@ export default function PartnershipAuth() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-green-50 flex items-center justify-center p-4">
-      {/* Back button — fixed top-left, same as SchoolAuth */}
+    <div className="min-h-screen bg-[#f3fbfd] flex items-center justify-center p-4 relative overflow-hidden">
+      {/* Organic background shapes */}
+      <div className="absolute inset-0 overflow-hidden pointer-events-none">
+        <div className="absolute top-[-10%] left-[-5%] w-[40%] h-[40%] bg-[#1db1d1]/20 rounded-full blur-[100px]" />
+        <div className="absolute bottom-[5%] right-[-10%] w-[50%] h-[50%] bg-[#1db1d1]/10 rounded-full blur-[120px]" />
+        <div className="absolute top-0 left-0 w-full h-full opacity-[0.03]" 
+             style={{ backgroundImage: 'radial-gradient(#1db1d1 1px, transparent 1px)', backgroundSize: '40px 40px' }} />
+      </div>
+
+      {/* Back button */}
       <motion.button
         onClick={() => navigate("/auth")}
-        className="fixed top-6 left-6 z-50 flex items-center gap-2
-                   bg-white/80 backdrop-blur-md px-4 py-2 rounded-full shadow-lg
-                   text-gray-600 hover:text-blue-600 transition-colors group"
-        whileHover={{ x: -5 }}
+        className="fixed top-8 left-8 z-50 flex items-center gap-3
+                   bg-white/60 backdrop-blur-md px-6 py-3 rounded-full shadow-[0_8px_32px_rgba(118,91,7,0.1)]
+                   text-[#1db1d1] font-black text-sm border border-white/50 transition-all group"
+        whileHover={{ x: -4, backgroundColor: "rgba(255, 255, 255, 0.8)" }}
         whileTap={{ scale: 0.95 }}
         initial={{ opacity: 0, x: -20 }}
         animate={{ opacity: 1, x: 0 }}
       >
-        <ArrowLeftOutlined className="text-lg" />
-        <span className="font-medium">Quay lại</span>
+        <ArrowLeftOutlined className="text-sm" />
+        <span className="font-greenhouse-heading tracking-widest uppercase text-xs">QUAY LẠI</span>
       </motion.button>
 
       <motion.div
-        className="w-full max-w-md"
+        className="w-full max-w-xl relative z-10"
         variants={containerVariants}
         initial="hidden"
         animate="visible"
       >
-        {/* Logo */}
+        {/* Logo Section */}
         <motion.div
-          className="text-center mb-8"
+          className="text-center mb-10"
           initial={{ opacity: 0, y: -20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.2, duration: 0.5 }}
         >
-          <div className="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-blue-100 mb-4">
-            <TeamOutlined className="text-3xl text-blue-600" />
+          <div className="inline-flex items-center justify-center w-20 h-20 rounded-[2rem] bg-gradient-to-br from-[#1db1d1] to-[#1db1d1] mb-6 shadow-xl shadow-amber-900/10">
+            <TeamOutlined className="text-4xl text-white" />
           </div>
-          <h1 className="text-3xl font-bold text-gray-800">EcoVerse</h1>
-          <p className="text-gray-600 mt-2">Cổng đăng ký dành cho Đối tác</p>
+          <h1 className="text-5xl font-black text-[#2e3430] font-greenhouse-heading tracking-tight mb-2">
+            EcoVerse
+          </h1>
+          <p className="text-[#5b605c] font-black text-sm uppercase tracking-widest font-greenhouse-heading opacity-60">
+            Cổng thông tin đối tác
+          </p>
         </motion.div>
 
-        {/* Card */}
         <motion.div variants={cardVariants}>
-          <Card className="border-0 shadow-xl">
+          <div className="bg-white/60 backdrop-blur-md rounded-[3rem] p-10 shadow-[0_32px_64px_rgba(118,91,7,0.1)] border border-white/50 overflow-hidden relative">
             <Tabs
               activeKey={activeTab}
               onChange={(k) => {
@@ -241,94 +260,114 @@ export default function PartnershipAuth() {
                 setRegisterStep("credentials");
               }}
               centered
-              className="w-full"
-              tabBarStyle={{ marginBottom: "24px" }}
+              className="greenhouse-tabs"
+              tabBarStyle={{ marginBottom: "40px", border: "none" }}
             >
               {/* ── Login ── */}
-              <TabPane tab="Đăng nhập" key="login">
-                <div className="space-y-4">
-                  <div className="mb-6">
-                    <h2 className="text-xl font-semibold text-gray-800">
+              <TabPane
+                tab={
+                  <span className="font-greenhouse-heading font-black text-sm uppercase tracking-widest px-4">
+                    ĐĂNG NHẬP
+                  </span>
+                }
+                key="login"
+              >
+                <div className="space-y-8">
+                  <div className="text-center mb-10">
+                    <h2 className="text-3xl font-black text-[#2e3430] mb-2 font-greenhouse-heading">
                       Chào mừng trở lại!
                     </h2>
-                    <p className="text-gray-600 text-sm mt-1">
-                      Đăng nhập để quản lý hợp tác của bạn
+                    <p className="text-[#5b605c] font-greenhouse-body font-medium">
+                      Tiếp tục hành trình kiến tạo tương lai xanh
                     </p>
                   </div>
 
-                  <div className="space-y-2">
-                    <label className="block text-sm font-medium text-gray-700">
-                      Email
-                    </label>
-                    <Input
-                      prefix={<MailOutlined className="text-gray-400" />}
-                      type="email"
-                      placeholder="partner@example.com"
-                      value={email}
-                      onChange={(e) => {
-                        setEmail(e.target.value);
-                        setErrors((p) => ({ ...p, email: "" }));
-                      }}
-                      size="large"
-                      disabled={isLoading}
-                      status={errors.email ? "error" : ""}
-                    />
-                    {errors.email && (
-                      <p className="text-red-500 text-sm">{errors.email}</p>
-                    )}
-                  </div>
+                  <div className="space-y-6">
+                    <div className="space-y-2">
+                      <label className="block text-xs font-black text-[#2e3430] uppercase tracking-widest font-greenhouse-heading ml-1">
+                        EMAIL ĐỐI TÁC
+                      </label>
+                      <Input
+                        prefix={<MailOutlined className="text-[#1db1d1]/40 mr-2" />}
+                        type="email"
+                        placeholder="partner@ecoverse.com"
+                        value={email}
+                        onChange={(e) => {
+                          setEmail(e.target.value);
+                          setErrors((p) => ({ ...p, email: "" }));
+                        }}
+                        className="h-14 rounded-2xl bg-[#f9faf6]/50 border-white/50 focus:bg-white transition-all font-greenhouse-body text-base"
+                        disabled={isLoading}
+                        status={errors.email ? "error" : ""}
+                      />
+                      {errors.email && (
+                        <p className="text-red-500 text-xs font-bold font-greenhouse-body ml-1">{errors.email}</p>
+                      )}
+                    </div>
 
-                  <div className="space-y-2">
-                    <label className="block text-sm font-medium text-gray-700">
-                      Mật khẩu
-                    </label>
-                    <Input.Password
-                      prefix={<LockOutlined className="text-gray-400" />}
-                      placeholder="••••••••"
-                      value={password}
-                      onChange={(e) => {
-                        setPassword(e.target.value);
-                        setErrors((p) => ({ ...p, password: "" }));
-                      }}
-                      size="large"
-                      disabled={isLoading}
-                      status={errors.password ? "error" : ""}
-                      iconRender={(v) =>
-                        v ? <EyeOutlined /> : <EyeInvisibleOutlined />
-                      }
-                    />
-                    {errors.password && (
-                      <p className="text-red-500 text-sm">{errors.password}</p>
-                    )}
-                  </div>
+                    <div className="space-y-2">
+                      <div className="flex justify-between items-end mb-1">
+                        <label className="block text-xs font-black text-[#2e3430] uppercase tracking-widest font-greenhouse-heading ml-1">
+                          MẬT KHẨU
+                        </label>
+                        <Button
+                          type="link"
+                          size="small"
+                          className="text-[#1db1d1]/60 hover:text-[#1db1d1] p-0 h-auto font-black text-[10px] uppercase tracking-tighter font-greenhouse-heading transition-all"
+                          onClick={() => navigate("/auth/forgot-password")}
+                        >
+                          Quên mật khẩu?
+                        </Button>
+                      </div>
+                      <Input.Password
+                        prefix={<LockOutlined className="text-[#1db1d1]/40 mr-2" />}
+                        placeholder="••••••••"
+                        value={password}
+                        onChange={(e) => {
+                          setPassword(e.target.value);
+                          setErrors((p) => ({ ...p, password: "" }));
+                        }}
+                        className="h-14 rounded-2xl bg-[#f9faf6]/50 border-white/50 focus:bg-white transition-all font-greenhouse-body text-base"
+                        disabled={isLoading}
+                        status={errors.password ? "error" : ""}
+                        iconRender={(v) =>
+                          v ? <EyeOutlined className="text-[#1db1d1]/40" /> : <EyeInvisibleOutlined className="text-[#1db1d1]/40" />
+                        }
+                      />
+                      {errors.password && (
+                        <p className="text-red-500 text-xs font-bold font-greenhouse-body ml-1">{errors.password}</p>
+                      )}
+                    </div>
 
-                  <div className="flex justify-end items-center mt-[-8px]">
-                    <Button
-                      type="link"
-                      size="small"
-                      className="text-gray-400 hover:text-green-600 p-0 h-auto font-medium transition-all duration-300"
-                      onClick={() => navigate("/auth/forgot-password")}
-                    >
-                      Quên mật khẩu?
-                    </Button>
+                    <div className="pt-4">
+                      <motion.button
+                        whileHover={{ scale: 1.01, translateY: -2 }}
+                        whileTap={{ scale: 0.98 }}
+                        onClick={handleLogin}
+                        disabled={isLoading}
+                        className="w-full h-16 bg-gradient-to-r from-[#1db1d1] to-[#1db1d1] text-white rounded-2xl font-black text-lg shadow-xl shadow-amber-900/10 transition-all duration-300 font-greenhouse-heading flex items-center justify-center disabled:opacity-50 disabled:cursor-not-allowed"
+                      >
+                        {isLoading ? (
+                          <div className="flex items-center gap-3">
+                            <LoadingOutlined className="text-xl" />
+                            <span>ĐANG XỬ LÝ...</span>
+                          </div>
+                        ) : (
+                          "ĐĂNG NHẬP NGAY"
+                        )}
+                      </motion.button>
+                    </div>
                   </div>
-
-                  <Button
-                    type="primary"
-                    size="large"
-                    block
-                    onClick={handleLogin}
-                    loading={isLoading}
-                    className="bg-blue-600 hover:bg-blue-700 mt-6"
-                  >
-                    {isLoading ? "Đang xử lý..." : "Đăng nhập"}
-                  </Button>
                 </div>
               </TabPane>
 
               {/* ── Register ── */}
               <TabPane
-                tab="Đăng ký"
+                tab={
+                  <span className="font-greenhouse-heading font-black text-sm uppercase tracking-widest px-4">
+                    ĐĂNG KÝ
+                  </span>
+                }
                 key="register"
                 disabled={registerStep === "verify"}
               >
@@ -336,123 +375,128 @@ export default function PartnershipAuth() {
                   {registerStep === "credentials" ? (
                     <motion.div
                       key="credentials"
-                      initial={{ opacity: 0, x: 20 }}
-                      animate={{ opacity: 1, x: 0 }}
-                      exit={{ opacity: 0, x: -20 }}
-                      className="space-y-4"
+                      initial={{ opacity: 0, scale: 0.98 }}
+                      animate={{ opacity: 1, scale: 1 }}
+                      exit={{ opacity: 0, scale: 1.02 }}
+                      className="space-y-8"
                     >
-                      <div className="mb-6">
-                        <h2 className="text-xl font-semibold text-gray-800">
-                          Đăng ký tài khoản
+                      <div className="text-center mb-10">
+                        <h2 className="text-3xl font-black text-[#2e3430] mb-2 font-greenhouse-heading">
+                          Tài Khoản Mới
                         </h2>
-                        <p className="text-gray-600 text-sm mt-1">
-                          Nhập email để nhận mã xác thực 6 số
+                        <p className="text-[#5b605c] font-greenhouse-body font-medium">
+                          Bắt đầu hành trình hợp tác tuyệt vời hôm nay
                         </p>
                       </div>
 
-                      <div className="space-y-2">
-                        <label className="block text-sm font-medium text-gray-700">
-                          Email
-                        </label>
-                        <Input
-                          prefix={<MailOutlined className="text-gray-400" />}
-                          type="email"
-                          placeholder="partner@example.com"
-                          value={email}
-                          onChange={(e) => {
-                            setEmail(e.target.value);
-                            setErrors((p) => ({ ...p, email: "" }));
-                          }}
-                          size="large"
-                          disabled={isLoading}
-                          status={errors.email ? "error" : ""}
-                        />
-                        {errors.email && (
-                          <p className="text-red-500 text-sm">{errors.email}</p>
-                        )}
+                      <div className="space-y-6">
+                        <div className="space-y-2">
+                          <label className="block text-xs font-black text-[#2e3430] uppercase tracking-widest font-greenhouse-heading ml-1">
+                            EMAIL ĐỐI TÁC
+                          </label>
+                          <Input
+                            prefix={<MailOutlined className="text-[#1db1d1]/40 mr-2" />}
+                            type="email"
+                            placeholder="partner@ecoverse.com"
+                            value={email}
+                            onChange={(e) => {
+                              setEmail(e.target.value);
+                              setErrors((p) => ({ ...p, email: "" }));
+                            }}
+                            className="h-14 rounded-2xl bg-[#f9faf6]/50 border-white/50 focus:bg-white transition-all font-greenhouse-body text-base"
+                            disabled={isLoading}
+                            status={errors.email ? "error" : ""}
+                          />
+                          {errors.email && (
+                            <p className="text-red-500 text-xs font-bold font-greenhouse-body ml-1">{errors.email}</p>
+                          )}
+                        </div>
+
+                        <div className="space-y-2">
+                          <label className="block text-xs font-black text-[#2e3430] uppercase tracking-widest font-greenhouse-heading ml-1">
+                            MẬT KHẨU
+                          </label>
+                          <Input.Password
+                            prefix={<LockOutlined className="text-[#1db1d1]/40 mr-2" />}
+                            placeholder="Ít nhất 6 ký tự"
+                            value={password}
+                            onChange={(e) => {
+                              setPassword(e.target.value);
+                              setErrors((p) => ({ ...p, password: "" }));
+                            }}
+                            className="h-14 rounded-2xl bg-[#f9faf6]/50 border-white/50 focus:bg-white transition-all font-greenhouse-body text-base"
+                            disabled={isLoading}
+                            status={errors.password ? "error" : ""}
+                            iconRender={(v) =>
+                              v ? <EyeOutlined className="text-[#1db1d1]/40" /> : <EyeInvisibleOutlined className="text-[#1db1d1]/40" />
+                            }
+                          />
+                          {errors.password && (
+                            <p className="text-red-500 text-xs font-bold font-greenhouse-body ml-1">{errors.password}</p>
+                          )}
+                        </div>
+
+                        <div className="pt-4">
+                          <motion.button
+                            whileHover={{ scale: 1.01, translateY: -2 }}
+                            whileTap={{ scale: 0.98 }}
+                            onClick={handleSendOTP}
+                            disabled={isLoading}
+                            className="w-full h-16 bg-gradient-to-r from-[#1db1d1] to-[#1db1d1] text-white rounded-2xl font-black text-lg shadow-xl shadow-amber-900/10 transition-all duration-300 font-greenhouse-heading flex items-center justify-center disabled:opacity-50 disabled:cursor-not-allowed"
+                          >
+                            {isLoading ? (
+                              <div className="flex items-center gap-3">
+                                <LoadingOutlined className="text-xl" />
+                                <span>ĐANG GỬI MÃ...</span>
+                              </div>
+                            ) : (
+                              "NHẬN MÃ XÁC THỰC"
+                            )}
+                          </motion.button>
+
+                          <div className="text-center mt-6">
+                            <p className="text-[10px] text-[#5b605c] uppercase tracking-wider font-black font-greenhouse-heading leading-tight mx-8">
+                              Bằng việc tiếp tục, bạn đồng ý với{" "}
+                              <a href="#" className="text-[#1db1d1] hover:underline decoration-2 underline-offset-2">ĐIỀU KHOẢN</a>{" "}
+                              và{" "}
+                              <a href="#" className="text-[#1db1d1] hover:underline decoration-2 underline-offset-2">CHÍNH SÁCH</a>
+                            </p>
+                          </div>
+                        </div>
                       </div>
-
-                      <div className="space-y-2">
-                        <label className="block text-sm font-medium text-gray-700">
-                          Mật khẩu
-                        </label>
-                        <Input.Password
-                          prefix={<LockOutlined className="text-gray-400" />}
-                          placeholder="Ít nhất 6 ký tự"
-                          value={password}
-                          onChange={(e) => {
-                            setPassword(e.target.value);
-                            setErrors((p) => ({ ...p, password: "" }));
-                          }}
-                          size="large"
-                          disabled={isLoading}
-                          status={errors.password ? "error" : ""}
-                          iconRender={(v) =>
-                            v ? <EyeOutlined /> : <EyeInvisibleOutlined />
-                          }
-                        />
-                        {errors.password && (
-                          <p className="text-red-500 text-sm">
-                            {errors.password}
-                          </p>
-                        )}
-                      </div>
-
-                      <Button
-                        type="primary"
-                        size="large"
-                        block
-                        onClick={handleSendOTP}
-                        loading={isLoading}
-                        className="bg-blue-600 hover:bg-blue-700 mt-6"
-                      >
-                        {isLoading ? "Đang gửi mã..." : "Gửi mã xác thực"}
-                      </Button>
-
-                      <p className="text-xs text-center text-gray-500 mt-4">
-                        Bằng việc đăng ký, bạn đồng ý với{" "}
-                        <a href="#" className="text-blue-600 hover:underline">
-                          Điều khoản sử dụng
-                        </a>{" "}
-                        và{" "}
-                        <a href="#" className="text-blue-600 hover:underline">
-                          Chính sách bảo mật
-                        </a>
-                      </p>
                     </motion.div>
                   ) : (
                     <motion.div
                       key="verify"
-                      initial={{ opacity: 0, x: 20 }}
-                      animate={{ opacity: 1, x: 0 }}
-                      exit={{ opacity: 0, x: -20 }}
-                      className="space-y-4"
+                      initial={{ opacity: 0, scale: 1.05 }}
+                      animate={{ opacity: 1, scale: 1 }}
+                      exit={{ opacity: 0, scale: 0.95 }}
+                      className="space-y-8"
                     >
-                      <button
-                        onClick={handleBackToCredentials}
-                        className="flex items-center gap-1 text-sm text-gray-600 hover:text-gray-800 transition-colors mb-4"
-                      >
-                        <ArrowLeftOutlined className="text-xs" />
-                        Quay lại
-                      </button>
+                      <div className="flex justify-start mb-6">
+                        <button
+                          onClick={handleBackToCredentials}
+                          className="flex items-center gap-2 text-xs font-black text-[#5b605c] hover:text-[#1db1d1] transition-all uppercase tracking-widest font-greenhouse-heading group"
+                        >
+                          <ArrowLeftOutlined className="text-[10px] group-hover:-translate-x-1 transition-transform" />
+                          QUAY LẠI
+                        </button>
+                      </div>
 
-                      <div className="text-center mb-6">
-                        <div className="inline-flex items-center justify-center w-12 h-12 rounded-full bg-blue-100 mb-3">
-                          <KeyOutlined className="text-xl text-blue-600" />
+                      <div className="text-center mb-8">
+                        <div className="inline-flex items-center justify-center w-20 h-20 rounded-[2rem] bg-[#1db1d1]/20 mb-6 shadow-inner">
+                          <KeyOutlined className="text-4xl text-[#1db1d1]" />
                         </div>
-                        <h2 className="text-xl font-semibold text-gray-800">
-                          Nhập mã xác thực
+                        <h2 className="text-3xl font-black text-[#2e3430] mb-2 font-greenhouse-heading">
+                          Xác Thực Đối Tác
                         </h2>
-                        <p className="text-gray-600 text-sm mt-2">
-                          Nhập mã 6 số đã gửi đến
-                          <br />
-                          <span className="font-medium text-gray-800">
-                            {email}
-                          </span>
+                        <p className="text-[#5b605c] font-greenhouse-body font-medium leading-relaxed">
+                          Nhập mã 6 chữ số đã được gửi đến<br />
+                          <span className="text-[#1db1d1] font-black">{email}</span>
                         </p>
                       </div>
 
-                      <div className="flex justify-center gap-2 py-4">
+                      <div className="flex justify-center gap-3 py-6">
                         {otpCode.map((digit, index) => (
                           <input
                             key={index}
@@ -465,69 +509,76 @@ export default function PartnershipAuth() {
                             }
                             onKeyDown={(e) => handleOtpKeyDown(index, e)}
                             disabled={isLoading}
-                            className="w-12 h-12 text-center text-xl font-semibold border-2 border-gray-300 rounded-lg focus:border-blue-500 focus:outline-none transition-colors disabled:bg-gray-100"
+                            className="w-14 h-16 text-center text-2xl font-black bg-[#f9faf6]/80 border-2 border-[#1db1d1]/5 rounded-2xl focus:border-[#1db1d1] focus:bg-white focus:outline-none transition-all font-greenhouse-heading disabled:opacity-50 shadow-sm"
                           />
                         ))}
                       </div>
 
-                      <Button
-                        type="primary"
-                        size="large"
-                        block
-                        onClick={handleVerifyOTP}
-                        loading={isLoading}
-                        disabled={otpCode.join("").length !== 6}
-                        className="bg-blue-600 hover:bg-blue-700"
-                      >
-                        {isLoading
-                          ? "Đang xác thực..."
-                          : "Xác thực và tiếp tục"}
-                      </Button>
-
-                      <div className="text-center mt-4">
-                        <p className="text-sm text-gray-600 mb-2">
-                          Không nhận được mã?
-                        </p>
-                        <Button
-                          type="link"
-                          size="small"
-                          onClick={handleResendOTP}
-                          disabled={isResending || resendCountdown > 0}
-                          className="text-blue-600 hover:text-blue-700"
+                      <div className="space-y-6">
+                        <motion.button
+                          whileHover={{ scale: 1.01, translateY: -2 }}
+                          whileTap={{ scale: 0.98 }}
+                          onClick={handleVerifyOTP}
+                          disabled={isLoading || otpCode.join("").length !== 6}
+                          className="w-full h-16 bg-gradient-to-r from-[#1db1d1] to-[#1db1d1] text-white rounded-2xl font-black text-lg shadow-xl shadow-amber-900/10 transition-all duration-300 font-greenhouse-heading flex items-center justify-center disabled:opacity-50 disabled:cursor-not-allowed"
                         >
-                          {isResending ? (
-                            <>
-                              <LoadingOutlined className="mr-2" />
-                              Đang gửi...
-                            </>
-                          ) : resendCountdown > 0 ? (
-                            `Gửi lại sau ${resendCountdown}s`
+                          {isLoading ? (
+                            <div className="flex items-center gap-3">
+                              <LoadingOutlined className="text-xl" />
+                              <span>ĐANG XÁC THỰC...</span>
+                            </div>
                           ) : (
-                            "Gửi lại mã"
+                            "XÁC THỰC VÀ TIẾP TỤC"
                           )}
-                        </Button>
+                        </motion.button>
+
+                        <div className="text-center">
+                          <p className="text-sm font-medium text-[#5b605c] mb-3 font-greenhouse-body">
+                            Không nhận được mã?
+                          </p>
+                          <Button
+                            type="link"
+                            size="small"
+                            onClick={handleResendOTP}
+                            disabled={isResending || resendCountdown > 0}
+                            className="text-[#1db1d1] hover:text-[#1db1d1]/80 font-black text-xs uppercase tracking-widest font-greenhouse-heading h-auto p-0"
+                          >
+                            {isResending ? (
+                              <span className="flex items-center gap-2">
+                                <LoadingOutlined /> ĐANG GỬI...
+                              </span>
+                            ) : resendCountdown > 0 ? (
+                              `Gửi lại sau ${resendCountdown}S`
+                            ) : (
+                              "GỬI LẠI MÃ NGAY"
+                            )}
+                          </Button>
+                        </div>
                       </div>
 
-                      <p className="text-xs text-center text-gray-500 mt-4">
-                        Mã có hiệu lực trong 10 phút. Kiểm tra cả thư mục spam.
+                      <p className="text-[10px] text-center text-[#5b605c]/60 font-black uppercase tracking-widest font-greenhouse-heading mt-8 border-t border-[#1db1d1]/5 pt-6">
+                        Mã có hiệu lực trong 10 phút.
                       </p>
                     </motion.div>
                   )}
                 </AnimatePresence>
               </TabPane>
             </Tabs>
-          </Card>
+          </div>
         </motion.div>
 
         <motion.p
-          className="text-center text-sm text-gray-600 mt-6"
+          className="text-center mt-10"
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           transition={{ delay: 0.6 }}
         >
-          <a href="/" className="hover:text-blue-600 transition-colors">
-            ← Quay về trang chủ
-          </a>
+          <button 
+            onClick={() => navigate("/")}
+            className="text-xs font-black text-[#5b605c] hover:text-[#1db1d1] transition-all uppercase tracking-[0.2em] font-greenhouse-heading"
+          >
+            ← TRANG CHỦ ECOVERSE
+          </button>
         </motion.p>
       </motion.div>
     </div>

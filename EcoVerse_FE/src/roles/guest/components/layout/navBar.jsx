@@ -58,9 +58,9 @@ const NavBar = () => {
       initial={{ y: -100 }}
       animate={{ y: 0 }}
       transition={{ duration: 0.5 }}
-      className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 ${
+      className={`fixed top-0 left-0 right-0 z-50 transition-all duration-500 ${
         isScrolled
-          ? "bg-white/80 backdrop-blur-xl border-b border-gray-200 shadow-lg"
+          ? "bg-[#f9faf6]/80 backdrop-blur-[20px] shadow-[0_8px_32px_rgba(45,106,79,0.08)]"
           : "bg-transparent"
       }`}
     >
@@ -74,13 +74,13 @@ const NavBar = () => {
             whileTap={{ scale: 0.95 }}
           >
             <motion.div
-              className="w-10 h-10 rounded-xl bg-green-600 flex items-center justify-center"
-              whileHover={{ rotate: 360 }}
-              transition={{ duration: 0.6 }}
+              className="w-11 h-11 rounded-[1.25rem] bg-gradient-to-br from-[#2d6a4f] to-[#1f5e44] flex items-center justify-center shadow-lg shadow-green-900/10"
+              whileHover={{ rotate: 15, scale: 1.1 }}
+              transition={{ type: "spring", stiffness: 300 }}
             >
               <LeafIcon className="w-6 h-6 text-white" />
             </motion.div>
-            <span className="text-xl font-bold text-gray-900">EcoVerse</span>
+            <span className="text-2xl font-extrabold tracking-tight text-[#2e3430] font-greenhouse-heading">EcoVerse</span>
           </motion.a>
 
           {/* Desktop Nav */}
@@ -93,15 +93,14 @@ const NavBar = () => {
                   e.preventDefault();
                   handleNavClick(link.href);
                 }}
-                className="text-sm font-medium text-gray-600 hover:text-gray-900 transition-colors relative"
+                className="text-base font-semibold text-[#5b605c] hover:text-[#2d6a4f] transition-all duration-300 relative group/link font-greenhouse-body"
                 initial={{ opacity: 0, y: -20 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: index * 0.1 }}
-                whileHover={{ scale: 1.05 }}
               >
                 {link.label}
                 <motion.span
-                  className="absolute bottom-0 left-0 w-0 h-0.5 bg-green-600"
+                  className="absolute -bottom-1 left-0 w-0 h-0.5 bg-[#2d6a4f] rounded-full"
                   whileHover={{ width: "100%" }}
                   transition={{ duration: 0.3 }}
                 />
@@ -115,7 +114,7 @@ const NavBar = () => {
               type="text"
               size="large"
               onClick={() => handleNavigate("/auth")}
-              className="font-medium"
+              className="font-bold text-[#5b605c] hover:text-[#2d6a4f] font-greenhouse-heading"
             >
               Đăng nhập
             </Button>
@@ -123,7 +122,7 @@ const NavBar = () => {
               type="primary"
               size="large"
               onClick={() => handleNavigate("/")}
-              className="bg-green-600 hover:bg-green-700 border-none font-medium"
+              className="h-12 px-8 bg-gradient-to-r from-[#2d6a4f] to-[#1f5e44] hover:from-[#1f5e44] hover:to-[#2d6a4f] border-none font-bold rounded-full shadow-lg shadow-green-900/20 transform transition-all active:scale-95 font-greenhouse-heading"
             >
               Bắt đầu ngay
             </Button>
