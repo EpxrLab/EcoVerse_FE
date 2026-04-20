@@ -154,16 +154,18 @@ export function initWorld(scene, state, manager) {
           child.castShadow = false;
           child.receiveShadow = false;
           child.frustumCulled = false;
+          child.renderOrder = -1; // Ensure it's rendered as background
 
           if (child.material) {
             const oldMat = child.material;
-            // Force basic material (unlit) and render inside (BackSide)
+            const skyMap = oldMat.map || oldMat.emissiveMap;
+
             child.material = new THREE.MeshBasicMaterial({
-              map: oldMat.map,
-              color: oldMat.color,
-              side: THREE.BackSide,
+              map: skyMap,
+              color: skyMap ? 0xffffff : (oldMat.color || 0xffffff),
+              side: THREE.DoubleSide,
               fog: false,
-              depthWrite: false, // Prevent the sky from blocking other transparency
+              depthWrite: false,
             });
             oldMat.dispose();
           }
