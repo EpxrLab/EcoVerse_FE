@@ -147,6 +147,15 @@ const getCampaignLeaderboard = async (campaignId) => {
   }
 };
 
+const getRoundLeaderboard = async (roundId) => {
+  try {
+    const res = await axios.get(`/campaign-rounds/${roundId}/leaderboard`);
+    return res.data;
+  } catch (error) {
+    console.log(error);
+  }
+};
+
 const getMyRewardDeliveries = async () => {
   try {
     const res = await axios.get("/rewards/deliveries/my");
@@ -220,6 +229,7 @@ export {
   startGame,
   submitGame,
   getCampaignLeaderboard,
+  getRoundLeaderboard,
   getMyRewardDeliveries,
   getQuizHistory,
   getAttemptHistory,

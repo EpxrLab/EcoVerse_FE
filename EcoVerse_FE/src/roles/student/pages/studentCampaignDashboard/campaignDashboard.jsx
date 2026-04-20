@@ -37,8 +37,8 @@ const ROUND_STATUS_CFG = {
   },
   COMPLETED: {
     label: "Đã kết thúc",
-    tw: "bg-gray-50 text-gray-500 border-gray-200",
-    dot: "bg-gray-400",
+    tw: "bg-gray-50 text-gray-400 border-gray-100",
+    dot: "bg-gray-300",
   },
   CANCELLED: {
     label: "Đã hủy",
@@ -102,9 +102,8 @@ const fadeUp = {
 
 function RoundCard({ round, campaignId, navigate }) {
   const sc = ROUND_STATUS_CFG[round.status] ?? ROUND_STATUS_CFG.UPCOMING;
-  const isActive = round.status === "ON_GOING";
-  const isAccessible =
-    round.status === "ACTIVE" || round.status === "COMPLETED";
+  const isActive = round.status === "ACTIVE"; // Unified to ACTIVE
+  const isAccessible = round.status === "ACTIVE"; // Only ACTIVE is accessible
   const diff = round.resolvedDifficulty ?? round.difficultyOverride;
 
   return (
@@ -119,12 +118,12 @@ function RoundCard({ round, campaignId, navigate }) {
       }}
     >
       <Card
-        className={`rounded-2xl border-2 transition-all duration-200 ${
+        className={`rounded-3xl border-2 transition-all duration-300 relative overflow-hidden ${
           isActive
-            ? "border-primary/30 shadow-md hover:shadow-xl"
-            : "border-gray-100 opacity-80"
+            ? "border-primary/40 shadow-lg hover:shadow-2xl hover:border-primary/60 cursor-pointer"
+            : "border-gray-100 opacity-60 grayscale-[0.5] cursor-not-allowed"
         }`}
-        bodyStyle={{ padding: "18px 20px" }}
+        bodyStyle={{ padding: "20px 24px" }}
       >
         {/* Top accent */}
         <div
@@ -226,25 +225,29 @@ function RoundCard({ round, campaignId, navigate }) {
         <Button
           block
           type={isActive ? "primary" : "default"}
-          size="middle"
-          disabled={round.status === "UPCOMING"}
-          className={`rounded-xl font-semibold ${isActive ? "bg-primary border-primary hover:opacity-90 shadow-sm shadow-primary/20" : ""}`}
+          size="large"
+          disabled={!isAccessible}
+          className={`rounded-2xl font-bold transition-all ${
+            isActive
+              ? "bg-primary border-primary hover:scale-[1.02] shadow-lg shadow-primary/20"
+              : "bg-gray-50 border-gray-100 text-gray-400"
+          }`}
           icon={
             isActive ? (
-              <RightOutlined />
+              <PlayCircleOutlined />
             ) : round.status === "COMPLETED" ? (
               <CheckCircleOutlined />
             ) : (
               <ClockCircleOutlined />
             )
           }
-          iconPosition="end"
+          iconPosition="start"
         >
           {round.status === "UPCOMING"
-            ? "Chưa mở"
+            ? "Sắp mở"
             : round.status === "COMPLETED"
-              ? "Xem kết quả"
-              : "Vào vòng này"}
+              ? "Vòng đã kết thúc"
+              : "Bắt đầu chơi"}
         </Button>
       </Card>
     </motion.div>
@@ -301,7 +304,7 @@ export default function CampaignDashboard() {
   const completedRounds = (c.rounds ?? []).filter(
     (r) => r.status === "COMPLETED",
   ).length;
-  const activeRound = (c.rounds ?? []).find((r) => r.status === "ON_GOING");
+  const activeRound = (c.rounds ?? []).find((r) => r.status === "ACTIVE");
   const roundProgress =
     c.totalRounds > 0 ? Math.round((completedRounds / c.totalRounds) * 100) : 0;
 
@@ -309,171 +312,112 @@ export default function CampaignDashboard() {
     CAMPAIGN_STATUS_CFG[c.status?.toUpperCase()] ?? CAMPAIGN_STATUS_CFG.INVITED;
 
   return (
-    <div className="space-y-6 pb-8">
+    <div className="space-y-8 pb-12">
       {/* ── Hero ── */}
       <motion.div
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.45 }}
+        initial={{ opacity: 0, scale: 0.98 }}
+        animate={{ opacity: 1, scale: 1 }}
+        transition={{ duration: 0.5 }}
       >
         <Card
-          className="border-2 shadow-xl overflow-hidden rounded-3xl"
+          className="border-0 shadow-2xl overflow-hidden rounded-[2.5rem]"
           bodyStyle={{ padding: 0 }}
         >
-          <div className="relative bg-gradient-mint-eco p-8 text-white">
-            <div className="absolute top-0 right-0 w-96 h-96 bg-white/10 rounded-full blur-3xl pointer-events-none" />
-            <div className="absolute bottom-0 left-0 w-64 h-64 bg-black/5 rounded-full blur-3xl pointer-events-none" />
+          <div className="relative bg-gradient-mint-eco p-8 md:p-12 text-white min-h-[400px] flex flex-col justify-center">
+            {/* Decorative circles */}
+            <div className="absolute top-[-5%] right-[-5%] w-96 h-96 bg-white/10 rounded-full blur-[100px] pointer-events-none" />
+            <div className="absolute bottom-[-10%] left-[-5%] w-72 h-72 bg-emerald-400/20 rounded-full blur-[80px] pointer-events-none" />
 
-            <div className="relative space-y-5">
-              {/* Badges row */}
-              <div className="flex flex-wrap items-center gap-2">
-                <span
-                  className={`inline-flex items-center gap-1 px-3 py-1 rounded-full text-[11px] font-bold border border-white/30 bg-white/20`}
-                >
-                  {statusCfg.label}
-                </span>
-                <span className="px-3 py-1 rounded-full text-[11px] font-bold bg-white/10 border border-white/20">
-                  {CAMPAIGN_TYPE_LABEL[c.campaignType] ?? c.campaignType}
-                </span>
-                {c.campaignCode && (
-                  <span className="flex items-center gap-1 px-3 py-1 rounded-full text-xs font-mono bg-white/60 border border-gray-200 text-gray-500">
-                    <CodeOutlined className="text-gray-400" />
-                    {c.campaignCode}
+            <div className="relative z-10 flex flex-col lg:flex-row items-center justify-between gap-12">
+              <div className="flex-1 space-y-6 text-center lg:text-left">
+                {/* Badges row */}
+                <div className="flex flex-wrap items-center justify-center lg:justify-start gap-3">
+                  <span className="px-4 py-1.5 rounded-full text-xs font-black bg-white/20 backdrop-blur-md border border-white/30 uppercase tracking-widest">
+                    {statusCfg.label}
                   </span>
+                  <span className="px-4 py-1.5 rounded-full text-xs font-black bg-emerald-500/20 backdrop-blur-md border border-emerald-400/30 uppercase tracking-widest text-emerald-100">
+                    {CAMPAIGN_TYPE_LABEL[c.campaignType] ?? c.campaignType}
+                  </span>
+                </div>
+
+                {/* Title */}
+                <h1 className="text-4xl md:text-6xl font-black leading-[1.1] tracking-tight drop-shadow-md">
+                  {c.campaignName}
+                </h1>
+
+                {/* Description */}
+                {c.description && (
+                  <p className="text-white/90 text-lg md:text-xl max-w-2xl mx-auto lg:mx-0 font-medium leading-relaxed opacity-90">
+                    {c.description}
+                  </p>
+                )}
+
+                {/* Join Button (Active Round) */}
+                {activeRound && (
+                  <motion.div
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: 0.3 }}
+                    className="pt-4"
+                  >
+                    <Button
+                      type="primary"
+                      size="large"
+                      onClick={() =>
+                        navigate(
+                          `/student/campaign/${campaignId}/round/${activeRound.id}`,
+                        )
+                      }
+                      className="h-16 px-10 rounded-2xl bg-white text-emerald-600 border-white hover:bg-emerald-50 hover:scale-105 transition-all font-black text-xl shadow-2xl shadow-black/20 flex items-center gap-3 mx-auto lg:mx-0"
+                    >
+                      THAM GIA THI ĐẤU NGAY
+                      <RightOutlined className="animate-bounce-x" />
+                    </Button>
+                    <p className="text-white/70 text-xs mt-3 font-bold uppercase tracking-widest">
+                      Đang diễn ra: {activeRound.roundName}
+                    </p>
+                  </motion.div>
                 )}
               </div>
 
-              {/* Title */}
-              <h1 className="text-3xl md:text-5xl font-black leading-tight drop-shadow-sm">
-                {c.campaignName}
-              </h1>
-
-              {/* Description */}
-              {c.description && (
-                <p className="text-white/80 text-base max-w-3xl line-clamp-3 font-medium">
-                  {c.description}
-                </p>
-              )}
-
-              {/* Date + deadline row */}
-              <div className="flex flex-wrap gap-3">
-                <div className="flex items-center gap-2 text-sm bg-black/10 px-4 py-2 rounded-xl backdrop-blur-sm border border-white/10">
-                  <CalendarOutlined className="text-white/60" />
-                  <span>{fmtDate(c.startDate)}</span>
-                  <span className="text-white/40">→</span>
-                  <span>{fmtDate(c.endDate)}</span>
-                </div>
-              </div>
-
-              {/* Round progress */}
-              {c.totalRounds > 0 && (
-                <div className="max-w-xl">
-                  <div className="flex items-center justify-between mb-2 text-sm font-bold">
-                    <span className="text-white/70">Tiến độ chiến dịch</span>
-                    <span className="text-white">
-                      {completedRounds}/{c.totalRounds} vòng
-                    </span>
+              {/* Quick Stats Card */}
+              <div className="w-full lg:w-80 grid grid-cols-1 gap-4">
+                <Card className="bg-white/10 backdrop-blur-xl border border-white/20 rounded-3xl p-6 text-white text-center shadow-xl">
+                  <div className="flex items-center justify-center gap-4 mb-4">
+                    <div className="text-center">
+                      <p className="text-[10px] uppercase font-black tracking-widest opacity-60 mb-1">
+                        Hoàn thành
+                      </p>
+                      <p className="text-3xl font-black">
+                        {completedRounds}/{c.totalRounds}
+                      </p>
+                    </div>
+                    <div className="w-[2px] h-10 bg-white/20" />
+                    <div className="text-center">
+                      <p className="text-[10px] uppercase font-black tracking-widest opacity-60 mb-1">
+                        Xếp hạng
+                      </p>
+                      <p className="text-3xl font-black text-white-400">
+                        Top {c.topRankingCount ?? 0}
+                      </p>
+                    </div>
                   </div>
                   <Progress
                     percent={roundProgress}
-                    strokeColor="#ffffff"
-                    trailColor="rgba(255,255,255,0.2)"
-                    strokeWidth={10}
+                    strokeColor="#10b981"
+                    trailColor="rgba(255,255,255,0.1)"
+                    strokeWidth={8}
                     showInfo={false}
                   />
-                </div>
-              )}
-            </div>
-          </div>
-
-          {/* Stats bar */}
-          <div className="grid grid-cols-3 divide-x divide-gray-100 bg-white border-t border-gray-100">
-            {[
-              {
-                icon: <UnorderedListOutlined />,
-                val: c.totalRounds ?? 0,
-                label: "Tổng số vòng",
-              },
-              {
-                icon: <CheckCircleOutlined />,
-                val: completedRounds,
-                label: "Vòng hoàn thành",
-              },
-              {
-                icon: <StarOutlined />,
-                val: c.topRankingCount ?? 0,
-                label: "Top xếp hạng",
-              },
-            ].map((s, i) => (
-              <div key={i} className="flex flex-col items-center py-4 gap-0.5">
-                <span className="text-gray-400 text-sm mb-0.5">{s.icon}</span>
-                <p className="text-2xl font-black text-gray-800">{s.val}</p>
-                <p className="text-xs text-gray-400">{s.label}</p>
+                  <p className="text-xs mt-3 font-bold opacity-70">
+                    Tiến độ: {roundProgress}%
+                  </p>
+                </Card>
               </div>
-            ))}
+            </div>
           </div>
         </Card>
       </motion.div>
-
-      {/* ── Active round highlight ── */}
-      {activeRound && (
-        <motion.div
-          initial={{ opacity: 0, y: 12 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.15 }}
-        >
-          <div className="flex items-center gap-2 mb-3 px-1">
-            <span className="flex h-2.5 w-2.5">
-              <span className="animate-ping absolute inline-flex h-2.5 w-2.5 rounded-full bg-primary/40 opacity-75" />
-              <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-primary" />
-            </span>
-            <p className="text-xs font-black text-primary uppercase tracking-widest">
-              Vòng đang diễn ra
-            </p>
-          </div>
-          <Card>
-            <div className="flex items-center justify-between gap-4 flex-wrap">
-              <div>
-                <p className="text-xs text-gray-400 mb-0.5">
-                  Vòng {activeRound.roundNumber} · {activeRound.gameTypeName}
-                </p>
-                <h3 className="text-xl font-bold text-gray-800">
-                  {activeRound.roundName}
-                </h3>
-                <div className="flex items-center gap-2 mt-1.5 flex-wrap">
-                  {activeRound.resolvedDifficulty && (
-                    <span
-                      className={`text-xs font-bold px-2 py-0.5 rounded-full ${DIFFICULTY_COLOR[activeRound.resolvedDifficulty] ?? "bg-gray-100"}`}
-                    >
-                      {DIFFICULTY_LABEL[activeRound.resolvedDifficulty] ??
-                        activeRound.resolvedDifficulty}
-                    </span>
-                  )}
-                  {activeRound.coinPerSession > 0 && (
-                    <span className="text-xs text-amber-600 bg-amber-50 px-2.5 py-0.5 rounded-full font-semibold">
-                      <StarOutlined /> +{activeRound.coinPerSession} xu/phiên
-                    </span>
-                  )}
-                  <span className="text-xs text-gray-400">
-                    {fmtDate(activeRound.startTime)} →{" "}
-                    {fmtDate(activeRound.endTime)}
-                  </span>
-                </div>
-              </div>
-              <Button
-                type="primary"
-                size="large"
-                onClick={() => navigate(`/student/campaign/${campaignId}/game`)}
-                className="rounded-xl bg-primary border-primary hover:opacity-90 shadow-md shadow-primary/20 font-bold"
-                icon={<RightOutlined />}
-                iconPosition="end"
-              >
-                Vào chơi ngay
-              </Button>
-            </div>
-          </Card>
-        </motion.div>
-      )}
 
       {/* ── Activities ── */}
       <div>

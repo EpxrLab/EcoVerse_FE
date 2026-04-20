@@ -1,18 +1,20 @@
 import { useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router";
-import { Card, Button } from "antd";
+import { Card, Button, Select, Space } from "antd";
 import {
   TrophyOutlined,
   HomeOutlined,
   ClockCircleOutlined,
   AimOutlined,
 } from "@ant-design/icons";
-import { Crown, Medal } from "lucide-react";
+import { Crown, Medal, Layers, ChevronRight } from "lucide-react";
 import { motion } from "framer-motion";
 import { useCampaignContext } from "../../context";
 import {
   getAuthenticatedStudentProfile,
+  getCampaignDetails,
   getCampaignLeaderboard,
+  getRoundLeaderboard,
 } from "../../services";
 
 // ─── CoinIcon ─────────────────────────────────────────────────────────────────
@@ -140,26 +142,51 @@ const row = {
 export default function StudentLeaderboard() {
   const navigate = useNavigate();
   const { campaignId } = useParams();
-  const { selectedCampaign } = useCampaignContext();
-  const campaign = selectedCampaign;
+  const [campaign, setCampaign] = useState(null);
 
   const [entries, setEntries] = useState([]); // leaderboardData
   const [currentUser, setCurrentUser] = useState(null); // authenticated student profile
+  const [selectedRoundId, setSelectedRoundId] = useState(null);
 
   useEffect(() => {
     (async () => {
       try {
-        const [r1, r2] = await Promise.all([
-          getAuthenticatedStudentProfile(),
-          getCampaignLeaderboard(campaignId),
-        ]);
-        setCurrentUser(r1?.data ?? null);
-        setEntries(r2?.data ?? []);
+        const resCamapign = await getCampaignDetails(campaignId);
+        const campaignData = resCamapign?.data;
+        setCampaign(campaignData ?? null);
+
+        // Auto-select first round for partnership events
+        if (
+          campaignData?.campaignType === "PARTNERSHIP_EVENT" &&
+          campaignData.rounds?.length > 0
+        ) {
+          setSelectedRoundId(campaignData.rounds[0].id);
+        }
+
+        const profileRes = await getAuthenticatedStudentProfile();
+        setCurrentUser(profileRes?.data ?? null);
       } catch (err) {
         console.error(err);
       }
     })();
   }, [campaignId]);
+
+  useEffect(() => {
+    (async () => {
+      try {
+        let lbRes;
+        if (campaign?.campaignType === "PARTNERSHIP_EVENT") {
+          if (!selectedRoundId) return;
+          lbRes = await getRoundLeaderboard(selectedRoundId);
+        } else {
+          lbRes = await getCampaignLeaderboard(campaignId);
+        }
+        setEntries(lbRes?.data ?? []);
+      } catch (err) {
+        console.error(err);
+      }
+    })();
+  }, [campaignId, selectedRoundId, campaign?.campaignType]);
 
   if (!campaign) {
     return (
@@ -279,6 +306,51 @@ export default function StudentLeaderboard() {
           </div>
         </Card>
       </motion.div>
+
+      {/* ── Round Selection (For Partnership Events) ── */}
+      {campaign?.campaignType === "PARTNERSHIP_EVENT" && (
+        <motion.div
+          initial={{ opacity: 0, y: 10 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.15 }}
+        >
+          <Card
+            className="border-2 border-primary/20 rounded-2xl shadow-sm hover:border-primary/40 transition-colors bg-white max-w-sm"
+            bodyStyle={{ padding: "20px" }}
+          >
+            <Space direction="vertical" className="w-full" size="middle">
+              <div className="flex items-center gap-2 text-primary font-black px-1 uppercase tracking-wider text-xs">
+                <Layers className="w-4 h-4" />
+                <span>Vòng thi đấu</span>
+              </div>
+              <Select
+                className="w-full h-12"
+                placeholder="Chọn vòng"
+                value={selectedRoundId}
+                onChange={setSelectedRoundId}
+                size="large"
+                suffixIcon={<ChevronRight className="w-4 h-4" />}
+                dropdownClassName="rounded-xl overflow-hidden shadow-xl"
+                options={
+                  campaign?.rounds?.map((round) => {
+                    const status = round.status;
+                    const statusLabel =
+                      status === "UPCOMING"
+                        ? " (Chưa mở)"
+                        : status === "COMPLETED"
+                          ? " (Đã kết thúc)"
+                          : "";
+                    return {
+                      label: `${round.roundName || `Vòng ${round.roundNumber}`}${statusLabel}`,
+                      value: round.id,
+                    };
+                  }) || []
+                }
+              />
+            </Space>
+          </Card>
+        </motion.div>
+      )}
 
       {/* ── Podium Top 3 ── */}
       {topThree.length > 0 && (
