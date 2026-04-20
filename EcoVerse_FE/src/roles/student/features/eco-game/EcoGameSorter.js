@@ -99,90 +99,166 @@ export default class EcoGameSorter {
   }
 
   _createEnvironment() {
-    // Ambient light
-    const ambient = new THREE.AmbientLight(0xffffff, 0.7);
+    // ─── 1. Lights ───
+    const ambient = new THREE.AmbientLight(0xffffff, 0.7); // Much brighter ambient
     this.scene.add(ambient);
     this._ambientLight = ambient;
 
-    // Directional light
-    const dirLight = new THREE.DirectionalLight(0xffffff, 0.6);
-    dirLight.position.set(5, 10, 5);
+    const dirLight = new THREE.DirectionalLight(0xffffff, 0.9);
+    dirLight.position.set(10, 15, 10);
     dirLight.castShadow = true;
-    dirLight.shadow.mapSize.width = 1024;
-    dirLight.shadow.mapSize.height = 1024;
+    dirLight.shadow.mapSize.width = 2048;
+    dirLight.shadow.mapSize.height = 2048;
+    dirLight.shadow.camera.left = -20;
+    dirLight.shadow.camera.right = 20;
+    dirLight.shadow.camera.top = 20;
+    dirLight.shadow.camera.bottom = -20;
     this.scene.add(dirLight);
     this._dirLight = dirLight;
 
-    // Background
-    this.scene.background = new THREE.Color(0xe8f5e9);
-    this.scene.fog = null;
+    // Overhead industrial PointLights
+    const lamp1 = new THREE.PointLight(0xfff4e0, 1.2, 20); // More white, brighter
+    lamp1.position.set(-5, 8, -2);
+    this.scene.add(lamp1);
+    
+    const lamp2 = new THREE.PointLight(0xfff4e0, 1.2, 20);
+    lamp2.position.set(5, 8, -2);
+    this.scene.add(lamp2);
 
-    // Floor
-    const floorGeo = new THREE.PlaneGeometry(20, 20);
+    // ─── 2. Atmosphere ───
+    this.scene.background = new THREE.Color(0xb0bec5); // Lighter gray-blue
+    this.scene.fog = new THREE.Fog(0xb0bec5, 15, 45); // Lighter fog
+
+    // ─── 3. Room Geometry ───
+    const roomGroup = new THREE.Group();
+
+    // Floor (Industrial Concrete - Lighter)
+    const floorGeo = new THREE.PlaneGeometry(100, 100);
     const floorMat = new THREE.MeshStandardMaterial({
-      color: 0xc8e6c9,
-      roughness: 0.9,
+      color: 0x90a4ae,
+      roughness: 0.7,
+      metalness: 0.1,
     });
     this._floor = new THREE.Mesh(floorGeo, floorMat);
     this._floor.rotation.x = -Math.PI / 2;
     this._floor.position.y = -0.7;
     this._floor.receiveShadow = true;
-    this.scene.add(this._floor);
+    roomGroup.add(this._floor);
+
+    // Back Wall (Lighter)
+    const wallGeo = new THREE.PlaneGeometry(60, 30);
+    const wallMat = new THREE.MeshStandardMaterial({
+      color: 0xcfd8dc,
+      roughness: 0.9,
+    });
+    const backWall = new THREE.Mesh(wallGeo, wallMat);
+    backWall.position.set(0, 14.3, -15);
+    backWall.receiveShadow = true;
+    roomGroup.add(backWall);
+
+    // Side Walls
+    const leftWall = new THREE.Mesh(wallGeo, wallMat);
+    leftWall.rotation.y = Math.PI / 2;
+    leftWall.position.set(-25, 14.3, 0);
+    roomGroup.add(leftWall);
+
+    const rightWall = new THREE.Mesh(wallGeo, wallMat);
+    rightWall.rotation.y = -Math.PI / 2;
+    rightWall.position.set(25, 14.3, 0);
+    roomGroup.add(rightWall);
+
+    // ─── 4. Factory Details ───
+    
+    // Windows (Brighter)
+    const winGeo = new THREE.PlaneGeometry(8, 4);
+    const winMat = new THREE.MeshStandardMaterial({
+      color: 0xbbdefb,
+      emissive: 0x90caf9,
+      emissiveIntensity: 0.8,
+    });
+    
+    for (let i = -2; i <= 2; i++) {
+      const window = new THREE.Mesh(winGeo, winMat);
+      window.position.set(i * 12, 10, -14.9);
+      roomGroup.add(window);
+    }
+
+    // Structural Beams
+    const beamGeo = new THREE.BoxGeometry(1, 30, 1);
+    const beamMat = new THREE.MeshStandardMaterial({ color: 0x161925, metalness: 0.5, roughness: 0.2 });
+    
+    for (let i = -2; i <= 2; i++) {
+      const beam = new THREE.Mesh(beamGeo, beamMat);
+      beam.position.set(i * 12 + 6, 14.3, -14.5);
+      roomGroup.add(beam);
+    }
+
+    this.scene.add(roomGroup);
   }
 
   _createTable() {
-    // Table surface
+    const group = new THREE.Group();
+
+    // 1. Table Top (Lighter Industrial Gray)
     const tableGeo = new THREE.BoxGeometry(
       TABLE_SIZE.w,
       TABLE_SIZE.h,
       TABLE_SIZE.d,
     );
     const tableMat = new THREE.MeshStandardMaterial({
-      color: 0xd1d1d1,
-      roughness: 0.7,
+      color: 0xeceff1, // Much lighter gray for visibility
+      roughness: 0.2,
+      metalness: 0.1,
     });
     this._table = new THREE.Mesh(tableGeo, tableMat);
-    this._table.position.set(0, TABLE_Y, 1);
     this._table.receiveShadow = true;
     this._table.castShadow = true;
-    this.scene.add(this._table);
+    group.add(this._table);
 
-    // Table legs
-    const legGeo = new THREE.CylinderGeometry(0.08, 0.08, 0.7, 8);
-    const legMat = new THREE.MeshStandardMaterial({ color: 0x6d4c41 });
+    // 2. Metallic Frame
+    const frameGeo = new THREE.BoxGeometry(TABLE_SIZE.w + 0.1, 0.1, TABLE_SIZE.d + 0.1);
+    const frameMat = new THREE.MeshStandardMaterial({ color: 0x111111, metalness: 0.8, roughness: 0.2 });
+    const frame = new THREE.Mesh(frameGeo, frameMat);
+    frame.position.y = -0.05;
+    group.add(frame);
+
+    // 3. Heary Duty Legs
+    const legGeo = new THREE.BoxGeometry(0.3, 0.7, 0.3);
+    const legMat = new THREE.MeshStandardMaterial({ color: 0x1a1c22, metalness: 0.6, roughness: 0.3 });
     const legPositions = [
-      [-TABLE_SIZE.w / 2 + 0.3, -0.45, 1 + TABLE_SIZE.d / 2 - 0.3],
-      [TABLE_SIZE.w / 2 - 0.3, -0.45, 1 + TABLE_SIZE.d / 2 - 0.3],
-      [-TABLE_SIZE.w / 2 + 0.3, -0.45, 1 - TABLE_SIZE.d / 2 + 0.3],
-      [TABLE_SIZE.w / 2 - 0.3, -0.45, 1 - TABLE_SIZE.d / 2 + 0.3],
+      [-TABLE_SIZE.w / 2 + 0.4, -0.45, TABLE_SIZE.d / 2 - 0.4],
+      [TABLE_SIZE.w / 2 - 0.4, -0.45, TABLE_SIZE.d / 2 - 0.4],
+      [-TABLE_SIZE.w / 2 + 0.4, -0.45, -TABLE_SIZE.d / 2 + 0.4],
+      [TABLE_SIZE.w / 2 - 0.4, -0.45, -TABLE_SIZE.d / 2 + 0.4],
     ];
+    
     this._tableLegs = [];
     legPositions.forEach(([x, y, z]) => {
       const leg = new THREE.Mesh(legGeo, legMat);
       leg.position.set(x, y, z);
       leg.castShadow = true;
-      this.scene.add(leg);
+      group.add(leg);
       this._tableLegs.push(leg);
     });
+
+    // 4. Hazard Stripe Detail
+    const stripeGeo = new THREE.PlaneGeometry(TABLE_SIZE.w, 0.08);
+    const stripeMat = new THREE.MeshBasicMaterial({ color: 0xffd600 });
+    const stripe = new THREE.Mesh(stripeGeo, stripeMat);
+    stripe.position.set(0, 0, TABLE_SIZE.d / 2 + 0.01);
+    group.add(stripe);
+
+    group.position.set(0, TABLE_Y, 1);
+    this.scene.add(group);
   }
+
 
   _createBins() {
     const numBins = this.wasteCategories.length;
-    const totalWidth = 14; // Spread bins across this width
-    let spacing, startX;
-
-    if (numBins === 1) {
-      startX = 0;
-      spacing = 0;
-    } else {
-      spacing = totalWidth / (numBins - 1);
-      startX = -totalWidth / 2;
-    }
-
     this.wasteCategories.forEach((catCode, index) => {
       const binType = DynamicBinTypes[catCode] || DynamicBinTypes.GENERAL;
       
-      // Responsive bin layout: use a narrower spread if the screen is portrait
+      // Responsive bin layout
       const aspect = window.innerWidth / window.innerHeight;
       const responsiveWidth = aspect < 1 ? 6 : 14; 
       const responsiveSpacing = numBins === 1 ? 0 : responsiveWidth / (numBins - 1);
@@ -193,41 +269,52 @@ export default class EcoGameSorter {
 
       const group = new THREE.Group();
 
-      // Bin body
-      const binGeo = new THREE.CylinderGeometry(1.0, 0.85, 2.0, 16, 1, true);
-      const binMat = new THREE.MeshStandardMaterial({
-        color: binType.color,
-        side: THREE.DoubleSide,
-        roughness: 0.5,
-        metalness: 0.2,
-      });
-      const bin = new THREE.Mesh(binGeo, binMat);
-      bin.castShadow = true;
-      group.add(bin);
+      // ─── 1. Bin Base (Pedestal) ───
+      const baseGeo = new THREE.CylinderGeometry(1.1, 1.1, 0.1, 32);
+      const baseMat = new THREE.MeshStandardMaterial({ color: 0x222222, roughness: 0.8 });
+      const base = new THREE.Mesh(baseGeo, baseMat);
+      base.position.y = -1.05;
+      group.add(base);
 
-      // Bin bottom
-      const bottomGeo = new THREE.CircleGeometry(0.85, 16);
-      const bottomMat = new THREE.MeshStandardMaterial({
+      // ─── 2. Bin Body (Tapered) ───
+      const bodyGeo = new THREE.CylinderGeometry(1.0, 0.85, 2.0, 32, 1, false);
+      const bodyMat = new THREE.MeshStandardMaterial({
         color: binType.color,
+        roughness: 0.3,
+        metalness: 0.1,
       });
-      const bottom = new THREE.Mesh(bottomGeo, bottomMat);
-      bottom.rotation.x = -Math.PI / 2;
-      bottom.position.y = -1.0;
-      group.add(bottom);
+      const body = new THREE.Mesh(bodyGeo, bodyMat);
+      body.castShadow = true;
+      body.receiveShadow = true;
+      group.add(body);
 
-      // Bin rim
-      const rimGeo = new THREE.TorusGeometry(1.0, 0.06, 8, 32);
+      // ─── 3. Inner Depth (The "Hole") ───
+      const holeGeo = new THREE.CircleGeometry(0.92, 32);
+      const holeMat = new THREE.MeshBasicMaterial({ color: 0x111111 });
+      const hole = new THREE.Mesh(holeGeo, holeMat);
+      hole.rotation.x = -Math.PI / 2;
+      hole.position.y = 1.01;
+      group.add(hole);
+
+      // ─── 4. Top Rim (Premium Look) ───
+      const rimGroup = new THREE.Group();
+      
+      // Outer ring
+      const rimGeo = new THREE.TorusGeometry(1.0, 0.08, 16, 48);
       const rimMat = new THREE.MeshStandardMaterial({
-        color: 0xffffff,
-        metalness: 0.5,
+        color: 0xdddddd,
+        metalness: 0.8,
+        roughness: 0.2,
       });
       const rim = new THREE.Mesh(rimGeo, rimMat);
       rim.rotation.x = Math.PI / 2;
-      rim.position.y = 1.0;
-      group.add(rim);
+      rimGroup.add(rim);
 
-      // Label using a small plane with canvas texture
-      const label = this._createBinLabel(binType.name, binType.color);
+      rimGroup.position.y = 1.0;
+      group.add(rimGroup);
+
+      // ─── 5. Label ───
+      const label = this._createBinLabel(binType.name, catCode);
       label.position.set(0, 0, 1.05);
       group.add(label);
 
@@ -243,42 +330,71 @@ export default class EcoGameSorter {
         x: 1,
         y: 1,
         z: 1,
-        duration: 0.5,
-        ease: "back.out(1.7)",
-        delay: 0.3,
+        duration: 0.6,
+        ease: "back.out(1.5)",
+        delay: 0.2 + index * 0.1,
       });
     });
   }
 
-  _createBinLabel(text, bgColor) {
+  _createBinLabel(text, catCode) {
     const canvas = document.createElement("canvas");
     canvas.width = 512;
-    canvas.height = 192;
+    canvas.height = 256;
     const ctx = canvas.getContext("2d");
 
-    // Background
+    const iconMap = {
+      ORGANIC: "🌿",
+      RECYCLABLE: "♻️",
+      HAZARDOUS: "☣️",
+      GENERAL: "🗑️",
+    };
+    const icon = iconMap[catCode] || "❓";
+
+    // Rounded background
     ctx.fillStyle = "#ffffff";
-    ctx.roundRect(8, 8, 496, 176, 24);
+    this._drawRoundedRect(ctx, 16, 16, 480, 224, 40);
     ctx.fill();
+    ctx.lineWidth = 8;
+    ctx.strokeStyle = "#e0e0e0";
+    ctx.stroke();
+
+    // Icon
+    ctx.font = "bold 80px Arial, sans-serif";
+    ctx.textAlign = "center";
+    ctx.textBaseline = "middle";
+    ctx.fillText(icon, 256, 80);
 
     // Text
     ctx.fillStyle = "#333333";
-    ctx.font = "bold 64px Arial, sans-serif";
-    ctx.textAlign = "center";
-    ctx.textBaseline = "middle";
-    ctx.fillText(text, 256, 96);
+    ctx.font = "bold 56px Arial, sans-serif";
+    ctx.fillText(text, 256, 170);
 
     const texture = new THREE.CanvasTexture(canvas);
     texture.minFilter = THREE.LinearFilter;
     texture.magFilter = THREE.LinearFilter;
 
-    const geo = new THREE.PlaneGeometry(1.6, 0.6);
+    const geo = new THREE.PlaneGeometry(1.4, 0.7);
     const mat = new THREE.MeshBasicMaterial({
       map: texture,
       transparent: true,
     });
 
     return new THREE.Mesh(geo, mat);
+  }
+
+  _drawRoundedRect(ctx, x, y, width, height, radius) {
+    ctx.beginPath();
+    ctx.moveTo(x + radius, y);
+    ctx.lineTo(x + width - radius, y);
+    ctx.quadraticCurveTo(x + width, y, x + width, y + radius);
+    ctx.lineTo(x + width, y + height - radius);
+    ctx.quadraticCurveTo(x + width, y + height, x + width - radius, y + height);
+    ctx.lineTo(x + radius, y + height);
+    ctx.quadraticCurveTo(x, y + height, x, y + height - radius);
+    ctx.lineTo(x, y + radius);
+    ctx.quadraticCurveTo(x, y, x + radius, y);
+    ctx.closePath();
   }
 
   _createTrashItems() {
