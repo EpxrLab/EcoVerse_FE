@@ -189,7 +189,9 @@ export default function StudentDashboardLayout() {
       {/* Student Info */}
       <div className="p-4 border-b border-border">
         <div className="flex items-center gap-3 mb-3">
-          <div className="text-4xl filter drop-shadow-sm">{currentStudent?.imagePresignedUrl}</div>
+          <div className="text-4xl filter drop-shadow-sm">
+            {currentStudent?.imagePresignedUrl}
+          </div>
           <div className="flex-1 min-w-0">
             <p className="font-bold text-sm text-foreground truncate">
               {currentStudent?.fullName}
@@ -208,7 +210,9 @@ export default function StudentDashboardLayout() {
                 {currentStudent?.totalCoins}
               </span>
             </div>
-            <span className="text-xs font-medium text-muted-foreground uppercase tracking-wider">xu</span>
+            <span className="text-xs font-medium text-muted-foreground uppercase tracking-wider">
+              xu
+            </span>
           </div>
           <Button
             block
@@ -299,7 +303,7 @@ export default function StudentDashboardLayout() {
       >
         {/* Top Bar */}
         <Header
-          className="sticky top-0 z-10 bg-card border-b border-border px-6 flex items-center gap-4"
+          className="sticky top-0 z-50 bg-card border-b border-border px-6 flex items-center gap-4"
           style={{ height: 64, lineHeight: "64px", padding: "0 24px" }}
         >
           <Button

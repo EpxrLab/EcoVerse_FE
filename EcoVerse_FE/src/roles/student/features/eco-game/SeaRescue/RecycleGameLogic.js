@@ -7,11 +7,11 @@ export const TOTAL_TRASH = 12;
 
 export const PLAYER_CAPACITY = 5;
 export const PLAYER_MAX_HP = 5;
-export const PLAYER_MAX_SPEED = 0.2;
-export const PLAYER_ACCELERATION = 0.008;
-export const PLAYER_FRICTION = 0.92;
+export const PLAYER_MAX_SPEED = 0.3;
+export const PLAYER_ACCELERATION = 0.01;
+export const PLAYER_FRICTION = 0.9;
 export const PLAYER_TURN_SPEED = 0.045;
-export const PLAYER_TURN_FRICTION = 0.77;
+export const PLAYER_TURN_FRICTION = 0.75;
 export const PLAYER_COLLISION_RADIUS = 1.5;
 export const OBSTACLE_COLLISION_RADIUS = 1.0;
 

@@ -68,9 +68,15 @@ export default class EcoGameSorter {
     this.itemsRemaining = 0;
     this.score = { correct: 0, wrong: 0 };
 
-    // Timer support (configurable)
-    this.timeRemaining = this.config.timeLimit; // 0 = no limit
+    // Timer support
+    this.timeLimit = this.config.timeLimit;
+    this.timeRemaining = this.config.timeLimit;
     this.timerActive = this.config.timeLimit > 0;
+    
+    this._startTime = 0;
+    this._accumulatedPausedTime = 0;
+    this._pauseStartTime = 0;
+    this._isPaused = false;
 
     this._onPointerDown = this._onPointerDown.bind(this);
     this._onPointerMove = this._onPointerMove.bind(this);
@@ -78,6 +84,7 @@ export default class EcoGameSorter {
     this._onResize = this._onResize.bind(this);
 
     this.domRect = null;
+    this._timerId = null;
   }
 
   // ─── Initialization ─────────────────────────────────────────────────────────
@@ -91,6 +98,35 @@ export default class EcoGameSorter {
     this._setupCamera();
     this._addEventListeners();
     this._onResize(); // Initial rect cache
+    
+    if (this.timerActive) {
+      this._startTime = Date.now();
+      this._startTimer();
+    }
+  }
+
+  _startTimer() {
+    this._timerId = setInterval(() => {
+      if (!this.timerActive || this.timeRemaining <= 0 || this._isPaused) return;
+
+      const now = Date.now();
+      const elapsedMs = now - this._startTime - this._accumulatedPausedTime;
+      const elapsedSec = elapsedMs / 1000;
+      
+      this.timeRemaining = Math.max(0, this.timeLimit - elapsedSec);
+
+      if (this._onTimerUpdate) {
+        this._onTimerUpdate(this.timeRemaining);
+      }
+
+      if (this.timeRemaining <= 0) {
+        this.timeRemaining = 0;
+        this.timerActive = false;
+        clearInterval(this._timerId);
+        // Time's up — trigger completion with current score
+        this._handleAllSorted();
+      }
+    }, 100);
   }
 
   _clearScene() {
@@ -315,7 +351,9 @@ export default class EcoGameSorter {
 
       // ─── 5. Label ───
       const label = this._createBinLabel(binType.name, catCode);
-      label.position.set(0, 0, 1.05);
+      // Place label ABOVE the rim and forward for maximum visibility
+      label.position.set(0, 1.45, 0.9); // Slightly higher and more forward
+      label.rotation.x = -Math.PI / 8; // Tilted more towards camera
       group.add(label);
 
       group.position.set(x, 0, z);
@@ -339,8 +377,8 @@ export default class EcoGameSorter {
 
   _createBinLabel(text, catCode) {
     const canvas = document.createElement("canvas");
-    canvas.width = 512;
-    canvas.height = 256;
+    canvas.width = 1200; // Even higher resolution
+    canvas.height = 600;
     const ctx = canvas.getContext("2d");
 
     const iconMap = {
@@ -352,32 +390,36 @@ export default class EcoGameSorter {
     const icon = iconMap[catCode] || "❓";
 
     // Rounded background
-    ctx.fillStyle = "#ffffff";
-    this._drawRoundedRect(ctx, 16, 16, 480, 224, 40);
+    ctx.fillStyle = "rgba(255, 255, 255, 0.98)";
+    this._drawRoundedRect(ctx, 30, 30, 1140, 540, 90);
     ctx.fill();
-    ctx.lineWidth = 8;
-    ctx.strokeStyle = "#e0e0e0";
+    
+    // Industrial border
+    ctx.lineWidth = 25;
+    ctx.strokeStyle = "#ffffff";
     ctx.stroke();
 
-    // Icon
-    ctx.font = "bold 80px Arial, sans-serif";
+    // Icon (MUCH LARGER)
+    ctx.font = "bold 320px Arial, sans-serif";
     ctx.textAlign = "center";
     ctx.textBaseline = "middle";
-    ctx.fillText(icon, 256, 80);
+    ctx.fillText(icon, 600, 200);
 
-    // Text
-    ctx.fillStyle = "#333333";
-    ctx.font = "bold 56px Arial, sans-serif";
-    ctx.fillText(text, 256, 170);
+    // Text Label (Larger)
+    ctx.fillStyle = "#111111";
+    ctx.font = "bold 150px Arial, sans-serif";
+    ctx.fillText(text.toUpperCase(), 600, 450);
 
     const texture = new THREE.CanvasTexture(canvas);
+    texture.anisotropy = 16;
     texture.minFilter = THREE.LinearFilter;
     texture.magFilter = THREE.LinearFilter;
 
-    const geo = new THREE.PlaneGeometry(1.4, 0.7);
+    const geo = new THREE.PlaneGeometry(2.2, 1.1); // Increased from 1.4, 0.7
     const mat = new THREE.MeshBasicMaterial({
       map: texture,
       transparent: true,
+      side: THREE.FrontSide,
     });
 
     return new THREE.Mesh(geo, mat);
@@ -866,21 +908,6 @@ export default class EcoGameSorter {
   // ─── Update (timer + idle animations) ──────────────────────────────────────
 
   update(delta) {
-    // Timer countdown (configurable)
-    if (this.timerActive && this.timeRemaining > 0) {
-      this.timeRemaining -= delta;
-      if (this._onTimerUpdate) {
-        this._onTimerUpdate(Math.max(0, this.timeRemaining));
-      }
-      if (this.timeRemaining <= 0) {
-        this.timeRemaining = 0;
-        this.timerActive = false;
-        // Time's up — trigger completion with current score
-        this._handleAllSorted();
-        return;
-      }
-    }
-
     // Gentle rotation for idle items
     this.trashMeshes.forEach((mesh) => {
       if (mesh !== this.selectedObject) {
@@ -889,10 +916,23 @@ export default class EcoGameSorter {
     });
   }
 
+  pause() {
+    if (this._isPaused) return;
+    this._isPaused = true;
+    this._pauseStartTime = Date.now();
+  }
+
+  resume() {
+    if (!this._isPaused) return;
+    this._isPaused = false;
+    this._accumulatedPausedTime += Date.now() - this._pauseStartTime;
+  }
+
   // ─── Cleanup ────────────────────────────────────────────────────────────────
 
   dispose() {
     this._removeEventListeners();
+    if (this._timerId) clearInterval(this._timerId);
 
     const toRemove = [
       ...this.trashMeshes,

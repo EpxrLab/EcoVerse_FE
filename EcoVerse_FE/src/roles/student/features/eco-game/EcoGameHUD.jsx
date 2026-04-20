@@ -132,6 +132,7 @@ export default function EcoGameHUD({
   const [showTransition, setShowTransition] = useState(false);
   const [showGameOver, setShowGameOver] = useState(false);
   const [showExitConfirm, setShowExitConfirm] = useState(false);
+  const [totalItemsSorter, setTotalItemsSorter] = useState(0);
 
   useEffect(() => {
     if (onPauseChange) {
@@ -177,6 +178,11 @@ export default function EcoGameHUD({
       if (newStage === "STAGE_2") {
         const tl = levelConfig?.sorter?.timeLimit || 0;
         setTimeRemaining(tl > 0 ? tl : null);
+        
+        // Calculate total items for accurate percentage from 0%
+        const items = game.stateManager.getTrashItemsForSorting();
+        setTotalItemsSorter(items.length);
+
         setShowTransition(true);
         setTimeout(() => {
           setShowTransition(false);
@@ -281,6 +287,7 @@ export default function EcoGameHUD({
             correct={sortScore.correct}
             wrong={sortScore.wrong}
             timeRemaining={timeRemaining}
+            totalItems={totalItemsSorter}
           />
         )}
       </AnimatePresence>

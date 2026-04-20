@@ -65,6 +65,12 @@ export default class EcoSeaRescue {
     // Audio tracking — prevent false-positive collect & spam damage sound
     this._prevInventorySize = 0; // updated each setInventoryCount call
     this._lastDamageSoundTime = 0; // cooldown for damage sfx
+
+    // ── Timer Logic (Persistent) ──────────────────────────────────────────
+    this._startTime = 0;
+    this._accumulatedPausedTime = 0;
+    this._pauseStartTime = 0;
+    this._isPaused = false;
   }
 
   setHudCallbacks(setters) {
@@ -262,10 +268,18 @@ export default class EcoSeaRescue {
 
       initWorld(this.scene, this._gameState, manager);
 
-      // Countdown timer
+      // Countdown timer (Persistent timestamp-based)
+      this._startTime = Date.now();
       this._timerId = setInterval(() => {
-        this._timeLeft = Math.max(0, this._timeLeft - 1);
+        if (this._isPaused || this._stopped) return;
+
+        const now = Date.now();
+        const elapsedMs = now - this._startTime - this._accumulatedPausedTime;
+        const elapsedSec = Math.floor(elapsedMs / 1000);
+        
+        this._timeLeft = Math.max(0, this.config.gameTime - elapsedSec);
         this._hudSetters.setTimeLeft(this._timeLeft);
+
         if (this._onDistanceUpdate) {
           this._onDistanceUpdate(
             this._gameState.recycledInStorage,
@@ -273,7 +287,7 @@ export default class EcoSeaRescue {
           );
         }
         if (this._timeLeft <= 0) this._handleComplete("timeout");
-      }, 1000);
+      }, 100); // Faster tick for smoother HUD and persistence check
 
       // Keyboard — resume AudioContext on first keydown (browser policy)
       const resumeAudio = () => {
@@ -401,6 +415,22 @@ export default class EcoSeaRescue {
       this._gameState.joystick.x = 0;
       this._gameState.joystick.y = 0;
     }
+  }
+
+  // ─── Pause / Resume ────────────────────────────────────────────────────────
+
+  pause() {
+    if (this._isPaused || this._stopped) return;
+    this._isPaused = true;
+    this._pauseStartTime = Date.now();
+    if (this._gameState) this._gameState.stopped = true;
+  }
+
+  resume() {
+    if (!this._isPaused || this._stopped) return;
+    this._isPaused = false;
+    this._accumulatedPausedTime += Date.now() - this._pauseStartTime;
+    if (this._gameState) this._gameState.stopped = false;
   }
 
   // ─── Callbacks ────────────────────────────────────────────────────────────

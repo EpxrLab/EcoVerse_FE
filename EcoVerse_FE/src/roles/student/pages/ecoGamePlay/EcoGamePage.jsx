@@ -165,6 +165,16 @@ export default function EcoGamePage() {
 
         if (cancelled) return;
 
+        // Register stage change listener to reset timer for Sorter specifically
+        game.onStageChange((newStage) => {
+          if (newStage === "STAGE_2") {
+            console.log("[EcoGamePage] Transitioning to Stage 2: Resetting timer");
+            gameStartTimeRef.current = Date.now();
+            deadTimeRef.current = 0;
+            pauseStartTimeRef.current = null;
+          }
+        });
+
         gameStartTimeRef.current = Date.now();
         setGameInstance(game);
 

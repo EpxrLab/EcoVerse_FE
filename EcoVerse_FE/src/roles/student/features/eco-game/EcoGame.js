@@ -130,7 +130,9 @@ export default class EcoGame {
 
       if (this._hudCallbacks.onTrashCollected) {
         // Many HUDs expect the total count
-        this._hudCallbacks.onTrashCollected(this.stateManager.getTotalTrashCount());
+        this._hudCallbacks.onTrashCollected(
+          this.stateManager.getTotalTrashCount(),
+        );
       }
     });
 
@@ -156,11 +158,13 @@ export default class EcoGame {
         reqPercent = 80; // Enforced 80% for runner as requested
       }
 
-      const percentage = totalTrash > 0 ? (recycledCount / totalTrash) * 100 : 0;
+      const percentage =
+        totalTrash > 0 ? (recycledCount / totalTrash) * 100 : 0;
 
       // SUCCESS: Hit the win target OR collected >= required %
       // Either game type can "timeout" and still win if they collected enough
-      const isWin = (reason === "win" || reason === "timeout") && percentage >= reqPercent;
+      const isWin =
+        (reason === "win" || reason === "timeout") && percentage >= reqPercent;
 
       if (isWin) {
         this.switchToStage2();
@@ -196,7 +200,7 @@ export default class EcoGame {
               correctItems: recycledCount,
               accuracyPercentage: Math.round(percentage),
               timeTakenSeconds: this.levelConfig?.searescue?.gameTime || 0,
-              coinAwarded: 0
+              coinAwarded: 0,
             },
           },
         );
@@ -266,7 +270,7 @@ export default class EcoGame {
         trashCollected: this.stateManager.getTotalTrashCount(),
         collectedTrash: this.stateManager.collectedTrash,
         sortingScore: score,
-        ...extra
+        ...extra,
       });
     }
 
