@@ -1,6 +1,4 @@
-import { useState } from "react";
 import { motion } from "framer-motion";
-import { Card } from "antd";
 import {
   HomeOutlined,
   ArrowRightOutlined,
