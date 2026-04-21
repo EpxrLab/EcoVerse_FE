@@ -1,4 +1,5 @@
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/shared/components/ui/dialog';
+import { ScrollArea } from '@/shared/components/ui/scroll-area';
 import { Badge } from '@/shared/components/ui/badge';
 import { Calendar, School, Send, FileQuestion, Package } from 'lucide-react';
 import { cn } from '@/shared/lib/utils';
@@ -46,7 +47,7 @@ export function CampaignDetail({ isOpen, onClose, campaign, availableQuizzes = [
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto p-0 gap-0">
+      <DialogContent className="max-w-4xl h-[90vh] flex flex-col p-0 gap-0 overflow-hidden">
         <DialogHeader className="p-6 border-b bg-muted/20">
           <div className="flex items-start gap-4">
              <div className="w-12 h-12 rounded-2xl bg-eco-blue/15 flex items-center justify-center shrink-0">
@@ -75,7 +76,8 @@ export function CampaignDetail({ isOpen, onClose, campaign, availableQuizzes = [
           </div>
         </DialogHeader>
 
-        <div className="p-6 space-y-8">
+        <ScrollArea className="flex-1">
+          <div className="p-6 space-y-8">
           {/* Main Stats Grid */}
           <div className="grid grid-cols-3 gap-4">
             <div className="bg-white rounded-xl p-4 border shadow-sm flex flex-col items-center justify-center text-center">
@@ -293,7 +295,8 @@ export function CampaignDetail({ isOpen, onClose, campaign, availableQuizzes = [
             </div>
           </div>
         </div>
-      </DialogContent>
+      </ScrollArea>
+    </DialogContent>
     </Dialog>
   );
 }

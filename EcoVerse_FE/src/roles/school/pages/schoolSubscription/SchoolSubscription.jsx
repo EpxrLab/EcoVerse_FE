@@ -4,7 +4,7 @@ import { Pagination, PaginationContent, PaginationItem, PaginationLink, Paginati
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/shared/components/ui/card';
 import { Button } from '@/shared/components/ui/button';
 import { Badge } from '@/shared/components/ui/badge';
-import { Check, CreditCard, Crown, Sparkles, Users, Zap, AlertTriangle, Info, History, Calendar, Receipt } from 'lucide-react';
+import { Check, CreditCard, Crown, Sparkles, Users, Zap, AlertTriangle, Info, History, Calendar } from 'lucide-react';
 import { toast } from '@/shared/hooks/use-toast';
 import { cn } from '@/shared/lib/utils';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/shared/components/ui/table';
@@ -199,58 +199,6 @@ export default function SchoolSubscription() {
         </CardContent>
       </Card>
 
-      {/* Current subscription status */}
-      {currentSubscription ? (
-        <Card className={cn(
-          "border-eco-green/30 bg-eco-green/5", 
-          currentSubscription.status === 'EXPIRED' && "border-amber-500/30 bg-amber-500/5"
-        )}>
-          <CardContent className="p-6">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-4">
-                <div className={cn(
-                  "w-12 h-12 rounded-xl bg-eco-green/20 flex items-center justify-center",
-                  currentSubscription.status === 'EXPIRED' && "bg-amber-500/20"
-                )}>
-                  {currentSubscription.status === 'EXPIRED' ? (
-                    <AlertTriangle className="w-6 h-6 text-amber-500" />
-                  ) : (
-                    <Sparkles className="w-6 h-6 text-eco-green" />
-                  )}
-                </div>
-                <div>
-                  <p className="font-medium text-foreground">
-                    Gói hiện tại: {currentSubscription.planName || currentSubscription.subscriptionName || currentSubscription.subscriptionCode || 'Không xác định'}
-                  </p>
-                  <p className="text-sm text-muted-foreground">
-                    Hết hạn: {currentSubscription.endDate || currentSubscription.expiredAt || currentSubscription.validUntil ? new Date(currentSubscription.endDate || currentSubscription.expiredAt || currentSubscription.validUntil).toLocaleDateString('vi-VN') : '--'}
-                  </p>
-                </div>
-              </div>
-              <Badge variant="outline" className={cn(
-                "text-eco-green border-eco-green/30",
-                currentSubscription.status === 'EXPIRED' && "text-amber-500 border-amber-500/30"
-              )}>
-                {currentSubscription.status === 'EXPIRED' ? 'Đã hết hạn' : 'Đang hoạt động'}
-              </Badge>
-            </div>
-          </CardContent>
-        </Card>
-      ) : (
-        <Card className="border-eco-orange/30 bg-eco-orange/5">
-          <CardContent className="p-6">
-            <div className="flex items-center gap-4">
-              <div className="w-12 h-12 rounded-xl bg-eco-orange/20 flex items-center justify-center">
-                <CreditCard className="w-6 h-6 text-eco-orange" />
-              </div>
-              <div>
-                <p className="font-medium text-foreground">Bạn chưa có gói đăng ký</p>
-                <p className="text-sm text-muted-foreground">Chọn một gói bên dưới để bắt đầu sử dụng EcoVerse</p>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-      )}
 
       {/* Pricing cards */}
       {loading ? (
