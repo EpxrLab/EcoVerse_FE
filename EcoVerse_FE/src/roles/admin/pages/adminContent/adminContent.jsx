@@ -22,6 +22,7 @@ import {
   CloseCircleOutlined,
   AppstoreOutlined,
   TagsOutlined,
+  EyeOutlined,
 } from "@ant-design/icons";
 import { motion, AnimatePresence } from "framer-motion";
 import {
@@ -80,9 +81,11 @@ const itemVariants = {
 
 function ModelPreview({ url }) {
   const containerRef = useRef(null);
+  const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
     if (!url || !containerRef.current) return;
+    setIsLoading(true);
 
     let animationId = null;
     let model = null;
@@ -121,9 +124,13 @@ function ModelPreview({ url }) {
         model.position.sub(center.multiplyScalar(scale));
 
         scene.add(model);
+        setIsLoading(false);
       },
       undefined,
-      (err) => console.error("Error loading model preview", err),
+      (err) => {
+        console.error("Error loading model preview", err);
+        setIsLoading(false);
+      },
     );
 
     const animate = () => {
@@ -154,10 +161,17 @@ function ModelPreview({ url }) {
   }, [url]);
 
   return (
-    <div
-      ref={containerRef}
-      className="w-full h-full cursor-grab active:cursor-grabbing pointer-events-auto"
-    />
+    <div className="relative w-full h-full flex items-center justify-center">
+      {isLoading && (
+        <div className="absolute inset-0 flex items-center justify-center bg-gray-50/10 z-10">
+          <Spin size="default" />
+        </div>
+      )}
+      <div
+        ref={containerRef}
+        className="w-full h-full cursor-grab active:cursor-grabbing pointer-events-auto"
+      />
+    </div>
   );
 }
 
@@ -178,11 +192,26 @@ function ImageUploadInput({
 
   useEffect(() => {
     if (previewUrl && !previewUrl.startsWith("blob:")) {
-      setActualIsModel(
-        previewUrl.includes(".glb") || previewUrl.includes(".gltf"),
-      );
+      const urlLower = previewUrl.toLowerCase().split("?")[0];
+      const hasModelExtension =
+        urlLower.endsWith(".glb") ||
+        urlLower.endsWith(".gltf") ||
+        previewUrl.includes(".glb") ||
+        previewUrl.includes(".gltf");
+
+      // For remote URLs, if it has a model extension, it's definitely a model.
+      // If we are in model mode (isModel=true), we should also treat it as a model
+      // unless it's a common image format that is NOT likely to be a model container.
+      const looksLikeImage =
+        urlLower.endsWith(".png") ||
+        urlLower.endsWith(".jpg") ||
+        urlLower.endsWith(".jpeg") ||
+        urlLower.endsWith(".webp") ||
+        urlLower.endsWith(".gif");
+
+      setActualIsModel(hasModelExtension || (isModel && !looksLikeImage));
     }
-  }, [previewUrl]);
+  }, [previewUrl, isModel]);
 
   const handleChange = async (e) => {
     const file = e.target.files?.[0];
@@ -206,7 +235,7 @@ function ImageUploadInput({
       } else if (!isImageFile && uploadModelFn) {
         activeFn = uploadModelFn;
       }
-      
+
       const uploadedUrl = activeFn ? await activeFn(data) : null;
 
       if (uploadedUrl) {
@@ -487,6 +516,10 @@ function WasteItemsTab({ wasteItems, subCategories, onRefresh }) {
   const [editModelUrl, setEditModelUrl] = useState(null);
   const [editUploadedUrl, setEditUploadedUrl] = useState(null);
   const [editUploading, setEditUploading] = useState(false);
+  const [isPreviewOpen, setIsPreviewOpen] = useState(false);
+  const [previewUrl, setPreviewUrl] = useState(null);
+  const [previewItemName, setPreviewItemName] = useState("");
+  const [previewTripoStatus, setPreviewTripoStatus] = useState(null);
   const [addForm] = Form.useForm();
   const [editForm] = Form.useForm();
 
@@ -543,12 +576,14 @@ function WasteItemsTab({ wasteItems, subCategories, onRefresh }) {
       isActive: item.isActive,
       generate3dModel: false,
     });
-    setEditModelUrl(
-      item?.model3dPresignedUrl ||
-        item?.imagePresignedUrl ||
-        item?.imageUrl ||
-        null,
-    );
+    // Determine which URL to show in preview: 3D model first, then presigned image (often holds AI model), then raw imageUrl
+    const previewUrl =
+      item.model3dPresignedUrl ||
+      item.imagePresignedUrl ||
+      item.imageUrl ||
+      null;
+    setEditModelUrl(previewUrl);
+
     const presignedUrl = item.imageUrl?.split("?X-Amz-Algorithm")[0];
     setEditUploadedUrl(presignedUrl ?? null);
     setIsEditOpen(true);
@@ -591,6 +626,18 @@ function WasteItemsTab({ wasteItems, subCategories, onRefresh }) {
     } catch (error) {
       console.log(error);
     }
+  };
+
+  const openPreview = (item) => {
+    const url = item.model3dPresignedUrl || item.imagePresignedUrl || null;
+    if (!url) {
+      toast.error("Vật phẩm này chưa có model 3D để xem trước!");
+      return;
+    }
+    setPreviewUrl(url);
+    setPreviewItemName(item.itemName);
+    setPreviewTripoStatus(item.tripoStatus);
+    setIsPreviewOpen(true);
   };
 
   const columns = [
@@ -654,6 +701,13 @@ function WasteItemsTab({ wasteItems, subCategories, onRefresh }) {
       width: 90,
       render: (_, row) => (
         <div className="flex gap-1">
+          <Button
+            type="text"
+            icon={<EyeOutlined />}
+            size="small"
+            onClick={() => openPreview(row)}
+            className="text-green-500 hover:text-green-600 hover:bg-green-50"
+          />
           <Button
             type="text"
             icon={<EditOutlined />}
@@ -866,6 +920,38 @@ function WasteItemsTab({ wasteItems, subCategories, onRefresh }) {
             />
           </Form>
         )}
+      </Modal>
+
+      {/* Preview Modal */}
+      <Modal
+        open={isPreviewOpen}
+        onCancel={() => {
+          setIsPreviewOpen(false);
+          setPreviewUrl(null);
+        }}
+        centered
+        width={600}
+        footer={null}
+        className="[&_.ant-modal-content]:rounded-2xl overflow-hidden"
+        title={
+          <span className="font-bold text-gray-800">
+            Xem trước Model 3D: {previewItemName}
+          </span>
+        }
+        destroyOnClose
+      >
+        <div className="aspect-square bg-gray-50 rounded-xl overflow-hidden relative border border-gray-100">
+          {previewTripoStatus === "PENDING" ? (
+            <div className="w-full h-full flex flex-col items-center justify-center p-6 text-center">
+              <Spin size="large" className="mb-4" />
+              <p className="text-gray-500 font-medium">
+                AI đang tạo model 3D, vui lòng quay lại sau...
+              </p>
+            </div>
+          ) : (
+            previewUrl && <ModelPreview url={previewUrl} />
+          )}
+        </div>
       </Modal>
     </>
   );
