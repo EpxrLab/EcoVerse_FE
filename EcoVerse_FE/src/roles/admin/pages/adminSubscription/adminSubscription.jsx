@@ -224,7 +224,7 @@ const PlanFormModal = ({ open, onClose, onSave, initialValues, isCreate }) => {
                 </span>
               }
               name="planName"
-              rules={[{ required: true, message: "Nhập tên gói" }]}
+              rules={[{ required: true, message: "Vui lòng nhập tên gói" }]}
             >
               <Input className={inp} placeholder="VD: Tiêu chuẩn" />
             </Form.Item>
@@ -244,7 +244,7 @@ const PlanFormModal = ({ open, onClose, onSave, initialValues, isCreate }) => {
                 </span>
               }
               name="planCode"
-              rules={[{ required: true, message: "Nhập mã gói" }]}
+              rules={[{ required: true, message: "Vui lòng nhập mã gói" }]}
               extra={
                 isCreate ? (
                   <span className="text-amber-500 text-xs">
@@ -329,7 +329,7 @@ const PlanFormModal = ({ open, onClose, onSave, initialValues, isCreate }) => {
                 </span>
               }
               name="price"
-              rules={[{ required: true }]}
+              rules={[{ required: true, message: "Vui lòng nhập giá gói" }]}
             >
               <InputNumber
                 className="w-full rounded-lg"
@@ -355,7 +355,7 @@ const PlanFormModal = ({ open, onClose, onSave, initialValues, isCreate }) => {
                 </span>
               }
               name="durationDays"
-              rules={[{ required: true }]}
+              rules={[{ required: true, message: "Vui lòng nhập thời hạn gói" }]}
             >
               <InputNumber
                 className="w-full rounded-lg"
@@ -395,7 +395,7 @@ const PlanFormModal = ({ open, onClose, onSave, initialValues, isCreate }) => {
                 </span>
               }
               name="maxStudents"
-              rules={[{ required: true }]}
+              rules={[{ required: true, message: "Vui lòng nhập số lượng học sinh tối đa" }]}
             >
               <InputNumber
                 className="w-full rounded-lg"
