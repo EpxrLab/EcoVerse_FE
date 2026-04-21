@@ -106,7 +106,7 @@ const TX_TYPE_CFG = {
     cls: "bg-gray-100 text-gray-400",
   },
 };
- 
+
 const ACHIEVEMENT_IMAGES = {
   MOST_GAMES_COMPLETED: "/image/MOST_COMPLETED.png",
   BEST_ACCURACY_AND_TIME: "/image/BEST_ACCURACY_TIME.png",
@@ -142,17 +142,21 @@ const AchievementCard = ({ achievement }) => (
         {/* Image display based on criteriaType */}
         <div className="h-44 w-full bg-white flex items-center justify-center p-0 overflow-hidden relative">
           <div className="absolute inset-0 bg-black/5 z-10" />
-          <img 
-            src={ACHIEVEMENT_IMAGES[achievement.criteriaType] || "/image/MOST_COMPLETED.png"} 
+          <img
+            src={
+              ACHIEVEMENT_IMAGES[achievement.criteriaType] ||
+              "/image/MOST_COMPLETED.png"
+            }
             alt={achievement.titleName}
             onError={(e) => {
               e.target.onerror = null;
-              e.target.src = "https://www.svgrepo.com/show/452030/avatar-default.svg";
+              e.target.src =
+                "https://www.svgrepo.com/show/452030/avatar-default.svg";
             }}
             className="h-full w-full object-cover filter brightness-105 group-hover:scale-110 transition-all duration-500 transform"
           />
         </div>
-        
+
         <div className="p-4 space-y-1">
           <h3 className="font-bold text-sm text-gray-800 line-clamp-1">
             {achievement.titleName}
@@ -162,7 +166,7 @@ const AchievementCard = ({ achievement }) => (
           </p>
           <div className="pt-2">
             <span className="inline-block px-3 py-1 rounded-full text-[10px] font-bold bg-primary text-white shadow-sm shadow-primary/10 italic">
-               {fmtDate(achievement.earnedAt?.split('T')[0])}
+              {fmtDate(achievement.earnedAt?.split("T")[0])}
             </span>
           </div>
         </div>
@@ -173,17 +177,22 @@ const AchievementCard = ({ achievement }) => (
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
-const pct = (v) => `${(v ?? 0)}%`;
+const pct = (v) => `${v ?? 0}%`;
 const fmtN = (v) => (v ?? 0).toLocaleString();
-const fmtDate = (iso) => {
+const fmtDate = (iso, includeTime = true) => {
   if (!iso) return "—";
-  return new Date(iso).toLocaleDateString("vi-VN", {
-    day: "2-digit",
-    month: "2-digit",
-    year: "numeric",
-    hour: "2-digit",
-    minute: "2-digit",
-  });
+  const d = new Date(iso);
+  const pad = (n) => n.toString().padStart(2, "0");
+  const day = pad(d.getDate());
+  const month = pad(d.getMonth() + 1);
+  const year = d.getFullYear();
+  const datePart = `${day}-${month}-${year}`;
+
+  if (!includeTime || iso.length <= 10) return datePart;
+
+  const h = pad(d.getHours());
+  const min = pad(d.getMinutes());
+  return `${datePart} ${h}:${min}`;
 };
 const calcAge = (dob) => {
   if (!dob) return null;
@@ -328,68 +337,6 @@ function SummaryTab() {
                 </p>
               </div>
             </div>
-          </div>
-
-          {/* Stat grid */}
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-            <StatTile
-              label="Chiến dịch"
-              value={s.totalCampaignsJoined}
-              sub={`Đang hoạt động: ${s.activeCampaigns}`}
-              icon={<FireOutlined />}
-              accent="bg-orange-50 text-orange-500"
-            />
-            <StatTile
-              label="Độ chính xác game"
-              value={pct(s.avgGameAccuracy)}
-              sub={`Tốt nhất: ${pct(s.bestGameAccuracy)}`}
-              icon={<AimOutlined />}
-              accent="bg-primary/10 text-primary"
-            />
-            <StatTile
-              label="Điểm quiz"
-              value={pct(s.avgQuizScore)}
-              sub={`Tỷ lệ đạt: ${pct(s.quizPassRate)}`}
-              icon={<BookOutlined />}
-              accent="bg-blue-50 text-blue-600"
-            />
-            <StatTile
-              label="Hạng tốt nhất"
-              value={s.bestOverallRank > 0 ? `#${s.bestOverallRank}` : "—"}
-              sub={`Danh hiệu: ${s.totalTitlesEarned}`}
-              icon={<TrophyOutlined />}
-              accent="bg-amber-50 text-amber-600"
-            />
-            <StatTile
-              label="Phiên game"
-              value={s.totalGameSessionsCompleted}
-              icon={<RocketOutlined />}
-              accent="bg-purple-50 text-purple-600"
-            />
-            <StatTile
-              label="Lượt quiz"
-              value={s.totalQuizAttemptsCompleted}
-              icon={<HistoryOutlined />}
-              accent="bg-slate-50 text-slate-500"
-            />
-            <StatTile
-              label="Đổi quà"
-              value={s.totalRewardRequestsMade}
-              sub={`Đang chờ: ${s.pendingRewardRequests}`}
-              icon={<CrownOutlined />}
-              accent="bg-pink-50 text-pink-500"
-            />
-            <StatTile
-              label="Giai đoạn"
-              value={PERIOD_MAP[s.period] ?? s.period ?? "—"}
-              sub={
-                s.fromDate
-                  ? `${s.fromDate?.slice(0, 10)} → ${s.toDate?.slice(0, 10)}`
-                  : ""
-              }
-              icon={<CalendarOutlined />}
-              accent="bg-teal-50 text-teal-600"
-            />
           </div>
 
           {/* Stat grid */}
@@ -642,7 +589,9 @@ function PerformanceSection() {
       <div className="p-6">
         <div className="mb-4 inline-flex items-center gap-2 px-3 py-1 rounded-full bg-indigo-50 text-indigo-700 text-xs font-bold border border-indigo-100">
           <CalendarOutlined />
-          <span>Đang xem: {PERIOD_OPTIONS.find(o => o.value === period)?.label}</span>
+          <span>
+            Đang xem: {PERIOD_OPTIONS.find((o) => o.value === period)?.label}
+          </span>
         </div>
         {loading ? (
           <Skeleton active paragraph={{ rows: 8 }} />
@@ -690,9 +639,7 @@ function PerformanceSection() {
                     <span className="font-bold">{pct(d.avgGameAccuracy)}</span>
                   </div>
                   <Progress
-                    percent={Number(
-                      (d.avgGameAccuracy ?? 0).toFixed(1),
-                    )}
+                    percent={Number((d.avgGameAccuracy ?? 0).toFixed(1))}
                     showInfo={false}
                     strokeColor="var(--primary)"
                     trailColor="var(--primary-light)"
@@ -1023,7 +970,7 @@ export default function StudentProfile() {
                           {
                             icon: <CalendarOutlined />,
                             label: "Ngày sinh",
-                            value: `${fmtDate(student?.dateOfBirth)?.split(" ")[0] ?? "—"}${age ? ` (${age} tuổi)` : ""}`,
+                            value: `${fmtDate(student?.dateOfBirth, false)}${age ? ` (${age} tuổi)` : ""}`,
                           },
                           {
                             icon: gender.icon ?? <ManOutlined />,
@@ -1193,7 +1140,9 @@ export default function StudentProfile() {
             {(!student?.earnedTitles || student.earnedTitles.length === 0) && (
               <div className="py-12 text-center space-y-3 border-2 border-dashed border-gray-100 rounded-2xl">
                 <div className="text-4xl opacity-20">🏆</div>
-                <p className="text-gray-400 text-sm">Chưa có thành tựu nào đạt được</p>
+                <p className="text-gray-400 text-sm">
+                  Chưa có thành tựu nào đạt được
+                </p>
               </div>
             )}
           </Card>
