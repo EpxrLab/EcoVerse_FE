@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import { useSearchParams, useNavigate } from 'react-router';
 import { Card, CardContent, CardFooter, CardHeader, CardTitle, CardDescription } from '@/shared/components/ui/card';
 import { Button } from '@/shared/components/ui/button';
-import { CheckCircle2, XCircle, ArrowRight, Loader2, RefreshCw } from 'lucide-react';
+import { CheckCircle2, XCircle, ArrowRight, Loader2 } from 'lucide-react';
 import { motion } from 'framer-motion';
 
 export default function PaymentResult() {
@@ -111,13 +111,6 @@ export default function PaymentResult() {
           </CardContent>
 
           <CardFooter className="flex flex-col gap-3 px-8 pb-10">
-            <Button 
-              size="lg"
-              className={`w-full text-md h-12 ${isSuccess ? 'bg-eco-green hover:bg-eco-green/90' : 'bg-gray-900 hover:bg-gray-800'}`}
-              onClick={() => navigate(userRole === 'THIRD_PARTY_PARTNERSHIP' ? '/partnership/subscription' : '/school/subscription')}
-            >
-               {isSuccess ? 'Xem gói của tôi' : 'Thử lại thanh toán'}
-            </Button>
             <Button 
               variant="ghost" 
               size="lg"

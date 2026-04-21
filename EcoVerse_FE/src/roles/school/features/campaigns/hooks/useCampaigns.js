@@ -459,7 +459,7 @@ export function useCampaigns() {
       console.error('Failed to activate campaign:', error);
       toast({
         title: "Lỗi",
-        description: "Không thể kích hoạt chiến dịch. Vui lòng thử lại sau.",
+        description: error.response?.data?.message || "Không thể kích hoạt chiến dịch. Vui lòng thử lại sau.",
         variant: "destructive",
       });
     }
