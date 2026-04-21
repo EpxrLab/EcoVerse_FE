@@ -80,6 +80,17 @@ const getPlanColor = (plan) =>
 const PlanFormModal = ({ open, onClose, onSave, initialValues, isCreate }) => {
   const [form] = Form.useForm();
   const [featureKeys, setFeatureKeys] = useState([""]);
+  const subscriberType = Form.useWatch("subscriberType", form);
+
+  // Auto-set values when subscriberType is SCHOOL
+  useEffect(() => {
+    if (subscriberType === "SCHOOL") {
+      form.setFieldsValue({
+        maxRoundsPerCampaign: 1,
+        maxSchoolsPerCampaign: 1,
+      });
+    }
+  }, [subscriberType, form]);
 
   useEffect(() => {
     if (!open) return;
@@ -410,6 +421,7 @@ const PlanFormModal = ({ open, onClose, onSave, initialValues, isCreate }) => {
                 className="w-full rounded-lg"
                 min={1}
                 placeholder="3"
+                disabled={subscriberType === "SCHOOL"}
               />
             </Form.Item>
             <Form.Item
@@ -427,6 +439,7 @@ const PlanFormModal = ({ open, onClose, onSave, initialValues, isCreate }) => {
                 className="w-full rounded-lg"
                 min={1}
                 placeholder="1"
+                disabled={subscriberType === "SCHOOL"}
               />
             </Form.Item>
             <Form.Item
