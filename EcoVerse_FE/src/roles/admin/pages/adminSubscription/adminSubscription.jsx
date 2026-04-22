@@ -80,6 +80,17 @@ const getPlanColor = (plan) =>
 const PlanFormModal = ({ open, onClose, onSave, initialValues, isCreate }) => {
   const [form] = Form.useForm();
   const [featureKeys, setFeatureKeys] = useState([""]);
+  const subscriberType = Form.useWatch("subscriberType", form);
+
+  // Auto-set values when subscriberType is SCHOOL
+  useEffect(() => {
+    if (subscriberType === "SCHOOL") {
+      form.setFieldsValue({
+        maxRoundsPerCampaign: 1,
+        maxSchoolsPerCampaign: 1,
+      });
+    }
+  }, [subscriberType, form]);
 
   useEffect(() => {
     if (!open) return;
@@ -213,7 +224,7 @@ const PlanFormModal = ({ open, onClose, onSave, initialValues, isCreate }) => {
                 </span>
               }
               name="planName"
-              rules={[{ required: true, message: "Nhập tên gói" }]}
+              rules={[{ required: true, message: "Vui lòng nhập tên gói" }]}
             >
               <Input className={inp} placeholder="VD: Tiêu chuẩn" />
             </Form.Item>
@@ -233,7 +244,7 @@ const PlanFormModal = ({ open, onClose, onSave, initialValues, isCreate }) => {
                 </span>
               }
               name="planCode"
-              rules={[{ required: true, message: "Nhập mã gói" }]}
+              rules={[{ required: true, message: "Vui lòng nhập mã gói" }]}
               extra={
                 isCreate ? (
                   <span className="text-amber-500 text-xs">
@@ -318,7 +329,7 @@ const PlanFormModal = ({ open, onClose, onSave, initialValues, isCreate }) => {
                 </span>
               }
               name="price"
-              rules={[{ required: true }]}
+              rules={[{ required: true, message: "Vui lòng nhập giá gói" }]}
             >
               <InputNumber
                 className="w-full rounded-lg"
@@ -344,7 +355,7 @@ const PlanFormModal = ({ open, onClose, onSave, initialValues, isCreate }) => {
                 </span>
               }
               name="durationDays"
-              rules={[{ required: true }]}
+              rules={[{ required: true, message: "Vui lòng nhập thời hạn gói" }]}
             >
               <InputNumber
                 className="w-full rounded-lg"
@@ -384,7 +395,7 @@ const PlanFormModal = ({ open, onClose, onSave, initialValues, isCreate }) => {
                 </span>
               }
               name="maxStudents"
-              rules={[{ required: true }]}
+              rules={[{ required: true, message: "Vui lòng nhập số lượng học sinh tối đa" }]}
             >
               <InputNumber
                 className="w-full rounded-lg"
@@ -410,6 +421,7 @@ const PlanFormModal = ({ open, onClose, onSave, initialValues, isCreate }) => {
                 className="w-full rounded-lg"
                 min={1}
                 placeholder="3"
+                disabled={subscriberType === "SCHOOL"}
               />
             </Form.Item>
             <Form.Item
@@ -427,6 +439,7 @@ const PlanFormModal = ({ open, onClose, onSave, initialValues, isCreate }) => {
                 className="w-full rounded-lg"
                 min={1}
                 placeholder="1"
+                disabled={subscriberType === "SCHOOL"}
               />
             </Form.Item>
             <Form.Item
