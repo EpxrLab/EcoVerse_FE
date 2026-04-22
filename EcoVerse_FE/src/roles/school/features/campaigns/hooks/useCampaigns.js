@@ -254,10 +254,18 @@ export function useCampaigns() {
         invitationDeadline: toUTCISO(data.invitation_deadline || existing.invitationDeadline),
         topRankingCount: data.top_ranking_count || existing.topRankingCount || 0,
         bannerImageUrl: data.banner_image_url || existing.bannerImageUrl || "",
-        studentIds: data.student_ids || existing.studentIds || []
       };
 
       await campaignService.updateCampaign(id, payload);
+
+      // Check if student list has changed
+      const oldStudents = (existing.studentIds || []).slice().sort();
+      const newStudents = (data.student_ids || []).slice().sort();
+      const hasStudentChanges = JSON.stringify(oldStudents) !== JSON.stringify(newStudents);
+
+      if (hasStudentChanges) {
+        await campaignService.assignStudentsToCampaign(id, data.student_ids || []);
+      }
 
       // Update local state
       setCampaigns(prev => prev.map(c =>
@@ -451,7 +459,7 @@ export function useCampaigns() {
       console.error('Failed to activate campaign:', error);
       toast({
         title: "Lỗi",
-        description: "Không thể kích hoạt chiến dịch. Vui lòng thử lại sau.",
+        description: error.response?.data?.message || "Không thể kích hoạt chiến dịch. Vui lòng thử lại sau.",
         variant: "destructive",
       });
     }

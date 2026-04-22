@@ -94,5 +94,9 @@ export const campaignService = {
   // Leaderboard
   getCampaignLeaderboard: (id) => {
     return axios.get(`/school/campaigns/${id}/leaderboard`);
+  },
+
+  assignStudentsToCampaign: (id, studentIds) => {
+    return axios.put(`/school/campaigns/${id}/assigned-students`, { studentIds });
   }
 };

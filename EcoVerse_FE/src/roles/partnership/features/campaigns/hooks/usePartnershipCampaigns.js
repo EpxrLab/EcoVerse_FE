@@ -358,6 +358,7 @@ export function usePartnershipCampaigns() {
       handleCloseCreate();
     } catch (error) {
       console.error(`Failed to ${isEditing ? 'update' : 'create'} campaign`, error);
+      toast.error(error.response?.data?.message || `Không thể ${isEditing ? 'cập nhật' : 'tạo'} chiến dịch. Vui lòng thử lại sau.`);
     } finally {
       setLoading(false);
     }
@@ -443,6 +444,7 @@ export function usePartnershipCampaigns() {
           setConfirmConfig(prev => ({ ...prev, isOpen: false }));
         } catch (error) {
           console.error('Failed to delete campaign', error);
+          toast.error(error.response?.data?.message || "Không thể xóa chiến dịch. Vui lòng thử lại sau.");
         } finally {
           setLoading(false);
         }
@@ -475,6 +477,7 @@ export function usePartnershipCampaigns() {
           setConfirmConfig(prev => ({ ...prev, isOpen: false }));
         } catch (error) {
           console.error('Failed to activate campaign', error);
+          toast.error(error.response?.data?.message || "Không thể kích hoạt chiến dịch. Vui lòng thử lại sau.");
         } finally {
           setLoading(false);
         }
@@ -498,6 +501,7 @@ export function usePartnershipCampaigns() {
           setConfirmConfig(prev => ({ ...prev, isOpen: false }));
         } catch (error) {
           console.error('Failed to revert campaign to draft', error);
+          toast.error(error.response?.data?.message || "Không thể chuyển chiến dịch về nháp. Vui lòng thử lại sau.");
         } finally {
           setLoading(false);
         }
@@ -521,6 +525,7 @@ export function usePartnershipCampaigns() {
           setConfirmConfig(prev => ({ ...prev, isOpen: false }));
         } catch (error) {
           console.error('Failed to cancel campaign', error);
+          toast.error(error.response?.data?.message || "Không thể hủy chiến dịch. Vui lòng thử lại sau.");
         } finally {
           setLoading(false);
         }
@@ -658,6 +663,7 @@ export function usePartnershipCampaigns() {
       handleCloseAddQuiz();
     } catch (error) {
       console.error('Failed to bind quizzes to rounds', error);
+      toast.error(error.response?.data?.message || "Không thể gán Quiz vào vòng chơi. Vui lòng thử lại sau.");
     } finally {
       setLoading(false);
     }

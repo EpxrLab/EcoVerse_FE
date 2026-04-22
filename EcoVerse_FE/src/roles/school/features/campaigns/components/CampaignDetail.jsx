@@ -285,19 +285,6 @@ export function CampaignDetail({ campaign, isLoading }) {
                 </div>
                 <CardContent className="p-4 space-y-4">
                   <div className="flex flex-wrap gap-4 text-sm">
-                    <div className="flex items-center gap-1.5 text-muted-foreground">
-                      <Clock className="w-4 h-4" />
-                      <span>{safeDateFormat(round.start_time, 'HH:mm dd/MM')} - {safeDateFormat(round.end_time, 'HH:mm dd/MM')}</span>
-                    </div>
-                    <div className="flex items-center gap-1.5 font-medium">
-                      <Gamepad2 className="w-4 h-4 text-eco-orange" />
-                      <span>{round.game_type_name || 'Chưa cấu hình Game'}</span>
-                      {round.difficulty && (
-                        <Badge variant="secondary" className="ml-1 text-[10px] h-4">
-                          {round.difficulty}
-                        </Badge>
-                      )}
-                    </div>
                     {round.max_participants > 0 && (
                       <div className="flex items-center gap-1.5 text-muted-foreground">
                         <Users className="w-4 h-4" />

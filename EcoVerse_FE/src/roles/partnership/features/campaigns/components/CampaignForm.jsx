@@ -1,6 +1,7 @@
 import React from 'react';
 import toast from 'react-hot-toast';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/shared/components/ui/dialog';
+import { ScrollArea } from '@/shared/components/ui/scroll-area';
 import { Button } from '@/shared/components/ui/button';
 import { Input } from '@/shared/components/ui/input';
 import { Label } from '@/shared/components/ui/label';
@@ -121,7 +122,7 @@ export function CampaignForm({
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="max-w-5xl max-h-[90vh] overflow-y-auto flex flex-col">
+      <DialogContent className="max-w-5xl h-[92vh] flex flex-col p-6 overflow-hidden">
         <ConfigProvider
           theme={{
             token: {
@@ -177,537 +178,539 @@ export function CampaignForm({
           ))}
         </div>
 
-        <div className="flex-1 py-4">
-          {currentStep === 0 && (
-            <div className="space-y-4 animate-fade-in">
-              <div className="grid grid-cols-2 gap-4">
-                <div className="space-y-2 col-span-2">
-                  <Label htmlFor="campaignName">Tên chiến dịch *</Label>
-                  <Input
-                    id="campaignName"
-                    placeholder="VD: Chiến dịch Thu gom rác thải nhựa 2024"
-                    value={formData.campaignName}
-                    onChange={(e) => onFormChange({ campaignName: e.target.value })}
-                  />
-                </div>
-                <div className="space-y-2 col-span-2">
-                  <Label htmlFor="description">Mô tả</Label>
-                  <Textarea
-                    id="description"
-                    placeholder="Mô tả chi tiết về chiến dịch..."
-                    rows={3}
-                    value={formData.description}
-                    onChange={(e) => onFormChange({ description: e.target.value })}
-                  />
-                </div>
-              </div>
-
-              <div className="border-t pt-4 space-y-4">
-                <div>
-                  <h3 className="text-sm font-semibold flex items-center gap-2">
-                    <Calendar className="w-4 h-4 text-eco-blue" />
-                    Thời gian sự kiện & Đăng ký
-                  </h3>
-                </div>
-
+        <ScrollArea className="flex-1 -mx-2 px-2 scrollbar-thin">
+          <div className="py-4">
+            {currentStep === 0 && (
+              <div className="space-y-4 animate-fade-in">
                 <div className="grid grid-cols-2 gap-4">
-                  <div className="space-y-2">
-                    <Label htmlFor="startDate">Ngày bắt đầu chiến dịch *</Label>
-                    <DatePicker
-                      id="startDate"
-                      showTime
-                      format="DD/MM/YYYY HH:mm"
-                      className="w-full h-10"
-                      placeholder="Chọn ngày bắt đầu"
-                      value={formData.startDate ? dayjs(formData.startDate) : null}
-                      onChange={(date) => {
-                        const newStartDate = date ? date.format('YYYY-MM-DDTHH:mm') : '';
-                        const newRounds = formData.rounds.map((r, idx) => ({
-                          ...r,
-                          startTime: idx === 0 ? newStartDate : r.startTime
-                        }));
-                        onFormChange({ 
-                          startDate: newStartDate,
-                          rounds: newRounds
-                        });
-                      }}
+                  <div className="space-y-2 col-span-2">
+                    <Label htmlFor="campaignName">Tên chiến dịch *</Label>
+                    <Input
+                      id="campaignName"
+                      placeholder="VD: Chiến dịch Thu gom rác thải nhựa 2024"
+                      value={formData.campaignName}
+                      onChange={(e) => onFormChange({ campaignName: e.target.value })}
                     />
                   </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="endDate">Ngày kết thúc chiến dịch *</Label>
-                    <DatePicker
-                      id="endDate"
-                      showTime
-                      format="DD/MM/YYYY HH:mm"
-                      className="w-full h-10"
-                      placeholder="Chọn ngày kết thúc"
-                      value={formData.endDate ? dayjs(formData.endDate) : null}
-                      onChange={(date) => {
-                        const newEndDate = date ? date.format('YYYY-MM-DDTHH:mm') : '';
-                        const newRounds = formData.rounds.map(r => ({
-                          ...r,
-                          endTime: r.isFinalRound ? newEndDate : r.endTime
-                        }));
-                        onFormChange({ 
-                          endDate: newEndDate,
-                          rounds: newRounds
-                        });
-                      }}
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="registrationDate">Ngày mở đăng ký *</Label>
-                    <DatePicker
-                      id="registrationDate"
-                      showTime
-                      format="DD/MM/YYYY HH:mm"
-                      className="w-full h-10"
-                      placeholder="Chọn ngày mở đăng ký"
-                      value={formData.registrationDate ? dayjs(formData.registrationDate) : null}
-                      onChange={(date) => onFormChange({ registrationDate: date ? date.format('YYYY-MM-DDTHH:mm') : '' })}
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="registrationDeadline">Hạn chót đăng ký *</Label>
-                    <DatePicker
-                      id="registrationDeadline"
-                      showTime
-                      format="DD/MM/YYYY HH:mm"
-                      className="w-full h-10"
-                      placeholder="Chọn hạn chót đăng ký"
-                      value={formData.registrationDeadline ? dayjs(formData.registrationDeadline) : null}
-                      onChange={(date) => onFormChange({ registrationDeadline: date ? date.format('YYYY-MM-DDTHH:mm') : '' })}
+                  <div className="space-y-2 col-span-2">
+                    <Label htmlFor="description">Mô tả</Label>
+                    <Textarea
+                      id="description"
+                      placeholder="Mô tả chi tiết về chiến dịch..."
+                      rows={3}
+                      value={formData.description}
+                      onChange={(e) => onFormChange({ description: e.target.value })}
                     />
                   </div>
                 </div>
-              </div>
 
-              <div className="border-t pt-4 space-y-4">
-                <div>
-                  <h3 className="text-sm font-semibold flex items-center gap-2">
-                    <Users className="w-4 h-4 text-eco-blue" />
-                    Mời học sinh & Chỉ tiêu
-                  </h3>
+                <div className="border-t pt-4 space-y-4">
+                  <div>
+                    <h3 className="text-sm font-semibold flex items-center gap-2">
+                      <Calendar className="w-4 h-4 text-eco-blue" />
+                      Thời gian sự kiện & Đăng ký
+                    </h3>
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="space-y-2">
+                      <Label htmlFor="startDate">Ngày bắt đầu chiến dịch *</Label>
+                      <DatePicker
+                        id="startDate"
+                        showTime
+                        format="DD/MM/YYYY HH:mm"
+                        className="w-full h-10"
+                        placeholder="Chọn ngày bắt đầu"
+                        value={formData.startDate ? dayjs(formData.startDate) : null}
+                        onChange={(date) => {
+                          const newStartDate = date ? date.format('YYYY-MM-DDTHH:mm') : '';
+                          const newRounds = formData.rounds.map((r, idx) => ({
+                            ...r,
+                            startTime: idx === 0 ? newStartDate : r.startTime
+                          }));
+                          onFormChange({ 
+                            startDate: newStartDate,
+                            rounds: newRounds
+                          });
+                        }}
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="endDate">Ngày kết thúc chiến dịch *</Label>
+                      <DatePicker
+                        id="endDate"
+                        showTime
+                        format="DD/MM/YYYY HH:mm"
+                        className="w-full h-10"
+                        placeholder="Chọn ngày kết thúc"
+                        value={formData.endDate ? dayjs(formData.endDate) : null}
+                        onChange={(date) => {
+                          const newEndDate = date ? date.format('YYYY-MM-DDTHH:mm') : '';
+                          const newRounds = formData.rounds.map(r => ({
+                            ...r,
+                            endTime: r.isFinalRound ? newEndDate : r.endTime
+                          }));
+                          onFormChange({ 
+                            endDate: newEndDate,
+                            rounds: newRounds
+                          });
+                        }}
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="registrationDate">Ngày mở đăng ký *</Label>
+                      <DatePicker
+                        id="registrationDate"
+                        showTime
+                        format="DD/MM/YYYY HH:mm"
+                        className="w-full h-10"
+                        placeholder="Chọn ngày mở đăng ký"
+                        value={formData.registrationDate ? dayjs(formData.registrationDate) : null}
+                        onChange={(date) => onFormChange({ registrationDate: date ? date.format('YYYY-MM-DDTHH:mm') : '' })}
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="registrationDeadline">Hạn chót đăng ký *</Label>
+                      <DatePicker
+                        id="registrationDeadline"
+                        showTime
+                        format="DD/MM/YYYY HH:mm"
+                        className="w-full h-10"
+                        placeholder="Chọn hạn chót đăng ký"
+                        value={formData.registrationDeadline ? dayjs(formData.registrationDeadline) : null}
+                        onChange={(date) => onFormChange({ registrationDeadline: date ? date.format('YYYY-MM-DDTHH:mm') : '' })}
+                      />
+                    </div>
+                  </div>
                 </div>
-                <div className="grid grid-cols-2 gap-4">
-                  <div className="space-y-2">
-                    <Label htmlFor="invitationDate">Ngày gửi lời mời *</Label>
-                    <DatePicker
-                      id="invitationDate"
-                      showTime
-                      format="DD/MM/YYYY HH:mm"
-                      className="w-full h-10"
-                      placeholder="Chọn ngày gửi lời mời"
-                      value={formData.invitationDate ? dayjs(formData.invitationDate) : null}
-                      onChange={(date) => onFormChange({ invitationDate: date ? date.format('YYYY-MM-DDTHH:mm') : '' })}
-                    />
+
+                <div className="border-t pt-4 space-y-4">
+                  <div>
+                    <h3 className="text-sm font-semibold flex items-center gap-2">
+                      <Users className="w-4 h-4 text-eco-blue" />
+                      Mời học sinh & Chỉ tiêu
+                    </h3>
                   </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="invitationDeadline">Hạn chót xác nhận lời mời *</Label>
-                    <DatePicker
-                      id="invitationDeadline"
-                      showTime
-                      format="DD/MM/YYYY HH:mm"
-                      className="w-full h-10"
-                      placeholder="Chọn hạn chót xác nhận"
-                      value={formData.invitationDeadline ? dayjs(formData.invitationDeadline) : null}
-                      onChange={(date) => onFormChange({ invitationDeadline: date ? date.format('YYYY-MM-DDTHH:mm') : '' })}
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="maxStudentsPerSchool">Số học sinh tối đa mỗi trường *</Label>
-                    <Input
-                      id="maxStudentsPerSchool"
-                      type="number"
-                      value={formData.maxStudentsPerSchool}
-                      onChange={(e) => onFormChange({ maxStudentsPerSchool: parseInt(e.target.value) || 0 })}
-                    />
-                  </div>
-                   <div className="space-y-2">
-                    <Label htmlFor="totalStudentQuota">Tổng chỉ tiêu học sinh *</Label>
-                    <Input
-                      id="totalStudentQuota"
-                      type="number"
-                      value={formData.totalStudentQuota}
-                      onChange={(e) => {
-                        const quota = parseInt(e.target.value) || 0;
-                        const updates = { totalStudentQuota: quota };
-                        if (formData.rounds.length > 0) {
-                          const newRounds = [...formData.rounds];
-                          newRounds[0].maxParticipants = quota;
-                          updates.rounds = newRounds;
-                        }
-                        onFormChange(updates);
-                      }}
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="topRankingCount">Số lượng giải thưởng (Top vinh danh) *</Label>
-                    <Input
-                      id="topRankingCount"
-                      type="number"
-                      value={formData.topRankingCount}
-                      onChange={(e) => {
-                        const count = parseInt(e.target.value) || 0;
-                        const updates = { topRankingCount: count };
-                        
-                        // Sync rewards array length with ranking count
-                        let currentRewards = [...formData.rewards];
-                        if (count > currentRewards.length) {
-                          for (let i = currentRewards.length; i < count; i++) {
-                            currentRewards.push({
-                              rankPosition: i + 1,
-                              rewardName: '',
-                              description: '',
-                              imageUrl: '',
-                              sponsorName: ''
-                            });
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="space-y-2">
+                      <Label htmlFor="invitationDate">Ngày gửi lời mời *</Label>
+                      <DatePicker
+                        id="invitationDate"
+                        showTime
+                        format="DD/MM/YYYY HH:mm"
+                        className="w-full h-10"
+                        placeholder="Chọn ngày gửi lời mời"
+                        value={formData.invitationDate ? dayjs(formData.invitationDate) : null}
+                        onChange={(date) => onFormChange({ invitationDate: date ? date.format('YYYY-MM-DDTHH:mm') : '' })}
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="invitationDeadline">Hạn chót xác nhận lời mời *</Label>
+                      <DatePicker
+                        id="invitationDeadline"
+                        showTime
+                        format="DD/MM/YYYY HH:mm"
+                        className="w-full h-10"
+                        placeholder="Chọn hạn chót xác nhận"
+                        value={formData.invitationDeadline ? dayjs(formData.invitationDeadline) : null}
+                        onChange={(date) => onFormChange({ invitationDeadline: date ? date.format('YYYY-MM-DDTHH:mm') : '' })}
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="maxStudentsPerSchool">Số học sinh tối đa mỗi trường *</Label>
+                      <Input
+                        id="maxStudentsPerSchool"
+                        type="number"
+                        value={formData.maxStudentsPerSchool}
+                        onChange={(e) => onFormChange({ maxStudentsPerSchool: parseInt(e.target.value) || 0 })}
+                      />
+                    </div>
+                     <div className="space-y-2">
+                      <Label htmlFor="totalStudentQuota">Tổng chỉ tiêu học sinh *</Label>
+                      <Input
+                        id="totalStudentQuota"
+                        type="number"
+                        value={formData.totalStudentQuota}
+                        onChange={(e) => {
+                          const quota = parseInt(e.target.value) || 0;
+                          const updates = { totalStudentQuota: quota };
+                          if (formData.rounds.length > 0) {
+                            const newRounds = [...formData.rounds];
+                            newRounds[0].maxParticipants = quota;
+                            updates.rounds = newRounds;
                           }
-                        } else if (count < currentRewards.length) {
-                          currentRewards = currentRewards.slice(0, count);
-                        }
-                        updates.rewards = currentRewards;
-                        onFormChange(updates);
-                      }}
-                    />
+                          onFormChange(updates);
+                        }}
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="topRankingCount">Số lượng giải thưởng (Top vinh danh) *</Label>
+                      <Input
+                        id="topRankingCount"
+                        type="number"
+                        value={formData.topRankingCount}
+                        onChange={(e) => {
+                          const count = parseInt(e.target.value) || 0;
+                          const updates = { topRankingCount: count };
+                          
+                          // Sync rewards array length with ranking count
+                          let currentRewards = [...formData.rewards];
+                          if (count > currentRewards.length) {
+                            for (let i = currentRewards.length; i < count; i++) {
+                              currentRewards.push({
+                                rankPosition: i + 1,
+                                rewardName: '',
+                                description: '',
+                                imageUrl: '',
+                                sponsorName: ''
+                              });
+                            }
+                          } else if (count < currentRewards.length) {
+                            currentRewards = currentRewards.slice(0, count);
+                          }
+                          updates.rewards = currentRewards;
+                          onFormChange(updates);
+                        }}
+                      />
+                    </div>
                   </div>
                 </div>
               </div>
-            </div>
-          )}
+            )}
 
-          {currentStep === 1 && (
-            <div className="space-y-4 animate-fade-in">
-              <div className="flex items-center justify-between">
-                <Label className="text-base font-bold">Chọn trường tham gia</Label>
-                <Badge variant="outline" className="text-sm">
-                  <School className="w-4 h-4 mr-1" />
-                  {formData.schoolIds.length} trường
-                </Badge>
-              </div>
+            {currentStep === 1 && (
+              <div className="space-y-4 animate-fade-in">
+                <div className="flex items-center justify-between">
+                  <Label className="text-base font-bold">Chọn trường tham gia</Label>
+                  <Badge variant="outline" className="text-sm">
+                    <School className="w-4 h-4 mr-1" />
+                    {formData.schoolIds.length} trường
+                  </Badge>
+                </div>
 
-              <div className="border-2 rounded-xl p-4 space-y-3 max-h-[400px] overflow-y-auto">
-                {availableSchools.length === 0 ? (
-                  <p className="text-center text-muted-foreground py-8">
-                    Không tìm thấy trường nào đủ điều kiện
-                  </p>
-                ) : (
-                    availableSchools.map((school) => {
-                      const id = school.schoolId || school.id;
-                      const isSelected = formData.schoolIds.includes(id);
+                <div className="border-2 rounded-xl p-4 space-y-3 max-h-[400px] overflow-y-auto">
+                  {availableSchools.length === 0 ? (
+                    <p className="text-center text-muted-foreground py-8">
+                      Không tìm thấy trường nào đủ điều kiện
+                    </p>
+                  ) : (
+                      availableSchools.map((school) => {
+                        const id = school.schoolId || school.id;
+                        const isSelected = formData.schoolIds.includes(id);
 
-                      return (
-                        <div
-                          key={id}
-                          className={cn(
-                            "p-4 rounded-lg border-2 transition-colors",
-                            isSelected
-                              ? "bg-eco-blue/5 border-eco-blue/30"
-                              : "border-border hover:bg-muted/50"
-                          )}
-                        >
-                          <div className="flex items-start gap-3">
-                            <Checkbox
-                              checked={isSelected}
-                              onCheckedChange={() => toggleSchool(id)}
-                              className="mt-1"
-                            />
-                            <div className="flex-1">
-                              <p className="font-semibold text-foreground">{school.schoolName || school.school_name}</p>
-                              <div className="flex items-center gap-3 mt-1">
-                                <div className="flex items-center gap-1 text-sm text-muted-foreground">
-                                  <MapPin className="w-3 h-3" />
-                                  <span>{school.ward || school.district}, {school.province || school.city}</span>
+                        return (
+                          <div
+                            key={id}
+                            className={cn(
+                              "p-4 rounded-lg border-2 transition-colors",
+                              isSelected
+                                ? "bg-eco-blue/5 border-eco-blue/30"
+                                : "border-border hover:bg-muted/50"
+                            )}
+                          >
+                            <div className="flex items-start gap-3">
+                              <Checkbox
+                                checked={isSelected}
+                                onCheckedChange={() => toggleSchool(id)}
+                                className="mt-1"
+                              />
+                              <div className="flex-1">
+                                <p className="font-semibold text-foreground">{school.schoolName || school.school_name}</p>
+                                <div className="flex items-center gap-3 mt-1">
+                                  <div className="flex items-center gap-1 text-sm text-muted-foreground">
+                                    <MapPin className="w-3 h-3" />
+                                    <span>{school.ward || school.district}, {school.province || school.city}</span>
+                                  </div>
+                                  {(school.student_count || school.studentCount) && (
+                                    <Badge variant="outline" className="text-xs">
+                                      <Users className="w-3 h-3 mr-1" />
+                                      {school.studentCount || school.student_count} HS
+                                    </Badge>
+                                  )}
                                 </div>
-                                {(school.student_count || school.studentCount) && (
-                                  <Badge variant="outline" className="text-xs">
-                                    <Users className="w-3 h-3 mr-1" />
-                                    {school.studentCount || school.student_count} HS
-                                  </Badge>
-                                )}
                               </div>
                             </div>
                           </div>
-                        </div>
-                      );
-                    })
-                )}
-              </div>
-            </div>
-          )}
-
-          {currentStep === 2 && (
-            <div className="space-y-6 animate-fade-in">
-              <div className="flex items-center justify-between">
-                <div>
-                  <Label className="text-base font-bold flex items-center gap-2">
-                    <Zap className="w-5 h-5 text-eco-blue" />
-                    Cấu trúc các vòng loại
-                  </Label>
+                        );
+                      })
+                  )}
                 </div>
-                  <Button 
-                    onClick={() => {
-                      if (currentSubscription && currentSubscription.maxRoundsPerCampaign !== null && formData.rounds.length >= currentSubscription.maxRoundsPerCampaign) {
-                        toast.error(`Gói đăng ký của bạn chỉ cho phép tối đa ${currentSubscription.maxRoundsPerCampaign} vòng trên mỗi chiến dịch.`);
-                        return;
-                      }
-                      const nextRoundNumber = formData.rounds.length + 1;
-                      const lastRound = formData.rounds[formData.rounds.length - 1];
-                      onFormChange({
-                        rounds: [
-                          ...formData.rounds,
-                          {
-                            roundNumber: nextRoundNumber,
-                            roundName: `Vòng ${nextRoundNumber}`,
-                            startTime: lastRound ? lastRound.endTime : '',
-                            endTime: '',
-                            maxParticipants: lastRound ? lastRound.advanceCount : (formData.totalStudentQuota || 0),
-                            advanceCount: 0,
-                            isFinalRound: false
-                          }
-                        ]
-                      });
-                    }}
-                    variant="outline" 
-                    className="gap-2 border-eco-blue text-eco-blue hover:bg-eco-blue hover:text-white"
-                  >
-                    <Plus className="w-4 h-4" />
-                    Thêm vòng
-                  </Button>
               </div>
+            )}
 
-              <div className="space-y-4">
-                {formData.rounds.map((round, index) => (
-                  <div key={index} className="p-4 border-2 rounded-xl space-y-4 bg-muted/10 relative">
-                    {formData.rounds.length > 1 && (
-                      <button
-                        onClick={() => {
-                          const newRounds = formData.rounds.filter((_, i) => i !== index).map((r, i, arr) => {
-                            if (i === 0) {
-                              return { ...r, maxParticipants: formData.totalStudentQuota || 0 };
+            {currentStep === 2 && (
+              <div className="space-y-6 animate-fade-in">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <Label className="text-base font-bold flex items-center gap-2">
+                      <Zap className="w-5 h-5 text-eco-blue" />
+                      Cấu trúc các vòng loại
+                    </Label>
+                  </div>
+                    <Button 
+                      onClick={() => {
+                        if (currentSubscription && currentSubscription.maxRoundsPerCampaign !== null && formData.rounds.length >= currentSubscription.maxRoundsPerCampaign) {
+                          toast.error(`Gói đăng ký của bạn chỉ cho phép tối đa ${currentSubscription.maxRoundsPerCampaign} vòng trên mỗi chiến dịch.`);
+                          return;
+                        }
+                        const nextRoundNumber = formData.rounds.length + 1;
+                        const lastRound = formData.rounds[formData.rounds.length - 1];
+                        onFormChange({
+                          rounds: [
+                            ...formData.rounds,
+                            {
+                              roundNumber: nextRoundNumber,
+                              roundName: `Vòng ${nextRoundNumber}`,
+                              startTime: lastRound ? lastRound.endTime : '',
+                              endTime: '',
+                              maxParticipants: lastRound ? lastRound.advanceCount : (formData.totalStudentQuota || 0),
+                              advanceCount: 0,
+                              isFinalRound: false
                             }
-                            return { ...r, maxParticipants: arr[i-1].advanceCount };
-                          });
-                          onFormChange({ rounds: newRounds });
-                        }}
-                        className="absolute top-2 right-2 p-1.5 text-muted-foreground hover:text-destructive"
-                      >
-                        <X className="w-4 h-4" />
-                      </button>
-                    )}
+                          ]
+                        });
+                      }}
+                      variant="outline" 
+                      className="gap-2 border-eco-blue text-eco-blue hover:bg-eco-blue hover:text-white"
+                    >
+                      <Plus className="w-4 h-4" />
+                      Thêm vòng
+                    </Button>
+                </div>
 
-                    <div className="grid grid-cols-2 md:grid-cols-4 gap-4 pr-8">
-                      <div className="space-y-2 col-span-2">
-                        <Label>Tên vòng *</Label>
-                        <Input
-                          value={round.roundName}
-                          onChange={(e) => {
-                            const newRounds = [...formData.rounds];
-                            newRounds[index].roundName = e.target.value;
-                            onFormChange({ rounds: newRounds });
-                          }}
-                        />
-                      </div>
-                      <div className="space-y-2">
-                        <Label>Số người tham gia tối đa</Label>
-                        <Input
-                          type="number"
-                          value={round.maxParticipants}
-                          disabled
-                        />
-                      </div>
-                      <div className="space-y-2">
-                        <Label>{round.isFinalRound ? 'Top của giải' : 'Số lượng thăng hạng'}</Label>
-                        <Input
-                          type="number"
-                          value={round.advanceCount}
-                          disabled={round.isFinalRound}
-                          onChange={(e) => {
-                            const val = parseInt(e.target.value) || 0;
-                            const newRounds = [...formData.rounds];
-                            newRounds[index].advanceCount = val;
-                            
-                            // Chain to next round maxParticipants
-                            if (newRounds[index + 1]) {
-                              newRounds[index + 1].maxParticipants = val;
-                            }
-                            
-                            onFormChange({ rounds: newRounds });
-                          }}
-                        />
-                      </div>
-                      <div className="space-y-2">
-                        <Label>Thời gian bắt đầu *</Label>
-                        <DatePicker
-                          showTime
-                          format="DD/MM/YYYY HH:mm"
-                          className="w-full h-10"
-                          placeholder="Chọn ngày bắt đầu"
-                          value={round.startTime ? dayjs(round.startTime) : null}
-                          onChange={(date) => {
-                            const newRounds = [...formData.rounds];
-                            newRounds[index].startTime = date ? date.format('YYYY-MM-DDTHH:mm') : '';
-                            onFormChange({ rounds: newRounds });
-                          }}
-                        />
-                      </div>
-                      <div className="space-y-2">
-                        <Label>Thời gian kết thúc *</Label>
-                        <DatePicker
-                          showTime
-                          format="DD/MM/YYYY HH:mm"
-                          className="w-full h-10"
-                          placeholder="Chọn ngày kết thúc"
-                          value={round.endTime ? dayjs(round.endTime) : null}
-                          onChange={(date) => {
-                            const newEndTime = date ? date.format('YYYY-MM-DDTHH:mm') : '';
-                            const newRounds = [...formData.rounds];
-                            newRounds[index].endTime = newEndTime;
-                            
-                            // Chain to next round start time
-                            if (newRounds[index + 1]) {
-                              newRounds[index + 1].startTime = newEndTime;
-                            }
-                            
-                            onFormChange({ rounds: newRounds });
-                          }}
-                        />
-                      </div>
-                      <div className="flex items-center space-x-2 pt-8">
-                        <Checkbox 
-                          id={`final-${index}`} 
-                          checked={round.isFinalRound}
-                          onCheckedChange={(checked) => {
-                            const newRounds = [...formData.rounds];
-                            newRounds[index].isFinalRound = !!checked;
-                            if (checked) {
-                              newRounds[index].advanceCount = formData.topRankingCount || 0;
-                              if (formData.endDate) {
-                                newRounds[index].endTime = formData.endDate;
+                <div className="space-y-4">
+                  {formData.rounds.map((round, index) => (
+                    <div key={index} className="p-4 border-2 rounded-xl space-y-4 bg-muted/10 relative">
+                      {formData.rounds.length > 1 && (
+                        <button
+                          onClick={() => {
+                            const newRounds = formData.rounds.filter((_, i) => i !== index).map((r, i, arr) => {
+                              if (i === 0) {
+                                return { ...r, maxParticipants: formData.totalStudentQuota || 0 };
                               }
-                            }
+                              return { ...r, maxParticipants: arr[i-1].advanceCount };
+                            });
                             onFormChange({ rounds: newRounds });
                           }}
-                        />
-                        <Label htmlFor={`final-${index}`}>Là vòng chung kết</Label>
+                          className="absolute top-2 right-2 p-1.5 text-muted-foreground hover:text-destructive"
+                        >
+                          <X className="w-4 h-4" />
+                        </button>
+                      )}
+
+                      <div className="grid grid-cols-2 md:grid-cols-4 gap-4 pr-8">
+                        <div className="space-y-2 col-span-2">
+                          <Label>Tên vòng *</Label>
+                          <Input
+                            value={round.roundName}
+                            onChange={(e) => {
+                              const newRounds = [...formData.rounds];
+                              newRounds[index].roundName = e.target.value;
+                              onFormChange({ rounds: newRounds });
+                            }}
+                          />
+                        </div>
+                        <div className="space-y-2">
+                          <Label>Số người tham gia tối đa</Label>
+                          <Input
+                            type="number"
+                            value={round.maxParticipants}
+                            disabled
+                          />
+                        </div>
+                        <div className="space-y-2">
+                          <Label>{round.isFinalRound ? 'Top của giải' : 'Số lượng thăng hạng'}</Label>
+                          <Input
+                            type="number"
+                            value={round.advanceCount}
+                            disabled={round.isFinalRound}
+                            onChange={(e) => {
+                              const val = parseInt(e.target.value) || 0;
+                              const newRounds = [...formData.rounds];
+                              newRounds[index].advanceCount = val;
+                              
+                              // Chain to next round maxParticipants
+                              if (newRounds[index + 1]) {
+                                newRounds[index + 1].maxParticipants = val;
+                              }
+                              
+                              onFormChange({ rounds: newRounds });
+                            }}
+                          />
+                        </div>
+                        <div className="space-y-2">
+                          <Label>Thời gian bắt đầu *</Label>
+                          <DatePicker
+                            showTime
+                            format="DD/MM/YYYY HH:mm"
+                            className="w-full h-10"
+                            placeholder="Chọn ngày bắt đầu"
+                            value={round.startTime ? dayjs(round.startTime) : null}
+                            onChange={(date) => {
+                              const newRounds = [...formData.rounds];
+                              newRounds[index].startTime = date ? date.format('YYYY-MM-DDTHH:mm') : '';
+                              onFormChange({ rounds: newRounds });
+                            }}
+                          />
+                        </div>
+                        <div className="space-y-2">
+                          <Label>Thời gian kết thúc *</Label>
+                          <DatePicker
+                            showTime
+                            format="DD/MM/YYYY HH:mm"
+                            className="w-full h-10"
+                            placeholder="Chọn ngày kết thúc"
+                            value={round.endTime ? dayjs(round.endTime) : null}
+                            onChange={(date) => {
+                              const newEndTime = date ? date.format('YYYY-MM-DDTHH:mm') : '';
+                              const newRounds = [...formData.rounds];
+                              newRounds[index].endTime = newEndTime;
+                              
+                              // Chain to next round start time
+                              if (newRounds[index + 1]) {
+                                newRounds[index + 1].startTime = newEndTime;
+                              }
+                              
+                              onFormChange({ rounds: newRounds });
+                            }}
+                          />
+                        </div>
+                        <div className="flex items-center space-x-2 pt-8">
+                          <Checkbox 
+                            id={`final-${index}`} 
+                            checked={round.isFinalRound}
+                            onCheckedChange={(checked) => {
+                              const newRounds = [...formData.rounds];
+                              newRounds[index].isFinalRound = !!checked;
+                              if (checked) {
+                                newRounds[index].advanceCount = formData.topRankingCount || 0;
+                                if (formData.endDate) {
+                                  newRounds[index].endTime = formData.endDate;
+                                }
+                              }
+                              onFormChange({ rounds: newRounds });
+                            }}
+                          />
+                          <Label htmlFor={`final-${index}`}>Là vòng chung kết</Label>
+                        </div>
                       </div>
                     </div>
-                  </div>
-                ))}
-              </div>
-            </div>
-          )}
-
-          {currentStep === 3 && (
-            <div className="space-y-6 animate-fade-in">
-              <div className="flex items-center justify-between">
-                <div>
-                  <Label className="text-base font-bold flex items-center gap-2">
-                    <Package className="w-5 h-5 text-eco-blue" />
-                    Danh sách phần thưởng cho Top {formData.topRankingCount}
-                  </Label>
-                  <p className="text-sm text-muted-foreground mt-1">
-                    Số lượng giải thưởng tự động khớp với cấu hình xếp hạng
-                  </p>
+                  ))}
                 </div>
               </div>
+            )}
 
-              <div className="space-y-4">
-                {formData.rewards.map((reward, index) => (
-                  <div key={index} className="p-4 border-2 rounded-xl space-y-4 bg-muted/10 relative">
-                    <div className="grid grid-cols-2 md:grid-cols-6 gap-4 pr-8">
-                       <div className="space-y-2">
-                        <Label>Hạng</Label>
-                        <Input
-                          type="number"
-                          value={reward.rankPosition}
-                          disabled
-                        />
-                      </div>
-                      <div className="space-y-2 col-span-2">
-                        <Label>Tên phần thưởng *</Label>
-                        <Input
-                          placeholder="VD: Xe đạp mini"
-                          value={reward.rewardName}
-                          onChange={(e) => updateReward(index, 'rewardName', e.target.value)}
-                        />
-                      </div>
-                      <div className="space-y-2 col-span-2">
-                        <Label>Nhà tài trợ</Label>
-                        <Input
-                          placeholder="VD: VinFast"
-                          value={reward.sponsorName}
-                          onChange={(e) => updateReward(index, 'sponsorName', e.target.value)}
-                        />
-                      </div>
-                      <div className="space-y-2 col-span-5">
-                        <Label>Mô tả</Label>
-                        <Input
-                          placeholder="..."
-                          value={reward.description}
-                          onChange={(e) => updateReward(index, 'description', e.target.value)}
-                        />
-                      </div>
-                      <div className="space-y-2 col-span-6">
-                        <Label>Ảnh phần thưởng</Label>
-                        <div className="flex items-center gap-4">
-                          <div className="w-16 h-16 rounded-lg border-2 border-dashed flex items-center justify-center overflow-hidden bg-muted/50">
-                            {reward.previewUrl || reward.imageUrl ? (
-                              <img src={reward.previewUrl || reward.imageUrl} alt="Reward" className="w-full h-full object-cover" />
-                            ) : (
-                              <ImageIcon className="w-6 h-6 text-muted-foreground" />
-                            )}
-                          </div>
-                          <div className="flex-1">
-                            <Input
-                              type="file"
-                              accept="image/*"
-                              className="hidden"
-                              id={`reward-image-${index}`}
-                              onChange={(e) => {
-                                const file = e.target.files?.[0];
-                                if (file) handleRewardImageUpload(index, file);
-                              }}
-                            />
-                            <Label 
-                              htmlFor={`reward-image-${index}`}
-                              className="inline-flex items-center gap-2 px-4 py-2 rounded-lg border-2 border-eco-blue/30 text-eco-blue cursor-pointer hover:bg-eco-blue/5 transition-colors text-sm font-medium"
-                            >
-                              <Upload className="w-4 h-4" />
-                              {reward.imageUrl ? 'Thay đổi ảnh' : 'Tải lên ảnh'}
-                            </Label>
-                            {reward.imageUrl && (
-                              <Button
-                                variant="ghost"
-                                size="sm"
-                                className="ml-2 text-destructive hover:text-destructive hover:bg-destructive/10"
-                                onClick={() => {
-                                  const newRewards = [...formData.rewards];
-                                  newRewards[index] = { 
-                                    ...newRewards[index], 
-                                    imageUrl: '', 
-                                    previewUrl: '' 
-                                  };
-                                  onFormChange({ rewards: newRewards });
+            {currentStep === 3 && (
+              <div className="space-y-6 animate-fade-in">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <Label className="text-base font-bold flex items-center gap-2">
+                      <Package className="w-5 h-5 text-eco-blue" />
+                      Danh sách phần thưởng cho Top {formData.topRankingCount}
+                    </Label>
+                    <p className="text-sm text-muted-foreground mt-1">
+                      Số lượng giải thưởng tự động khớp với cấu hình xếp hạng
+                    </p>
+                  </div>
+                </div>
+
+                <div className="space-y-4">
+                  {formData.rewards.map((reward, index) => (
+                    <div key={index} className="p-4 border-2 rounded-xl space-y-4 bg-muted/10 relative">
+                      <div className="grid grid-cols-2 md:grid-cols-6 gap-4 pr-8">
+                         <div className="space-y-2">
+                          <Label>Hạng</Label>
+                          <Input
+                            type="number"
+                            value={reward.rankPosition}
+                            disabled
+                          />
+                        </div>
+                        <div className="space-y-2 col-span-2">
+                          <Label>Tên phần thưởng *</Label>
+                          <Input
+                            placeholder="VD: Xe đạp mini"
+                            value={reward.rewardName}
+                            onChange={(e) => updateReward(index, 'rewardName', e.target.value)}
+                          />
+                        </div>
+                        <div className="space-y-2 col-span-2">
+                          <Label>Nhà tài trợ</Label>
+                          <Input
+                            placeholder="VD: VinFast"
+                            value={reward.sponsorName}
+                            onChange={(e) => updateReward(index, 'sponsorName', e.target.value)}
+                          />
+                        </div>
+                        <div className="space-y-2 col-span-5">
+                          <Label>Mô tả</Label>
+                          <Input
+                            placeholder="..."
+                            value={reward.description}
+                            onChange={(e) => updateReward(index, 'description', e.target.value)}
+                          />
+                        </div>
+                        <div className="space-y-2 col-span-6">
+                          <Label>Ảnh phần thưởng</Label>
+                          <div className="flex items-center gap-4">
+                            <div className="w-16 h-16 rounded-lg border-2 border-dashed flex items-center justify-center overflow-hidden bg-muted/50">
+                              {reward.previewUrl || reward.imageUrl ? (
+                                <img src={reward.previewUrl || reward.imageUrl} alt="Reward" className="w-full h-full object-cover" />
+                              ) : (
+                                <ImageIcon className="w-6 h-6 text-muted-foreground" />
+                              )}
+                            </div>
+                            <div className="flex-1">
+                              <Input
+                                type="file"
+                                accept="image/*"
+                                className="hidden"
+                                id={`reward-image-${index}`}
+                                onChange={(e) => {
+                                  const file = e.target.files?.[0];
+                                  if (file) handleRewardImageUpload(index, file);
                                 }}
+                              />
+                              <Label 
+                                htmlFor={`reward-image-${index}`}
+                                className="inline-flex items-center gap-2 px-4 py-2 rounded-lg border-2 border-eco-blue/30 text-eco-blue cursor-pointer hover:bg-eco-blue/5 transition-colors text-sm font-medium"
                               >
-                                <X className="w-4 h-4 mr-1" />
-                                Xóa
-                              </Button>
-                            )}
-                            <p className="text-[10px] text-muted-foreground mt-1">
-                              Định dạng: JPG, PNG, WebP. Tối đa 5MB.
-                            </p>
+                                <Upload className="w-4 h-4" />
+                                {reward.imageUrl ? 'Thay đổi ảnh' : 'Tải lên ảnh'}
+                              </Label>
+                              {reward.imageUrl && (
+                                <Button
+                                  variant="ghost"
+                                  size="sm"
+                                  className="ml-2 text-destructive hover:text-destructive hover:bg-destructive/10"
+                                  onClick={() => {
+                                    const newRewards = [...formData.rewards];
+                                    newRewards[index] = { 
+                                      ...newRewards[index], 
+                                      imageUrl: '', 
+                                      previewUrl: '' 
+                                    };
+                                    onFormChange({ rewards: newRewards });
+                                  }}
+                                >
+                                  <X className="w-4 h-4 mr-1" />
+                                  Xóa
+                                </Button>
+                              )}
+                              <p className="text-[10px] text-muted-foreground mt-1">
+                                Định dạng: JPG, PNG, WebP. Tối đa 5MB.
+                              </p>
+                            </div>
                           </div>
                         </div>
                       </div>
                     </div>
-                  </div>
-                ))}
+                  ))}
+                </div>
               </div>
-            </div>
-          )}
-        </div>
+            )}
+          </div>
+        </ScrollArea>
 
         <div className="flex items-center justify-between pt-4 border-t mt-auto">
           <Button

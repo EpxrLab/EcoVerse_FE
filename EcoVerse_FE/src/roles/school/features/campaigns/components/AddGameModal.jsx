@@ -453,7 +453,8 @@ export function AddGameModal({ isOpen, onClose, campaign, onSubmit }) {
                       <p className="text-sm text-muted-foreground flex gap-1.5 flex-wrap">
                         {selectedPresetIds.map(id => {
                           const p = presets.find(pr => pr.id === id);
-                          return <span key={id} className="text-eco-green">#{p?.difficulty}</span>;
+                          const label = DIFFICULTY_META[p?.difficulty]?.label || p?.difficulty;
+                          return <span key={id} className="text-eco-green">#{label}</span>;
                         })}
                       </p>
                     </div>
@@ -473,8 +474,8 @@ export function AddGameModal({ isOpen, onClose, campaign, onSubmit }) {
                           return (
                             <div key={id} className="p-3 bg-muted/20 rounded-lg">
                               <p className="font-bold text-xs text-muted-foreground flex justify-between uppercase border-b border-muted/50 pb-2 mb-2">
-                                <span>{p?.difficulty} PRESET</span>
-                                <span>{lvls.length} LEVELS</span>
+                                <span>CẤU HÌNH {DIFFICULTY_META[p?.difficulty]?.label || p?.difficulty}</span>
+                                <span>{lvls.length} MÀN CHƠI</span>
                               </p>
                               
                               <div className="mb-3">
@@ -488,7 +489,7 @@ export function AddGameModal({ isOpen, onClose, campaign, onSubmit }) {
                               </div>
                               {lvls.slice(0, 3).map(lvl => (
                                 <div key={lvl.id} className="flex items-center justify-between text-[11px] py-1 border-b last:border-0 border-dashed border-muted/50">
-                                  <span>Level {lvl.levelNumber}</span>
+                                  <span>Màn {lvl.levelNumber}</span>
                                   <div className="flex items-center gap-3 text-muted-foreground">
                                     <span>{lvl.itemCount} rác</span>
                                     <span>{lvl.timeLimitSeconds}s</span>

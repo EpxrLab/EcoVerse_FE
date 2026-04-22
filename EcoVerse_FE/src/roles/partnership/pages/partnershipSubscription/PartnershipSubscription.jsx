@@ -4,7 +4,7 @@ import { Pagination, PaginationContent, PaginationItem, PaginationLink, Paginati
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/shared/components/ui/card';
 import { Button } from '@/shared/components/ui/button';
 import { Badge } from '@/shared/components/ui/badge';
-import { Check, CreditCard, Crown, Sparkles, Users, Zap, AlertTriangle, Info, History, Calendar, Receipt } from 'lucide-react';
+import { Check, CreditCard, Crown, Sparkles, Users, Zap, AlertTriangle, Info, History, Calendar } from 'lucide-react';
 import { toast } from '@/shared/hooks/use-toast';
 import { cn } from '@/shared/lib/utils';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/shared/components/ui/table';
@@ -66,11 +66,23 @@ export default function PartnershipSubscription() {
 
   useEffect(() => {
     fetchPlans();
+    fetchCurrentSubscription();
   }, []);
 
   useEffect(() => {
     fetchHistory();
   }, [historyPage, historyStatusFilter]);
+
+  const fetchCurrentSubscription = async () => {
+    try {
+      const response = await subscriptionService.getMySubscription();
+      if (response.data && response.data.data) {
+        setCurrentSubscription(response.data.data);
+      }
+    } catch (error) {
+      console.error('Error fetching current subscription:', error);
+    }
+  };
 
   const fetchHistory = async () => {
     setHistoryLoading(true);
@@ -83,14 +95,11 @@ export default function PartnershipSubscription() {
         status: historyStatusFilter || undefined
       });
       if (response.data && (response.data.status === 0 || response.data.status === 200 || response.data.status === '0')) {
-        const content = response.data.data?.content || [];
+        let content = response.data.data?.content || [];
+        // Hide cancelled subscriptions
+        content = content.filter(s => s.status?.toUpperCase() !== 'CANCELLED');
         setHistory(content);
         setHistoryTotalPages(response.data.data?.totalPages || 1);
-        
-        if (!historyStatusFilter && historyPage === 1) {
-          const activeOrExpired = content.find(s => s.status === 'ACTIVE' || s.status === 'EXPIRED');
-          if (activeOrExpired) setCurrentSubscription(activeOrExpired);
-        }
       }
     } catch (error) {
       console.error('Error fetching history:', error);
@@ -198,59 +207,6 @@ export default function PartnershipSubscription() {
         </CardContent>
       </Card>
 
-      {/* Current subscription status */}
-      {currentSubscription ? (
-        <Card className={cn(
-          "border-eco-green/30 bg-eco-green/5", 
-          currentSubscription.status === 'EXPIRED' && "border-amber-500/30 bg-amber-500/5"
-        )}>
-          <CardContent className="p-6">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-4">
-                <div className={cn(
-                  "w-12 h-12 rounded-xl bg-eco-green/20 flex items-center justify-center",
-                  currentSubscription.status === 'EXPIRED' && "bg-amber-500/20"
-                )}>
-                  {currentSubscription.status === 'EXPIRED' ? (
-                    <AlertTriangle className="w-6 h-6 text-amber-500" />
-                  ) : (
-                    <Sparkles className="w-6 h-6 text-eco-green" />
-                  )}
-                </div>
-                <div>
-                  <p className="font-medium text-foreground">
-                    Gói hiện tại: {currentSubscription.planName || currentSubscription.subscriptionName || currentSubscription.subscriptionCode || 'Không xác định'}
-                  </p>
-                  <p className="text-sm text-muted-foreground">
-                    Hết hạn: {currentSubscription.endDate || currentSubscription.expiredAt || currentSubscription.validUntil ? new Date(currentSubscription.endDate || currentSubscription.expiredAt || currentSubscription.validUntil).toLocaleDateString('vi-VN') : '--'}
-                  </p>
-                </div>
-              </div>
-              <Badge variant="outline" className={cn(
-                "text-eco-green border-eco-green/30",
-                currentSubscription.status === 'EXPIRED' && "text-amber-500 border-amber-500/30"
-              )}>
-                {currentSubscription.status === 'EXPIRED' ? 'Đã hết hạn' : 'Đang hoạt động'}
-              </Badge>
-            </div>
-          </CardContent>
-        </Card>
-      ) : (
-        <Card className="border-eco-orange/30 bg-eco-orange/5">
-          <CardContent className="p-6">
-            <div className="flex items-center gap-4">
-              <div className="w-12 h-12 rounded-xl bg-eco-orange/20 flex items-center justify-center">
-                <CreditCard className="w-6 h-6 text-eco-orange" />
-              </div>
-              <div>
-                <p className="font-medium text-foreground">Bạn chưa có gói đăng ký</p>
-                <p className="text-sm text-muted-foreground">Chọn một gói bên dưới để bắt đầu sử dụng EcoVerse</p>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-      )}
-
       {/* Pricing cards */}
       {loading ? (
         <div className="flex flex-col items-center justify-center py-20">
@@ -269,7 +225,7 @@ export default function PartnershipSubscription() {
                 key={plan.id}
                 className={cn(
                   "relative overflow-hidden transition-all duration-300 hover:shadow-lg flex flex-col",
-                  isPopular && "border-eco-green shadow-eco-green/10 shadow-lg scale-105 z-10"
+                  isPopular && "border-eco-green shadow-eco-green/10 shadow-lg"
                 )}
               >
                 {isPopular && (
@@ -374,9 +330,10 @@ export default function PartnershipSubscription() {
                     onClick={() => handleSelectPlan(plan)}
                     disabled={
                       (isProcessing && selectedPlan === plan.id) || 
-                      (currentSubscription && currentSubscription.status?.toUpperCase() === 'ACTIVE' && 
+                      (currentSubscription && currentSubscription.status?.toUpperCase() === 'ACTIVE' && (
+                        (currentSubscription.planId === plan.id || currentSubscription.planCode === plan.planCode) ||
                         Number(plan.price || 0) <= Number(currentSubscription.price || currentSubscription.amount || 0)
-                      )
+                      ))
                     }
                   >
                     {isProcessing && selectedPlan === plan.id ? (
@@ -423,7 +380,6 @@ export default function PartnershipSubscription() {
                 <SelectItem value="ALL">--</SelectItem>
                 <SelectItem value="ACTIVE">Đang hoạt động</SelectItem>
                 <SelectItem value="EXPIRED">Đã hết hạn</SelectItem>
-                <SelectItem value="CANCELLED">Đã hủy</SelectItem>
                 <SelectItem value="PENDING_RENEWAL">Chờ gia hạn</SelectItem>
               </SelectContent>
             </Select>
@@ -561,8 +517,6 @@ export default function PartnershipSubscription() {
             <h4 className="font-medium text-foreground mb-1">Điều gì xảy ra khi gói hết hạn?</h4>
             <p className="text-sm text-muted-foreground">
               Khi gói hết hạn, doanh nghiệp có <strong>10 ngày</strong> để gia hạn. 
-              Trong thời gian này, các tính năng vẫn có thể được duy trì để xử lý hoàn tất chiến dịch dở dang. 
-              Sau 10 ngày, tài khoản sẽ bị tạm khóa các tính năng tạo chiến dịch mới cho đến khi gia hạn.
             </p>
           </div>
           <div>
