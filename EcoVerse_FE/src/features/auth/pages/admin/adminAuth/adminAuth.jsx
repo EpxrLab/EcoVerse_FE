@@ -142,6 +142,7 @@ export default function AdminAuth() {
                     ĐỊA CHỈ EMAIL
                   </label>
                   <Input
+                    variant="borderless"
                     prefix={<MailOutlined className="text-[#1db1d1]/50 mr-2" />}
                     type="email"
                     placeholder="admin@ecoverse.systems"
@@ -151,7 +152,7 @@ export default function AdminAuth() {
                       setErrors((p) => ({ ...p, email: "" }));
                     }}
                     onKeyDown={handleKeyDown}
-                    className="h-14 rounded-2xl bg-white/5 border-white/10 text-white placeholder:text-white/20 focus:bg-white/10 transition-all font-greenhouse-body text-base"
+                    className="h-14 rounded-2xl !bg-white/5 border border-white/10 text-white placeholder:text-white/20 hover:!bg-white/10 focus:!bg-white/10 transition-all font-greenhouse-body text-base"
                     disabled={isLoading}
                     status={errors.email ? "error" : ""}
                   />
@@ -166,6 +167,7 @@ export default function AdminAuth() {
                     MẬT KHẨU CẤP CAO
                   </label>
                   <Input.Password
+                    variant="borderless"
                     prefix={<LockOutlined className="text-[#1db1d1]/50 mr-2" />}
                     placeholder="••••••••"
                     value={password}
@@ -174,7 +176,7 @@ export default function AdminAuth() {
                       setErrors((p) => ({ ...p, password: "" }));
                     }}
                     onKeyDown={handleKeyDown}
-                    className="h-14 rounded-2xl bg-white/5 border-white/10 text-white placeholder:text-white/20 focus:bg-white/10 transition-all font-greenhouse-body text-base"
+                    className="h-14 rounded-2xl !bg-white/5 border border-white/10 text-white placeholder:text-white/20 hover:!bg-white/10 focus:!bg-white/10 transition-all font-greenhouse-body text-base"
                     disabled={isLoading}
                     status={errors.password ? "error" : ""}
                     iconRender={(v) =>
