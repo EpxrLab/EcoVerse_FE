@@ -66,11 +66,23 @@ export default function SchoolSubscription() {
 
   useEffect(() => {
     fetchPlans();
+    fetchCurrentSubscription();
   }, []);
 
   useEffect(() => {
     fetchHistory();
   }, [historyPage, historyStatusFilter]);
+
+  const fetchCurrentSubscription = async () => {
+    try {
+      const response = await subscriptionService.getMySubscription();
+      if (response.data && response.data.data) {
+        setCurrentSubscription(response.data.data);
+      }
+    } catch (error) {
+      console.error('Error fetching current subscription:', error);
+    }
+  };
 
   const fetchHistory = async () => {
     setHistoryLoading(true);
@@ -83,14 +95,11 @@ export default function SchoolSubscription() {
         status: historyStatusFilter || undefined
       });
       if (response.data && (response.data.status === 0 || response.data.status === 200 || response.data.status === '0')) {
-        const content = response.data.data?.content || [];
+        let content = response.data.data?.content || [];
+        // Hide cancelled subscriptions
+        content = content.filter(s => s.status?.toUpperCase() !== 'CANCELLED');
         setHistory(content);
         setHistoryTotalPages(response.data.data?.totalPages || 1);
-        
-        if (!historyStatusFilter && historyPage === 1) {
-          const activeOrExpired = content.find(s => s.status === 'ACTIVE' || s.status === 'EXPIRED');
-          if (activeOrExpired) setCurrentSubscription(activeOrExpired);
-        }
       }
     } catch (error) {
       console.error('Error fetching history:', error);
@@ -218,7 +227,7 @@ export default function SchoolSubscription() {
                 key={plan.id}
                 className={cn(
                   "relative overflow-hidden transition-all duration-300 hover:shadow-lg flex flex-col",
-                  isPopular && "border-eco-green shadow-eco-green/10 shadow-lg scale-105 z-10"
+                  isPopular && "border-eco-green shadow-eco-green/10 shadow-lg"
                 )}
               >
                 {isPopular && (
@@ -323,9 +332,10 @@ export default function SchoolSubscription() {
                     onClick={() => handleSelectPlan(plan)}
                     disabled={
                       (isProcessing && selectedPlan === plan.id) || 
-                      (currentSubscription && currentSubscription.status?.toUpperCase() === 'ACTIVE' && 
+                      (currentSubscription && currentSubscription.status?.toUpperCase() === 'ACTIVE' && (
+                        (currentSubscription.planId === plan.id || currentSubscription.planCode === plan.planCode) ||
                         Number(plan.price || 0) <= Number(currentSubscription.price || currentSubscription.amount || 0)
-                      )
+                      ))
                     }
                   >
                     {isProcessing && selectedPlan === plan.id ? (
@@ -372,7 +382,6 @@ export default function SchoolSubscription() {
                 <SelectItem value="ALL">--</SelectItem>
                 <SelectItem value="ACTIVE">Đang hoạt động</SelectItem>
                 <SelectItem value="EXPIRED">Đã hết hạn</SelectItem>
-                <SelectItem value="CANCELLED">Đã hủy</SelectItem>
                 <SelectItem value="PENDING_RENEWAL">Chờ gia hạn</SelectItem>
               </SelectContent>
             </Select>
@@ -503,7 +512,6 @@ export default function SchoolSubscription() {
             <h4 className="font-medium text-foreground mb-1">Học sinh nhận xu như thế nào?</h4>
             <p className="text-sm text-muted-foreground">
               Học sinh tự kiếm xu bằng cách chơi game phân loại rác và hoàn thành các bài quiz. 
-              Mỗi rác phân loại đúng được +10 xu, hoàn thành quiz với điểm ≥80% được +25 xu.
             </p>
           </div>
           <div>
@@ -517,14 +525,12 @@ export default function SchoolSubscription() {
             <h4 className="font-medium text-foreground mb-1">Điều gì xảy ra khi gói hết hạn?</h4>
             <p className="text-sm text-muted-foreground">
               Khi gói hết hạn, nhà trường có <strong>10 ngày</strong> để gia hạn. 
-              Trong thời gian này, học sinh vẫn có thể sử dụng tài khoản nhưng không thể đổi quà mới. 
-              Sau 10 ngày, tài khoản sẽ bị tạm khóa cho đến khi gia hạn.
             </p>
           </div>
           <div>
             <h4 className="font-medium text-foreground mb-1">Hỗ trợ thanh toán nào?</h4>
             <p className="text-sm text-muted-foreground">
-              Chúng tôi hỗ trợ chuyển khoản ngân hàng, thẻ tín dụng/ghi nợ, và các ví điện tử phổ biến.
+              Chúng tôi hỗ trợ chuyển khoản ngân hàng và các ví điện tử phổ biến.
             </p>
           </div>
         </CardContent>

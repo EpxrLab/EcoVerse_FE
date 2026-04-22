@@ -4,6 +4,7 @@ import { Card, CardContent, CardFooter, CardHeader, CardTitle, CardDescription }
 import { Button } from '@/shared/components/ui/button';
 import { CheckCircle2, XCircle, ArrowRight, Loader2 } from 'lucide-react';
 import { motion } from 'framer-motion';
+import { paymentService } from '../../services/payment.service';
 
 export default function PaymentResult() {
   const [searchParams] = useSearchParams();
@@ -21,12 +22,23 @@ export default function PaymentResult() {
   const isSuccess = cancel !== 'true' && status !== 'CANCELLED' && code === '00';
 
   useEffect(() => {
+    // Handle payment cancellation if status is CANCELLED
+    if (status === 'CANCELLED' && orderCode) {
+      paymentService.cancelPayment(orderCode)
+        .then(() => {
+          console.log(`Payment ${orderCode} cancelled successfully`);
+        })
+        .catch((error) => {
+          console.error('Failed to cancel payment:', error);
+        });
+    }
+
     // Simulate processing time for better UX
     const timer = setTimeout(() => {
       setIsProcessing(false);
     }, 1500);
     return () => clearTimeout(timer);
-  }, []);
+  }, [status, orderCode]);
 
   if (isProcessing) {
     return (
