@@ -1,0 +1,468 @@
+import { useState } from 'react';
+import { Button } from "@/shared/components/ui/button";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/shared/components/ui/tabs";
+import { Plus, FileQuestion, Globe, Pencil } from "lucide-react";
+import { useQuizzes } from '../../features/quizzes/hooks/useQuizzes';
+import { useQuizForm } from '../../features/quizzes/hooks';
+import { QuizStats, QuizList, QuizForm, QuizDetailDialog, ConfirmDeleteDialog } from '../../features/quizzes/components';
+import { toast } from 'sonner';
+import { quizzesService } from '../../features/quizzes/services/quizzes.service';
+
+export default function SchoolQuizzes() {
+  const [selectedQuizId, setSelectedQuizId] = useState(null);
+  const [isDetailDialogOpen, setIsDetailDialogOpen] = useState(false);
+  const [isPublishing, setIsPublishing] = useState(false);
+  const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
+  const [quizToDelete, setQuizToDelete] = useState(null);
+  const [isCreating, setIsCreating] = useState(false);
+  const [deletedQuestionIds, setDeletedQuestionIds] = useState([]);
+  const [originalQuestions, setOriginalQuestions] = useState([]);
+
+  const {
+    defaultQuizzes,
+    customQuizzes,
+    stats,
+    getDifficultyStars,
+    getDifficultyColor,
+    isLoading,
+    refreshQuizzes,
+  } = useQuizzes();
+
+  const {
+    quizForm,
+    updateQuizForm,
+    resetQuizForm,
+    loadQuizForm,
+    questions,
+    addQuestion,
+    removeQuestion,
+    isCreateDialogOpen,
+    setIsCreateDialogOpen,
+    editingQuestionId,
+    startEditQuestion,
+    saveQuestion,
+    cancelAddQuestion,
+  } = useQuizForm();
+
+  const [isImportingQuestions, setIsImportingQuestions] = useState(false);
+
+  const allQuizzes = [...defaultQuizzes, ...customQuizzes];
+  const publishedQuizzes = customQuizzes.filter(q => q.status === 'published');
+  const draftQuizzes = customQuizzes.filter(q => q.status === 'draft');
+
+  const handleViewDetail = (quiz) => {
+    setSelectedQuizId(quiz.id);
+    setIsDetailDialogOpen(true);
+  };
+
+  const handleOpenCreate = () => {
+    setSelectedQuizId(null);
+    setDeletedQuestionIds([]);
+    setOriginalQuestions([]);
+    resetQuizForm();
+    setIsCreateDialogOpen(true);
+  };
+
+  const handleCloseForm = () => {
+    setIsCreateDialogOpen(false);
+    setSelectedQuizId(null);
+    setDeletedQuestionIds([]);
+    setOriginalQuestions([]);
+    resetQuizForm();
+  };
+
+  const handleEditQuiz = async (quiz) => {
+    if (quiz.status === 'published') {
+        toast.error('Không thể sửa bài quiz đã xuất bản. Hãy chuyển về bản nháp trước.');
+        return;
+    }
+    try {
+        const response = await quizzesService.getQuizDetail(quiz.id);
+        const detailedQuiz = response.data.data;
+        
+        const qData = detailedQuiz.questions.map(q => {
+          const isTF = q.questionType === 'TRUE_FALSE';
+          const correctAns = q.answers.find(a => a.correct);
+          let correctAnswer = correctAns?.answerText;
+          
+          if (isTF && correctAnswer) {
+            // Normalize to "true" or "false" for local state
+            const text = correctAnswer.toLowerCase();
+            if (text.startsWith('đ') || text === 'true') correctAnswer = 'true';
+            else if (text.startsWith('s') || text === 'false') correctAnswer = 'false';
+          }
+
+          return {
+            id: q.id,
+            question: q.questionText,
+            type: isTF ? 'true_false' : 'multiple_choice', 
+            options: q.answers.map(a => a.answerText),
+            correctAnswer: correctAnswer,
+            isExisting: true,
+          };
+        });
+
+        loadQuizForm({
+          title: detailedQuiz.title,
+          description: detailedQuiz.description,
+          difficulty: detailedQuiz.difficulty.toLowerCase(),
+          timeLimit: detailedQuiz.timePerQuestion,
+          passingScore: detailedQuiz.passScorePercentage,
+          targetGrade: detailedQuiz.targetGrade,
+          coinsOnPass: detailedQuiz.coinOnPass || detailedQuiz.coinsOnPass || 1,
+        }, qData);
+        
+        setOriginalQuestions(JSON.parse(JSON.stringify(qData)));
+        setDeletedQuestionIds([]);
+        setSelectedQuizId(quiz.id);
+        setIsCreateDialogOpen(true);
+    } catch (error) {
+        console.error('Failed to load quiz details for editing:', error);
+        toast.error('Không thể tải chi tiết bài quiz để chỉnh sửa');
+    }
+  };
+
+  const handleUpdateQuiz = async () => {
+    setIsCreating(true);
+    try {
+      // 1. Update Quiz Metadata
+      const updateData = {
+        title: quizForm.title,
+        description: quizForm.description,
+        difficulty: quizForm.difficulty.toUpperCase(),
+        targetGrade: quizForm.targetGrade,
+        coinOnPass: quizForm.coinsOnPass,
+        timePerQuestion: quizForm.timeLimit,
+        passScorePercentage: quizForm.passingScore,
+      };
+      
+      await quizzesService.updateQuiz(selectedQuizId, updateData);
+
+      // 2. Handle Deletions
+      for (const questionId of deletedQuestionIds) {
+          await quizzesService.deleteQuestion(selectedQuizId, questionId);
+      }
+
+      // 3. Handle Updates for ALL existing questions (to ensure correct questionOrder after deletions)
+      const existingQuestions = questions.filter(q => q.isExisting);
+      for (const q of existingQuestions) {
+          const original = originalQuestions.find(orig => orig.id == q.id);
+          const newOrder = questions.indexOf(q) + 1;
+          
+          // We update if CONTENT changed OR if ORDER changed
+          // Since we can't easily check DB order here, we always update or check original index
+          // Always updating is safest to keep DB in sync with UI sequence
+          if (original) {
+              const updateQData = {
+                  questionOrder: newOrder,
+                  questionType: q.type?.toUpperCase() === 'TRUE_FALSE' ? 'TRUE_FALSE' : 'MULTIPLE_CHOICE',
+                  questionText: q.question,
+                  answers: q.type === 'multiple_choice' 
+                    ? q.options.map(opt => ({
+                        answerText: opt,
+                        correct: opt === q.correctAnswer
+                      }))
+                    : [
+                        { answerText: 'Đúng', correct: q.correctAnswer === 'true' || q.correctAnswer === 'Đúng' },
+                        { answerText: 'Sai', correct: q.correctAnswer === 'false' || q.correctAnswer === 'Sai' }
+                      ]
+              };
+              await quizzesService.updateQuestion(selectedQuizId, q.id, updateQData);
+          }
+      }
+
+      // 4. Add New Questions
+      const newQuestions = questions.filter(q => !q.isExisting);
+      if (newQuestions.length > 0) {
+        const formattedNewQuestions = newQuestions.map((q, index) => ({
+          questionOrder: (questions.length - newQuestions.length) + index + 1,
+          questionType: q.type?.toUpperCase() === 'TRUE_FALSE' ? 'TRUE_FALSE' : 'MULTIPLE_CHOICE',
+          questionText: q.question,
+          answers: q.type === 'multiple_choice' 
+            ? q.options.map(opt => ({
+                answerText: opt,
+                correct: opt === q.correctAnswer
+              }))
+                    : [
+                        { answerText: 'Đúng', correct: String(q.correctAnswer) === 'true' || q.correctAnswer === 'Đúng' },
+                        { answerText: 'Sai', correct: String(q.correctAnswer) === 'false' || q.correctAnswer === 'Sai' }
+                      ]
+        }));
+
+        await quizzesService.addQuestionsToQuiz(selectedQuizId, formattedNewQuestions);
+      }
+      
+      toast.success('Cập nhật bài quiz thành công!');
+      handleCloseForm();
+      refreshQuizzes();
+    } catch (error) {
+      console.error('Failed to update quiz:', error);
+      const errorMessage = error.response?.data?.message || 'Có lỗi xảy ra khi cập nhật bài quiz';
+      toast.error(errorMessage);
+    } finally {
+      setIsCreating(false);
+    }
+  };
+
+  const wrapRemoveQuestion = (id) => {
+    const questionToRemove = questions.find(q => q.id == id);
+    if (questionToRemove?.isExisting) {
+        setDeletedQuestionIds(prev => [...prev, id]);
+    }
+    removeQuestion(id);
+  };
+
+  const handleCreateQuiz = async () => {
+    setIsCreating(true);
+    try {
+      const apiData = {
+        title: quizForm.title,
+        description: quizForm.description,
+        difficulty: quizForm.difficulty.toUpperCase(),
+        targetGrade: quizForm.targetGrade,
+        coinOnPass: quizForm.coinsOnPass,
+        timePerQuestion: quizForm.timeLimit,
+        passScorePercentage: quizForm.passingScore,
+        createdBy: 'USER',
+        source: 'MANUAL',
+        questions: questions.map((q, index) => ({
+          questionOrder: index + 1,
+          questionType: q.type?.toUpperCase() === 'TRUE_FALSE' ? 'TRUE_FALSE' : 'MULTIPLE_CHOICE',
+          questionText: q.question,
+          answers: q.type === 'multiple_choice' 
+            ? q.options.map(opt => ({
+                answerText: opt,
+                correct: opt === q.correctAnswer
+              }))
+                    : [
+                        { answerText: 'Đúng', correct: q.correctAnswer === 'true' || q.correctAnswer === 'Đúng' },
+                        { answerText: 'Sai', correct: q.correctAnswer === 'false' || q.correctAnswer === 'Sai' }
+                      ]
+        }))
+      };
+
+      await quizzesService.createManualQuiz(apiData);
+      toast.success('Tạo bài quiz thành công!');
+      setIsCreateDialogOpen(false);
+      resetQuizForm();
+      refreshQuizzes();
+    } catch (error) {
+      console.error('Failed to create quiz:', error);
+      const errorMessage = error.response?.data?.message || 'Có lỗi xảy ra khi tạo bài quiz';
+      toast.error(errorMessage);
+    } finally {
+      setIsCreating(false);
+    }
+  };
+
+  const handleDeleteQuiz = (id) => {
+    const quiz = allQuizzes.find(q => q.id === id);
+    if (!quiz || quiz.status === 'published') {
+        toast.error('Không thể xóa bài quiz đã xuất bản. Hãy chuyển về bản nháp trước.');
+        return;
+    }
+    setQuizToDelete(quiz);
+    setIsDeleteDialogOpen(true);
+  };
+
+  const handleConfirmDelete = async () => {
+    if (!quizToDelete) return;
+    try {
+        await quizzesService.deleteQuiz(quizToDelete.id);
+        toast.success('Xóa bài quiz thành công!');
+        refreshQuizzes();
+    } catch (error) {
+        console.error('Failed to delete quiz:', error);
+        const errorMessage = error.response?.data?.message || 'Có lỗi xảy ra khi xóa bài quiz';
+        toast.error(errorMessage);
+    } finally {
+        setIsDeleteDialogOpen(false);
+        setQuizToDelete(null);
+    }
+  };
+
+  const handlePublishQuiz = async (id, published) => {
+    setIsPublishing(true);
+    try {
+      await quizzesService.publishQuiz(id, published);
+      toast.success(published ? 'Xuất bản quiz thành công!' : 'Đã chuyển quiz về bản nháp');
+      refreshQuizzes();
+    } catch (error) {
+      console.error('Failed to update quiz status:', error);
+      const errorMessage = error.response?.data?.message || 'Có lỗi xảy ra khi cập nhật trạng thái quiz';
+      toast.error(errorMessage);
+    } finally {
+      setIsPublishing(false);
+    }
+  };
+
+  const handleImportQuestions = async (file) => {
+    setIsImportingQuestions(true);
+    try {
+      const response = await quizzesService.previewQuestions(file);
+      if (response.data && response.data.data) {
+        const importedQuestions = response.data.data.map((q, idx) => {
+          const isTF = q.questionType === 'TRUE_FALSE';
+          const correctAns = q.answers?.find(a => a.correct);
+          let correctAnswer = correctAns?.answerText;
+          
+          if (isTF && correctAnswer) {
+            const text = correctAnswer.toLowerCase();
+            if (text.startsWith('đ') || text === 'true') correctAnswer = 'true';
+            else if (text.startsWith('s') || text === 'false') correctAnswer = 'false';
+          }
+
+          return {
+            id: `imported-${Date.now()}-${idx}`,
+            question: q.questionText,
+            type: isTF ? 'true_false' : 'multiple_choice',
+            options: q.answers?.map(a => a.answerText) || [],
+            correctAnswer: correctAnswer,
+            isExisting: false,
+          };
+        });
+        
+        // Add to current questions
+        importedQuestions.forEach(q => addQuestion(q));
+        toast.success(`Đã import thành công ${importedQuestions.length} câu hỏi`);
+      }
+    } catch (error) {
+      console.error('Failed to import questions:', error);
+      toast.error(error.response?.data?.message || 'Có lỗi xảy ra khi import câu hỏi');
+    } finally {
+      setIsImportingQuestions(false);
+    }
+  };
+
+  return (
+    <div className="space-y-6 animate-fade-in text-eco-green-dark">
+      {/* Header */}
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+        <div className="flex items-center gap-4">
+          <div className="w-14 h-14 rounded-2xl bg-eco-orange flex items-center justify-center">
+            <FileQuestion className="w-7 h-7 text-primary-foreground" />
+          </div>
+          <div>
+            <h1 className="text-2xl font-bold text-foreground">Quản lý Quiz</h1>
+            <p className="text-muted-foreground">Tạo và quản lý quiz cho học sinh</p>
+          </div>
+        </div>
+
+        <div className="flex items-center gap-3">
+          {/* Create Quiz Button & Dialog */}
+          <Button 
+            className="bg-eco-green hover:bg-eco-green-dark text-primary-foreground font-semibold"
+            onClick={handleOpenCreate}
+          >
+            <Plus className="w-4 h-4 mr-2" />
+            Tạo Quiz
+          </Button>
+        </div>
+          
+        <QuizForm 
+            isOpen={isCreateDialogOpen}
+            onClose={handleCloseForm}
+            formData={quizForm}
+            questions={questions}
+            onFormChange={updateQuizForm}
+            onAddQuestion={addQuestion}
+            onRemoveQuestion={wrapRemoveQuestion}
+            onEditQuestion={startEditQuestion}
+            onSubmit={selectedQuizId ? handleUpdateQuiz : handleCreateQuiz}
+            isSubmitting={isCreating}
+            isEdit={!!selectedQuizId}
+            editingQuestionId={editingQuestionId}
+            onSaveQuestion={saveQuestion}
+            onCancelAddQuestion={cancelAddQuestion}
+            onImportQuestions={handleImportQuestions}
+            isImportingQuestions={isImportingQuestions}
+        />
+
+        <QuizDetailDialog
+          isOpen={isDetailDialogOpen}
+          onClose={() => {
+            setIsDetailDialogOpen(false);
+            setSelectedQuizId(null);
+          }}
+          quizId={selectedQuizId}
+          getDifficultyStars={getDifficultyStars}
+          getDifficultyColor={getDifficultyColor}
+        />
+
+        <ConfirmDeleteDialog
+           isOpen={isDeleteDialogOpen}
+           onClose={() => {
+             setIsDeleteDialogOpen(false);
+             setQuizToDelete(null);
+           }}
+           onConfirm={handleConfirmDelete}
+           title={quizToDelete?.title}
+        />
+      </div>
+
+      {/* Stats */}
+      <QuizStats stats={stats} />
+
+      {isLoading ? (
+        <div className="flex flex-col items-center justify-center py-20 gap-4">
+          <div className="w-12 h-12 border-4 border-eco-green/30 border-t-eco-green rounded-full animate-spin" />
+          <p className="text-muted-foreground font-medium">Đang tải danh sách bài quiz...</p>
+        </div>
+      ) : (
+        /* Quiz List */
+        <Tabs defaultValue="published" className="space-y-5">
+          <TabsList className="bg-muted/50 p-1 border-2 border-eco-green/15 grid w-full grid-cols-2">
+            <TabsTrigger value="published" className="gap-2 font-medium data-[state=active]:bg-card data-[state=active]:text-eco-green">
+              <Globe className="w-4 h-4" />
+              Đã xuất bản ({(defaultQuizzes.length + publishedQuizzes.length)})
+            </TabsTrigger>
+            <TabsTrigger value="draft" className="gap-2 font-medium data-[state=active]:bg-card data-[state=active]:text-eco-orange">
+              <Pencil className="w-4 h-4" />
+              Bản nháp ({draftQuizzes.length})
+            </TabsTrigger>
+          </TabsList>
+
+          <TabsContent value="published" className="space-y-4 animate-fade-in">
+             <div className="flex items-center justify-between">
+               <div>
+                 <h3 className="text-lg font-semibold text-eco-green flex items-center gap-2">
+                   <Globe className="w-5 h-5" />
+                   Thư viện Quiz
+                 </h3>
+                 <p className="text-sm text-muted-foreground">Các bài quiz đã xuất bản và quiz hệ thống sẵn sàng sử dụng</p>
+               </div>
+             </div>
+          <QuizList
+            quizzes={[...defaultQuizzes, ...publishedQuizzes]}
+            onViewDetail={handleViewDetail}
+            onPublish={handlePublishQuiz}
+            getDifficultyStars={getDifficultyStars}
+            getDifficultyColor={getDifficultyColor}
+          />
+        </TabsContent>
+
+        <TabsContent value="draft" className="space-y-4 animate-fade-in">
+           <div className="flex items-center justify-between">
+             <div>
+               <h3 className="text-lg font-semibold text-eco-orange flex items-center gap-2">
+                 <Pencil className="w-5 h-5" />
+                 Bản nháp
+               </h3>
+               <p className="text-sm text-muted-foreground">Các bài quiz đang trong quá trình soạn thảo</p>
+             </div>
+           </div>
+          <QuizList
+            quizzes={draftQuizzes}
+            onViewDetail={handleViewDetail}
+            onEdit={handleEditQuiz}
+            onDelete={handleDeleteQuiz}
+            onPublish={handlePublishQuiz}
+            getDifficultyStars={getDifficultyStars}
+            getDifficultyColor={getDifficultyColor}
+          />
+        </TabsContent>
+      </Tabs>
+      )}
+    </div>
+  );
+}

@@ -1,0 +1,1 @@
+export { PartnershipStats } from './PartnershipStats';
