@@ -69,8 +69,8 @@ export default function PartnershipReports() {
       c.schoolsParticipated,
       c.totalStudentsEnrolled,
       (c.avgParticipantAccuracy).toFixed(2),
-      new Date(toLocalISO(c.startDate)).toLocaleDateString('vi-VN'),
-      new Date(toLocalISO(c.endDate)).toLocaleDateString('vi-VN')
+      new Date(c.startDate).toLocaleDateString('vi-VN'),
+      new Date(c.endDate).toLocaleDateString('vi-VN')
     ]);
 
     const worksheet = XLSX.utils.aoa_to_sheet([headers, ...rows]);
@@ -218,11 +218,11 @@ export default function PartnershipReports() {
                               <div className="flex flex-col text-xs items-start gap-1">
                                  <div className="flex items-center gap-1.5 text-eco-blue font-bold">
                                     <div className="w-1.5 h-1.5 rounded-full bg-eco-blue" />
-                                    {new Date(toLocalISO(campaign.startDate)).toLocaleDateString()}
+                                    {new Date(campaign.startDate).toLocaleDateString()}
                                  </div>
                                  <div className="flex items-center gap-1.5 text-muted-foreground">
                                     <div className="w-1.5 h-1.5 rounded-full bg-muted" />
-                                    {new Date(toLocalISO(campaign.endDate)).toLocaleDateString()}
+                                    {new Date(campaign.endDate).toLocaleDateString()}
                                  </div>
                               </div>
                            </td>

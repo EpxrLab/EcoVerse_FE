@@ -449,11 +449,11 @@ export default function StudentRoundDetails() {
                 <div className="flex flex-wrap gap-3 mt-2 text-sm text-gray-500">
                   <span className="flex items-center gap-1">
                     <ClockCircleOutlined className="text-gray-400" />
-                    {new Date(toLocalISO(roundData.roundStartTime)).toLocaleDateString(
+                    {new Date(roundData.roundStartTime).toLocaleDateString(
                       "vi-VN",
                     )}
                     {" → "}
-                    {new Date(toLocalISO(roundData.roundEndTime)).toLocaleDateString(
+                    {new Date(roundData.roundEndTime).toLocaleDateString(
                       "vi-VN",
                     )}
                   </span>

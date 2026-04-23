@@ -391,13 +391,13 @@ export default function StudentGame() {
                     <div className="flex justify-between items-center">
                       <span className="text-gray-500 font-medium">Bắt đầu:</span>
                       <span className="text-primary font-bold">
-                        {new Date(toLocalISO(selectedRound.startTime)).toLocaleString('vi-VN', { hour: '2-digit', minute: '2-digit', day: '2-digit', month: '2-digit', year: 'numeric' })}
+                        {new Date(selectedRound.startTime).toLocaleString('vi-VN', { hour: '2-digit', minute: '2-digit', day: '2-digit', month: '2-digit', year: 'numeric' })}
                       </span>
                     </div>
                     <div className="flex justify-between items-center">
                       <span className="text-gray-500 font-medium">Kết thúc:</span>
                       <span className="text-gray-800 font-bold">
-                        {new Date(toLocalISO(selectedRound.endTime)).toLocaleString('vi-VN', { hour: '2-digit', minute: '2-digit', day: '2-digit', month: '2-digit', year: 'numeric' })}
+                        {new Date(selectedRound.endTime).toLocaleString('vi-VN', { hour: '2-digit', minute: '2-digit', day: '2-digit', month: '2-digit', year: 'numeric' })}
                       </span>
                     </div>
                   </div>

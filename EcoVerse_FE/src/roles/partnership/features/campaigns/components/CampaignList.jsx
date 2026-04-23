@@ -1,4 +1,3 @@
-import { toLocalISO } from "@/utils/dateUtils";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/shared/components/ui/table';
 import { Badge } from '@/shared/components/ui/badge';
 import { Button } from '@/shared/components/ui/button';
@@ -93,17 +92,17 @@ export function CampaignList({ campaigns, onViewDetail, onEdit, onDelete, onActi
               <TableCell>
                 <div className="text-sm">
                   <p className="text-muted-foreground">
-                    {campaign.startDate ? new Date(toLocalISO(campaign.startDate)).toLocaleString('vi-VN') : "-"}
+                    {campaign.startDate ? new Date(campaign.startDate).toLocaleString('vi-VN') : "-"}
                   </p>
                   <p className="text-muted-foreground">
-                    {campaign.endDate ? new Date(toLocalISO(campaign.endDate)).toLocaleString('vi-VN') : "-"}
+                    {campaign.endDate ? new Date(campaign.endDate).toLocaleString('vi-VN') : "-"}
                   </p>
                 </div>
               </TableCell>
               <TableCell>
                 {campaign.invitationDate ? (
                   <p className="text-sm text-muted-foreground">
-                    {new Date(toLocalISO(campaign.invitationDate)).toLocaleString('vi-VN')}
+                    {new Date(campaign.invitationDate).toLocaleString('vi-VN')}
                   </p>
                 ) : (
                   <span className="text-muted-foreground text-sm">Chưa đặt</span>

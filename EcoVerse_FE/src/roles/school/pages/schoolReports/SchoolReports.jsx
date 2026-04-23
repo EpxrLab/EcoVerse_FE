@@ -90,8 +90,8 @@ export default function SchoolReports() {
         c.studentsEnrolled,
         c.studentsCompleted,
         c.avgCombinedAccuracy.toFixed(2),
-        new Date(toLocalISO(c.startDate)).toLocaleDateString('vi-VN'),
-        new Date(toLocalISO(c.endDate)).toLocaleDateString('vi-VN')
+        new Date(c.startDate).toLocaleDateString('vi-VN'),
+        new Date(c.endDate).toLocaleDateString('vi-VN')
       ]);
     }
 
@@ -341,12 +341,12 @@ export default function SchoolReports() {
                         <div className="flex items-center justify-between text-[11px] font-bold text-muted-foreground border-t border-border/30 pt-4">
                            <div className="flex items-center gap-2">
                               <Calendar className="w-3.5 h-3.5" />
-                              {new Date(toLocalISO(campaign.startDate)).toLocaleDateString('vi-VN')}
+                              {new Date(campaign.startDate).toLocaleDateString('vi-VN')}
                            </div>
                            <ChevronRight className="w-4 h-4 text-muted-foreground/30" />
                            <div className="flex items-center gap-2">
                               <Calendar className="w-3.5 h-3.5 text-rose-500" />
-                              {new Date(toLocalISO(campaign.endDate)).toLocaleDateString('vi-VN')}
+                              {new Date(campaign.endDate).toLocaleDateString('vi-VN')}
                            </div>
                         </div>
                      </CardContent>

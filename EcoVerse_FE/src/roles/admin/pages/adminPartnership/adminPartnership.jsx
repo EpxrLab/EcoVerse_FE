@@ -1,5 +1,5 @@
 import React, { useState, useEffect, lazy, Suspense } from "react";
-import { toLocalISO } from "@/utils/dateUtils";
+
 import {
   Table,
   Input,
@@ -449,7 +449,7 @@ const AdminPartnerships = () => {
       key: "date",
       render: (_, reg) => (
         <span className="text-sm text-gray-500">
-          {new Date(toLocalISO(reg.createdAt)).toLocaleDateString("vi-VN")}
+          {new Date(reg.createdAt).toLocaleDateString("vi-VN")}
         </span>
       ),
     },

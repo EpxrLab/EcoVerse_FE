@@ -323,7 +323,7 @@ function RequestCard({ request, onCancel }) {
   // Hàm helper để định dạng ngày tháng đơn giản
   const formatDate = (dateStr) => {
     if (!dateStr) return "—";
-    return new Date(toLocalISO(dateStr)).toLocaleString("vi-VN", {
+    return new Date(dateStr).toLocaleString("vi-VN", {
       hour: "2-digit",
       minute: "2-digit",
       day: "2-digit",
@@ -486,7 +486,7 @@ function PartnershipRewardCard({ delivery }) {
 
   const formatDate = (dateStr) => {
     if (!dateStr) return "—";
-    return new Date(toLocalISO(dateStr)).toLocaleString("vi-VN", {
+    return new Date(dateStr).toLocaleString("vi-VN", {
       hour: "2-digit",
       minute: "2-digit",
       day: "2-digit",

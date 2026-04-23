@@ -1,4 +1,3 @@
-import { toLocalISO } from "@/utils/dateUtils";
 import { useState, useEffect } from 'react';
 import { Button } from '@/shared/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/shared/components/ui/select';
@@ -250,7 +249,7 @@ export default function PartnershipRewards() {
                     <TableCell className="text-center">
                       <div className="flex flex-col gap-1">
                         <span className="text-xs font-bold whitespace-nowrap">
-                          {delivery.shippedAt ? new Date(toLocalISO(delivery.shippedAt)).toLocaleDateString('vi-VN') : '-'}
+                          {delivery.shippedAt ? new Date(delivery.shippedAt).toLocaleDateString('vi-VN') : '-'}
                         </span>
                         {delivery.shippingTrackingCode && (
                           <Badge variant="outline" className="text-[9px] py-0 border-eco-blue/20 text-eco-blue bg-eco-blue/5">
@@ -265,7 +264,7 @@ export default function PartnershipRewards() {
                         {delivery.arrivedAt && (
                           <div className="flex flex-col">
                             <span className="text-[10px] text-muted-foreground">Trường nhận:</span>
-                            <span className="text-xs font-semibold">{new Date(toLocalISO(delivery.arrivedAt)).toLocaleDateString('vi-VN')}</span>
+                            <span className="text-xs font-semibold">{new Date(delivery.arrivedAt).toLocaleDateString('vi-VN')}</span>
                             {delivery.arrivedConfirmedByName && <span className="text-[9px] italic text-muted-foreground">Bởi: {delivery.arrivedConfirmedByName}</span>}
                           </div>
                         )}

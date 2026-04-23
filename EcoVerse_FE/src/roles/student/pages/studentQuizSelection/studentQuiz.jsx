@@ -494,7 +494,7 @@ export default function StudentQuiz() {
                               Bắt đầu:
                             </span>
                             <span className="text-primary font-bold">
-                              {new Date(toLocalISO(selectedRound.startTime)).toLocaleString(
+                              {new Date(selectedRound.startTime).toLocaleString(
                                 "vi-VN",
                                 {
                                   hour: "2-digit",
@@ -511,7 +511,7 @@ export default function StudentQuiz() {
                               Kết thúc:
                             </span>
                             <span className="text-gray-800 font-bold">
-                              {new Date(toLocalISO(selectedRound.endTime)).toLocaleString(
+                              {new Date(selectedRound.endTime).toLocaleString(
                                 "vi-VN",
                                 {
                                   hour: "2-digit",
