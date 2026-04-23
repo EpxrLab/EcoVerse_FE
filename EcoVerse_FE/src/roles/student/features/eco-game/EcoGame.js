@@ -211,7 +211,11 @@ export default class EcoGame {
   /**
    * Transition from Stage 1 to Stage 2
    */
-  switchToStage2() {
+  async switchToStage2() {
+    if (this._hudCallbacks.onStageLoading) {
+      this._hudCallbacks.onStageLoading(true, 0, "Đang tải màn phân loại...");
+    }
+
     if (this._hudCallbacks.onStageChange) {
       this._hudCallbacks.onStageChange(GameState.STAGE_2);
     }
@@ -222,13 +226,21 @@ export default class EcoGame {
       this.stage1Game = null;
     }
 
-    this.startStage2();
+    await this.startStage2((prog) => {
+      if (this._hudCallbacks.onStageLoading) {
+        this._hudCallbacks.onStageLoading(true, prog, "Đang chuẩn bị rác...");
+      }
+    });
+
+    if (this._hudCallbacks.onStageLoading) {
+      this._hudCallbacks.onStageLoading(false, 1, "Bắt đầu!");
+    }
   }
 
   /**
    * Start Stage 2 - Sorting Game
    */
-  startStage2() {
+  async startStage2(onProgress = null) {
     this.stateManager.setState(GameState.STAGE_2);
 
     this.sorter = new EcoGameSorter(
@@ -239,7 +251,7 @@ export default class EcoGame {
       this.levelConfig.sorter,
       this.levelConfig,
     );
-    this.sorter.init();
+    await this.sorter.init(onProgress);
     this.activeStage = this.sorter;
 
     // Register callbacks
@@ -333,6 +345,9 @@ export default class EcoGame {
   }
   onResult(cb) {
     this._hudCallbacks.onResult = cb;
+  }
+  onStageLoading(cb) {
+    this._hudCallbacks.onStageLoading = cb;
   }
 
   /** Get the current level config */

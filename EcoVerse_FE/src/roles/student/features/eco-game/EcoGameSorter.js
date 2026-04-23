@@ -72,7 +72,7 @@ export default class EcoGameSorter {
     this.timeLimit = this.config.timeLimit;
     this.timeRemaining = this.config.timeLimit;
     this.timerActive = this.config.timeLimit > 0;
-    
+
     this._startTime = 0;
     this._accumulatedPausedTime = 0;
     this._pauseStartTime = 0;
@@ -89,16 +89,16 @@ export default class EcoGameSorter {
 
   // ─── Initialization ─────────────────────────────────────────────────────────
 
-  init() {
+  async init(onProgress = null) {
     this._clearScene();
     this._createEnvironment();
     this._createTable();
     this._createBins();
-    this._createTrashItems();
+    await this._createTrashItems(onProgress);
     this._setupCamera();
     this._addEventListeners();
     this._onResize(); // Initial rect cache
-    
+
     if (this.timerActive) {
       this._startTime = Date.now();
       this._startTimer();
@@ -107,12 +107,13 @@ export default class EcoGameSorter {
 
   _startTimer() {
     this._timerId = setInterval(() => {
-      if (!this.timerActive || this.timeRemaining <= 0 || this._isPaused) return;
+      if (!this.timerActive || this.timeRemaining <= 0 || this._isPaused)
+        return;
 
       const now = Date.now();
       const elapsedMs = now - this._startTime - this._accumulatedPausedTime;
       const elapsedSec = elapsedMs / 1000;
-      
+
       this.timeRemaining = Math.max(0, this.timeLimit - elapsedSec);
 
       if (this._onTimerUpdate) {
@@ -156,7 +157,7 @@ export default class EcoGameSorter {
     const lamp1 = new THREE.PointLight(0xfff4e0, 1.2, 20); // More white, brighter
     lamp1.position.set(-5, 8, -2);
     this.scene.add(lamp1);
-    
+
     const lamp2 = new THREE.PointLight(0xfff4e0, 1.2, 20);
     lamp2.position.set(5, 8, -2);
     this.scene.add(lamp2);
@@ -204,7 +205,7 @@ export default class EcoGameSorter {
     roomGroup.add(rightWall);
 
     // ─── 4. Factory Details ───
-    
+
     // Windows (Brighter)
     const winGeo = new THREE.PlaneGeometry(8, 4);
     const winMat = new THREE.MeshStandardMaterial({
@@ -212,7 +213,7 @@ export default class EcoGameSorter {
       emissive: 0x90caf9,
       emissiveIntensity: 0.8,
     });
-    
+
     for (let i = -2; i <= 2; i++) {
       const window = new THREE.Mesh(winGeo, winMat);
       window.position.set(i * 12, 10, -14.9);
@@ -221,8 +222,12 @@ export default class EcoGameSorter {
 
     // Structural Beams
     const beamGeo = new THREE.BoxGeometry(1, 30, 1);
-    const beamMat = new THREE.MeshStandardMaterial({ color: 0x161925, metalness: 0.5, roughness: 0.2 });
-    
+    const beamMat = new THREE.MeshStandardMaterial({
+      color: 0x161925,
+      metalness: 0.5,
+      roughness: 0.2,
+    });
+
     for (let i = -2; i <= 2; i++) {
       const beam = new THREE.Mesh(beamGeo, beamMat);
       beam.position.set(i * 12 + 6, 14.3, -14.5);
@@ -252,22 +257,34 @@ export default class EcoGameSorter {
     group.add(this._table);
 
     // 2. Metallic Frame
-    const frameGeo = new THREE.BoxGeometry(TABLE_SIZE.w + 0.1, 0.1, TABLE_SIZE.d + 0.1);
-    const frameMat = new THREE.MeshStandardMaterial({ color: 0x111111, metalness: 0.8, roughness: 0.2 });
+    const frameGeo = new THREE.BoxGeometry(
+      TABLE_SIZE.w + 0.1,
+      0.1,
+      TABLE_SIZE.d + 0.1,
+    );
+    const frameMat = new THREE.MeshStandardMaterial({
+      color: 0x111111,
+      metalness: 0.8,
+      roughness: 0.2,
+    });
     const frame = new THREE.Mesh(frameGeo, frameMat);
     frame.position.y = -0.05;
     group.add(frame);
 
     // 3. Heary Duty Legs
     const legGeo = new THREE.BoxGeometry(0.3, 0.7, 0.3);
-    const legMat = new THREE.MeshStandardMaterial({ color: 0x1a1c22, metalness: 0.6, roughness: 0.3 });
+    const legMat = new THREE.MeshStandardMaterial({
+      color: 0x1a1c22,
+      metalness: 0.6,
+      roughness: 0.3,
+    });
     const legPositions = [
       [-TABLE_SIZE.w / 2 + 0.4, -0.45, TABLE_SIZE.d / 2 - 0.4],
       [TABLE_SIZE.w / 2 - 0.4, -0.45, TABLE_SIZE.d / 2 - 0.4],
       [-TABLE_SIZE.w / 2 + 0.4, -0.45, -TABLE_SIZE.d / 2 + 0.4],
       [TABLE_SIZE.w / 2 - 0.4, -0.45, -TABLE_SIZE.d / 2 + 0.4],
     ];
-    
+
     this._tableLegs = [];
     legPositions.forEach(([x, y, z]) => {
       const leg = new THREE.Mesh(legGeo, legMat);
@@ -288,18 +305,18 @@ export default class EcoGameSorter {
     this.scene.add(group);
   }
 
-
   _createBins() {
     const numBins = this.wasteCategories.length;
     this.wasteCategories.forEach((catCode, index) => {
       const binType = DynamicBinTypes[catCode] || DynamicBinTypes.GENERAL;
-      
+
       // Responsive bin layout
       const aspect = window.innerWidth / window.innerHeight;
-      const responsiveWidth = aspect < 1 ? 6 : 14; 
-      const responsiveSpacing = numBins === 1 ? 0 : responsiveWidth / (numBins - 1);
+      const responsiveWidth = aspect < 1 ? 6 : 14;
+      const responsiveSpacing =
+        numBins === 1 ? 0 : responsiveWidth / (numBins - 1);
       const responsiveStartX = -responsiveWidth / 2;
-      
+
       const x = responsiveStartX + responsiveSpacing * index;
       const z = -4;
 
@@ -307,7 +324,10 @@ export default class EcoGameSorter {
 
       // ─── 1. Bin Base (Pedestal) ───
       const baseGeo = new THREE.CylinderGeometry(1.1, 1.1, 0.1, 32);
-      const baseMat = new THREE.MeshStandardMaterial({ color: 0x222222, roughness: 0.8 });
+      const baseMat = new THREE.MeshStandardMaterial({
+        color: 0x222222,
+        roughness: 0.8,
+      });
       const base = new THREE.Mesh(baseGeo, baseMat);
       base.position.y = -1.05;
       group.add(base);
@@ -334,7 +354,7 @@ export default class EcoGameSorter {
 
       // ─── 4. Top Rim (Premium Look) ───
       const rimGroup = new THREE.Group();
-      
+
       // Outer ring
       const rimGeo = new THREE.TorusGeometry(1.0, 0.08, 16, 48);
       const rimMat = new THREE.MeshStandardMaterial({
@@ -393,7 +413,7 @@ export default class EcoGameSorter {
     ctx.fillStyle = "rgba(255, 255, 255, 0.98)";
     this._drawRoundedRect(ctx, 30, 30, 1140, 540, 90);
     ctx.fill();
-    
+
     // Industrial border
     ctx.lineWidth = 25;
     ctx.strokeStyle = "#ffffff";
@@ -439,22 +459,24 @@ export default class EcoGameSorter {
     ctx.closePath();
   }
 
-  _createTrashItems() {
+  async _createTrashItems(onProgress = null) {
     const items = this.stateManager.getTrashItemsForSorting();
-
     this.itemsRemaining = items.length;
 
-    // Arrange items on the table in a grid
+    if (items.length === 0) {
+      if (onProgress) onProgress(1);
+      return;
+    }
+
     const cols = Math.ceil(Math.sqrt(items.length));
     const spacing = TABLE_SIZE.w / (cols + 1);
-
-    // Dùng cache để tránh XHR dồn dập khiến 1 vài file GLTF bị browser drop ngầm
     const gltfPromiseCache = {};
 
-    items.forEach((item, index) => {
+    let loadedCount = 0;
+
+    const setupItem = async (item, index) => {
       const col = index % cols;
       const row = Math.floor(index / cols);
-
       const x = -TABLE_SIZE.w / 2 + spacing * (col + 1);
       const z = 1 - TABLE_SIZE.d / 2 + 0.5 + row * 0.8;
 
@@ -471,7 +493,6 @@ export default class EcoGameSorter {
         this.scene.add(mesh);
         this.trashMeshes.push(mesh);
 
-        // Entrance animation
         const s = mesh.scale.clone();
         mesh.scale.set(0, 0, 0);
         gsap.to(mesh.scale, {
@@ -492,15 +513,13 @@ export default class EcoGameSorter {
           const box = new THREE.Box3().setFromObject(model);
           const size = box.getSize(new THREE.Vector3());
           const maxDim = Math.max(size.x, size.y, size.z);
-          if (maxDim > 0) model.scale.multiplyScalar(0.6 / maxDim); // Scaled up from 0.4
+          if (maxDim > 0) model.scale.multiplyScalar(0.6 / maxDim);
 
           const box2 = new THREE.Box3().setFromObject(model);
           const center = box2.getCenter(new THREE.Vector3());
           model.position.sub(center);
-
           wrapper.add(model);
 
-          // Add invisible hitbox for easier picking
           const hitboxGeo = new THREE.BoxGeometry(0.8, 0.8, 0.8);
           const hitboxMat = new THREE.MeshBasicMaterial({
             transparent: true,
@@ -513,7 +532,6 @@ export default class EcoGameSorter {
 
           wrapper.traverse((child) => {
             if (child.isMesh) {
-              // Only allow actual models to cast/receive shadows, not the invisible hitbox
               if (child.name !== "hitbox") {
                 child.castShadow = true;
                 child.receiveShadow = true;
@@ -532,48 +550,54 @@ export default class EcoGameSorter {
       };
 
       const modelUrl =
-        item.model3dPresignedUrl ||
+        item.presignedModel3dUrl ||
         (typeof item.preloadedModel === "string" && item.preloadedModel) ||
         item.modelUrl ||
         item.imageUrl;
 
-      if (item.preloadedModel && typeof item.preloadedModel !== "string") {
-        normalizeAndSetup(item.preloadedModel);
-      } else if (modelUrl && !modelUrl.match(/\.(png|jpg|jpeg|webp)$/i)) {
-        if (!gltfPromiseCache[modelUrl]) {
-          const loader = new GLTFLoader();
-          gltfPromiseCache[modelUrl] = new Promise((resolve, reject) => {
-            loader.load(
-              modelUrl,
-              (gltf) => resolve(gltf.scene),
-              undefined,
-              reject,
-            );
-          });
+      try {
+        if (item.preloadedModel && typeof item.preloadedModel !== "string") {
+          normalizeAndSetup(item.preloadedModel);
+        } else if (modelUrl && !modelUrl.match(/\.(png|jpg|jpeg|webp)$/i)) {
+          if (!gltfPromiseCache[modelUrl]) {
+            const loader = new GLTFLoader();
+            gltfPromiseCache[modelUrl] = new Promise((resolve, reject) => {
+              loader.load(
+                modelUrl,
+                (gltf) => resolve(gltf.scene),
+                undefined,
+                reject,
+              );
+            });
+          }
+          const model = await gltfPromiseCache[modelUrl];
+          normalizeAndSetup(model);
+        } else {
+          let mesh;
+          switch (item.id) {
+            case "plastic_bottle":
+              mesh = this._createBottle(item.color || 0xffffff);
+              break;
+            case "can":
+              mesh = this._createCan(item.color || 0xffffff);
+              break;
+            default:
+              mesh = this._createBoxItem(item.color || 0xffffff);
+              break;
+          }
+          setupMesh(mesh);
         }
-
-        gltfPromiseCache[modelUrl]
-          .then((model) => normalizeAndSetup(model))
-          .catch((err) => {
-            console.error("Sorter GLTF Load Error:", err);
-            setupMesh(this._createBoxItem(item.color || 0x2196f3));
-          });
-      } else {
-        let mesh;
-        switch (item.id) {
-          case "plastic_bottle":
-            mesh = this._createBottle(item.color || 0xffffff);
-            break;
-          case "can":
-            mesh = this._createCan(item.color || 0xffffff);
-            break;
-          default:
-            mesh = this._createBoxItem(item.color || 0xffffff);
-            break;
-        }
-        setupMesh(mesh);
+      } catch (err) {
+        console.error("Sorter Load Error:", err);
+        setupMesh(this._createBoxItem(item.color || 0x2196f3));
+      } finally {
+        loadedCount++;
+        if (onProgress) onProgress(loadedCount / items.length);
       }
-    });
+    };
+
+    // Parallel setup
+    await Promise.all(items.map((item, idx) => setupItem(item, idx)));
   }
 
   _createBottle(color) {
@@ -721,8 +745,11 @@ export default class EcoGameSorter {
     this.raycaster.setFromCamera(this.mouse, this.camera);
 
     const intersection = new THREE.Vector3();
-    const result = this.raycaster.ray.intersectPlane(this.dragPlane, intersection);
- 
+    const result = this.raycaster.ray.intersectPlane(
+      this.dragPlane,
+      intersection,
+    );
+
     if (result) {
       this.selectedObject.position.x = intersection.x;
       this.selectedObject.position.z = intersection.z;
@@ -744,7 +771,7 @@ export default class EcoGameSorter {
       const dx = itemPos.x - bin.position.x;
       const dz = itemPos.z - bin.position.z;
       const distance = Math.sqrt(dx * dx + dz * dz);
- 
+
       // Increased hitbox for mobile: 2.0 instead of 1.2
       if (distance < 2.0) {
         droppedOnBin = bin;

@@ -178,16 +178,18 @@ export default function EcoGameHUD({
       if (newStage === "STAGE_2") {
         const tl = levelConfig?.sorter?.timeLimit || 0;
         setTimeRemaining(tl > 0 ? tl : null);
-        
-        // Calculate total items for accurate percentage from 0%
+
+        // Initialize sorting stats immediately
         const items = game.stateManager.getTrashItemsForSorting();
         setTotalItemsSorter(items.length);
+        setItemsRemaining(items.length);
+        setSortScore({ correct: 0, wrong: 0 });
 
         setShowTransition(true);
         setTimeout(() => {
           setShowTransition(false);
           setStage("STAGE_2");
-        }, 2000);
+        }, 1200); // Reduced delay for better feel
       } else if (newStage === "RESULT") {
         setStage("RESULT");
       }

@@ -175,6 +175,13 @@ export default function EcoGamePage() {
           }
         });
 
+        // Register loading listener for Stage 2
+        game.onStageLoading((isLoading, progress, text) => {
+          setLoading(isLoading);
+          setLoadingProgress(Math.round(progress * 100));
+          if (text) setLoadingText(text);
+        });
+
         gameStartTimeRef.current = Date.now();
         setGameInstance(game);
 
@@ -304,7 +311,7 @@ export default function EcoGamePage() {
             alignItems: "center",
             justifyContent: "center",
             background: "#111",
-            zIndex: 10,
+            zIndex: 100000,
             gap: "16px",
           }}
         >
@@ -341,18 +348,18 @@ export default function EcoGamePage() {
       />
 
       {/* HUD Overlay */}
-      {!loading && (
-        <div
-          style={{
-            position: "absolute",
-            top: 0,
-            left: 0,
-            width: "100%",
-            height: "100%",
-            pointerEvents: "none",
-            zIndex: 9999,
-          }}
-        >
+      <div
+        style={{
+          display: loading ? "none" : "block",
+          position: "absolute",
+          top: 0,
+          left: 0,
+          width: "100%",
+          height: "100%",
+          pointerEvents: "none",
+          zIndex: 9999,
+        }}
+      >
           <div style={{ pointerEvents: "auto" }}>
             <EcoGameHUD
               game={gameInstance}
@@ -363,9 +370,8 @@ export default function EcoGamePage() {
               onPauseChange={handlePauseChange}
               onReplay={handleReplay}
             />
-          </div>
         </div>
-      )}
+      </div>
     </div>
   );
 }
