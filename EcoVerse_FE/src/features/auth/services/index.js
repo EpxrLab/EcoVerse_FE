@@ -77,6 +77,7 @@ const loginFunction = async (payload) => {
     return res.data;
   } catch (error) {
     console.log(error);
+    return error.response?.data;
   }
 };
 

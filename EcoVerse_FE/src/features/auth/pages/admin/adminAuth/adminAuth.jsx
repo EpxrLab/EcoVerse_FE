@@ -46,14 +46,14 @@ export default function AdminAuth() {
       };
       const res = await loginFunction(payload);
 
-      if (res && res.data.role === "ADMINISTRATOR") {
+      if (res && res?.data?.role === "ADMINISTRATOR") {
         message.success("Đăng nhập thành công!");
         sessionStorage.setItem("accessToken", res.data.accessToken);
         sessionStorage.setItem("refreshToken", res.data.refreshToken);
         sessionStorage.setItem("role", res.data.role);
         navigate("/admin");
       } else {
-        message.error("Đăng nhập thất bại!");
+        message.error(res?.message || "Đăng nhập thất bại!");
       }
     } catch {
       message.error("Đã xảy ra lỗi khi đăng nhập");

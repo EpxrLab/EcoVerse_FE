@@ -78,14 +78,14 @@ export default function PartnershipAuth() {
         password: password,
       };
       const res = await loginFunction(payload);
-      if (res && res.data.role === "THIRD_PARTY_PARTNERSHIP") {
+      if (res && res?.data?.role === "THIRD_PARTY_PARTNERSHIP") {
         toast.success("Đăng nhập thành công!");
         sessionStorage.setItem("accessToken", res?.data?.accessToken);
         sessionStorage.setItem("refreshToken", res?.data?.refreshToken);
         sessionStorage.setItem("role", res.data.role);
         navigate("/partnership");
       } else {
-        toast.error("Đăng nhập thất bại!");
+        toast.error(res?.message || "Đăng nhập thất bại!");
       }
     } catch {
       toast.error("Đã xảy ra lỗi khi đăng nhập");

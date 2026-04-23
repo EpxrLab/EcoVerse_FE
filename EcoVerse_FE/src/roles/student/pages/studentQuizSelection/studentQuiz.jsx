@@ -3,10 +3,8 @@ import { useNavigate, useParams } from "react-router";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   Card,
-  Badge,
   Button,
   Spin,
-  Statistic,
   Select,
   Space,
   Modal,
@@ -30,6 +28,7 @@ import {
   Lock,
 } from "lucide-react";
 import { getCampaignDetails, getQuizHistory } from "../../services";
+import { toLocalISO } from "@/utils/dateUtils";
 
 // Lazy-loaded QuizCard component
 const QuizCard = lazy(() =>
@@ -495,7 +494,7 @@ export default function StudentQuiz() {
                               Bắt đầu:
                             </span>
                             <span className="text-primary font-bold">
-                              {new Date(selectedRound.startTime).toLocaleString(
+                              {new Date(toLocalISO(selectedRound.startTime)).toLocaleString(
                                 "vi-VN",
                                 {
                                   hour: "2-digit",
@@ -512,7 +511,7 @@ export default function StudentQuiz() {
                               Kết thúc:
                             </span>
                             <span className="text-gray-800 font-bold">
-                              {new Date(selectedRound.endTime).toLocaleString(
+                              {new Date(toLocalISO(selectedRound.endTime)).toLocaleString(
                                 "vi-VN",
                                 {
                                   hour: "2-digit",
