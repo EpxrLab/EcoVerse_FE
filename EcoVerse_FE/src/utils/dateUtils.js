@@ -9,7 +9,7 @@ export const toLocalISO = (date) => {
 
   let dateValue = date;
   // Handle case where BE returns string missing 'Z' suffix (treat as UTC)
-  if (typeof dateValue === 'string' && dateValue.includes('T') && !dateValue.endsWith('Z') && !dateValue.match(/[+-]\d{2}:?\d{2}$/)) {
+  if (typeof dateValue === 'string' && dateValue.includes('T') && !dateValue.endsWith('Z') && !dateValue.match(/[+-]\d{2}:?\d{2}$/) && dateValue.length > 16) {
     dateValue += 'Z';
   }
 

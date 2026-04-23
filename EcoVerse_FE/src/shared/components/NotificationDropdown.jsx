@@ -214,7 +214,7 @@ export function NotificationDropdown() {
                         {notification.message}
                       </p>
                       <p className="text-[10px] text-muted-foreground/70 mt-1 font-medium">
-                        {notification.createdAt ? formatDistanceToNow(new Date(toLocalISO(notification.createdAt)), { addSuffix: true, locale: vi }) : notification.time}
+                        {notification.createdAt ? formatDistanceToNow(new Date(notification.createdAt), { addSuffix: true, locale: vi }) : notification.time}
                       </p>
                     </div>
                   </div>

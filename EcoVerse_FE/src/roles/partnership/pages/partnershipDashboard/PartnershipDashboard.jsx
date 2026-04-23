@@ -1,4 +1,3 @@
-import { toLocalISO } from "@/utils/dateUtils";
 import { usePartnership, usePartnershipDashboard } from "../../hooks";
 import { Card, CardContent, CardHeader, CardTitle } from "@/shared/components/ui/card";
 import { Badge } from "@/shared/components/ui/badge";
@@ -98,7 +97,7 @@ export default function PartnershipDashboard() {
               </div>
               <div>
                 <p className="text-sm font-bold text-eco-blue">Gói {stats.subscriptionPlanName}</p>
-                <p className="text-xs text-muted-foreground">Thời hạn đến: {new Date(toLocalISO(stats.subscriptionEndDate)).toLocaleDateString('vi-VN')}</p>
+                <p className="text-xs text-muted-foreground">Thời hạn đến: {new Date(stats.subscriptionEndDate).toLocaleDateString('vi-VN')}</p>
               </div>
             </div>
             <Badge variant="outline" className="text-eco-blue border-eco-blue/20 bg-white">Đang sử dụng</Badge>
