@@ -10,21 +10,6 @@ const getInitials = (name) => {
 
 const podiumConfig = [
   {
-    order: 'order-2 md:order-1',
-    maxW: 'max-w-[260px]',
-    avatarSize: 'w-16 h-16',
-    textSize: 'text-lg',
-    pointsSize: 'text-2xl',
-    padding: 'p-5',
-    rankBg: 'bg-muted',
-    rankText: 'text-muted-foreground',
-    accentBorder: 'border-border',
-    accentBar: 'bg-muted-foreground/50',
-    badgeClass: 'bg-muted text-muted-foreground border-border',
-    icon: <Medal className="w-4 h-4" />,
-    rankNum: 2,
-  },
-  {
     order: 'order-1 md:order-2 z-10',
     maxW: 'max-w-[300px]',
     avatarSize: 'w-20 h-20',
@@ -38,6 +23,21 @@ const podiumConfig = [
     badgeClass: 'bg-accent/15 text-accent border-accent/25',
     icon: <Crown className="w-5 h-5" />,
     rankNum: 1,
+  },
+  {
+    order: 'order-2 md:order-1',
+    maxW: 'max-w-[260px]',
+    avatarSize: 'w-16 h-16',
+    textSize: 'text-lg',
+    pointsSize: 'text-2xl',
+    padding: 'p-5',
+    rankBg: 'bg-muted',
+    rankText: 'text-muted-foreground',
+    accentBorder: 'border-border',
+    accentBar: 'bg-muted-foreground/50',
+    badgeClass: 'bg-muted text-muted-foreground border-border',
+    icon: <Medal className="w-4 h-4" />,
+    rankNum: 2,
   },
   {
     order: 'order-3',
@@ -56,7 +56,7 @@ const podiumConfig = [
   },
 ];
 
-// Reorder: display order is [1(2nd), 0(1st), 2(3rd)] mapped to data indices [1, 0, 2]
+// Reorder: display order in DOM is [1(2nd), 0(1st), 2(3rd)]
 const displayOrder = [1, 0, 2];
 
 export function LeaderboardPodium({ top3 }) {
