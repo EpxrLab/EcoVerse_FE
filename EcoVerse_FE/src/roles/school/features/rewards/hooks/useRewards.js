@@ -1,10 +1,7 @@
 import { useState, useEffect } from 'react';
 import { rewardService } from '../../../services/reward.service';
 import { campaignService } from '../../../services/campaign.service';
-import {
-  rewardStats,
-  topRewardsData,
-} from '../../../data/reward.data';
+
 
 export function useRewards() {
   const [partnershipInvitations, setPartnershipInvitations] = useState([]);
@@ -17,8 +14,8 @@ export function useRewards() {
   const [confirmedRewards, setConfirmedRewards] = useState([]);
   const [rejectedRewards, setRejectedRewards] = useState([]);
   const [cancelledRewards, setCancelledRewards] = useState([]);
-  const [localStats, setLocalStats] = useState(rewardStats);
-  const [localTopRewards, setLocalTopRewards] = useState(topRewardsData);
+  const [localStats, setLocalStats] = useState({ pending: 0, completed: 0, expired: 0, coinsRedeemed: 0 });
+  const [localTopRewards, setLocalTopRewards] = useState([]);
 
   const fetchRewards = async () => {
     try {
@@ -141,7 +138,7 @@ export function useRewards() {
         .sort((a, b) => b.count - a.count)
         .slice(0, 5);
 
-      setLocalTopRewards(topRewards.length > 0 ? topRewards : topRewardsData);
+      setLocalTopRewards(topRewards);
     } catch (e) {
       console.error('Failed to fetch reward requests', e);
     }
