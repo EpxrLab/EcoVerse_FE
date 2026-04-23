@@ -1,4 +1,5 @@
 import { motion } from "framer-motion";
+
 export function SorterHUD({ itemsRemaining, correct, wrong, timeRemaining, totalItems }) {
   const accuracy = totalItems > 0 ? Math.round((correct / totalItems) * 100) : 0;
   const hasTimer = timeRemaining !== null && timeRemaining !== undefined;
@@ -18,7 +19,7 @@ export function SorterHUD({ itemsRemaining, correct, wrong, timeRemaining, total
             Còn lại
           </div>
           <div className="text-lg md:text-2xl font-bold tabular-nums">
-            {itemsRemaining}
+            {itemsRemaining} / {totalItems}
           </div>
         </div>
 

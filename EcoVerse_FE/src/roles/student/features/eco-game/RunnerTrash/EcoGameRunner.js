@@ -142,7 +142,8 @@ export default class EcoGameRunner {
           console.log("--- RUNNER OBSTACLE MODEL LOADED ---");
         },
         undefined,
-        (err) => console.warn("Failed to load /assets/rock.glb for runner", err),
+        (err) =>
+          console.warn("Failed to load /assets/rock.glb for runner", err),
       );
     });
   }
@@ -553,7 +554,7 @@ export default class EcoGameRunner {
 
     // Use API wasteItems with valid imagePresignedUrl
     const apiItems = this.wasteItems.filter(
-      (w) => w.model3dPresignedUrl || w.imagePresignedUrl || w.imageUrl,
+      (w) => w.presignedModel3dUrl || w.imagePresignedUrl,
     );
     if (apiItems.length > 0) {
       this.totalTrashSpawned++;
@@ -561,9 +562,7 @@ export default class EcoGameRunner {
       const apiItem = apiItems[Math.floor(Math.random() * apiItems.length)];
 
       const currentModelUrl =
-        apiItem.model3dPresignedUrl ||
-        apiItem.imagePresignedUrl ||
-        apiItem.imageUrl;
+        apiItem.presignedModel3dUrl || apiItem.imagePresignedUrl;
 
       const trashUserData = {
         type: "trash",
@@ -572,7 +571,7 @@ export default class EcoGameRunner {
           name: apiItem.itemName,
           bin: apiItem.wasteCategory?.toLowerCase() || "recycle",
           color: 0x2196f3,
-          imageUrl: apiItem.imageUrl || apiItem.imagePresignedUrl,
+          imageUrl: apiItem.imagePresignedUrl,
           preloadedModel: currentModelUrl,
           modelUrl: currentModelUrl,
           funFact: apiItem.funFact, // Captured for result display
@@ -722,10 +721,10 @@ export default class EcoGameRunner {
     let mesh;
     if (this.rockModel) {
       mesh = this.rockModel.clone(true);
-      
+
       // Randomize rotation for variety
       mesh.rotation.y = Math.random() * Math.PI * 2;
-      
+
       // Scale variation (0.8x to 1.1x of the already normalized base)
       const scaleVar = 0.8 + Math.random() * 0.3;
       mesh.scale.multiplyScalar(scaleVar);
@@ -744,13 +743,13 @@ export default class EcoGameRunner {
     }
 
     mesh.castShadow = true;
-    mesh.userData = { 
-      type: "obstacle", 
+    mesh.userData = {
+      type: "obstacle",
       obsType,
       lane: lane, // Critical for lane-aware collision
-      collisionTarget: mesh 
+      collisionTarget: mesh,
     };
-    
+
     this.scene.add(mesh);
     this.obstacles.push(mesh);
   }
@@ -958,7 +957,10 @@ export default class EcoGameRunner {
         setTimeout(() => {
           this.stateManager.distance = this.distance;
           if (this._onStageComplete) {
-            this._onStageComplete("win", this.stateManager.getTotalTrashCount());
+            this._onStageComplete(
+              "win",
+              this.stateManager.getTotalTrashCount(),
+            );
           }
         }, 800);
         return;

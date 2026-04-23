@@ -12,7 +12,6 @@ import {
   LogoutOutlined,
   MenuFoldOutlined,
   MenuUnfoldOutlined,
-  BellOutlined,
   UserOutlined,
   GlobalOutlined,
   ControlOutlined,
@@ -95,44 +94,6 @@ const AdminLayout = ({ children }) => {
     navigate(item.key);
   };
 
-  const notificationMenu = (
-    <div className="w-80 bg-white rounded-lg shadow-lg p-4">
-      <div className="flex items-center justify-between mb-3">
-        <h3 className="font-semibold text-gray-800">Thông báo</h3>
-        <span className="text-xs text-gray-500">3 mới</span>
-      </div>
-      <div className="space-y-2">
-        <div className="p-3 bg-blue-50 rounded-lg hover:bg-blue-100 transition-colors cursor-pointer">
-          <p className="text-sm font-medium text-gray-800">
-            Trường mới đăng ký
-          </p>
-          <p className="text-xs text-gray-600 mt-1">
-            Trường THPT Nguyễn Du vừa đăng ký gói Premium
-          </p>
-          <p className="text-xs text-gray-400 mt-1">5 phút trước</p>
-        </div>
-        <div className="p-3 bg-green-50 rounded-lg hover:bg-green-100 transition-colors cursor-pointer">
-          <p className="text-sm font-medium text-gray-800">
-            Thanh toán thành công
-          </p>
-          <p className="text-xs text-gray-600 mt-1">
-            Trường THCS Lê Lợi đã thanh toán 5,000,000 VNĐ
-          </p>
-          <p className="text-xs text-gray-400 mt-1">1 giờ trước</p>
-        </div>
-        <div className="p-3 hover:bg-gray-50 rounded-lg transition-colors cursor-pointer">
-          <p className="text-sm font-medium text-gray-800">Yêu cầu hỗ trợ</p>
-          <p className="text-xs text-gray-600 mt-1">
-            Trường TH Trần Hưng Đạo cần hỗ trợ kỹ thuật
-          </p>
-          <p className="text-xs text-gray-400 mt-1">2 giờ trước</p>
-        </div>
-      </div>
-      <button className="w-full mt-3 text-center text-sm text-blue-600 hover:text-blue-700 font-medium py-2">
-        Xem tất cả thông báo
-      </button>
-    </div>
-  );
 
   if (isLoading) {
     return (
@@ -228,20 +189,6 @@ const AdminLayout = ({ children }) => {
           </div>
 
           <div className="flex items-center gap-4">
-            {/* Notifications */}
-            <Dropdown
-              trigger={["click"]}
-              placement="bottomRight"
-              dropdownRender={() => notificationMenu}
-            >
-              <span className="inline-block cursor-pointer">
-                <div className="relative w-10 h-10 rounded-lg hover:bg-gray-100 flex items-center justify-center transition-colors">
-                  <Badge count={3} size="small">
-                    <BellOutlined className="text-xl text-gray-600" />
-                  </Badge>
-                </div>
-              </span>
-            </Dropdown>
 
             {/* User Info */}
             <div className="flex items-center gap-3 pl-4 border-l border-gray-200">
