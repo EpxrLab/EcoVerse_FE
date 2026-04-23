@@ -26,7 +26,6 @@ import {
   Star,
 } from "lucide-react";
 import { cn } from "@/shared/lib/utils";
-import { toLocalISO } from "@/utils/dateUtils";
 
 export function StudentDetailCard({ student, index, onEdit, onDelete }) {
   const getRankIcon = (idx) => {
@@ -46,7 +45,7 @@ export function StudentDetailCard({ student, index, onEdit, onDelete }) {
 
   const formatDate = (date) => {
     if (!date) return null;
-    return new Date(toLocalISO(date)).toLocaleDateString('vi-VN');
+    return new Date(date).toLocaleDateString('vi-VN');
   };
 
   return (

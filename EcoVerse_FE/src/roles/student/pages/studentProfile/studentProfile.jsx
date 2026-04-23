@@ -181,7 +181,7 @@ const pct = (v) => `${v ?? 0}%`;
 const fmtN = (v) => (v ?? 0).toLocaleString();
 const fmtDate = (iso, includeTime = true) => {
   if (!iso) return "—";
-  const d = new Date(toLocalISO(iso));
+  const d = new Date(iso);
   const pad = (n) => n.toString().padStart(2, "0");
   const day = pad(d.getDate());
   const month = pad(d.getMonth() + 1);
@@ -197,7 +197,7 @@ const fmtDate = (iso, includeTime = true) => {
 const calcAge = (dob) => {
   if (!dob) return null;
   return Math.floor(
-    (Date.now() - new Date(toLocalISO(dob))) / (1000 * 60 * 60 * 24 * 365.25),
+    (Date.now() - new Date(dob)) / (1000 * 60 * 60 * 24 * 365.25),
   );
 };
 
