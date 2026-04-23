@@ -1,3 +1,4 @@
+import { toLocalISO } from "@/utils/dateUtils";
 import { useState, useEffect } from 'react';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/shared/components/ui/select';
 import { Pagination, PaginationContent, PaginationItem, PaginationLink, PaginationNext, PaginationPrevious } from '@/shared/components/ui/pagination';
@@ -426,13 +427,13 @@ export default function PartnershipSubscription() {
                         <TableCell>
                           <div className="flex items-center gap-1.5 text-muted-foreground">
                             <Calendar className="w-3.5 h-3.5" />
-                            {purchase.startDate || purchase.createdAt || purchase.paidAt ? new Date(purchase.startDate || purchase.createdAt || purchase.paidAt).toLocaleDateString('vi-VN') : '--'}
+                            {purchase.startDate || purchase.createdAt || purchase.paidAt ? new Date(toLocalISO(purchase.startDate || purchase.createdAt || purchase.paidAt)).toLocaleDateString('vi-VN') : '--'}
                           </div>
                         </TableCell>
                         <TableCell>
                           <div className="flex items-center gap-1.5 text-muted-foreground">
                             <Calendar className="w-3.5 h-3.5" />
-                            {purchase.endDate || purchase.expiredAt || purchase.validUntil ? new Date(purchase.endDate || purchase.expiredAt || purchase.validUntil).toLocaleDateString('vi-VN') : '--'}
+                            {purchase.endDate || purchase.expiredAt || purchase.validUntil ? new Date(toLocalISO(purchase.endDate || purchase.expiredAt || purchase.validUntil)).toLocaleDateString('vi-VN') : '--'}
                           </div>
                         </TableCell>
                         <TableCell>

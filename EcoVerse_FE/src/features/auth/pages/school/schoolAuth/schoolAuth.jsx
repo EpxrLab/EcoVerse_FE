@@ -81,14 +81,14 @@ export default function SchoolAuth() {
       };
       const res = await loginFunction(infor);
 
-      if (res && res.data.role === "PARTNERSHIP_SCHOOL") {
+      if (res && res?.data?.role === "PARTNERSHIP_SCHOOL") {
         toast.success("Đăng nhập thành công!");
         sessionStorage.setItem("accessToken", res?.data?.accessToken);
         sessionStorage.setItem("refreshToken", res?.data?.refreshToken);
         sessionStorage.setItem("role", res.data.role);
         navigate("/school");
       } else {
-        toast.error("Đăng nhập thất bại!");
+        toast.error(res?.message || "Đăng nhập thất bại!");
       }
     } catch (error) {
       toast.error("Đã xảy ra lỗi khi đăng nhập");

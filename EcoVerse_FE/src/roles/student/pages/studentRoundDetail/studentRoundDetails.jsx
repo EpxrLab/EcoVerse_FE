@@ -15,6 +15,7 @@ import {
   ThunderboltOutlined,
 } from "@ant-design/icons";
 import { motion } from "framer-motion";
+import { toLocalISO } from "@/utils/dateUtils";
 import { getCurrentRoundContent } from "../../services";
 import { RotateCcw } from "lucide-react";
 
@@ -448,11 +449,11 @@ export default function StudentRoundDetails() {
                 <div className="flex flex-wrap gap-3 mt-2 text-sm text-gray-500">
                   <span className="flex items-center gap-1">
                     <ClockCircleOutlined className="text-gray-400" />
-                    {new Date(roundData.roundStartTime).toLocaleDateString(
+                    {new Date(toLocalISO(roundData.roundStartTime)).toLocaleDateString(
                       "vi-VN",
                     )}
                     {" → "}
-                    {new Date(roundData.roundEndTime).toLocaleDateString(
+                    {new Date(toLocalISO(roundData.roundEndTime)).toLocaleDateString(
                       "vi-VN",
                     )}
                   </span>

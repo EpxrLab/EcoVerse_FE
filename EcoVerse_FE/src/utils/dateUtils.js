@@ -6,9 +6,16 @@
  */
 export const toLocalISO = (date) => {
   if (!date) return "";
-  const d = new Date(date);
+
+  let dateValue = date;
+  // Handle case where BE returns string missing 'Z' suffix (treat as UTC)
+  if (typeof dateValue === 'string' && dateValue.includes('T') && !dateValue.endsWith('Z') && !dateValue.match(/[+-]\d{2}:?\d{2}$/)) {
+    dateValue += 'Z';
+  }
+
+  const d = new Date(dateValue);
   if (isNaN(d.getTime())) return "";
-  
+
   // Shift by timezone offset to get local time in ISO format
   const offset = d.getTimezoneOffset() * 60000;
   const localDate = new Date(d.getTime() - offset);

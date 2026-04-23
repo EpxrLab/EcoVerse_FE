@@ -52,11 +52,11 @@ const getStatusCfg = (status) =>
 const getTypeCfg = (type) =>
   TYPE_CONFIG[type] ?? { label: type ?? "—", tw: "bg-gray-100 text-gray-600" };
 
-// ─── Helpers ──────────────────────────────────────────────────────────────────
+import { toLocalISO } from "@/utils/dateUtils";
 
 const fmtDate = (iso) => {
   if (!iso) return "—";
-  return new Date(iso).toLocaleDateString("vi-VN", {
+  return new Date(toLocalISO(iso)).toLocaleDateString("vi-VN", {
     day: "2-digit",
     month: "2-digit",
     year: "numeric",
@@ -67,7 +67,7 @@ const isActive = (status) => status?.toUpperCase() === "ON_GOING";
 
 const daysUntil = (iso) => {
   if (!iso) return null;
-  const diff = new Date(iso) - new Date();
+  const diff = new Date(toLocalISO(iso)) - new Date();
   return Math.ceil(diff / (1000 * 60 * 60 * 24));
 };
 

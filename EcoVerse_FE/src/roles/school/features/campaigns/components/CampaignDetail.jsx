@@ -33,6 +33,7 @@ import {
 } from 'lucide-react';
 import { format } from 'date-fns';
 import { vi } from 'date-fns/locale';
+import { toLocalISO } from "@/utils/dateUtils";
 
 const statusConfig = {
   prepared: { label: 'Chuẩn bị', color: 'bg-blue-500/15 text-blue-500' },
@@ -65,7 +66,7 @@ export function CampaignDetail({ campaign, isLoading }) {
 
   const safeDateFormat = (dateStr, formatStr = 'HH:mm dd/MM/yyyy') => {
     if (!dateStr) return '---';
-    const date = new Date(dateStr);
+    const date = new Date(toLocalISO(dateStr));
     if (isNaN(date.getTime())) return '---';
     return format(date, formatStr, { locale: vi });
   };
@@ -74,7 +75,7 @@ export function CampaignDetail({ campaign, isLoading }) {
   const isInvitingStudents = campaign.status === 'inviting';
   
   const deadline = campaign.registration_deadline || 
-    (campaign.start_date ? new Date(new Date(campaign.start_date).getTime() - 5 * 24 * 60 * 60 * 1000).toISOString() : null);
+    (campaign.start_date ? new Date(new Date(toLocalISO(campaign.start_date)).getTime() - 5 * 24 * 60 * 60 * 1000).toISOString() : null);
 
   // Student invitations/participants mapping
   const participants = campaign.participants || [];

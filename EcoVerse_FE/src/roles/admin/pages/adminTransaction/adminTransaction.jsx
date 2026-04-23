@@ -4,11 +4,8 @@ import {
   Table,
   Tag,
   Select,
-  DatePicker,
   Input,
   Button,
-  Statistic,
-  Tooltip,
 } from "antd";
 import {
   SearchOutlined,
@@ -16,12 +13,10 @@ import {
   ArrowUpOutlined,
   ArrowDownOutlined,
   DollarOutlined,
-  CreditCardOutlined,
   TeamOutlined,
   CheckCircleOutlined,
   ClockCircleOutlined,
   CloseCircleOutlined,
-  FilterOutlined,
 } from "@ant-design/icons";
 import {
   AreaChart,
@@ -36,7 +31,6 @@ import {
   CartesianGrid,
   Tooltip as ReTooltip,
   ResponsiveContainer,
-  Legend,
 } from "recharts";
 import { motion } from "framer-motion";
 import dayjs from "dayjs";
@@ -78,6 +72,8 @@ const PAY_STATUS_CFG = {
 
 const CHART_COLORS = ["#3b82f6", "#22c55e", "#f59e0b", "#ef4444", "#8b5cf6"];
 
+import { toLocalISO } from "@/utils/dateUtils";
+
 const fmtVND = (v) => {
   if (!v && v !== 0) return "0";
   if (v >= 1_000_000_000) return `${(v / 1_000_000_000).toFixed(1)}B`;
@@ -85,9 +81,9 @@ const fmtVND = (v) => {
   if (v >= 1_000) return `${(v / 1_000).toFixed(0)}K`;
   return `${v}`;
 };
-const fmtDate = (iso) => (iso ? dayjs(iso).format("DD/MM/YYYY") : "—");
+const fmtDate = (iso) => (iso ? dayjs(toLocalISO(iso)).format("DD/MM/YYYY") : "—");
 const fmtDateTime = (iso) =>
-  iso ? dayjs(iso).format("DD/MM/YYYY HH:mm") : "—";
+  iso ? dayjs(toLocalISO(iso)).format("DD/MM/YYYY HH:mm") : "—";
 
 const fadeUp = {
   hidden: { opacity: 0, y: 16 },

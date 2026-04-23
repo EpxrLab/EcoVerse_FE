@@ -20,6 +20,7 @@ import {
 } from 'lucide-react';
 import { cn } from '@/shared/lib/utils';
 import { quizzesService } from '../services/quizzes.service';
+import { toLocalISO } from "@/utils/dateUtils";
 
 export function QuizDetailDialog({ isOpen, onClose, quizId, getDifficultyStars, getDifficultyColor }) {
   const [quiz, setQuiz] = useState(null);
@@ -64,7 +65,7 @@ export function QuizDetailDialog({ isOpen, onClose, quizId, getDifficultyStars, 
                   )}>
                     {quiz?.published ? 'Công khai' : 'Bản nháp'}
                   </Badge>
-                  <span className="text-[11px] text-muted-foreground">• Đã cập nhật {quiz?.updatedAt ? new Date(quiz.updatedAt).toLocaleDateString() : '—'}</span>
+                  <span className="text-[11px] text-muted-foreground">• Đã cập nhật {quiz?.updatedAt ? new Date(toLocalISO(quiz.updatedAt)).toLocaleDateString() : '—'}</span>
               </div>
             </div>
           </DialogTitle>

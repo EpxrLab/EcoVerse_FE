@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import { getAllCampaigns } from "../services";
+import { toLocalISO } from "@/utils/dateUtils";
 
 export function useStudentCampaigns() {
   const [campaigns, setCampaigns] = useState([]);
@@ -9,7 +10,13 @@ export function useStudentCampaigns() {
     setLoading(true);
     try {
       const res = await getAllCampaigns();
-      setCampaigns(res.data);
+      const mappedData = (res.data || []).map(c => ({
+        ...c,
+        startDate: toLocalISO(c.startDate),
+        endDate: toLocalISO(c.endDate),
+        invitationDeadline: toLocalISO(c.invitationDeadline)
+      }));
+      setCampaigns(mappedData);
     } catch (error) {
       console.log(error);
     } finally {

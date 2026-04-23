@@ -1,4 +1,5 @@
 import React from 'react';
+import { toLocalISO } from '@/utils/dateUtils';
 import { Card, CardContent } from '@/shared/components/ui/card';
 import { Button } from '@/shared/components/ui/button';
 import { Badge } from '@/shared/components/ui/badge';
@@ -187,8 +188,8 @@ export function CampaignList({
                       <Calendar className="w-4 h-4" />
                       <span>
                         {(() => {
-                          const start = new Date(campaign.start_date);
-                          const end = new Date(campaign.end_date);
+                          const start = new Date(toLocalISO(campaign.start_date));
+                          const end = new Date(toLocalISO(campaign.end_date));
                           const isValidStart = campaign.start_date && !isNaN(start.getTime());
                           const isValidEnd = campaign.end_date && !isNaN(end.getTime());
                           
@@ -209,7 +210,7 @@ export function CampaignList({
                           <span className="flex items-center gap-1 text-eco-blue bg-eco-blue/5 px-1.5 py-0.5 rounded border border-eco-blue/10">
                             <Send className="w-2.5 h-2.5" />
                              {(() => {
-                               const d = new Date(campaign.invitation_send_date);
+                               const d = new Date(toLocalISO(campaign.invitation_send_date));
                                return !isNaN(d.getTime()) ? format(d, 'HH:mm dd/MM', { locale: vi }) : '---';
                              })()}
                           </span>
@@ -218,7 +219,7 @@ export function CampaignList({
                           <span className="flex items-center gap-1 text-eco-orange bg-eco-orange/5 px-1.5 py-0.5 rounded border border-eco-orange/10">
                             <Clock className="w-2.5 h-2.5" />
                              Hạn: {(() => {
-                               const d = new Date(campaign.invitation_deadline);
+                               const d = new Date(toLocalISO(campaign.invitation_deadline));
                                return !isNaN(d.getTime()) ? format(d, 'HH:mm dd/MM', { locale: vi }) : '---';
                              })()}
                           </span>

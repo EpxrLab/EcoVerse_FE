@@ -1,3 +1,4 @@
+import { toLocalISO } from "@/utils/dateUtils";
 import React, { useState, useMemo, useEffect } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/shared/components/ui/dialog';
 import { Button } from '@/shared/components/ui/button';
@@ -489,7 +490,7 @@ function AIGeneratePanel({ campaignId, rounds, onGenerated, currentSubscription,
                       {file.name || file.fileName || (file.publicId ? file.publicId.split('/').pop().replace(/_\d{14}$/, '') : 'Tài liệu không tên')}
                     </p>
                     <p className="text-[10px] text-gray-400 mt-0.5">
-                      {file.size ? `${(file.size / 1024).toFixed(1)} KB` : 'Đang xử lý size'} • {file.createdAt ? new Date(file.createdAt).toLocaleDateString() : 'Vừa tải lên'}
+                      {file.size ? `${(file.size / 1024).toFixed(1)} KB` : 'Đang xử lý size'} • {file.createdAt ? new Date(toLocalISO(file.createdAt)).toLocaleDateString() : 'Vừa tải lên'}
                     </p>
                   </div>
                   <div className={cn("w-5 h-5 rounded-full border-2 flex items-center justify-center transition-all",
