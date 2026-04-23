@@ -1,4 +1,4 @@
-import { useState, useEffect, lazy, Suspense } from "react";
+import { useState, useEffect, Suspense } from "react";
 import {
   Card,
   Button,
@@ -23,14 +23,12 @@ import {
   IdcardOutlined,
   ManOutlined,
   WomanOutlined,
-  EnvironmentOutlined,
   LockOutlined,
   KeyOutlined,
   SwapOutlined,
   DollarOutlined,
   ClockCircleOutlined,
   HistoryOutlined,
-  BarChartOutlined,
   FireOutlined,
   RiseOutlined,
   ToolOutlined,
@@ -177,11 +175,13 @@ const AchievementCard = ({ achievement }) => (
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
+import { toLocalISO } from "@/utils/dateUtils";
+
 const pct = (v) => `${v ?? 0}%`;
 const fmtN = (v) => (v ?? 0).toLocaleString();
 const fmtDate = (iso, includeTime = true) => {
   if (!iso) return "—";
-  const d = new Date(iso);
+  const d = new Date(toLocalISO(iso));
   const pad = (n) => n.toString().padStart(2, "0");
   const day = pad(d.getDate());
   const month = pad(d.getMonth() + 1);
@@ -197,7 +197,7 @@ const fmtDate = (iso, includeTime = true) => {
 const calcAge = (dob) => {
   if (!dob) return null;
   return Math.floor(
-    (Date.now() - new Date(dob)) / (1000 * 60 * 60 * 24 * 365.25),
+    (Date.now() - new Date(toLocalISO(dob))) / (1000 * 60 * 60 * 24 * 365.25),
   );
 };
 

@@ -34,7 +34,7 @@ import {
   PaginationNext,
   PaginationPrevious,
 } from "@/shared/components/ui/pagination";
-import { Search, Plus, Gift, Clock, CheckCircle, XCircle, AlertCircle, Package, TrendingUp, ChevronLeft, ChevronRight } from "lucide-react";
+import { Search, Plus, Gift, Clock, CheckCircle, XCircle, AlertCircle, Package, TrendingUp } from "lucide-react";
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from "recharts";
 import { RewardStats, RewardList, MarketplaceItems } from '../../features/rewards/components';
 import { useRewards, useRewardForm, useRewardPagination } from '../../features/rewards/hooks';

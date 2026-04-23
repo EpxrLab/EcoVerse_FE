@@ -8,10 +8,8 @@ import {
   CalendarOutlined,
   CheckCircleOutlined,
   ClockCircleOutlined,
-  CodeOutlined,
   StarOutlined,
   RightOutlined,
-  UnorderedListOutlined,
 } from "@ant-design/icons";
 import { motion } from "framer-motion";
 import { getCampaignDetails } from "../../services";
@@ -68,9 +66,11 @@ const DIFFICULTY_COLOR = {
 };
 const DIFFICULTY_LABEL = { EASY: "Dễ", MEDIUM: "Trung bình", HARD: "Khó" };
 
+import { toLocalISO } from "@/utils/dateUtils";
+
 const fmtDate = (iso) =>
   iso
-    ? new Date(iso).toLocaleDateString("vi-VN", {
+    ? new Date(toLocalISO(iso)).toLocaleDateString("vi-VN", {
         day: "2-digit",
         month: "2-digit",
         year: "numeric",
@@ -79,7 +79,7 @@ const fmtDate = (iso) =>
 
 const daysLeft = (iso) => {
   if (!iso) return null;
-  const diff = Math.ceil((new Date(iso) - new Date()) / (1000 * 60 * 60 * 24));
+  const diff = Math.ceil((new Date(toLocalISO(iso)) - new Date()) / (1000 * 60 * 60 * 24));
   return diff;
 };
 

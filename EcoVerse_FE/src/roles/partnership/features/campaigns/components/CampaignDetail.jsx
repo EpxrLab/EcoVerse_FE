@@ -1,3 +1,4 @@
+import { toLocalISO } from "@/utils/dateUtils";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/shared/components/ui/dialog';
 import { ScrollArea } from '@/shared/components/ui/scroll-area';
 import { Badge } from '@/shared/components/ui/badge';
@@ -68,7 +69,7 @@ export function CampaignDetail({ isOpen, onClose, campaign, availableQuizzes = [
                 {campaign.createdAt && (
                   <span className="text-sm text-muted-foreground flex items-center gap-1">
                     <span className="w-1 h-1 rounded-full bg-muted-foreground" />
-                    Tạo ngày {new Date(campaign.createdAt).toLocaleDateString('vi-VN')}
+                    Tạo ngày {new Date(toLocalISO(campaign.createdAt)).toLocaleDateString('vi-VN')}
                   </span>
                 )}
               </div>
@@ -187,11 +188,11 @@ export function CampaignDetail({ isOpen, onClose, campaign, availableQuizzes = [
                         <div className="grid grid-cols-2 gap-3 text-sm">
                           <div className="flex items-center gap-2 text-muted-foreground">
                             <Calendar className="w-4 h-4" />
-                            <span>Bắt đầu: {new Date(round.startTime).toLocaleString('vi-VN')}</span>
+                            <span>Bắt đầu: {new Date(toLocalISO(round.startTime)).toLocaleString('vi-VN')}</span>
                           </div>
                           <div className="flex items-center gap-2 text-muted-foreground">
                             <Calendar className="w-4 h-4" />
-                            <span>Kết thúc: {new Date(round.endTime).toLocaleString('vi-VN')}</span>
+                            <span>Kết thúc: {new Date(toLocalISO(round.endTime)).toLocaleString('vi-VN')}</span>
                           </div>
                         </div>
 
@@ -252,31 +253,31 @@ export function CampaignDetail({ isOpen, onClose, campaign, availableQuizzes = [
                   <div className="space-y-1">
                     <p className="text-xs text-muted-foreground">Thời gian chiến dịch:</p>
                     <div className="flex justify-between items-center text-sm">
-                      <span className="font-semibold">{new Date(campaign.startDate).toLocaleDateString('vi-VN')}</span>
+                      <span className="font-semibold">{new Date(toLocalISO(campaign.startDate)).toLocaleDateString('vi-VN')}</span>
                       <span className="text-muted-foreground">đến</span>
-                      <span className="font-semibold">{new Date(campaign.endDate).toLocaleDateString('vi-VN')}</span>
+                      <span className="font-semibold">{new Date(toLocalISO(campaign.endDate)).toLocaleDateString('vi-VN')}</span>
                     </div>
                   </div>
 
                   <div className="pt-3 border-t space-y-3">
                     <div className="flex justify-between items-center text-sm">
                       <span className="text-muted-foreground">Bắt đầu đăng ký:</span>
-                      <span className="font-semibold">{new Date(campaign.registrationDate).toLocaleDateString('vi-VN')}</span>
+                      <span className="font-semibold">{new Date(toLocalISO(campaign.registrationDate)).toLocaleDateString('vi-VN')}</span>
                     </div>
                     <div className="flex justify-between items-center text-sm">
                       <span className="text-muted-foreground">Hạn chót đăng ký:</span>
-                      <span className="font-semibold text-destructive">{new Date(campaign.registrationDeadline).toLocaleDateString('vi-VN')}</span>
+                      <span className="font-semibold text-destructive">{new Date(toLocalISO(campaign.registrationDeadline)).toLocaleDateString('vi-VN')}</span>
                     </div>
                   </div>
 
                   <div className="pt-3 border-t space-y-3">
                     <div className="flex justify-between items-center text-sm">
                       <span className="text-muted-foreground">Gửi lời mời:</span>
-                      <span className="font-semibold">{new Date(campaign.invitationDate).toLocaleDateString('vi-VN')}</span>
+                      <span className="font-semibold">{new Date(toLocalISO(campaign.invitationDate)).toLocaleDateString('vi-VN')}</span>
                     </div>
                     <div className="flex justify-between items-center text-sm">
                       <span className="text-muted-foreground">Hạn chót lời mời:</span>
-                      <span className="font-semibold text-destructive">{new Date(campaign.invitationDeadline).toLocaleDateString('vi-VN')}</span>
+                      <span className="font-semibold text-destructive">{new Date(toLocalISO(campaign.invitationDeadline)).toLocaleDateString('vi-VN')}</span>
                     </div>
                   </div>
 

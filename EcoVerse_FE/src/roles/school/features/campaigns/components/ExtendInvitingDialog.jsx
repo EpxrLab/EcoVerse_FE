@@ -28,12 +28,12 @@ export function ExtendInvitingDialog({
 
   const minDate = useMemo(() => {
     if (!campaign?.invitation_deadline) return toLocalISO(new Date()).slice(0, 16);
-    return toLocalISO(new Date(campaign.invitation_deadline)).slice(0, 16);
+    return toLocalISO(campaign.invitation_deadline);
   }, [campaign]);
 
   const maxDate = useMemo(() => {
     if (!campaign?.start_date) return '';
-    return toLocalISO(new Date(campaign.start_date)).slice(0, 16);
+    return toLocalISO(campaign.start_date);
   }, [campaign]);
 
   // Extract IDs of students already invited to this campaign
@@ -46,19 +46,19 @@ export function ExtendInvitingDialog({
   useEffect(() => {
     if (isOpen && campaign) {
       const currentDeadline = campaign.invitation_deadline || campaign.end_date || new Date().toISOString();
-      const defaultDate = new Date(currentDeadline);
+      const defaultDate = new Date(toLocalISO(currentDeadline));
       defaultDate.setDate(defaultDate.getDate() + 7);
       
       // Ensure default date is between min and max
       let initialDate = defaultDate;
       if (campaign.start_date) {
-        const startDate = new Date(campaign.start_date);
+        const startDate = new Date(toLocalISO(campaign.start_date));
         if (initialDate > startDate) {
           // If 1 week later is after start date, set to 1 hour before start date
           initialDate = new Date(startDate.getTime() - 60 * 60 * 1000);
           // If even that is before min, just use min
-          if (campaign.invitation_deadline && initialDate < new Date(campaign.invitation_deadline)) {
-            initialDate = new Date(new Date(campaign.invitation_deadline).getTime() + 1000);
+          if (campaign.invitation_deadline && initialDate < new Date(toLocalISO(campaign.invitation_deadline))) {
+            initialDate = new Date(new Date(toLocalISO(campaign.invitation_deadline)).getTime() + 1000);
           }
         }
       }
@@ -80,7 +80,7 @@ export function ExtendInvitingDialog({
 
     const selectedDate = new Date(value);
     if (campaign?.invitation_deadline) {
-      const min = new Date(campaign.invitation_deadline);
+      const min = new Date(toLocalISO(campaign.invitation_deadline));
       if (selectedDate <= min) {
         setDateError('Ngày gia hạn phải sau ngày hạn cũ');
         return;
@@ -88,7 +88,7 @@ export function ExtendInvitingDialog({
     }
 
     if (campaign?.start_date) {
-      const max = new Date(campaign.start_date);
+      const max = new Date(toLocalISO(campaign.start_date));
       if (selectedDate >= max) {
         setDateError('Ngày gia hạn phải trước ngày bắt đầu chiến dịch');
         return;
@@ -164,7 +164,7 @@ export function ExtendInvitingDialog({
   const handleConfirm = () => {
     if (!newInviteEndAt || dateError) return;
     onConfirm({
-      newInviteEndAt: new Date(newInviteEndAt).toISOString(),
+      newInviteEndAt: new Date(toLocalISO(newInviteEndAt)).toISOString(),
       additionalStudentIds: selectedStudentIds,
       reason: reason
     });

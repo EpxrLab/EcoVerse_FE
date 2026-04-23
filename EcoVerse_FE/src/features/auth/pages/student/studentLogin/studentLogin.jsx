@@ -51,7 +51,7 @@ export default function StudentLogin() {
         password: password,
       };
       const res = await loginFunction(payload);
-      if (res && res.data.role === "STUDENT") {
+      if (res && res?.data?.role === "STUDENT") {
         toast.success(
           "Đăng nhập thành công! Chào mừng bạn đến với EcoVerse",
         );
@@ -60,7 +60,7 @@ export default function StudentLogin() {
         sessionStorage.setItem("role", res.data.role);
         navigate("/student");
       } else {
-        toast.error("Đăng nhập thất bại!");
+        toast.error(res?.message || "Đăng nhập thất bại!");
       }
     } catch (error) {
       toast.error("Đã xảy ra lỗi khi đăng nhập");

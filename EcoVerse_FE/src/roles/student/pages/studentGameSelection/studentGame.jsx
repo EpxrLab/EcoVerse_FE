@@ -4,7 +4,6 @@ import { Card, Button, Progress, Spin } from "antd";
 import {
   PlayCircleOutlined,
   LockOutlined,
-  StarOutlined,
   HomeOutlined,
   CheckCircleOutlined,
   AimOutlined,
@@ -15,6 +14,7 @@ import { motion } from "framer-motion";
 import { Select, Space } from "antd";
 import { Layers, ChevronRight } from "lucide-react";
 import { getCampaignDetails } from "../../services";
+import { toLocalISO } from "@/utils/dateUtils";
 
 // ─── CoinIcon ─────────────────────────────────────────────────────────────────
 
@@ -391,13 +391,13 @@ export default function StudentGame() {
                     <div className="flex justify-between items-center">
                       <span className="text-gray-500 font-medium">Bắt đầu:</span>
                       <span className="text-primary font-bold">
-                        {new Date(selectedRound.startTime).toLocaleString('vi-VN', { hour: '2-digit', minute: '2-digit', day: '2-digit', month: '2-digit', year: 'numeric' })}
+                        {new Date(toLocalISO(selectedRound.startTime)).toLocaleString('vi-VN', { hour: '2-digit', minute: '2-digit', day: '2-digit', month: '2-digit', year: 'numeric' })}
                       </span>
                     </div>
                     <div className="flex justify-between items-center">
                       <span className="text-gray-500 font-medium">Kết thúc:</span>
                       <span className="text-gray-800 font-bold">
-                        {new Date(selectedRound.endTime).toLocaleString('vi-VN', { hour: '2-digit', minute: '2-digit', day: '2-digit', month: '2-digit', year: 'numeric' })}
+                        {new Date(toLocalISO(selectedRound.endTime)).toLocaleString('vi-VN', { hour: '2-digit', minute: '2-digit', day: '2-digit', month: '2-digit', year: 'numeric' })}
                       </span>
                     </div>
                   </div>

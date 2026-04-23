@@ -22,6 +22,7 @@ import { useDashboard } from '../../hooks/useDashboard';
 import { cn } from "@/shared/lib/utils";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/shared/components/ui/select";
 import { useNavigate } from "react-router";
+import { toLocalISO } from "@/utils/dateUtils";
 
 export default function SchoolDashboard() {
   const [period, setPeriod] = useState('THIS_MONTH');
@@ -67,7 +68,7 @@ export default function SchoolDashboard() {
             <h1 className="text-2xl font-bold text-foreground">Tổng quan</h1>
             <p className="text-sm text-muted-foreground flex items-center gap-1.5">
               <Calendar className="w-3.5 h-3.5" />
-              Hiệu suất EcoVerse từ {new Date(stats.fromDate).toLocaleDateString('vi-VN')}
+              Hiệu suất EcoVerse từ {new Date(toLocalISO(stats.fromDate)).toLocaleDateString('vi-VN')}
             </p>
           </div>
         </div>
@@ -288,7 +289,7 @@ export default function SchoolDashboard() {
                   </Badge>
                 </div>
                 <p className="text-sm text-muted-foreground font-medium">
-                   Đăng ký hỗ trợ đến: {new Date(stats.subscriptionEndDate).toLocaleDateString('vi-VN', { year: 'numeric', month: 'long', day: 'numeric' })}
+                   Đăng ký hỗ trợ đến: {new Date(toLocalISO(stats.subscriptionEndDate)).toLocaleDateString('vi-VN', { year: 'numeric', month: 'long', day: 'numeric' })}
                 </p>
               </div>
             </div>

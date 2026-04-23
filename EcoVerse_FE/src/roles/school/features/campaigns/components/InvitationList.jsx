@@ -27,6 +27,7 @@ import {
 } from 'lucide-react';
 import { format } from 'date-fns';
 import { vi } from 'date-fns/locale';
+import { toLocalISO } from '@/utils/dateUtils';
 
 export function InvitationList({
   invitations,
@@ -70,11 +71,11 @@ export function InvitationList({
           {invitations.map((invitation, index) => {
              // Calculate a mock deadline if not present (e.g., 7 days after creation or 5 days before start)
              const deadline = invitation.registration_deadline || 
-               (invitation.start_date ? new Date(new Date(invitation.start_date).getTime() - 5 * 24 * 60 * 60 * 1000).toISOString() : null);
+               (invitation.start_date ? new Date(new Date(toLocalISO(invitation.start_date)).getTime() - 5 * 24 * 60 * 60 * 1000).toISOString() : null);
 
              const safeFormat = (d, f = 'HH:mm dd/MM/yyyy') => {
                if (!d) return '---';
-               const date = new Date(d);
+               const date = new Date(toLocalISO(d));
                return !isNaN(date.getTime()) ? format(date, f, { locale: vi }) : '---';
              };
 

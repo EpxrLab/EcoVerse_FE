@@ -93,7 +93,7 @@ export function NotificationDetailDialog({ isOpen, onClose, notificationId }) {
               {notification?.createdAt && (
                 <p className="text-xs text-muted-foreground flex items-center gap-1 mt-0.5">
                   <Calendar className="w-3 h-3" />
-                  {format(new Date(notification.createdAt), 'HH:mm - dd/MM/yyyy', { locale: vi })}
+                  {format(new Date(toLocalISO(notification.createdAt)), 'HH:mm - dd/MM/yyyy', { locale: vi })}
                 </p>
               )}
             </div>

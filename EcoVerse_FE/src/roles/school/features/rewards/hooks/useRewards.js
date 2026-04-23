@@ -1,10 +1,8 @@
 import { useState, useEffect } from 'react';
 import { rewardService } from '../../../services/reward.service';
 import { campaignService } from '../../../services/campaign.service';
-import {
-  rewardStats,
-  topRewardsData,
-} from '../../../data/reward.data';
+import { toLocalISO } from "@/utils/dateUtils";
+
 
 export function useRewards() {
   const [partnershipInvitations, setPartnershipInvitations] = useState([]);
@@ -17,8 +15,8 @@ export function useRewards() {
   const [confirmedRewards, setConfirmedRewards] = useState([]);
   const [rejectedRewards, setRejectedRewards] = useState([]);
   const [cancelledRewards, setCancelledRewards] = useState([]);
-  const [localStats, setLocalStats] = useState(rewardStats);
-  const [localTopRewards, setLocalTopRewards] = useState(topRewardsData);
+  const [localStats, setLocalStats] = useState({ pending: 0, completed: 0, expired: 0, coinsRedeemed: 0 });
+  const [localTopRewards, setLocalTopRewards] = useState([]);
 
   const fetchRewards = async () => {
     try {
@@ -66,7 +64,7 @@ export function useRewards() {
           coins: req.totalCoins,
           status: req.status.toLowerCase(),
           rawStatus: req.status,
-          requestDate: new Date(req.createdAt).toLocaleString('vi-VN', {
+          requestDate: new Date(toLocalISO(req.createdAt)).toLocaleString('vi-VN', {
             hour: '2-digit',
             minute: '2-digit',
             day: '2-digit',
@@ -74,8 +72,8 @@ export function useRewards() {
             year: 'numeric',
             hour12: false
           }).replace(',', ''),
-          expiresAt: req.expiresAt ? new Date(req.expiresAt).toLocaleDateString('vi-VN') : 'N/A',
-          deliveredAt: (req.deliveredAt || req.updatedAt) ? new Date(req.deliveredAt || req.updatedAt).toLocaleString('vi-VN', {
+          expiresAt: req.expiresAt ? new Date(toLocalISO(req.expiresAt)).toLocaleDateString('vi-VN') : 'N/A',
+          deliveredAt: (req.deliveredAt || req.updatedAt) ? new Date(toLocalISO(req.deliveredAt || req.updatedAt)).toLocaleString('vi-VN', {
             hour: '2-digit',
             minute: '2-digit',
             day: '2-digit',
@@ -83,7 +81,7 @@ export function useRewards() {
             year: 'numeric',
             hour12: false
           }).replace(',', '') : null,
-          confirmedAt: req.confirmedAt ? new Date(req.confirmedAt).toLocaleString('vi-VN', {
+          confirmedAt: req.confirmedAt ? new Date(toLocalISO(req.confirmedAt)).toLocaleString('vi-VN', {
             hour: '2-digit',
             minute: '2-digit',
             day: '2-digit',
@@ -91,7 +89,7 @@ export function useRewards() {
             year: 'numeric',
             hour12: false
           }).replace(',', '') : null,
-          cancelledDate: (req.cancelledAt || req.rejectedAt) ? new Date(req.cancelledAt || req.rejectedAt).toLocaleString('vi-VN', {
+          cancelledDate: (req.cancelledAt || req.rejectedAt) ? new Date(toLocalISO(req.cancelledAt || req.rejectedAt)).toLocaleString('vi-VN', {
             hour: '2-digit',
             minute: '2-digit',
             day: '2-digit',
@@ -141,7 +139,7 @@ export function useRewards() {
         .sort((a, b) => b.count - a.count)
         .slice(0, 5);
 
-      setLocalTopRewards(topRewards.length > 0 ? topRewards : topRewardsData);
+      setLocalTopRewards(topRewards);
     } catch (e) {
       console.error('Failed to fetch reward requests', e);
     }
@@ -176,9 +174,9 @@ export function useRewards() {
         campaignName: r.campaignName,
         rewardName: r.rewardName,
         status: mapPartnershipStatus(r.status),
-        receivedAt: r.arrivedAt ? new Date(r.arrivedAt).toLocaleDateString('vi-VN') : null,
-        givenAt: r.deliveredAt ? new Date(r.deliveredAt).toLocaleDateString('vi-VN') : null,
-        collectedAt: r.confirmedAt ? new Date(r.confirmedAt).toLocaleDateString('vi-VN') : null,
+        receivedAt: r.arrivedAt ? new Date(toLocalISO(r.arrivedAt)).toLocaleDateString('vi-VN') : null,
+        givenAt: r.deliveredAt ? new Date(toLocalISO(r.deliveredAt)).toLocaleDateString('vi-VN') : null,
+        collectedAt: r.confirmedAt ? new Date(toLocalISO(r.confirmedAt)).toLocaleDateString('vi-VN') : null,
       }));
       setPartnershipRewards(mapped);
       return mapped;
