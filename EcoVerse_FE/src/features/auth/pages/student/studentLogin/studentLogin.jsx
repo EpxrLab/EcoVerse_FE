@@ -52,13 +52,16 @@ export default function StudentLogin() {
       };
       const res = await loginFunction(payload);
       if (res && res?.data?.role === "STUDENT") {
-        toast.success(
-          "Đăng nhập thành công! Chào mừng bạn đến với EcoVerse",
-        );
+        toast.success("Đăng nhập thành công! Chào mừng bạn đến với EcoVerse");
         sessionStorage.setItem("accessToken", res?.data?.accessToken);
         sessionStorage.setItem("refreshToken", res?.data?.refreshToken);
         sessionStorage.setItem("role", res.data.role);
-        navigate("/student");
+
+        if (res.data.isFirstLogin) {
+          navigate("/student/profile", { state: { showChangePassword: true } });
+        } else {
+          navigate("/student");
+        }
       } else {
         toast.error(res?.message || "Đăng nhập thất bại!");
       }
@@ -93,8 +96,13 @@ export default function StudentLogin() {
       <div className="absolute inset-0 overflow-hidden pointer-events-none">
         <div className="absolute top-[-10%] left-[-5%] w-[40%] h-[40%] bg-[#8ed645]/20 rounded-full blur-[100px]" />
         <div className="absolute bottom-[5%] right-[-10%] w-[50%] h-[50%] bg-[#8ed645]/10 rounded-full blur-[120px]" />
-        <div className="absolute top-0 left-0 w-full h-full opacity-[0.03]" 
-             style={{ backgroundImage: 'radial-gradient(#8ed645 1px, transparent 1px)', backgroundSize: '40px 40px' }} />
+        <div
+          className="absolute top-0 left-0 w-full h-full opacity-[0.03]"
+          style={{
+            backgroundImage: "radial-gradient(#8ed645 1px, transparent 1px)",
+            backgroundSize: "40px 40px",
+          }}
+        />
       </div>
 
       <motion.div
@@ -115,23 +123,29 @@ export default function StudentLogin() {
           animate={{ opacity: 1, x: 0 }}
         >
           <ArrowLeftOutlined className="text-sm" />
-          <span className="font-greenhouse-heading tracking-widest uppercase text-xs">QUAY LẠI</span>
+          <span className="font-greenhouse-heading tracking-widest uppercase text-xs">
+            QUAY LẠI
+          </span>
         </motion.button>
 
         <motion.div variants={cardVariants}>
           <div className="bg-white/70 backdrop-blur-3xl rounded-[3.5rem] p-10 md:p-14 shadow-[0_48px_96px_-12px_rgba(142,214,69,0.15)] border border-white/60 relative overflow-hidden">
             {/* Internal polish blurs */}
             <div className="absolute -top-24 -right-24 w-48 h-48 bg-[#8ed645]/10 rounded-full blur-3xl" />
-            
+
             <div className="relative space-y-12">
               <div className="text-center">
                 <motion.div
                   className="inline-block relative mb-8"
-                  animate={{ 
+                  animate={{
                     rotate: [0, 5, -5, 0],
-                    scale: [1, 1.05, 1]
+                    scale: [1, 1.05, 1],
                   }}
-                  transition={{ duration: 4, repeat: Infinity, ease: "easeInOut" }}
+                  transition={{
+                    duration: 4,
+                    repeat: Infinity,
+                    ease: "easeInOut",
+                  }}
                 >
                   <div className="w-20 h-20 bg-gradient-to-br from-[#f7fcf2] to-[#8ed645] rounded-[2rem] flex items-center justify-center shadow-xl shadow-[#8ed645]/20">
                     <SmileOutlined className="text-4xl text-white" />
@@ -161,7 +175,9 @@ export default function StudentLogin() {
                     status={errors.username ? "error" : ""}
                   />
                   {errors.username && (
-                    <p className="text-red-500 text-xs font-bold font-greenhouse-body ml-1">{errors.username}</p>
+                    <p className="text-red-500 text-xs font-bold font-greenhouse-body ml-1">
+                      {errors.username}
+                    </p>
                   )}
                 </div>
 
@@ -179,11 +195,17 @@ export default function StudentLogin() {
                     disabled={isLoading}
                     status={errors.password ? "error" : ""}
                     iconRender={(visible) =>
-                      visible ? <EyeOutlined className="text-[#8ed645]/60" /> : <EyeInvisibleOutlined className="text-[#8ed645]/60" />
+                      visible ? (
+                        <EyeOutlined className="text-[#8ed645]/60" />
+                      ) : (
+                        <EyeInvisibleOutlined className="text-[#8ed645]/60" />
+                      )
                     }
                   />
                   {errors.password && (
-                    <p className="text-red-500 text-xs font-bold font-greenhouse-body ml-1">{errors.password}</p>
+                    <p className="text-red-500 text-xs font-bold font-greenhouse-body ml-1">
+                      {errors.password}
+                    </p>
                   )}
                 </div>
 
@@ -206,7 +228,8 @@ export default function StudentLogin() {
                     <span className="font-black font-greenhouse-heading tracking-widest text-xs uppercase block mb-1">
                       💡 Mẹo nhỏ cho bạn
                     </span>
-                    Sử dụng tên đăng nhập và mật khẩu được thầy cô giáo cung cấp để vào chơi game nhé!
+                    Sử dụng tên đăng nhập và mật khẩu được thầy cô giáo cung cấp
+                    để vào chơi game nhé!
                   </p>
                 </div>
               </div>
@@ -225,7 +248,7 @@ export default function StudentLogin() {
             🌍 CÙNG NHAU BẢO VỆ MÔI TRƯỜNG 🌍
           </p>
 
-          <button 
+          <button
             onClick={() => navigate("/")}
             className="text-xs font-black text-[#5b605c] hover:text-[#8ed645] transition-all uppercase tracking-[0.2em] font-greenhouse-heading block w-full"
           >

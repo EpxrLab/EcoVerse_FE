@@ -36,7 +36,7 @@ import {
   AimOutlined,
 } from "@ant-design/icons";
 import { motion, AnimatePresence } from "framer-motion";
-import { useNavigate } from "react-router";
+import { useNavigate, useLocation } from "react-router";
 import {
   getAuthenticatedStudentProfile,
   getStudentReport,
@@ -830,6 +830,15 @@ export default function StudentProfile() {
   const [pwOpen, setPwOpen] = useState(false);
   const [pwLoading, setPwLoading] = useState(false);
   const [pwForm] = Form.useForm();
+  const location = useLocation();
+
+  useEffect(() => {
+    if (location.state?.showChangePassword) {
+      setPwOpen(true);
+      // Optional: Clear location state to avoid re-opening on manual refresh
+      navigate(location.pathname, { replace: true, state: {} });
+    }
+  }, [location, navigate]);
 
   useEffect(() => {
     setLoading(true);
