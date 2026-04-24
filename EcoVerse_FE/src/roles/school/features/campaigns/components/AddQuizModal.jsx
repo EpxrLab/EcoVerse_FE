@@ -10,7 +10,6 @@ import { cn } from '@/shared/lib/utils';
 import { aiQuizService } from '../../quizzes/services/aiQuiz.service';
 import { toast } from 'sonner';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/shared/components/ui/select';
-import { toLocalISO } from '@/utils/dateUtils';
 
 const difficultyConfig = {
   easy: { label: 'Dễ', color: 'bg-eco-green/15 text-eco-green', dot: 'bg-eco-green' },
@@ -512,7 +511,7 @@ function AIGeneratePanel({ campaignId, roundId, onGenerated, currentSubscription
                     <p className="text-[10px] text-gray-400 mt-0.5">
                       {file.size ? `${(file.size / 1024).toFixed(1)} KB` : 'Đang xử lý size'} 
                       • 
-                      {file.createdAt ? new Date(toLocalISO(file.createdAt)).toLocaleDateString() : 'Vừa tải lên'}
+                      {file.createdAt ? new Date(file.createdAt).toLocaleDateString() : 'Vừa tải lên'}
                     </p>
                   </div>
                   <div className={cn(
