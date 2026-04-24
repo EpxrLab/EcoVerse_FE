@@ -370,7 +370,7 @@ export default function QuizPlay({ quiz: _quiz, onFinish, onCancel }) {
         />
       )}
 
-      <div className="fixed inset-0 z-[10] bg-[#f8f9fa] flex flex-col overflow-hidden font-sans text-slate-900">
+      <div className="fixed inset-0 z-[10001] bg-[#f8f9fa] flex flex-col overflow-hidden font-sans text-slate-900">
         <header className="h-14 border-b border-slate-200 px-4 flex items-center justify-between bg-white z-20 shadow-sm">
           <div className="flex items-center gap-3">
             <Button

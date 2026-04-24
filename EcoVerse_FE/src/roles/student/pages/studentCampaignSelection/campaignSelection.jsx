@@ -177,34 +177,6 @@ const CampaignCard = lazy(() =>
                 <span>{fmtDate(campaign.endDate)}</span>
               </div>
 
-              {/* ── Invitation deadline ── */}
-              {campaign.invitationDeadline && (
-                <div
-                  className={`flex items-center gap-2 text-xs px-3 py-2 rounded-xl border ${
-                    deadlineWarning
-                      ? "bg-red-50 border-red-200 text-red-600"
-                      : "bg-amber-50 border-amber-200 text-amber-600"
-                  }`}
-                >
-                  <ClockCircleOutlined className="flex-shrink-0" />
-                  <span className="font-medium">Hạn đăng ký:</span>
-                  <span>{fmtDate(campaign.invitationDeadline)}</span>
-                  {deadlineDays !== null && deadlineDays >= 0 && (
-                    <span
-                      className={`ml-auto font-bold ${deadlineWarning ? "text-red-600" : "text-amber-600"}`}
-                    >
-                      {deadlineDays === 0
-                        ? "Hôm nay!"
-                        : `còn ${deadlineDays} ngày`}
-                    </span>
-                  )}
-                  {deadlineDays !== null && deadlineDays < 0 && (
-                    <span className="ml-auto font-bold text-gray-400">
-                      Đã hết hạn
-                    </span>
-                  )}
-                </div>
-              )}
 
               {/* Spacer */}
               <div className="flex-1" />

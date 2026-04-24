@@ -11,6 +11,7 @@ import {
 import { cn } from '@/shared/lib/utils';
 import { notificationService } from '@/shared/services';
 import { NotificationDetailDialog } from './NotificationDetailDialog';
+import { toLocalISO } from '@/utils/dateUtils';
 
 const getNotificationIcon = (type) => {
   switch (type) {
