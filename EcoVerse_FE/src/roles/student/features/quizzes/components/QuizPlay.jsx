@@ -90,6 +90,7 @@ function ResultModal({ result, onClose }) {
       centered
       width={480}
       closable={false}
+      zIndex={10005}
       className="[&_.ant-modal-content]:rounded-2xl [&_.ant-modal-content]:overflow-hidden [&_.ant-modal-content]:p-0"
     >
       <motion.div
@@ -274,8 +275,14 @@ export default function QuizPlay({ quiz: _quiz, onFinish, onCancel }) {
   useEffect(() => {
     if (_quiz?.attemptId) {
       setAttemptId(_quiz.attemptId);
+      // Reset state for new attempt (Play Again)
+      setAnswers([]);
+      setCurrentQuestionIndex(0);
+      setShowResult(false);
+      setQuizResult(null);
+      setTimeLeft((quiz?.timeLimit ?? 10) * 60);
     }
-  }, [_quiz]);
+  }, [_quiz?.attemptId, quiz?.timeLimit]);
 
   const handleSelectAnswer = (selectedAnswerId) => {
     setAnswers((prev) => {
@@ -321,14 +328,18 @@ export default function QuizPlay({ quiz: _quiz, onFinish, onCancel }) {
         setQuizResult(resultRes);
       }
 
-      // Refresh sidebar coins
       if (refreshStudentData) {
         refreshStudentData();
       }
 
+      // Ensure we show result even if resultRes is partially empty
       setShowResult(true);
     } catch (error) {
-      console.log(error);
+      console.error("Quiz submission error:", error);
+      toast.error("Đã xảy ra lỗi khi nộp bài hoặc lấy kết quả.");
+      // Fallback: set empty result object to ensure beShapedResult is at least truthy
+      setQuizResult({});
+      setShowResult(true);
     } finally {
       setIsSubmitting(false);
     }
@@ -503,7 +514,7 @@ export default function QuizPlay({ quiz: _quiz, onFinish, onCancel }) {
                     value={currentAnswer?.selectedAnswerId}
                     className="w-full"
                   >
-                    <div className="space-y-3">
+                    <div className="flex flex-col gap-3">
                       {currentQuestion?.options.map((option, idx) => {
                         const selected =
                           currentAnswer?.selectedAnswerId === option.id;
@@ -511,26 +522,46 @@ export default function QuizPlay({ quiz: _quiz, onFinish, onCancel }) {
                           <Radio.Button
                             key={option.id}
                             value={option.id}
-                            className={`!h-auto !py-3.5 !px-5 !rounded-xl !border-2 !flex !items-center !w-full !transition-all
-                              ${selected ? "!border-primary !bg-primary/10" : "!border-slate-200 hover:!border-slate-300 !bg-white"}`}
+                            className={`
+            !h-auto !py-4 !px-5 !rounded-xl !border-2 !flex !items-center !w-full !transition-all !relative
+            ${
+              selected
+                ? "!border-primary !bg-primary/5 !shadow-sm"
+                : "!border-slate-100 hover:!border-slate-300 !bg-white"
+            }
+            before:!hidden
+          `}
                           >
                             <div
-                              className={`w-8 h-8 rounded-full border-2 flex items-center justify-center mr-4 text-xs font-bold flex-shrink-0 transition-all
-                              ${selected ? "bg-primary border-primary text-white" : "bg-white border-slate-300 text-slate-400"}`}
+                              className={`w-8 h-8 rounded-full border-2 flex items-center justify-center mr-4 text-xs font-bold flex-shrink-0 transition-colors
+            ${selected ? "bg-primary border-primary text-white" : "bg-slate-50 border-slate-200 text-slate-500"}`}
                             >
                               {String.fromCharCode(65 + idx)}
                             </div>
+
+                            {/* Nội dung câu trả lời */}
                             <span
-                              className={`text-sm font-medium ${selected ? "text-indigo-700" : "text-slate-700"}`}
+                              className={`text-[15px] leading-relaxed flex-grow pr-4 transition-colors ${
+                                selected
+                                  ? "text-primary font-semibold"
+                                  : "text-slate-600 font-medium"
+                              }`}
                             >
                               {option.text}
                             </span>
-                            {selected && (
-                              <CheckCircle2
-                                size={18}
-                                className="text-indigo-500 ml-auto flex-shrink-0"
-                              />
-                            )}
+
+                            {/* Icon Check nằm ở cuối bên phải */}
+                            <div className="flex-shrink-0 w-6 flex justify-end">
+                              {selected ? (
+                                <CheckCircle2
+                                  size={20}
+                                  className="text-primary animate-in zoom-in duration-200"
+                                />
+                              ) : (
+                                // Giữ khoảng trống hoặc một vòng tròn mờ để UI không bị "giật" khi chọn
+                                <div className="w-5 h-5 rounded-full border border-slate-200" />
+                              )}
+                            </div>
                           </Radio.Button>
                         );
                       })}
