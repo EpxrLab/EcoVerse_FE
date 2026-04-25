@@ -48,6 +48,7 @@ const GAME_TYPE_OPTIONS = [
   { value: "SPEED_CLASSIFY", label: "Phân loại nhanh (SPEED_CLASSIFY)" },
   { value: "WASTE_SORTING", label: "Phân loại rác (WASTE_SORTING)" },
   { value: "COLLECT_SORTING", label: "Thu gom & phân loại (COLLECT_SORTING)" },
+  { value: "GRABBER_SORTING", label: "Gắp & phân loại (GRABBER_SORTING)" },
 ];
 
 const WASTE_CATEGORIES = [

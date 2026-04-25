@@ -1029,7 +1029,7 @@ export default class EcoGameRunner {
       this.nextSpawnTime =
         this.config.spawnIntervalMin +
         Math.random() *
-          (this.config.spawnIntervalMax - this.config.spawnIntervalMin);
+        (this.config.spawnIntervalMax - this.config.spawnIntervalMin);
 
       // prioritized trash spawning if we haven't reached the limit
       const remainingTrash = this.maxTrashToSpawn - this.totalTrashSpawned;

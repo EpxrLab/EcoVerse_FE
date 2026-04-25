@@ -45,6 +45,7 @@ import StudentGame from "./roles/student/pages/studentGameSelection/studentGame"
 import StudentQuiz from "./roles/student/pages/studentQuizSelection/studentQuiz";
 import StudentQuizPlay from "./roles/student/pages/studentQuizPlay/StudentQuizPlay";
 import EcoGamePage from "./roles/student/pages/ecoGamePlay/EcoGamePage";
+import EcoGrabberTest from "./roles/student/pages/ecoGamePlay/EcoGrabberTest";
 
 //========================School Routes==============================
 import SchoolAdminLayout from "@/roles/school/SchoolAdminLayout";
@@ -114,6 +115,7 @@ const App = () => (
           <BrowserRouter>
             <Routes>
               <Route path="/" element={<Index />} />
+              <Route path="/test-grabber" element={<EcoGrabberTest />} />
 
               {/* Authentication Router*/}
               <Route path="/auth" element={<OptionPage />} />
