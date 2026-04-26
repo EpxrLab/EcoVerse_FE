@@ -156,7 +156,7 @@ const PlanFormModal = ({ open, onClose, onSave, initialValues, isCreate }) => {
         description: vals.description || "",
         durationDays: Number(vals.durationDays),
         price: Number(vals.price),
-        currency: vals.currency,
+        currency: "VND",
         maxStudents: Number(vals.maxStudents),
         maxCampaignsPerMonth: Number(vals.maxCampaignsPerMonth),
         maxRoundsPerCampaign: Number(vals.maxRoundsPerCampaign),
@@ -342,6 +342,7 @@ const PlanFormModal = ({ open, onClose, onSave, initialValues, isCreate }) => {
             <Form.Item
               label={<span className={lbl}>Tiền tệ</span>}
               name="currency"
+              hidden
             >
               <Select
                 className="w-full"
@@ -401,6 +402,7 @@ const PlanFormModal = ({ open, onClose, onSave, initialValues, isCreate }) => {
                 className="w-full rounded-lg"
                 min={0}
                 placeholder="200"
+                disabled={subscriberType === "PARTNERSHIP"}
               />
             </Form.Item>
             <Form.Item
