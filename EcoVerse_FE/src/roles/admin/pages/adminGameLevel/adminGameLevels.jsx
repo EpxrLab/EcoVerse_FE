@@ -501,10 +501,10 @@ function PresetTab({ gameTypes }) {
     try {
       const res = await deleteGameLevel(selectedGameId, id);
       if (res) {
-        toast.success("Xóa preset thành công!");
+        toast.success("Xóa cấp độ thành công!");
         fetchData();
       } else {
-        toast.error("Xóa preset thất bại!");
+        toast.error("Xóa cấp độ thất bại!");
       }
     } catch (error) {
       console.log(error);
@@ -759,7 +759,7 @@ function PresetTab({ gameTypes }) {
                           icon={<MinusCircleOutlined />}
                           onClick={() => {
                             if (fields.length <= 1) {
-                              toast.error("Phải có ít nhất 1 level");
+                              toast.error("Phải có ít nhất 1 màn chơi");
                               return;
                             }
                             remove(name);
@@ -860,7 +860,9 @@ function PresetTab({ gameTypes }) {
                     type="dashed"
                     onClick={() => {
                       if (fields.length >= levelAllow) {
-                        toast.error(`Chỉ được tạo tối đa ${levelAllow} level`);
+                        toast.error(
+                          `Chỉ được tạo tối đa ${levelAllow} màn chơi`,
+                        );
                         return;
                       }
 
