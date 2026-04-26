@@ -1,16 +1,7 @@
 import { useState, lazy, Suspense, useEffect } from "react";
 import { useNavigate, useParams } from "react-router";
 import { motion, AnimatePresence } from "framer-motion";
-import {
-  Card,
-  Button,
-  Spin,
-  Select,
-  Space,
-  Modal,
-  Empty,
-  Tag,
-} from "antd";
+import { Card, Button, Spin, Select, Space, Modal, Empty, Tag } from "antd";
 import {
   Home,
   Coins,
@@ -120,12 +111,6 @@ const QuizCard = lazy(() =>
                 <div className="flex items-center gap-2 text-gray-600">
                   <Target className="w-4 h-4 text-purple-500" />
                   <span className="text-sm">Thứ tự: {quiz.displayOrder}</span>
-                </div>
-                <div className="flex items-center gap-2">
-                  <Coins className="w-4 h-4 text-amber-500" />
-                  <span className="text-sm font-semibold text-amber-600">
-                    +{quiz.coinReward || 20} xu
-                  </span>
                 </div>
                 {isCompleted && (
                   <div className="flex items-center gap-2">
