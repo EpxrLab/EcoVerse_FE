@@ -431,7 +431,7 @@ function GameTypeTab({ gameTypes, setGameTypes, onRefresh }) {
             >
               <Switch />
             </Form.Item>
-            <Form.Item label="Max Levels" name="maxLevels">
+            <Form.Item label="Số màn chơi" name="maxLevels">
               <InputNumber min={0} className="w-full rounded-xl" />
             </Form.Item>
             <Form.Item label="Thứ tự hiển thị" name="displayOrder">
