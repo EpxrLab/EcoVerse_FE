@@ -161,6 +161,8 @@ export default function SchoolLeaderboardPage() {
   const [searchQuery, setSearchQuery] = useState("");
   const [campaignType, setCampaignType] = useState("school");
   const [selectedCampaignId, setSelectedCampaignId] = useState("");
+  const [selectedRoundId, setSelectedRoundId] = useState("");
+  const [rounds, setRounds] = useState([]);
   const [currentPage, setCurrentPage] = useState(1);
   const [leaderboardData, setLeaderboardData] = useState([]);
   const [isLoading, setIsLoading] = useState(false);
@@ -182,7 +184,7 @@ export default function SchoolLeaderboardPage() {
     : relevantCampaigns.partnership;
 
   const activeCampaignName = useMemo(() => {
-    const c = relevantCampaigns.all.find(c => (c.campaign_id || c.id) === selectedCampaignId);
+    const c = relevantCampaigns.all.find(c => c.id === selectedCampaignId);
     return c?.name || c?.campaignName || "";
   }, [relevantCampaigns.all, selectedCampaignId]);
 
@@ -190,21 +192,57 @@ export default function SchoolLeaderboardPage() {
     if (!selectedCampaignId) { setLeaderboardData([]); return; }
     try {
       setIsLoading(true);
-      const res = await campaignService.getCampaignLeaderboard(selectedCampaignId);
-      setLeaderboardData(res.data?.data || []);
+      let res;
+      if (campaignType === "partnership") {
+        if (selectedRoundId) {
+          res = await campaignService.getPartnershipLeaderboard(selectedCampaignId, selectedRoundId);
+        } else {
+          setLeaderboardData([]);
+          return;
+        }
+      } else {
+        res = await campaignService.getCampaignLeaderboard(selectedCampaignId);
+      }
+      setLeaderboardData(res?.data?.data || []);
     } catch { setLeaderboardData([]); }
     finally { setIsLoading(false); }
   };
 
-  useEffect(() => { fetchLeaderboard(); }, [selectedCampaignId]);
+  useEffect(() => { fetchLeaderboard(); }, [selectedCampaignId, selectedRoundId]);
 
   useEffect(() => {
     const list = campaignType === "school" ? relevantCampaigns.school : relevantCampaigns.partnership;
-    setSelectedCampaignId(list[0]?.campaign_id || list[0]?.id || "");
-    if (!list.length) setLeaderboardData([]);
+    const initialId = list[0]?.id || "";
+    setSelectedCampaignId(initialId);
+
+    if (!list.length) {
+      setLeaderboardData([]);
+      setRounds([]);
+      setSelectedRoundId("");
+    }
     setCurrentPage(1);
     setSearchQuery("");
   }, [campaignType, relevantCampaigns.school, relevantCampaigns.partnership]);
+
+  useEffect(() => {
+    if (campaignType === "partnership" && selectedCampaignId) {
+      const fetchRounds = async () => {
+        try {
+          const res = await campaignService.getPartnershipInvitationDetail(selectedCampaignId);
+          const rds = res.data?.data?.rounds || [];
+          setRounds(rds);
+          setSelectedRoundId(rds[0]?.roundId || "");
+        } catch {
+          setRounds([]);
+          setSelectedRoundId("");
+        }
+      };
+      fetchRounds();
+    } else {
+      setRounds([]);
+      setSelectedRoundId("");
+    }
+  }, [selectedCampaignId, campaignType]);
 
   const filteredLeaderboard = useMemo(() =>
     leaderboardData.filter(item =>
@@ -325,41 +363,67 @@ export default function SchoolLeaderboardPage() {
                   Không có chiến dịch nào đang diễn ra hoặc đã hoàn thành.
                 </div>
               ) : (
-                <div className="flex-1 flex items-center px-4 py-3">
-                  <Select
-                    value={selectedCampaignId}
-                    onValueChange={v => { setSelectedCampaignId(v); setCurrentPage(1); }}
-                  >
-                    <SelectTrigger className={cn(
-                      "h-10 border-2 rounded-xl font-semibold w-full",
-                      isPartnership ? "border-amber-300/60" : "border-eco-green/30"
-                    )}>
-                      <div className="flex items-center gap-2 min-w-0">
-                        <div className={cn(
-                          "w-2 h-2 rounded-full shrink-0",
-                          isPartnership ? "bg-amber-500" : "bg-eco-green"
-                        )} />
-                        <SelectValue placeholder="Chọn chiến dịch..." />
-                      </div>
-                    </SelectTrigger>
-                    <SelectContent
-                      className="rounded-xl border-2 shadow-xl"
-                      style={{
-                        "--accent": isPartnership ? "38 92% 92%" : "142 72% 92%",
-                        "--accent-foreground": isPartnership ? "32 80% 30%" : "142 60% 25%",
-                      }}
+                <div className="flex-1 flex flex-col sm:flex-row divide-y sm:divide-y-0 sm:divide-x divide-border/60">
+                  <div className="flex-1 flex items-center px-4 py-3">
+                    <Select
+                      value={selectedCampaignId}
+                      onValueChange={v => { setSelectedCampaignId(v); setCurrentPage(1); }}
                     >
-                      {activeCampaignList.map(c => (
-                        <SelectItem
-                          key={c.campaign_id || c.id}
-                          value={c.campaign_id || c.id}
-                          className="font-medium py-2.5 rounded-lg"
-                        >
-                          {c.name || c.campaignName}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
+                      <SelectTrigger className={cn(
+                        "h-10 border-2 rounded-xl font-semibold w-full",
+                        isPartnership ? "border-amber-300/60" : "border-eco-green/30"
+                      )}>
+                        <div className="flex items-center gap-2 min-w-0">
+                          <div className={cn(
+                            "w-2 h-2 rounded-full shrink-0",
+                            isPartnership ? "bg-amber-500" : "bg-eco-green"
+                          )} />
+                          <SelectValue placeholder="Chọn chiến dịch..." />
+                        </div>
+                      </SelectTrigger>
+                      <SelectContent
+                        className="rounded-xl border-2 shadow-xl"
+                        style={{
+                          "--accent": isPartnership ? "38 92% 92%" : "142 72% 92%",
+                          "--accent-foreground": isPartnership ? "32 80% 30%" : "142 60% 25%",
+                        }}
+                      >
+                        {activeCampaignList.map(c => (
+                          <SelectItem
+                            key={c.id}
+                            value={c.id}
+                            className="font-medium py-2.5 rounded-lg"
+                          >
+                            {c.name || c.campaignName}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+
+                  {/* Round Selector for Partnership */}
+                  {isPartnership && rounds.length > 0 && (
+                    <div className="sm:w-48 flex items-center px-4 py-3">
+                      <Select
+                        value={selectedRoundId}
+                        onValueChange={v => { setSelectedRoundId(v); setCurrentPage(1); }}
+                      >
+                        <SelectTrigger className="h-10 border-2 border-amber-300/60 rounded-xl font-semibold w-full">
+                          <div className="flex items-center gap-2 min-w-0">
+                            <Target className="w-4 h-4 text-amber-500 shrink-0" />
+                            <SelectValue placeholder="Chọn vòng..." />
+                          </div>
+                        </SelectTrigger>
+                        <SelectContent className="rounded-xl border-2 shadow-xl">
+                          {rounds.map(r => (
+                            <SelectItem key={r.roundId} value={r.roundId} className="font-medium py-2.5 rounded-lg">
+                              {r.roundName}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  )}
                 </div>
               )}
 
