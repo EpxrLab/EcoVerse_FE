@@ -174,7 +174,7 @@ export default function StudentGame() {
                       itemsCount: item.itemCount,
                       sorter: { timeLimit: item.timeLimitSeconds },
                       coinReward: game.coinPerSession,
-                      completed: item.coinReceived === true,
+                      completed: item.isPassed === true,
                       locked: false, // Determine your lock logic if any
                       stars: 0, // Not explicitly provided in new API payload without attempt result
                     });
