@@ -96,6 +96,10 @@ export const campaignService = {
     return axios.get(`/school/campaigns/${id}/leaderboard`);
   },
 
+  getPartnershipLeaderboard: (campaignId, roundId) => {
+    return axios.get(`/school/campaigns/${campaignId}/rounds/${roundId}/leaderboard`);
+  },
+
   assignStudentsToCampaign: (id, studentIds) => {
     return axios.put(`/school/campaigns/${id}/assigned-students`, { studentIds });
   }

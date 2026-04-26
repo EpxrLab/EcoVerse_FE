@@ -234,69 +234,68 @@ function StudentQuizHistory() {
         </div>
 
         <div className="space-y-4">
-          {history.answerResults.map((item, idx) => (
-            <motion.div
-              key={item.questionId}
-              initial={{ opacity: 0, x: -12 }}
-              animate={{ opacity: 1, x: 0 }}
-              transition={{ delay: 0.1 * idx }}
-            >
-              <Card
-                className={`rounded-2xl border-2 transition-all duration-300 ${
-                  item.isCorrect
-                    ? "border-emerald-100 bg-white"
-                    : "border-rose-100 bg-rose-50/20"
-                }`}
-                bodyStyle={{ padding: "24px" }}
+          {history.answerResults && history.answerResults.length > 0 ? (
+            history.answerResults.map((item, idx) => (
+              <motion.div
+                key={item.questionId}
+                initial={{ opacity: 0, x: -12 }}
+                animate={{ opacity: 1, x: 0 }}
+                transition={{ delay: 0.1 * idx }}
               >
-                <div className="flex items-start gap-4">
-                  <div
-                    className={`w-10 h-10 rounded-xl flex items-center justify-center font-black text-lg shrink-0 ${
-                      item.isCorrect
-                        ? "bg-primary/10 text-primary"
-                        : "bg-rose-100 text-rose-600 shadow-sm shadow-rose-100"
-                    }`}
-                  >
-                    {idx + 1}
-                  </div>
+                <Card
+                  className={`rounded-2xl border-2 transition-all duration-300 ${
+                    item.isCorrect
+                      ? "border-emerald-100 bg-white"
+                      : "border-rose-100 bg-rose-50/20"
+                  }`}
+                  bodyStyle={{ padding: "24px" }}
+                >
+                  <div className="flex items-start gap-4">
+                    <div
+                      className={`w-10 h-10 rounded-xl flex items-center justify-center font-black text-lg shrink-0 ${
+                        item.isCorrect
+                          ? "bg-primary/10 text-primary"
+                          : "bg-rose-100 text-rose-600 shadow-sm shadow-rose-100"
+                      }`}
+                    >
+                      {idx + 1}
+                    </div>
 
-                  <div className="flex-1 space-y-4">
-                    <h3 className="text-base font-bold text-gray-800 leading-relaxed">
-                      {item.questionText}
-                    </h3>
+                    <div className="flex-1 space-y-4">
+                      <h3 className="text-base font-bold text-gray-800 leading-relaxed">
+                        {item.questionText}
+                      </h3>
 
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                      {/* Selected Answer */}
-                      <div
-                        className={`p-4 rounded-xl border-2 flex flex-col gap-1 ${
-                          item.isCorrect
-                            ? "bg-emerald-50/50 border-emerald-200"
-                            : "bg-rose-50 border-rose-200"
-                        }`}
-                      >
-                        <span className="text-[10px] font-bold uppercase tracking-widest text-gray-400">
-                          Bạn đã chọn
-                        </span>
-                        <div className="flex items-center justify-between">
-                          <span
-                            className={`font-bold ${
-                              item.isCorrect
-                                ? "text-primary"
-                                : "text-rose-700"
-                            }`}
-                          >
-                            {item.selectedAnswerText}
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                        {/* Selected Answer */}
+                        <div
+                          className={`p-4 rounded-xl border-2 flex flex-col gap-1 ${
+                            item.isCorrect
+                              ? "bg-emerald-50/50 border-emerald-200"
+                              : "bg-rose-50 border-rose-200"
+                          }`}
+                        >
+                          <span className="text-[10px] font-bold uppercase tracking-widest text-gray-400">
+                            Bạn đã chọn
                           </span>
-                          {item.isCorrect ? (
-                            <CheckCircle2 size={18} className="text-primary" />
-                          ) : (
-                            <XCircle size={18} className="text-rose-500" />
-                          )}
+                          <div className="flex items-center justify-between">
+                            <span
+                              className={`font-bold ${
+                                item.isCorrect ? "text-primary" : "text-rose-700"
+                              }`}
+                            >
+                              {item.selectedAnswerText}
+                            </span>
+                            {item.isCorrect ? (
+                              <CheckCircle2 size={18} className="text-primary" />
+                            ) : (
+                              <XCircle size={18} className="text-rose-500" />
+                            )}
+                          </div>
                         </div>
-                      </div>
 
-                      {/* Correct Answer (if wrong) */}
-                      {!item.isCorrect && (
+                        {/* Correct Answer (if wrong) */}
+                        {!item.isCorrect && (
                           <div className="p-4 rounded-xl border-2 border-primary/20 bg-primary/5 flex flex-col gap-1">
                             <span className="text-[10px] font-bold uppercase tracking-widest text-primary/60">
                               Đáp án đúng
@@ -308,13 +307,26 @@ function StudentQuizHistory() {
                               <CheckCircle2 size={18} className="text-primary" />
                             </div>
                           </div>
-                      )}
+                        )}
+                      </div>
                     </div>
                   </div>
-                </div>
-              </Card>
+                </Card>
+              </motion.div>
+            ))
+          ) : (
+            <motion.div
+              initial={{ opacity: 0, scale: 0.95 }}
+              animate={{ opacity: 1, scale: 1 }}
+              className="bg-amber-50 border-2 border-dashed border-amber-200 rounded-3xl p-12 text-center"
+            >
+              <RotateCcw className="w-12 h-12 text-amber-400 mx-auto mb-4 animate-spin-slow" />
+              <p className="text-amber-800 font-bold text-lg max-w-md mx-auto leading-relaxed">
+                Phần làm bài của bạn đã bị gián đoạn do vi phạm quy chuẩn làm
+                quiz hoặc do bạn đã bỏ làm bài giữa khi chưa làm bất kỳ câu nào
+              </p>
             </motion.div>
-          ))}
+          )}
         </div>
       </div>
 

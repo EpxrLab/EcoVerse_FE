@@ -138,14 +138,6 @@ const submitGame = async (sessionId, payload) => {
   }
 };
 
-const getCampaignLeaderboard = async (campaignId) => {
-  try {
-    const res = await axios.get(`/campaigns/${campaignId}/leaderboard`);
-    return res.data;
-  } catch (error) {
-    console.log(error);
-  }
-};
 
 const getRoundLeaderboard = async (roundId) => {
   try {
@@ -228,7 +220,6 @@ export {
   getAttemptResult,
   startGame,
   submitGame,
-  getCampaignLeaderboard,
   getRoundLeaderboard,
   getMyRewardDeliveries,
   getQuizHistory,

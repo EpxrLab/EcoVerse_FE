@@ -1,16 +1,7 @@
 import { useState, lazy, Suspense, useEffect } from "react";
 import { useNavigate, useParams } from "react-router";
 import { motion, AnimatePresence } from "framer-motion";
-import {
-  Card,
-  Button,
-  Spin,
-  Select,
-  Space,
-  Modal,
-  Empty,
-  Tag,
-} from "antd";
+import { Card, Button, Spin, Select, Space, Modal, Empty, Tag } from "antd";
 import {
   Home,
   Coins,
@@ -114,17 +105,7 @@ const QuizCard = lazy(() =>
                 <div className="flex items-center gap-2 text-gray-600">
                   <RotateCcw className="w-4 h-4 text-blue-500" />
                   <span className="text-sm">
-                    Lần thử: {quiz.attemptsUsed}/{quiz.maxAttempts}
-                  </span>
-                </div>
-                <div className="flex items-center gap-2 text-gray-600">
-                  <Target className="w-4 h-4 text-purple-500" />
-                  <span className="text-sm">Thứ tự: {quiz.displayOrder}</span>
-                </div>
-                <div className="flex items-center gap-2">
-                  <Coins className="w-4 h-4 text-amber-500" />
-                  <span className="text-sm font-semibold text-amber-600">
-                    +{quiz.coinReward || 20} xu
+                    Lượt làm bài: {quiz.attemptsUsed}/{quiz.maxAttempts}
                   </span>
                 </div>
                 {isCompleted && (
@@ -416,24 +397,26 @@ export default function StudentQuiz() {
                     </div>
                   </Card>
 
-                  <Card
-                    className="border-2 border-amber-200 bg-amber-50 rounded-2xl shadow-sm"
-                    bodyStyle={{ padding: "16px 20px" }}
-                  >
-                    <div className="flex items-center gap-3">
-                      <div className="w-11 h-11 rounded-xl bg-amber-500 flex items-center justify-center shadow">
-                        <Coins className="w-5 h-5 text-white" />
+                  {campaign?.campaignType !== "PARTNERSHIP_EVENT" && (
+                    <Card
+                      className="border-2 border-amber-200 bg-amber-50 rounded-2xl shadow-sm"
+                      bodyStyle={{ padding: "16px 20px" }}
+                    >
+                      <div className="flex items-center gap-3">
+                        <div className="w-11 h-11 rounded-xl bg-amber-500 flex items-center justify-center shadow">
+                          <Coins className="w-5 h-5 text-white" />
+                        </div>
+                        <div>
+                          <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider mb-0.5">
+                            Xu tích lũy
+                          </p>
+                          <p className="text-2xl font-black text-amber-600">
+                            {totalCoinsEarned}
+                          </p>
+                        </div>
                       </div>
-                      <div>
-                        <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider mb-0.5">
-                          Xu tích lũy
-                        </p>
-                        <p className="text-2xl font-black text-amber-600">
-                          {totalCoinsEarned}
-                        </p>
-                      </div>
-                    </div>
-                  </Card>
+                    </Card>
+                  )}
                 </div>
               </div>
             </div>
@@ -703,7 +686,7 @@ export default function StudentQuiz() {
                   <div className="flex flex-wrap items-center gap-4 flex-1">
                     <div className="flex flex-col">
                       <span className="text-xs text-gray-400 font-medium uppercase tracking-wider">
-                        Lần thử
+                        Lượt làm bài
                       </span>
                       <span className="font-bold text-gray-700">
                         #{item.attemptNumber}

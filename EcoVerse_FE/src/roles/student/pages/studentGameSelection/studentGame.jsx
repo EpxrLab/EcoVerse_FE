@@ -12,7 +12,7 @@ import {
 import { Star, Lock, Play } from "lucide-react";
 import { motion } from "framer-motion";
 import { Select, Space } from "antd";
-import { Layers, ChevronRight } from "lucide-react";
+import { Layers, ChevronRight, RotateCcw } from "lucide-react";
 import { getCampaignDetails } from "../../services";
 import { toLocalISO } from "@/utils/dateUtils";
 
@@ -154,51 +154,51 @@ export default function StudentGame() {
         const status = round.status;
         setIsPreviewMode(status === "UPCOMING");
         setIsCompletedMode(status === "COMPLETED");
-        
+
         if (round.games) {
-        const flattenedLevels = [];
-        round.games.forEach((game) => {
-          if (game.presets) {
-            game.presets.forEach((preset) => {
-              if (preset.items) {
-                preset.items.forEach((item) => {
-                  flattenedLevels.push({
-                    id: `${game.roundGameConfigId}-${preset.presetId}-${item.levelNumber}`,
-                    roundGameConfigId: game.roundGameConfigId,
-                    typeCode: game.typeCode,
-                    gameTypeName: game.gameTypeName,
-                    presetId: preset.presetId,
-                    difficulty: preset.difficulty,
-                    levelNumber: item.levelNumber,
-                    name: `Level ${item.levelNumber}`, // Or format based on type
-                    itemsCount: item.itemCount,
-                    sorter: { timeLimit: item.timeLimitSeconds },
-                    coinReward: game.coinPerSession,
-                    completed: item.coinReceived === true,
-                    locked: false, // Determine your lock logic if any
-                    stars: 0, // Not explicitly provided in new API payload without attempt result
+          const flattenedLevels = [];
+          round.games.forEach((game) => {
+            if (game.presets) {
+              game.presets.forEach((preset) => {
+                if (preset.items) {
+                  preset.items.forEach((item) => {
+                    flattenedLevels.push({
+                      id: `${game.roundGameConfigId}-${preset.presetId}-${item.levelNumber}`,
+                      roundGameConfigId: game.roundGameConfigId,
+                      typeCode: game.typeCode,
+                      gameTypeName: game.gameTypeName,
+                      presetId: preset.presetId,
+                      difficulty: preset.difficulty,
+                      levelNumber: item.levelNumber,
+                      name: `Level ${item.levelNumber}`, // Or format based on type
+                      itemsCount: item.itemCount,
+                      sorter: { timeLimit: item.timeLimitSeconds },
+                      coinReward: game.coinPerSession,
+                      completed: item.coinReceived === true,
+                      locked: false, // Determine your lock logic if any
+                      stars: 0, // Not explicitly provided in new API payload without attempt result
+                    });
                   });
-                });
-              }
-            });
-          }
-        });
-        // Sort levels by levelNumber
-        flattenedLevels.sort((a, b) => a.levelNumber - b.levelNumber);
-
-        // Lock logic: level is unlocked if it's the first one, or if the previous one is completed (Per difficulty)
-        const difficulties = ["EASY", "MEDIUM", "HARD"];
-        difficulties.forEach((diff) => {
-          const diffLevels = flattenedLevels.filter(
-            (l) => l.difficulty === diff,
-          );
-          diffLevels.forEach((level, index) => {
-            if (index === 0) level.locked = false;
-            else level.locked = !diffLevels[index - 1].completed;
+                }
+              });
+            }
           });
-        });
+          // Sort levels by levelNumber
+          flattenedLevels.sort((a, b) => a.levelNumber - b.levelNumber);
 
-        setGameLevels(flattenedLevels);
+          // Lock logic: level is unlocked if it's the first one, or if the previous one is completed (Per difficulty)
+          const difficulties = ["EASY", "MEDIUM", "HARD"];
+          difficulties.forEach((diff) => {
+            const diffLevels = flattenedLevels.filter(
+              (l) => l.difficulty === diff,
+            );
+            diffLevels.forEach((level, index) => {
+              if (index === 0) level.locked = false;
+              else level.locked = !diffLevels[index - 1].completed;
+            });
+          });
+
+          setGameLevels(flattenedLevels);
         } else {
           setGameLevels([]);
         }
@@ -323,22 +323,24 @@ export default function StudentGame() {
                   </div>
                 </Card>
 
-                <Card
-                  className="border-2 border-amber-200 rounded-2xl bg-amber-50"
-                  bodyStyle={{ padding: "16px" }}
-                >
-                  <div className="flex items-center gap-3">
-                    <div className="w-12 h-12 rounded-xl bg-amber-500 flex items-center justify-center shadow-lg">
-                      <CoinIcon />
+                {campaign?.campaignType !== "PARTNERSHIP_EVENT" && (
+                  <Card
+                    className="border-2 border-amber-200 rounded-2xl bg-amber-50"
+                    bodyStyle={{ padding: "16px" }}
+                  >
+                    <div className="flex items-center gap-3">
+                      <div className="w-12 h-12 rounded-xl bg-amber-500 flex items-center justify-center shadow-lg">
+                        <CoinIcon />
+                      </div>
+                      <div className="text-left">
+                        <p className="text-sm text-gray-500">Xu kiếm được</p>
+                        <p className="text-2xl font-bold text-amber-600">
+                          {totalCoins}
+                        </p>
+                      </div>
                     </div>
-                    <div className="text-left">
-                      <p className="text-sm text-gray-500">Xu kiếm được</p>
-                      <p className="text-2xl font-bold text-amber-600">
-                        {totalCoins}
-                      </p>
-                    </div>
-                  </div>
-                </Card>
+                  </Card>
+                )}
               </div>
             </div>
           </div>
@@ -384,20 +386,44 @@ export default function StudentGame() {
                 })}
               />
               {(() => {
-                const selectedRound = campaign?.rounds?.find(r => r.id === selectedRoundId);
+                const selectedRound = campaign?.rounds?.find(
+                  (r) => r.id === selectedRoundId,
+                );
                 if (!selectedRound) return null;
                 return (
                   <div className="mt-1 text-sm flex flex-col gap-2 bg-gray-50 border border-gray-100 rounded-xl p-3">
                     <div className="flex justify-between items-center">
-                      <span className="text-gray-500 font-medium">Bắt đầu:</span>
+                      <span className="text-gray-500 font-medium">
+                        Bắt đầu:
+                      </span>
                       <span className="text-primary font-bold">
-                        {new Date(selectedRound.startTime).toLocaleString('vi-VN', { hour: '2-digit', minute: '2-digit', day: '2-digit', month: '2-digit', year: 'numeric' })}
+                        {new Date(selectedRound.startTime).toLocaleString(
+                          "vi-VN",
+                          {
+                            hour: "2-digit",
+                            minute: "2-digit",
+                            day: "2-digit",
+                            month: "2-digit",
+                            year: "numeric",
+                          },
+                        )}
                       </span>
                     </div>
                     <div className="flex justify-between items-center">
-                      <span className="text-gray-500 font-medium">Kết thúc:</span>
+                      <span className="text-gray-500 font-medium">
+                        Kết thúc:
+                      </span>
                       <span className="text-gray-800 font-bold">
-                        {new Date(selectedRound.endTime).toLocaleString('vi-VN', { hour: '2-digit', minute: '2-digit', day: '2-digit', month: '2-digit', year: 'numeric' })}
+                        {new Date(selectedRound.endTime).toLocaleString(
+                          "vi-VN",
+                          {
+                            hour: "2-digit",
+                            minute: "2-digit",
+                            day: "2-digit",
+                            month: "2-digit",
+                            year: "numeric",
+                          },
+                        )}
                       </span>
                     </div>
                   </div>
@@ -490,9 +516,11 @@ export default function StudentGame() {
                     )
                   : 0
               }
-              strokeColor="var(--primary)"
-              trailColor="var(--primary-light)"
+              strokeColor={gameLevels.length > 0 ? "#4cc41cff" : "#e5e7eb"}
+              trailColor="#f3f4f6"
               strokeWidth={12}
+              showInfo={false}
+              className="m-0"
             />
           </div>
         </Card>
@@ -629,15 +657,17 @@ export default function StudentGame() {
                                   {level.itemsCount || "—"}
                                 </span>
                               </div>
-                              <div className="flex items-center justify-between text-sm">
-                                <span className="text-gray-500 flex items-center gap-2">
-                                  <CoinIcon className="w-4 h-4 text-amber-500" />
-                                  Phần thưởng
-                                </span>
-                                <span className="font-semibold text-amber-600">
-                                  +{level.coinReward || 0} xu
-                                </span>
-                              </div>
+                              {campaign?.campaignType !== "PARTNERSHIP_EVENT" && (
+                                <div className="flex items-center justify-between text-sm">
+                                  <span className="text-gray-500 flex items-center gap-2">
+                                    <CoinIcon className="w-4 h-4 text-amber-500" />
+                                    Phần thưởng
+                                  </span>
+                                  <span className="font-semibold text-amber-600">
+                                    +{level.coinReward || 0} xu
+                                  </span>
+                                </div>
+                              )}
                               {level.sorter?.timeLimit > 0 && (
                                 <div className="flex items-center justify-between text-sm">
                                   <span className="text-gray-500">
@@ -675,14 +705,18 @@ export default function StudentGame() {
                                 isPreviewMode ||
                                 isCompletedMode ? (
                                   <LockOutlined />
+                                ) : level.completed ? (
+                                  <RotateCcw className="w-4 h-4" />
                                 ) : (
                                   <Play className="w-4 h-4" />
                                 )
                               }
-                              className={`rounded-xl font-semibold ${
+                              className={`rounded-xl font-semibold !transition-all ${
                                 level.locked || isPreviewMode || isCompletedMode
-                                  ? "bg-gray-100 text-gray-400 cursor-not-allowed border-transparent"
-                                  : "bg-primary border-primary hover:opacity-90 text-white"
+                                  ? "!bg-gray-100 !text-gray-400 cursor-not-allowed !border-transparent"
+                                  : level.completed
+                                    ? "!bg-green-500 !border-green-500 hover:!bg-green-600 !text-white"
+                                    : "!bg-blue-600 !border-blue-600 hover:!bg-blue-700 !text-white"
                               }`}
                             >
                               {level.locked

@@ -378,9 +378,13 @@ function WasteItemModalForm({
         <Input placeholder="VD: Chai nhựa PET" className="rounded-lg" />
       </Form.Item>
 
-      <Form.Item label="Phân loại phụ (Sub-category)" name="subCategoryId">
+      <Form.Item
+        label="Phân loại phụ"
+        name="subCategoryId"
+        rules={[{ required: true, message: "Vui lòng chọn 1 phân loại" }]}
+      >
         <Select
-          placeholder="Chọn phân loại phụ"
+          placeholder="Chọn phân loại phụ" 
           className="rounded-lg"
           allowClear
           options={subCategories.map((s) => ({
