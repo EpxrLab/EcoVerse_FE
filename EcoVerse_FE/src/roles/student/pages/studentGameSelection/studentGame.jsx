@@ -323,22 +323,24 @@ export default function StudentGame() {
                   </div>
                 </Card>
 
-                <Card
-                  className="border-2 border-amber-200 rounded-2xl bg-amber-50"
-                  bodyStyle={{ padding: "16px" }}
-                >
-                  <div className="flex items-center gap-3">
-                    <div className="w-12 h-12 rounded-xl bg-amber-500 flex items-center justify-center shadow-lg">
-                      <CoinIcon />
+                {campaign?.campaignType !== "PARTNERSHIP_EVENT" && (
+                  <Card
+                    className="border-2 border-amber-200 rounded-2xl bg-amber-50"
+                    bodyStyle={{ padding: "16px" }}
+                  >
+                    <div className="flex items-center gap-3">
+                      <div className="w-12 h-12 rounded-xl bg-amber-500 flex items-center justify-center shadow-lg">
+                        <CoinIcon />
+                      </div>
+                      <div className="text-left">
+                        <p className="text-sm text-gray-500">Xu kiếm được</p>
+                        <p className="text-2xl font-bold text-amber-600">
+                          {totalCoins}
+                        </p>
+                      </div>
                     </div>
-                    <div className="text-left">
-                      <p className="text-sm text-gray-500">Xu kiếm được</p>
-                      <p className="text-2xl font-bold text-amber-600">
-                        {totalCoins}
-                      </p>
-                    </div>
-                  </div>
-                </Card>
+                  </Card>
+                )}
               </div>
             </div>
           </div>
@@ -514,9 +516,11 @@ export default function StudentGame() {
                     )
                   : 0
               }
-              strokeColor="var(--primary)"
-              trailColor="var(--primary-light)"
+              strokeColor={gameLevels.length > 0 ? "#4cc41cff" : "#e5e7eb"}
+              trailColor="#f3f4f6"
               strokeWidth={12}
+              showInfo={false}
+              className="m-0"
             />
           </div>
         </Card>
@@ -653,15 +657,17 @@ export default function StudentGame() {
                                   {level.itemsCount || "—"}
                                 </span>
                               </div>
-                              <div className="flex items-center justify-between text-sm">
-                                <span className="text-gray-500 flex items-center gap-2">
-                                  <CoinIcon className="w-4 h-4 text-amber-500" />
-                                  Phần thưởng
-                                </span>
-                                <span className="font-semibold text-amber-600">
-                                  +{level.coinReward || 0} xu
-                                </span>
-                              </div>
+                              {campaign?.campaignType !== "PARTNERSHIP_EVENT" && (
+                                <div className="flex items-center justify-between text-sm">
+                                  <span className="text-gray-500 flex items-center gap-2">
+                                    <CoinIcon className="w-4 h-4 text-amber-500" />
+                                    Phần thưởng
+                                  </span>
+                                  <span className="font-semibold text-amber-600">
+                                    +{level.coinReward || 0} xu
+                                  </span>
+                                </div>
+                              )}
                               {level.sorter?.timeLimit > 0 && (
                                 <div className="flex items-center justify-between text-sm">
                                   <span className="text-gray-500">

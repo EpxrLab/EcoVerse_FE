@@ -22,6 +22,7 @@ import {
   Star,
   TrendingUp,
   Hash,
+  AlertTriangle,
 } from "lucide-react";
 
 import { submitQuiz, getAttemptResult } from "../../../services";
@@ -275,7 +276,6 @@ export default function QuizPlay({ quiz: _quiz, onFinish, onCancel }) {
   useEffect(() => {
     if (_quiz?.attemptId) {
       setAttemptId(_quiz.attemptId);
-      // Reset state for new attempt (Play Again)
       setAnswers([]);
       setCurrentQuestionIndex(0);
       setShowResult(false);
@@ -399,7 +399,7 @@ export default function QuizPlay({ quiz: _quiz, onFinish, onCancel }) {
 
     const handleBlur = () => {
       if (!showResult && !isSubmitting) {
-        // AUTO SUBMIT ON FOCUS LOSS (clicking outside window)
+        // AUTO SUBMIT ON FOCUS LOSS
         handleFinish();
         toast.error(
           "Bài làm của bạn đã được tự động nộp do vi phạm quy định (rời khỏi màn hình làm bài)!",
@@ -438,6 +438,22 @@ export default function QuizPlay({ quiz: _quiz, onFinish, onCancel }) {
       window.removeEventListener("beforeunload", handleBeforeUnload);
     };
   }, [showResult, handleFinish, isSubmitting]);
+
+  const handleRequestExit = () => {
+    Modal.confirm({
+      title: "Xác nhận kết thúc và nộp bài?",
+      content:
+        "Bạn đang trong quá trình làm bài. Việc thoát ra giữa chừng sẽ tính là một lượt thi và hệ thống sẽ tự động nộp những câu bạn đã trả lời. Bạn chắc chắn muốn kết thúc chứ?",
+      okText: "Xác nhận nộp và thoát",
+      cancelText: "Tiếp tục làm bài",
+      okType: "danger",
+      centered: true,
+      zIndex: 11000,
+      onOk() {
+        handleFinish();
+      },
+    });
+  };
 
   // ── Timer color ──
   const timerRatio = timeLeft / ((quiz?.timeLimit ?? 10) * 60);
@@ -498,13 +514,27 @@ export default function QuizPlay({ quiz: _quiz, onFinish, onCancel }) {
               {String(timeLeft % 60).padStart(2, "0")}
             </div>
             <button
-              onClick={onCancel}
+              onClick={handleRequestExit}
               className="w-8 h-8 rounded-lg flex items-center justify-center text-slate-400 hover:text-red-500 hover:bg-red-50 transition-colors"
             >
               <X size={18} />
             </button>
           </div>
         </header>
+
+        {/* Anti-cheat Warning Banner */}
+        <motion.div
+          initial={{ y: -20, opacity: 0 }}
+          animate={{ y: 0, opacity: 1 }}
+          className="bg-red-600 text-white px-4 py-2 flex items-center justify-center gap-3 z-10 shadow-md flex-shrink-0"
+        >
+          <AlertTriangle size={16} className="animate-pulse flex-shrink-0" />
+          <span className="text-xs md:text-sm font-bold text-center leading-tight tracking-wide" style={{ fontFamily: "'Inter', 'Segoe UI', Roboto, sans-serif" }}>
+            Hệ thống giám sát: Nếu thoát tab hoặc chuyển màn hình, bài làm sẽ bị
+            dừng và nộp tự động ngay lập tức!
+          </span>
+          <AlertTriangle size={16} className="animate-pulse flex-shrink-0" />
+        </motion.div>
 
         <div className="flex flex-1 overflow-hidden">
           {/* Sidebar */}
