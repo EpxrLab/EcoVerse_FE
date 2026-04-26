@@ -1,12 +1,14 @@
 import { Outlet } from "react-router";
-import { CampaignProvider } from "./context";
+import { CampaignProvider, StudentProvider } from "./context";
 
 export default function StudentLayout() {
   return (
-    <CampaignProvider>
-      <div className="min-h-screen bg-background theme-student">
-        <Outlet />
-      </div>
-    </CampaignProvider>
+    <StudentProvider>
+      <CampaignProvider>
+        <div className="min-h-screen bg-background theme-student">
+          <Outlet />
+        </div>
+      </CampaignProvider>
+    </StudentProvider>
   );
 }

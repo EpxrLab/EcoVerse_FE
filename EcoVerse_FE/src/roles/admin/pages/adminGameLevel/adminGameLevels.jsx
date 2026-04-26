@@ -191,7 +191,6 @@ function GameTypeTab({ gameTypes, setGameTypes, onRefresh }) {
       render: (v) => <span className="font-semibold text-gray-800">{v}</span>,
     },
     {
-      title: "Mô tả ngắn",
       dataIndex: "shortDescription",
       key: "shortDescription",
       ellipsis: true,
@@ -205,7 +204,7 @@ function GameTypeTab({ gameTypes, setGameTypes, onRefresh }) {
         v ? <Tag color="green">Có</Tag> : <Tag color="default">Không</Tag>,
     },
     {
-      title: "Max Levels",
+      title: "Màn chơi/cấp",
       dataIndex: "maxLevels",
       key: "maxLevels",
       align: "center",
@@ -242,7 +241,9 @@ function GameTypeTab({ gameTypes, setGameTypes, onRefresh }) {
                     cancelText="Hủy"
                     okButtonProps={{ danger: true }}
                   >
-                    <span className="text-red-500">Xóa</span>
+                    <div className="flex items-center w-full text-red-500">
+                      <span>Xóa</span>
+                    </div>
                   </Popconfirm>
                 ),
                 icon: <DeleteOutlined className="text-red-500" />,

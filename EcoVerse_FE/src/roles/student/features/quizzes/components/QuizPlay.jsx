@@ -345,6 +345,100 @@ export default function QuizPlay({ quiz: _quiz, onFinish, onCancel }) {
     }
   };
 
+  // Anti-copy/Anti-cheat measures
+  useEffect(() => {
+    const handleContextMenu = (e) => {
+      e.preventDefault();
+    };
+
+    const handleKeyDown = (e) => {
+      if (
+        (e.ctrlKey || e.metaKey) &&
+        (e.key === "c" || e.key === "v" || e.key === "x")
+      ) {
+        e.preventDefault();
+        toast.error("Thao tác này bị chặn để đảm bảo tính minh bạch!");
+      }
+    };
+
+    const handleCopy = (e) => {
+      e.preventDefault();
+      toast.error("Không được phép sao chép nội dung bài làm!");
+    };
+
+    const handlePaste = (e) => {
+      e.preventDefault();
+      toast.error("Không được phép dán nội dung vào đây!");
+    };
+
+    window.addEventListener("contextmenu", handleContextMenu);
+    window.addEventListener("keydown", handleKeyDown);
+    window.addEventListener("copy", handleCopy);
+    window.addEventListener("paste", handlePaste);
+
+    // Block Tab Switching / Blur
+    const handleVisibilityChange = () => {
+      if (document.hidden && !showResult && !isSubmitting) {
+        // AUTO SUBMIT ON TAB SWITCH
+        handleFinish();
+        toast.error(
+          "Bài làm của bạn đã được tự động nộp do vi phạm quy định (rời khỏi màn hình làm bài)!",
+          {
+            duration: 8000,
+            icon: "🚫",
+            style: {
+              borderRadius: "12px",
+              background: "#1a1a1a",
+              color: "#fff",
+              border: "1px solid rgba(255,255,255,0.1)",
+            },
+          },
+        );
+      }
+    };
+
+    const handleBlur = () => {
+      if (!showResult && !isSubmitting) {
+        // AUTO SUBMIT ON FOCUS LOSS (clicking outside window)
+        handleFinish();
+        toast.error(
+          "Bài làm của bạn đã được tự động nộp do vi phạm quy định (rời khỏi màn hình làm bài)!",
+          {
+            duration: 8000,
+            icon: "🚫",
+            style: {
+              borderRadius: "12px",
+              background: "#1a1a1a",
+              color: "#fff",
+              border: "1px solid rgba(255,255,255,0.1)",
+            },
+          },
+        );
+      }
+    };
+
+    const handleBeforeUnload = (e) => {
+      if (!showResult) {
+        e.preventDefault();
+        e.returnValue = "";
+      }
+    };
+
+    document.addEventListener("visibilitychange", handleVisibilityChange);
+    window.addEventListener("blur", handleBlur);
+    window.addEventListener("beforeunload", handleBeforeUnload);
+
+    return () => {
+      window.removeEventListener("contextmenu", handleContextMenu);
+      window.removeEventListener("keydown", handleKeyDown);
+      window.removeEventListener("copy", handleCopy);
+      window.removeEventListener("paste", handlePaste);
+      document.removeEventListener("visibilitychange", handleVisibilityChange);
+      window.removeEventListener("blur", handleBlur);
+      window.removeEventListener("beforeunload", handleBeforeUnload);
+    };
+  }, [showResult, handleFinish, isSubmitting]);
+
   // ── Timer color ──
   const timerRatio = timeLeft / ((quiz?.timeLimit ?? 10) * 60);
   const timerColor =
@@ -381,7 +475,7 @@ export default function QuizPlay({ quiz: _quiz, onFinish, onCancel }) {
         />
       )}
 
-      <div className="fixed inset-0 z-[10001] bg-[#f8f9fa] flex flex-col overflow-hidden font-sans text-slate-900">
+      <div className="fixed inset-0 z-[10001] bg-[#f8f9fa] flex flex-col overflow-hidden font-sans text-slate-900 select-none">
         <header className="h-14 border-b border-slate-200 px-4 flex items-center justify-between bg-white z-20 shadow-sm">
           <div className="flex items-center gap-3">
             <Button

@@ -33,7 +33,6 @@ import AdminRevenue from "./roles/admin/pages/adminTransaction/adminTransaction"
 import AdminContent from "./roles/admin/pages/adminContent/adminContent";
 
 //=======================Student Routes==============================
-import { StudentProvider } from "./roles/student/context";
 import CampaignSelection from "./roles/student/pages/studentCampaignSelection/campaignSelection";
 import StudentProfile from "./roles/student/pages/studentProfile/studentProfile";
 import StudentLayout from "./roles/student/StudentLayout";
@@ -110,8 +109,7 @@ const App = () => (
       <TooltipProvider>
         <Toaster />
         <Sonner />
-        <StudentProvider>
-          <BrowserRouter>
+        <BrowserRouter>
             <Routes>
               <Route path="/" element={<Index />} />
 
@@ -280,7 +278,6 @@ const App = () => (
               <Route path="*" element={<NotFound />} />
             </Routes>
           </BrowserRouter>
-        </StudentProvider>
       </TooltipProvider>
     </QueryClientProvider>
   </HelmetProvider>
