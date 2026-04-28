@@ -425,9 +425,8 @@ export default function StudentQuiz() {
 
         {/* Round Selection & Filters */}
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
-          {/* Round Selector - Only show if not SCHOOL_INTERNAL and has rounds */}
-          {campaign?.campaignType !== "SCHOOL_INTERNAL" &&
-            campaign?.rounds?.length > 1 && (
+          {/* Round Selector - Only show if not SCHOOL_INTERNAL */}
+          {campaign?.campaignType !== "SCHOOL_INTERNAL" && (
               <motion.div
                 className="lg:col-span-4"
                 initial={{ opacity: 0, x: -20 }}
@@ -517,8 +516,7 @@ export default function StudentQuiz() {
           {/* Filters */}
           <motion.div
             className={
-              campaign?.campaignType !== "SCHOOL_INTERNAL" &&
-              campaign?.rounds?.length > 1
+              campaign?.campaignType !== "SCHOOL_INTERNAL"
                 ? "lg:col-span-8"
                 : "lg:col-span-12"
             }

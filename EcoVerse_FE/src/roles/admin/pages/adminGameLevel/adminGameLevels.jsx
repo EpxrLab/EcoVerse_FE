@@ -460,9 +460,15 @@ function PresetTab({ gameTypes }) {
 
   const fetchData = async () => {
     try {
+      if (!selectedGameId) {
+        setPresets([]);
+        return;
+      }
       const res = await getAllGameLevels(selectedGameId);
       const type = gameTypes.find((item) => item.id === selectedGameId);
-      setlevelAllow(type.maxLevels);
+      if (type) {
+        setlevelAllow(type.maxLevels);
+      }
       setPresets(res.data);
     } catch (error) {
       console.log(error);
@@ -856,30 +862,29 @@ function PresetTab({ gameTypes }) {
                       </div>
                     </div>
                   ))}
-                  <Button
-                    type="dashed"
-                    onClick={() => {
-                      if (fields.length >= levelAllow) {
-                        toast.error(
-                          `Chỉ được tạo tối đa ${levelAllow} màn chơi`,
-                        );
-                        return;
-                      }
-
-                      add({
-                        levelNumber: fields.length + 1,
-                        itemCount: 10,
-                        timeLimitSeconds: 0,
-                        lives: isRunner ? 1 : 3,
-                        wasteCategories: ["RECYCLABLE"],
-                      });
-                    }}
-                    block
-                    icon={<PlusOutlined />}
-                    className="rounded-2xl h-12 border-2 border-green-200 text-green-600 hover:border-green-400 hover:text-green-700 bg-green-50/50"
-                  >
-                    Thêm Màn chơi mới
-                  </Button>
+                  {fields.length < levelAllow ? (
+                    <Button
+                      type="dashed"
+                      onClick={() => {
+                        add({
+                          levelNumber: fields.length + 1,
+                          itemCount: 10,
+                          timeLimitSeconds: 0,
+                          lives: isRunner ? 1 : 3,
+                          wasteCategories: ["RECYCLABLE"],
+                        });
+                      }}
+                      block
+                      icon={<PlusOutlined />}
+                      className="rounded-2xl h-12 border-2 border-green-200 text-green-600 hover:border-green-400 hover:text-green-700 bg-green-50/50"
+                    >
+                      Thêm Màn chơi mới
+                    </Button>
+                  ) : (
+                    <div className="text-center p-3 bg-blue-50 text-blue-600 rounded-xl border border-blue-100 font-medium text-sm">
+                      Đã đạt tới số lượng màn chơi tối đa ({levelAllow} màn)
+                    </div>
+                  )}
                 </div>
               )}
             </Form.List>
