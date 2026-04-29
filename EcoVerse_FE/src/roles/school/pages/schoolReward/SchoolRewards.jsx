@@ -10,10 +10,6 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/shared/components/ui/select";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/shared/components/ui/dialog";
-import { Label } from "@/shared/components/ui/label";
-import { Checkbox } from "@/shared/components/ui/checkbox";
-import { Textarea } from "@/shared/components/ui/textarea";
 import { Badge } from "@/shared/components/ui/badge";
 import { cn } from "@/shared/lib/utils";
 import {
@@ -36,7 +32,7 @@ import {
 } from "@/shared/components/ui/pagination";
 import { Search, Plus, Gift, Clock, CheckCircle, XCircle, AlertCircle, Package, TrendingUp } from "lucide-react";
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from "recharts";
-import { RewardStats, RewardList, MarketplaceItems } from '../../features/rewards/components';
+import { RewardStats, RewardList, MarketplaceItems, RewardFormDialog, DeliveryFormDialog, RejectionFormDialog } from '../../features/rewards/components';
 import { useRewards, useRewardForm, useRewardPagination } from '../../features/rewards/hooks';
 import { rewardService } from '../../services/reward.service';
 
@@ -77,7 +73,7 @@ export default function SchoolRewards() {
   const [deliveryType, setDeliveryType] = useState('mission'); // 'mission' or 'partnership'
   
   const [partnershipFilters, setPartnershipFilters] = useState({
-    campaign: 'all',
+    campaign: '',
     status: 'all'
   });
 
@@ -86,22 +82,26 @@ export default function SchoolRewards() {
   }, [rewards.partnershipInvitations]);
 
   useEffect(() => {
-    if (partnershipFilters.campaign !== 'all') {
+    if (partnershipFilters.campaign) {
       rewards.fetchPartnershipRewards(partnershipFilters.campaign);
     }
   }, [partnershipFilters.campaign]);
 
+  useEffect(() => {
+    if (!partnershipFilters.campaign && uniqueCampaigns.length > 0) {
+      setPartnershipFilters(prev => ({ ...prev, campaign: uniqueCampaigns[0].campaignId }));
+    }
+  }, [uniqueCampaigns]);
+
   const filteredPartnershipRewards = useMemo(() => {
     return (rewards.partnershipRewards || []).filter(reward => {
-      const matchCampaign = partnershipFilters.campaign === 'all' || reward.campaignId === partnershipFilters.campaign;
+      const matchCampaign = !partnershipFilters.campaign || reward.campaignId === partnershipFilters.campaign;
       const matchStatus = partnershipFilters.status === 'all' || reward.status === partnershipFilters.status;
       return matchCampaign && matchStatus;
     });
   }, [rewards.partnershipRewards, partnershipFilters]);
 
   const [deleteId, setDeleteId] = useState(null);
-
-  const marketplaceItems = rewards.marketplaceItems;
 
   const handleApprove = async (id) => {
     try {
@@ -585,9 +585,7 @@ export default function SchoolRewards() {
                           <SelectValue placeholder="Chiến dịch" />
                         </SelectTrigger>
                         <SelectContent className="rounded-2xl border-2 shadow-xl overflow-hidden p-1">
-                          <SelectItem value="all" className="rounded-xl my-1 cursor-pointer">
-                            <span className="font-bold">Tất cả chiến dịch</span>
-                          </SelectItem>
+
                           {uniqueCampaigns.map(invitation => (
                             <SelectItem key={invitation.campaignId} value={invitation.campaignId} className="rounded-xl my-1 cursor-pointer">
                               <div className="flex items-center justify-between gap-4 w-full min-w-[300px]">
@@ -686,287 +684,72 @@ export default function SchoolRewards() {
                 <Package className="w-5 h-5 text-eco-green" />
                 Cửa hàng quà tặng
               </CardTitle>
-              <Dialog open={isAddItemOpen} onOpenChange={(open) => { setIsAddItemOpen(open); if (!open) resetItemForm(); }}>
-                <DialogTrigger asChild>
-                  <Button className="bg-eco-green hover:bg-eco-green-dark text-primary-foreground font-semibold">
-                    <Plus className="w-4 h-4 mr-2" />
-                    Thêm quà mới
-                  </Button>
-                </DialogTrigger>
-                <DialogContent>
-                  <DialogHeader>
-                    <DialogTitle>Thêm quà tặng mới</DialogTitle>
-                  </DialogHeader>
-                  <div className="space-y-4 py-4 max-h-[70vh] overflow-y-auto px-1">
-                    <div className="grid grid-cols-2 gap-4">
-                      <div className="space-y-2">
-                        <Label>Tên sản phẩm *</Label>
-                        <Input 
-                          placeholder="VD: Gấu bông Eco" 
-                          value={itemForm.rewardName}
-                          onChange={(e) => updateItemForm({ rewardName: e.target.value })}
-                        />
-                      </div>
-                      <div className="space-y-2">
-                        <Label>Loại quà *</Label>
-                        <Select 
-                          value={itemForm.rewardType} 
-                          onValueChange={(value) => updateItemForm({ rewardType: value })}
-                        >
-                          <SelectTrigger>
-                            <SelectValue placeholder="Chọn loại" />
-                          </SelectTrigger>
-                          <SelectContent>
-                            <SelectItem value="PHYSICAL">Vật lý</SelectItem>
-                            <SelectItem value="VOUCHER">Voucher</SelectItem>
-                          </SelectContent>
-                        </Select>
-                      </div>
-                    </div>
-                    <div className="space-y-2">
-                      <Label>Hình ảnh</Label>
-                      <div className="flex items-center gap-3">
-                        <Input 
-                          type="file" 
-                          accept="image/*"
-                          onChange={async (e) => {
-                            const file = e.target.files?.[0];
-                            if (!file) return;
-                            try {
-                              const formData = new FormData();
-                              formData.append('file', file);
-                              const res = await rewardService.uploadImage(formData);
-                              const data = res.data?.data || res.data;
-                              const url = data?.url || (typeof data === 'string' ? data : null);
-                              const presignedUrl = data?.presignedUrl || data?.imagePresignedUrl;
-                              
-                              if (url) {
-                                updateItemForm({ 
-                                  imageUrl: url, 
-                                  imagePresignedUrl: presignedUrl || url 
-                                });
-                              }
-                            } catch (error) {
-                              console.error('Upload failed', error);
-                            }
-                          }}
-                          className="cursor-pointer file:cursor-pointer file:bg-eco-green/10 file:text-eco-green file:border-0 file:rounded-md file:px-2 file:py-1 file:mr-3 file:font-semibold hover:file:bg-eco-green/20 transition-all text-xs"
-                        />
-                        {itemForm.imageUrl && (
-                          <div className="shrink-0 w-10 h-10 border rounded-lg overflow-hidden relative flex items-center justify-center bg-muted/20">
-                            {typeof itemForm.imageUrl === 'string' && (itemForm.imageUrl.startsWith('http') || itemForm.imageUrl.startsWith('/') || itemForm.imageUrl.startsWith('blob:') || itemForm.imageUrl.length > 5) ? (
-                                <img src={itemForm.imagePresignedUrl || itemForm.imageUrl} alt="Preview" className="w-full h-full object-cover" />
-                            ) : (
-                                <span className="text-xl">{itemForm.imageUrl}</span>
-                            )}
-                          </div>
-                        )}
-                      </div>
-                    </div>
-                    <div className="space-y-2">
-                      <Label>Mô tả</Label>
-                      <Textarea 
-                        placeholder="Mô tả ngắn gọn về phần thưởng..." 
-                        value={itemForm.description}
-                        onChange={(e) => updateItemForm({ description: e.target.value })}
-                        className="resize-none"
-                      />
-                    </div>
-                    <div className="grid grid-cols-2 gap-4">
-                      <div className="space-y-2">
-                        <Label>Giá (Xu) *</Label>
-                        <Input 
-                          type="number" 
-                          placeholder="200" 
-                          value={itemForm.coinCost || ''}
-                          onChange={(e) => updateItemForm({ coinCost: parseInt(e.target.value) || 0 })}
-                        />
-                      </div>
-                      <div className="space-y-2">
-                        <Label>Số lượng</Label>
-                        <Input 
-                          type="number" 
-                          placeholder="10" 
-                          value={itemForm.stockQuantity || ''}
-                          onChange={(e) => updateItemForm({ stockQuantity: parseInt(e.target.value) || 0 })}
-                          disabled={itemForm.isUnlimited}
-                        />
-                      </div>
-                    </div>
-                    <div className="flex items-center space-x-2">
-                      <Checkbox 
-                        id="unlimited" 
-                        checked={itemForm.isUnlimited}
-                        onCheckedChange={(checked) => updateItemForm({ isUnlimited: !!checked })}
-                      />
-                      <label 
-                        htmlFor="unlimited" 
-                        className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
-                      >
-                        Không giới hạn số lượng
-                      </label>
-                    </div>
-                    <div className="space-y-2">
-                      <Label>Điều khoản sử dụng</Label>
-                      <Textarea 
-                        placeholder="Nhập điều khoản khi sử dụng hoặc đổi quà..." 
-                        value={itemForm.termsConditions}
-                        onChange={(e) => updateItemForm({ termsConditions: e.target.value })}
-                        className="resize-none"
-                      />
-                    </div>
-                    <Button 
-                      className="w-full bg-eco-green hover:bg-eco-green-dark text-primary-foreground font-semibold"
-                      onClick={handleAddItem}
-                      disabled={!itemForm.rewardName || itemForm.coinCost === undefined || itemForm.coinCost === null || itemForm.coinCost < 0}
-                    >
-                      Thêm sản phẩm
-                    </Button>
-                  </div>
-                </DialogContent>
-              </Dialog>
+              <Button 
+                className="bg-eco-green hover:bg-eco-green-dark text-primary-foreground font-semibold"
+                onClick={() => setIsAddItemOpen(true)}
+              >
+                <Plus className="w-4 h-4 mr-2" />
+                Thêm quà mới
+              </Button>
 
-              <Dialog open={isEditItemOpen} onOpenChange={(open) => { setIsEditItemOpen(open); if (!open) resetItemForm(); }}>
-                <DialogContent>
-                  <DialogHeader>
-                    <DialogTitle>Cập nhật quà tặng</DialogTitle>
-                  </DialogHeader>
-                  <div className="space-y-4 py-4 max-h-[70vh] overflow-y-auto px-1">
-                    <div className="grid grid-cols-2 gap-4">
-                      <div className="space-y-2">
-                        <Label>Tên sản phẩm *</Label>
-                        <Input 
-                          placeholder="VD: Voucher Rạp phim" 
-                          value={itemForm.rewardName}
-                          onChange={(e) => updateItemForm({ rewardName: e.target.value })}
-                        />
-                      </div>
-                      <div className="space-y-2">
-                        <Label>Loại quà *</Label>
-                        <Select 
-                          value={itemForm.rewardType} 
-                          onValueChange={(value) => updateItemForm({ rewardType: value })}
-                        >
-                          <SelectTrigger>
-                            <SelectValue placeholder="Chọn loại" />
-                          </SelectTrigger>
-                          <SelectContent>
-                            <SelectItem value="PHYSICAL">Vật lý</SelectItem>
-                            <SelectItem value="VOUCHER">Voucher</SelectItem>
-                          </SelectContent>
-                        </Select>
-                      </div>
-                    </div>
-                    <div className="space-y-2">
-                      <Label>Hình ảnh</Label>
-                      <div className="flex items-center gap-3">
-                        <Input 
-                          type="file" 
-                          accept="image/*"
-                          onChange={async (e) => {
-                            const file = e.target.files?.[0];
-                            if (!file) return;
-                            try {
-                              const formData = new FormData();
-                              formData.append('file', file);
-                              const res = await rewardService.uploadImage(formData);
-                              const data = res.data?.data || res.data;
-                              const url = data?.url || (typeof data === 'string' ? data : null);
-                              const presignedUrl = data?.presignedUrl || data?.imagePresignedUrl;
-                              
-                              if (url) {
-                                updateItemForm({ 
-                                  imageUrl: url, 
-                                  imagePresignedUrl: presignedUrl || url 
-                                });
-                              }
-                            } catch (error) {
-                              console.error('Upload failed', error);
-                            }
-                          }}
-                          className="cursor-pointer file:cursor-pointer file:bg-eco-green/10 file:text-eco-green file:border-0 file:rounded-md file:px-2 file:py-1 file:mr-3 file:font-semibold hover:file:bg-eco-green/20 transition-all text-xs"
-                        />
-                        {itemForm.imageUrl && (
-                          <div className="shrink-0 w-10 h-10 border rounded-lg overflow-hidden relative flex items-center justify-center bg-muted/20">
-                            {typeof itemForm.imageUrl === 'string' && (itemForm.imageUrl.startsWith('http') || itemForm.imageUrl.startsWith('/') || itemForm.imageUrl.startsWith('blob:') || itemForm.imageUrl.length > 5) ? (
-                                <img src={itemForm.imagePresignedUrl || itemForm.imageUrl} alt="Preview" className="w-full h-full object-cover" />
-                            ) : (
-                                <span className="text-xl">{itemForm.imageUrl}</span>
-                            )}
-                          </div>
-                        )}
-                      </div>
-                    </div>
-                    <div className="space-y-2">
-                      <Label>Mô tả</Label>
-                      <Textarea 
-                        placeholder="Mô tả ngắn gọn về phần thưởng..." 
-                        value={itemForm.description}
-                        onChange={(e) => updateItemForm({ description: e.target.value })}
-                        className="resize-none"
-                      />
-                    </div>
-                    <div className="grid grid-cols-2 gap-4">
-                      <div className="space-y-2">
-                        <Label>Giá (Xu) *</Label>
-                        <Input 
-                          type="number" 
-                          placeholder="200" 
-                          value={itemForm.coinCost !== null && itemForm.coinCost !== undefined ? itemForm.coinCost : ''}
-                          onChange={(e) => updateItemForm({ coinCost: e.target.value === '' ? '' : parseInt(e.target.value) || 0 })}
-                        />
-                      </div>
-                      <div className="space-y-2">
-                        <Label>Số lượng</Label>
-                        <Input 
-                          type="number" 
-                          placeholder="10" 
-                          value={itemForm.stockQuantity !== null && itemForm.stockQuantity !== undefined ? itemForm.stockQuantity : ''}
-                          onChange={(e) => updateItemForm({ stockQuantity: e.target.value === '' ? '' : parseInt(e.target.value) || 0 })}
-                          disabled={itemForm.isUnlimited}
-                        />
-                      </div>
-                    </div>
-                    <div className="flex items-center space-x-2">
-                      <Checkbox 
-                        id="unlimited-edit" 
-                        checked={itemForm.isUnlimited}
-                        onCheckedChange={(checked) => updateItemForm({ isUnlimited: !!checked })}
-                      />
-                      <label 
-                        htmlFor="unlimited-edit" 
-                        className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
-                      >
-                        Không giới hạn số lượng
-                      </label>
-                    </div>
-                    <div className="space-y-2">
-                      <Label>Điều khoản sử dụng</Label>
-                      <Textarea 
-                        placeholder="Nhập điều khoản khi sử dụng hoặc đổi quà..." 
-                        value={itemForm.termsConditions}
-                        onChange={(e) => updateItemForm({ termsConditions: e.target.value })}
-                        className="resize-none"
-                      />
-                    </div>
-                    <Button 
-                      className="w-full bg-eco-green hover:bg-eco-green-dark text-primary-foreground font-semibold"
-                      onClick={handleUpdateItem}
-                      disabled={!itemForm.rewardName || itemForm.coinCost === undefined || itemForm.coinCost === null || itemForm.coinCost < 0}
-                    >
-                      Lưu thay đổi
-                    </Button>
-                  </div>
-                </DialogContent>
-              </Dialog>
+              <RewardFormDialog 
+                isOpen={isAddItemOpen}
+                onOpenChange={setIsAddItemOpen}
+                mode="add"
+                form={itemForm}
+                onUpdateForm={updateItemForm}
+                onResetForm={resetItemForm}
+                onSubmit={handleAddItem}
+              />
+
+              <RewardFormDialog 
+                isOpen={isEditItemOpen}
+                onOpenChange={setIsEditItemOpen}
+                mode="edit"
+                form={itemForm}
+                onUpdateForm={updateItemForm}
+                onResetForm={resetItemForm}
+                onSubmit={handleUpdateItem}
+              />
             </div>
           </CardHeader>
           <CardContent>
             <MarketplaceItems 
-              items={marketplaceItems}
+              items={paged.marketplace}
               onEdit={handleEditItem}
               onDelete={handleDeleteItem}
             />
+            {filtered.marketplace.length > PAGE_SIZE && (
+              <div className="mt-4">
+                <Pagination>
+                  <PaginationContent>
+                    <PaginationItem>
+                      <PaginationPrevious 
+                        onClick={() => setPage('marketplace', p => Math.max(1, p - 1))}
+                        className={pages.marketplace === 1 ? "opacity-50 pointer-events-none" : "cursor-pointer"}
+                      />
+                    </PaginationItem>
+                    {Array.from({ length: Math.ceil(filtered.marketplace.length / PAGE_SIZE) }).map((_, i) => (
+                      <PaginationItem key={i}>
+                        <PaginationLink 
+                          isActive={pages.marketplace === i + 1}
+                          onClick={() => setPage('marketplace', i + 1)}
+                          className="cursor-pointer"
+                        >
+                          {i + 1}
+                        </PaginationLink>
+                      </PaginationItem>
+                    ))}
+                    <PaginationItem>
+                      <PaginationNext 
+                        onClick={() => setPage('marketplace', p => Math.min(Math.ceil(filtered.marketplace.length / PAGE_SIZE), p + 1))}
+                        className={pages.marketplace === Math.ceil(filtered.marketplace.length / PAGE_SIZE) ? "opacity-50 pointer-events-none" : "cursor-pointer"}
+                      />
+                    </PaginationItem>
+                  </PaginationContent>
+                </Pagination>
+              </div>
+            )}
           </CardContent>
         </Card>
 
@@ -991,40 +774,13 @@ export default function SchoolRewards() {
         </Card>
       </div>
 
-      <Dialog open={isRejectDialogOpen} onOpenChange={setIsRejectDialogOpen}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle className="text-destructive flex items-center gap-2">
-              <XCircle className="w-5 h-5" />
-              Từ chối yêu cầu
-            </DialogTitle>
-          </DialogHeader>
-          <div className="space-y-4 py-4">
-            <div className="space-y-2">
-              <Label>Lý do từ chối *</Label>
-              <Textarea 
-                placeholder="Nhập lý do học sinh không được duyệt đổi quà này..." 
-                value={rejectionReason}
-                onChange={(e) => setRejectionReason(e.target.value)}
-                className="min-h-[100px] resize-none border-2 focus-visible:ring-destructive"
-              />
-              <p className="text-xs text-muted-foreground italic">
-                Lý do này sẽ được hiển thị cho học sinh trong phần lịch sử đổi quà.
-              </p>
-            </div>
-          </div>
-          <div className="flex justify-end gap-3">
-            <Button variant="outline" onClick={() => setIsRejectDialogOpen(false)}>Hủy</Button>
-            <Button 
-              variant="destructive" 
-              onClick={handleConfirmReject}
-              disabled={!rejectionReason.trim()}
-            >
-              Xác nhận từ chối
-            </Button>
-          </div>
-        </DialogContent>
-      </Dialog>
+      <RejectionFormDialog 
+        isOpen={isRejectDialogOpen}
+        onOpenChange={setIsRejectDialogOpen}
+        reason={rejectionReason}
+        onReasonChange={setRejectionReason}
+        onSubmit={handleConfirmReject}
+      />
 
       <AlertDialog open={!!deleteId} onOpenChange={(open) => !open && setDeleteId(null)}>
         <AlertDialogContent>
@@ -1041,88 +797,14 @@ export default function SchoolRewards() {
         </AlertDialogContent>
       </AlertDialog>
 
-      <Dialog open={isDeliverDialogOpen} onOpenChange={setIsDeliverDialogOpen}>
-        <DialogContent className="sm:max-w-md">
-          <DialogHeader>
-            <DialogTitle className="flex items-center gap-2">
-              <Package className="w-5 h-5 text-eco-blue" />
-              Xác nhận giao quà
-            </DialogTitle>
-          </DialogHeader>
-          <div className="space-y-4 py-4">
-            <div className="space-y-3">
-              <Label className="text-base font-semibold">Ảnh xác nhận (Bằng chứng giao quà) *</Label>
-              <div className="space-y-4">
-                <div className="flex items-center justify-center w-full">
-                  <label className="flex flex-col items-center justify-center w-full h-64 border-2 border-dashed rounded-xl cursor-pointer bg-muted/5 hover:bg-muted/10 border-muted-foreground/20 transition-all overflow-hidden group">
-                    {deliveryForm.imagePresignedUrl ? (
-                      <div className="relative w-full h-full">
-                        <img 
-                          src={deliveryForm.imagePresignedUrl} 
-                          alt="Delivery confirmation" 
-                          className="w-full h-full object-cover" 
-                        />
-                        <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
-                          <p className="text-white font-medium flex items-center gap-2">
-                            <Plus className="w-5 h-5" /> Thay đổi ảnh
-                          </p>
-                        </div>
-                      </div>
-                    ) : (
-                      <div className="flex flex-col items-center justify-center pt-5 pb-6">
-                        <div className="w-12 h-12 rounded-full bg-eco-blue/10 flex items-center justify-center mb-3 group-hover:scale-110 transition-transform">
-                          <Plus className="w-6 h-6 text-eco-blue" />
-                        </div>
-                        <p className="mb-2 text-sm text-foreground font-medium">Click để tải ảnh lên</p>
-                        <p className="text-xs text-muted-foreground">PNG, JPG hoặc JPEG (Tối đa 5MB)</p>
-                      </div>
-                    )}
-                    <input 
-                      type="file" 
-                      className="hidden" 
-                      accept="image/*"
-                      onChange={async (e) => {
-                        const file = e.target.files?.[0];
-                        if (!file) return;
-                        try {
-                          const formData = new FormData();
-                          formData.append('file', file);
-                          const res = await rewardService.uploadImage(formData);
-                          const data = res.data?.data || res.data;
-                          const url = data?.url || (typeof data === 'string' ? data : null);
-                          const presignedUrl = data?.presignedUrl || data?.imagePresignedUrl;
-                          
-                          if (url) {
-                            setDeliveryForm({ 
-                              imageUrl: url, 
-                              imagePresignedUrl: presignedUrl || url 
-                            });
-                          }
-                        } catch (error) {
-                          console.error('Upload failed', error);
-                        }
-                      }}
-                    />
-                  </label>
-                </div>
-                <p className="text-xs text-muted-foreground italic text-center">
-                  Vui lòng tải ảnh chụp khoảnh khắc học sinh nhận quà hoặc hóa đơn giao hàng.
-                </p>
-              </div>
-            </div>
-          </div>
-          <div className="flex justify-end gap-3">
-            <Button variant="outline" onClick={() => setIsDeliverDialogOpen(false)} disabled={isDelivering}>Hủy</Button>
-            <Button 
-              className="bg-eco-blue hover:bg-eco-blue-dark text-white font-semibold"
-              onClick={handleConfirmDeliver}
-              disabled={!deliveryForm.imageUrl || isDelivering}
-            >
-              {isDelivering ? "Đang xử lý..." : "Xác nhận đã giao"}
-            </Button>
-          </div>
-        </DialogContent>
-      </Dialog>
+      <DeliveryFormDialog 
+        isOpen={isDeliverDialogOpen}
+        onOpenChange={setIsDeliverDialogOpen}
+        deliveryForm={deliveryForm}
+        onUpdateForm={(updates) => setDeliveryForm(prev => ({ ...prev, ...updates }))}
+        onSubmit={handleConfirmDeliver}
+        isSubmitting={isDelivering}
+      />
     </div>
   );
 }
