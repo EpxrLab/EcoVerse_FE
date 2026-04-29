@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useMemo } from "react";
 import { useNavigate, useParams } from "react-router";
 import { Card, Button, Select, Space } from "antd";
 import {
@@ -9,11 +9,9 @@ import {
 } from "@ant-design/icons";
 import { Crown, Medal, Layers, ChevronRight } from "lucide-react";
 import { motion } from "framer-motion";
-import { useCampaignContext } from "../../context";
 import {
   getAuthenticatedStudentProfile,
   getCampaignDetails,
-  getCampaignLeaderboard,
   getRoundLeaderboard,
 } from "../../services";
 
@@ -68,7 +66,7 @@ const RankIcon = ({ rank }) => {
 // ─── PodiumSlot ───────────────────────────────────────────────────────────────
 
 function PodiumSlot({ entry, isFirst }) {
-  if (!entry) return <div className="w-36" />;
+  if (!entry) return <div className="w-28" />;
   const initial = (entry.studentName ?? "?").charAt(0).toUpperCase();
 
   return (
@@ -86,13 +84,13 @@ function PodiumSlot({ entry, isFirst }) {
       <div
         className={`rounded-full flex items-center justify-center font-black shadow-xl border-4 border-white mb-3
         ${AVATAR_GRADIENT[entry.rank] ?? "bg-primary text-white"}
-        ${isFirst ? "w-24 h-24 text-4xl" : "w-20 h-20 text-3xl"}`}
+        ${isFirst ? "w-20 h-20 text-3xl" : "w-16 h-16 text-2xl"}`}
       >
         {initial}
       </div>
 
       {/* Name / School */}
-      <div className="text-center mb-3 max-w-[130px]">
+      <div className="text-center mb-3 max-w-[110px]">
         <p
           className={`font-bold text-gray-800 leading-tight ${isFirst ? "text-base" : "text-sm"}`}
         >
@@ -113,11 +111,11 @@ function PodiumSlot({ entry, isFirst }) {
 
       {/* Podium block */}
       <div
-        className={`w-32 rounded-t-2xl flex items-center justify-center shadow-md
+        className={`w-24 rounded-t-2xl flex items-center justify-center shadow-md
         ${PODIUM_HEIGHT[entry.rank] ?? "h-16"} ${PODIUM_GRADIENT[entry.rank] ?? "bg-gray-200"}`}
       >
         <span
-          className={`font-black text-white ${isFirst ? "text-5xl" : "text-4xl"}`}
+          className={`font-black text-white ${isFirst ? "text-4xl" : "text-3xl"}`}
         >
           {entry.rank}
         </span>
@@ -155,11 +153,8 @@ export default function StudentLeaderboard() {
         const campaignData = resCamapign?.data;
         setCampaign(campaignData ?? null);
 
-        // Auto-select first round for partnership events
-        if (
-          campaignData?.campaignType === "PARTNERSHIP_EVENT" &&
-          campaignData.rounds?.length > 0
-        ) {
+        // Auto-select first round
+        if (campaignData?.rounds?.length > 0) {
           setSelectedRoundId(campaignData.rounds[0].id);
         }
 
@@ -173,20 +168,20 @@ export default function StudentLeaderboard() {
 
   useEffect(() => {
     (async () => {
+      if (!selectedRoundId) return;
       try {
-        let lbRes;
-        if (campaign?.campaignType === "PARTNERSHIP_EVENT") {
-          if (!selectedRoundId) return;
-          lbRes = await getRoundLeaderboard(selectedRoundId);
-        } else {
-          lbRes = await getCampaignLeaderboard(campaignId);
-        }
+        const lbRes = await getRoundLeaderboard(selectedRoundId);
         setEntries(lbRes?.data ?? []);
       } catch (err) {
         console.error(err);
       }
     })();
-  }, [campaignId, selectedRoundId, campaign?.campaignType]);
+  }, [campaignId, selectedRoundId]);
+
+  const selectedRound = useMemo(() => 
+    campaign?.rounds?.find(r => r.id === selectedRoundId),
+    [campaign?.rounds, selectedRoundId]
+  );
 
   if (!campaign) {
     return (
@@ -248,12 +243,19 @@ export default function StudentLeaderboard() {
             <div className="absolute top-0 right-0 w-64 h-64 bg-white/10 rounded-full blur-3xl pointer-events-none" />
             <div className="relative flex flex-col sm:flex-row items-start sm:items-center justify-between gap-6">
               <div>
-                <h1 className="text-3xl font-black text-white flex items-center gap-4 mb-2">
-                  <div className="w-14 h-14 rounded-2xl bg-white/20 backdrop-blur-md border border-white/30 flex items-center justify-center shadow-xl">
-                    <TrophyOutlined className="text-2xl text-white" />
-                  </div>
-                  Bảng xếp hạng
-                </h1>
+                <div className="flex items-center gap-4 mb-2">
+                  <h1 className="text-3xl font-black text-white flex items-center gap-4">
+                    <div className="w-14 h-14 rounded-2xl bg-white/20 backdrop-blur-md border border-white/30 flex items-center justify-center shadow-xl">
+                      <TrophyOutlined className="text-2xl text-white" />
+                    </div>
+                    Bảng xếp hạng
+                  </h1>
+                  {selectedRound?.isFinalRound && (
+                    <span className="px-4 py-1.5 text-[10px] font-black uppercase tracking-widest bg-white/20 text-white border border-white/30 rounded-full backdrop-blur-md animate-pulse">
+                      Chung kết
+                    </span>
+                  )}
+                </div>
                 <p className="text-white/80 font-medium">
                   {campaign.campaignName ?? campaign.name}
                 </p>
@@ -307,8 +309,8 @@ export default function StudentLeaderboard() {
         </Card>
       </motion.div>
 
-      {/* ── Round Selection (For Partnership Events) ── */}
-      {campaign?.campaignType === "PARTNERSHIP_EVENT" && (
+      {/* ── Round Selection ── */}
+      {campaign?.rounds?.length > 0 && (
         <motion.div
           initial={{ opacity: 0, y: 10 }}
           animate={{ opacity: 1, y: 0 }}
@@ -366,7 +368,7 @@ export default function StudentLeaderboard() {
             <h2 className="text-xl font-bold text-center text-gray-800 mb-6">
               🏆 Top 3
             </h2>
-            <div className="flex items-end justify-center gap-3 overflow-x-auto pb-0">
+            <div className="flex items-end justify-center gap-2 sm:gap-3 overflow-hidden pb-0">
               {/* 2nd */}
               <PodiumSlot entry={topThree[1]} isFirst={false} />
               {/* 1st */}

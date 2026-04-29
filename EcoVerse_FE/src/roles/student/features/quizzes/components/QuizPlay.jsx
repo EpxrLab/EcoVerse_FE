@@ -22,6 +22,7 @@ import {
   Star,
   TrendingUp,
   Hash,
+  AlertTriangle,
 } from "lucide-react";
 
 import { submitQuiz, getAttemptResult } from "../../../services";
@@ -90,6 +91,7 @@ function ResultModal({ result, onClose }) {
       centered
       width={480}
       closable={false}
+      zIndex={10005}
       className="[&_.ant-modal-content]:rounded-2xl [&_.ant-modal-content]:overflow-hidden [&_.ant-modal-content]:p-0"
     >
       <motion.div
@@ -253,7 +255,7 @@ export default function QuizPlay({ quiz: _quiz, onFinish, onCancel }) {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [showResult, setShowResult] = useState(false);
   const [quizResult, setQuizResult] = useState(null);
-  const [isSidebarOpen, setIsSidebarOpen] = useState(true);
+  const [isSidebarOpen, setIsSidebarOpen] = useState(() => typeof window !== 'undefined' ? window.innerWidth >= 768 : true);
 
   const { refreshStudentData } = useStudentContext();
 
@@ -274,8 +276,13 @@ export default function QuizPlay({ quiz: _quiz, onFinish, onCancel }) {
   useEffect(() => {
     if (_quiz?.attemptId) {
       setAttemptId(_quiz.attemptId);
+      setAnswers([]);
+      setCurrentQuestionIndex(0);
+      setShowResult(false);
+      setQuizResult(null);
+      setTimeLeft((quiz?.timeLimit ?? 10) * 60);
     }
-  }, [_quiz]);
+  }, [_quiz?.attemptId, quiz?.timeLimit]);
 
   const handleSelectAnswer = (selectedAnswerId) => {
     setAnswers((prev) => {
@@ -321,17 +328,131 @@ export default function QuizPlay({ quiz: _quiz, onFinish, onCancel }) {
         setQuizResult(resultRes);
       }
 
-      // Refresh sidebar coins
       if (refreshStudentData) {
         refreshStudentData();
       }
 
+      // Ensure we show result even if resultRes is partially empty
       setShowResult(true);
     } catch (error) {
-      console.log(error);
+      console.error("Quiz submission error:", error);
+      toast.error("Đã xảy ra lỗi khi nộp bài hoặc lấy kết quả.");
+      // Fallback: set empty result object to ensure beShapedResult is at least truthy
+      setQuizResult({});
+      setShowResult(true);
     } finally {
       setIsSubmitting(false);
     }
+  };
+
+  // Anti-copy/Anti-cheat measures
+  useEffect(() => {
+    const handleContextMenu = (e) => {
+      e.preventDefault();
+    };
+
+    const handleKeyDown = (e) => {
+      if (
+        (e.ctrlKey || e.metaKey) &&
+        (e.key === "c" || e.key === "v" || e.key === "x")
+      ) {
+        e.preventDefault();
+        toast.error("Thao tác này bị chặn để đảm bảo tính minh bạch!");
+      }
+    };
+
+    const handleCopy = (e) => {
+      e.preventDefault();
+      toast.error("Không được phép sao chép nội dung bài làm!");
+    };
+
+    const handlePaste = (e) => {
+      e.preventDefault();
+      toast.error("Không được phép dán nội dung vào đây!");
+    };
+
+    window.addEventListener("contextmenu", handleContextMenu);
+    window.addEventListener("keydown", handleKeyDown);
+    window.addEventListener("copy", handleCopy);
+    window.addEventListener("paste", handlePaste);
+
+    // Block Tab Switching / Blur
+    const handleVisibilityChange = () => {
+      if (document.hidden && !showResult && !isSubmitting) {
+        // AUTO SUBMIT ON TAB SWITCH
+        handleFinish();
+        toast.error(
+          "Bài làm của bạn đã được tự động nộp do vi phạm quy định (rời khỏi màn hình làm bài)!",
+          {
+            duration: 8000,
+            icon: "🚫",
+            style: {
+              borderRadius: "12px",
+              background: "#1a1a1a",
+              color: "#fff",
+              border: "1px solid rgba(255,255,255,0.1)",
+            },
+          },
+        );
+      }
+    };
+
+    const handleBlur = () => {
+      if (!showResult && !isSubmitting) {
+        // AUTO SUBMIT ON FOCUS LOSS
+        handleFinish();
+        toast.error(
+          "Bài làm của bạn đã được tự động nộp do vi phạm quy định (rời khỏi màn hình làm bài)!",
+          {
+            duration: 8000,
+            icon: "🚫",
+            style: {
+              borderRadius: "12px",
+              background: "#1a1a1a",
+              color: "#fff",
+              border: "1px solid rgba(255,255,255,0.1)",
+            },
+          },
+        );
+      }
+    };
+
+    const handleBeforeUnload = (e) => {
+      if (!showResult) {
+        e.preventDefault();
+        e.returnValue = "";
+      }
+    };
+
+    document.addEventListener("visibilitychange", handleVisibilityChange);
+    window.addEventListener("blur", handleBlur);
+    window.addEventListener("beforeunload", handleBeforeUnload);
+
+    return () => {
+      window.removeEventListener("contextmenu", handleContextMenu);
+      window.removeEventListener("keydown", handleKeyDown);
+      window.removeEventListener("copy", handleCopy);
+      window.removeEventListener("paste", handlePaste);
+      document.removeEventListener("visibilitychange", handleVisibilityChange);
+      window.removeEventListener("blur", handleBlur);
+      window.removeEventListener("beforeunload", handleBeforeUnload);
+    };
+  }, [showResult, handleFinish, isSubmitting]);
+
+  const handleRequestExit = () => {
+    Modal.confirm({
+      title: "Xác nhận kết thúc và nộp bài?",
+      content:
+        "Bạn đang trong quá trình làm bài. Việc thoát ra giữa chừng sẽ tính là một lượt thi và hệ thống sẽ tự động nộp những câu bạn đã trả lời. Bạn chắc chắn muốn kết thúc chứ?",
+      okText: "Xác nhận nộp và thoát",
+      cancelText: "Tiếp tục làm bài",
+      okType: "danger",
+      centered: true,
+      zIndex: 11000,
+      onOk() {
+        handleFinish();
+      },
+    });
   };
 
   // ── Timer color ──
@@ -370,7 +491,7 @@ export default function QuizPlay({ quiz: _quiz, onFinish, onCancel }) {
         />
       )}
 
-      <div className="fixed inset-0 z-[10001] bg-[#f8f9fa] flex flex-col overflow-hidden font-sans text-slate-900">
+      <div className="fixed inset-0 z-[10001] bg-[#f8f9fa] flex flex-col overflow-hidden font-sans text-slate-900 select-none">
         <header className="h-14 border-b border-slate-200 px-4 flex items-center justify-between bg-white z-20 shadow-sm">
           <div className="flex items-center gap-3">
             <Button
@@ -393,7 +514,7 @@ export default function QuizPlay({ quiz: _quiz, onFinish, onCancel }) {
               {String(timeLeft % 60).padStart(2, "0")}
             </div>
             <button
-              onClick={onCancel}
+              onClick={handleRequestExit}
               className="w-8 h-8 rounded-lg flex items-center justify-center text-slate-400 hover:text-red-500 hover:bg-red-50 transition-colors"
             >
               <X size={18} />
@@ -401,67 +522,96 @@ export default function QuizPlay({ quiz: _quiz, onFinish, onCancel }) {
           </div>
         </header>
 
-        <div className="flex flex-1 overflow-hidden">
+        {/* Anti-cheat Warning Banner */}
+        <motion.div
+          initial={{ y: -20, opacity: 0 }}
+          animate={{ y: 0, opacity: 1 }}
+          className="bg-red-600 text-white px-4 py-2 flex items-center justify-center gap-3 z-10 shadow-md flex-shrink-0"
+        >
+          <AlertTriangle size={16} className="animate-pulse flex-shrink-0" />
+          <span className="text-xs md:text-sm font-bold text-center leading-tight tracking-wide" style={{ fontFamily: "'Inter', 'Segoe UI', Roboto, sans-serif" }}>
+            Hệ thống giám sát: Nếu thoát tab hoặc chuyển màn hình, bài làm sẽ bị
+            dừng và nộp tự động ngay lập tức!
+          </span>
+          <AlertTriangle size={16} className="animate-pulse flex-shrink-0" />
+        </motion.div>
+
+        <div className="flex flex-1 overflow-hidden relative">
           {/* Sidebar */}
           <AnimatePresence>
             {isSidebarOpen && (
-              <motion.aside
-                initial={{ width: 0, opacity: 0 }}
-                animate={{ width: 260, opacity: 1 }}
-                exit={{ width: 0, opacity: 0 }}
-                transition={{ duration: 0.22, ease: "easeOut" }}
-                className="border-r border-slate-200 bg-white p-5 overflow-hidden flex-shrink-0"
-              >
-                <Text className="text-[11px] font-bold text-slate-400 uppercase block mb-3">
-                  Tiến độ — {answeredCount}/{questions.length}
-                </Text>
-                <Progress
-                  percent={progressPercent}
-                  strokeColor="var(--primary)"
-                  size="small"
-                  className="mb-5"
+              <>
+                {/* Mobile Backdrop */}
+                <motion.div
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  exit={{ opacity: 0 }}
+                  onClick={() => window.innerWidth < 768 && setIsSidebarOpen(false)}
+                  className="absolute inset-0 bg-slate-900/20 z-10 md:hidden backdrop-blur-sm"
                 />
+                <motion.aside
+                  initial={{ width: 0, opacity: 0 }}
+                  animate={{ width: 280, opacity: 1 }}
+                  exit={{ width: 0, opacity: 0 }}
+                  transition={{ duration: 0.22, ease: "easeOut" }}
+                  className="absolute md:relative z-20 h-full border-r border-slate-200 bg-white overflow-hidden flex-shrink-0 shadow-2xl md:shadow-none"
+                >
+                  <div className="w-[280px] p-5 h-full overflow-y-auto">
+                    <Text className="text-[11px] font-bold text-slate-400 uppercase block mb-3">
+                      Tiến độ — {answeredCount}/{questions.length}
+                    </Text>
+                    <Progress
+                      percent={progressPercent}
+                      strokeColor="var(--primary)"
+                      size="small"
+                      className="mb-5"
+                    />
 
-                <div className="grid grid-cols-5 gap-1.5">
-                  {questions.map((q, idx) => {
-                    const isAnswered = answers.some(
-                      (a) => a.questionId === q.id,
-                    );
-                    const isCurrent = currentQuestionIndex === idx;
-                    return (
-                      <button
-                        key={q.id}
-                        onClick={() => setCurrentQuestionIndex(idx)}
-                        className={`h-9 rounded-lg text-xs font-semibold border transition-all
-                          ${
-                            isCurrent
-                              ? "border-primary text-primary bg-primary/10 ring-1 ring-primary/40"
-                              : isAnswered
-                                ? "bg-slate-800 text-white border-slate-800"
-                                : "bg-white text-slate-400 border-slate-200 hover:border-slate-400"
-                          }`}
-                      >
-                        {idx + 1}
-                      </button>
-                    );
-                  })}
-                </div>
+                    <div className="grid grid-cols-5 gap-1.5">
+                      {questions.map((q, idx) => {
+                        const isAnswered = answers.some(
+                          (a) => a.questionId === q.id,
+                        );
+                        const isCurrent = currentQuestionIndex === idx;
+                        return (
+                          <button
+                            key={q.id}
+                            onClick={() => {
+                              setCurrentQuestionIndex(idx);
+                              if (window.innerWidth < 768) setIsSidebarOpen(false);
+                            }}
+                            className={`h-9 rounded-lg text-xs font-semibold border transition-all
+                              ${
+                                isCurrent
+                                  ? "border-primary text-primary bg-primary/10 ring-1 ring-primary/40"
+                                  : isAnswered
+                                    ? "bg-slate-800 text-white border-slate-800"
+                                    : "bg-white text-slate-400 border-slate-200 hover:border-slate-400 shadow-sm"
+                              }`}
+                          >
+                            {idx + 1}
+                          </button>
+                        );
+                      })}
+                    </div>
 
-                <div className="mt-5 space-y-1.5 text-xs text-slate-400">
-                  <div className="flex items-center gap-2">
-                    <div className="w-4 h-4 rounded bg-slate-800" />
-                    <span>Đã trả lời</span>
+                    <div className="mt-8 space-y-3 text-[13px] font-medium text-slate-500 bg-slate-50 p-4 rounded-xl border border-slate-100">
+                      <div className="flex items-center gap-3">
+                        <div className="w-4 h-4 rounded shadow-sm bg-slate-800" />
+                        <span>Đã trả lời</span>
+                      </div>
+                      <div className="flex items-center gap-3">
+                        <div className="w-4 h-4 rounded shadow-sm border-2 border-primary/40 bg-primary/10" />
+                        <span className="text-primary font-bold">Câu hiện tại</span>
+                      </div>
+                      <div className="flex items-center gap-3">
+                        <div className="w-4 h-4 rounded shadow-sm border border-slate-200 bg-white" />
+                        <span>Chưa trả lời</span>
+                      </div>
+                    </div>
                   </div>
-                  <div className="flex items-center gap-2">
-                    <div className="w-4 h-4 rounded border-2 border-primary/40 bg-primary/10" />
-                    <span>Câu hiện tại</span>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <div className="w-4 h-4 rounded border border-slate-200 bg-white" />
-                    <span>Chưa trả lời</span>
-                  </div>
-                </div>
-              </motion.aside>
+                </motion.aside>
+              </>
             )}
           </AnimatePresence>
 
@@ -503,7 +653,7 @@ export default function QuizPlay({ quiz: _quiz, onFinish, onCancel }) {
                     value={currentAnswer?.selectedAnswerId}
                     className="w-full"
                   >
-                    <div className="space-y-3">
+                    <div className="flex flex-col gap-3">
                       {currentQuestion?.options.map((option, idx) => {
                         const selected =
                           currentAnswer?.selectedAnswerId === option.id;
@@ -511,26 +661,46 @@ export default function QuizPlay({ quiz: _quiz, onFinish, onCancel }) {
                           <Radio.Button
                             key={option.id}
                             value={option.id}
-                            className={`!h-auto !py-3.5 !px-5 !rounded-xl !border-2 !flex !items-center !w-full !transition-all
-                              ${selected ? "!border-primary !bg-primary/10" : "!border-slate-200 hover:!border-slate-300 !bg-white"}`}
+                            className={`
+            !h-auto !py-4 !px-5 !rounded-xl !border-2 !flex !items-center !w-full !transition-all !relative
+            ${
+              selected
+                ? "!border-primary !bg-primary/5 !shadow-sm"
+                : "!border-slate-100 hover:!border-slate-300 !bg-white"
+            }
+            before:!hidden
+          `}
                           >
                             <div
-                              className={`w-8 h-8 rounded-full border-2 flex items-center justify-center mr-4 text-xs font-bold flex-shrink-0 transition-all
-                              ${selected ? "bg-primary border-primary text-white" : "bg-white border-slate-300 text-slate-400"}`}
+                              className={`w-8 h-8 rounded-full border-2 flex items-center justify-center mr-4 text-xs font-bold flex-shrink-0 transition-colors
+            ${selected ? "bg-primary border-primary text-white" : "bg-slate-50 border-slate-200 text-slate-500"}`}
                             >
                               {String.fromCharCode(65 + idx)}
                             </div>
+
+                            {/* Nội dung câu trả lời */}
                             <span
-                              className={`text-sm font-medium ${selected ? "text-indigo-700" : "text-slate-700"}`}
+                              className={`text-[15px] leading-relaxed flex-grow pr-4 transition-colors ${
+                                selected
+                                  ? "text-primary font-semibold"
+                                  : "text-slate-600 font-medium"
+                              }`}
                             >
                               {option.text}
                             </span>
-                            {selected && (
-                              <CheckCircle2
-                                size={18}
-                                className="text-indigo-500 ml-auto flex-shrink-0"
-                              />
-                            )}
+
+                            {/* Icon Check nằm ở cuối bên phải */}
+                            <div className="flex-shrink-0 w-6 flex justify-end">
+                              {selected ? (
+                                <CheckCircle2
+                                  size={20}
+                                  className="text-primary animate-in zoom-in duration-200"
+                                />
+                              ) : (
+                                // Giữ khoảng trống hoặc một vòng tròn mờ để UI không bị "giật" khi chọn
+                                <div className="w-5 h-5 rounded-full border border-slate-200" />
+                              )}
+                            </div>
                           </Radio.Button>
                         );
                       })}

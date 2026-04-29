@@ -375,6 +375,7 @@ export default function EcoGamePage() {
       >
           <div style={{ pointerEvents: "auto" }}>
             <EcoGameHUD
+              key={replayKey}
               game={gameInstance}
               onBack={handleBack}
               levelConfig={levelConfig}

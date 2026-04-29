@@ -203,7 +203,7 @@ export default function PartnershipAuth() {
   };
 
   return (
-    <div className="min-h-screen bg-[#f3fbfd] flex items-center justify-center p-4 relative overflow-hidden">
+    <div className="min-h-screen bg-[#f3fbfd] flex items-center justify-center p-4 relative overflow-x-hidden">
       {/* Organic background shapes */}
       <div className="absolute inset-0 overflow-hidden pointer-events-none">
         <div className="absolute top-[-10%] left-[-5%] w-[40%] h-[40%] bg-[#1db1d1]/20 rounded-full blur-[100px]" />
@@ -212,10 +212,9 @@ export default function PartnershipAuth() {
              style={{ backgroundImage: 'radial-gradient(#1db1d1 1px, transparent 1px)', backgroundSize: '40px 40px' }} />
       </div>
 
-      {/* Back button */}
       <motion.button
         onClick={() => navigate("/auth")}
-        className="fixed top-8 left-8 z-50 flex items-center gap-3
+        className="fixed top-4 left-4 md:top-8 md:left-8 z-50 flex items-center gap-3
                    bg-white/60 backdrop-blur-md px-6 py-3 rounded-full shadow-[0_8px_32px_rgba(118,91,7,0.1)]
                    text-[#1db1d1] font-black text-sm border border-white/50 transition-all group"
         whileHover={{ x: -4, backgroundColor: "rgba(255, 255, 255, 0.8)" }}
@@ -243,7 +242,7 @@ export default function PartnershipAuth() {
           <div className="inline-flex items-center justify-center w-20 h-20 rounded-[2rem] bg-gradient-to-br from-[#1db1d1] to-[#1db1d1] mb-6 shadow-xl shadow-amber-900/10">
             <TeamOutlined className="text-4xl text-white" />
           </div>
-          <h1 className="text-5xl font-black text-[#2e3430] font-greenhouse-heading tracking-tight mb-2">
+          <h1 className="text-3xl md:text-5xl font-black text-[#2e3430] font-greenhouse-heading tracking-tight mb-2">
             EcoVerse
           </h1>
           <p className="text-[#5b605c] font-black text-sm uppercase tracking-widest font-greenhouse-heading opacity-60">
@@ -252,7 +251,7 @@ export default function PartnershipAuth() {
         </motion.div>
 
         <motion.div variants={cardVariants}>
-          <div className="bg-white/60 backdrop-blur-md rounded-[3rem] p-10 shadow-[0_32px_64px_rgba(118,91,7,0.1)] border border-white/50 overflow-hidden relative">
+          <div className="bg-white/60 backdrop-blur-md rounded-[3rem] p-6 sm:p-10 md:p-12 shadow-[0_32px_64px_rgba(118,91,7,0.1)] border border-white/50 overflow-hidden relative">
             <Tabs
               activeKey={activeTab}
               onChange={(k) => {

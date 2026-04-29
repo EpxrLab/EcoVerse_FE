@@ -1,16 +1,7 @@
 import { useState, lazy, Suspense, useEffect } from "react";
 import { useNavigate, useParams } from "react-router";
 import { motion, AnimatePresence } from "framer-motion";
-import {
-  Card,
-  Button,
-  Spin,
-  Select,
-  Space,
-  Modal,
-  Empty,
-  Tag,
-} from "antd";
+import { Card, Button, Spin, Select, Space, Modal, Empty, Tag } from "antd";
 import {
   Home,
   Coins,
@@ -114,17 +105,7 @@ const QuizCard = lazy(() =>
                 <div className="flex items-center gap-2 text-gray-600">
                   <RotateCcw className="w-4 h-4 text-blue-500" />
                   <span className="text-sm">
-                    Lần thử: {quiz.attemptsUsed}/{quiz.maxAttempts}
-                  </span>
-                </div>
-                <div className="flex items-center gap-2 text-gray-600">
-                  <Target className="w-4 h-4 text-purple-500" />
-                  <span className="text-sm">Thứ tự: {quiz.displayOrder}</span>
-                </div>
-                <div className="flex items-center gap-2">
-                  <Coins className="w-4 h-4 text-amber-500" />
-                  <span className="text-sm font-semibold text-amber-600">
-                    +{quiz.coinReward || 20} xu
+                    Lượt làm bài: {quiz.attemptsUsed}/{quiz.maxAttempts}
                   </span>
                 </div>
                 {isCompleted && (
@@ -416,24 +397,26 @@ export default function StudentQuiz() {
                     </div>
                   </Card>
 
-                  <Card
-                    className="border-2 border-amber-200 bg-amber-50 rounded-2xl shadow-sm"
-                    bodyStyle={{ padding: "16px 20px" }}
-                  >
-                    <div className="flex items-center gap-3">
-                      <div className="w-11 h-11 rounded-xl bg-amber-500 flex items-center justify-center shadow">
-                        <Coins className="w-5 h-5 text-white" />
+                  {campaign?.campaignType !== "PARTNERSHIP_EVENT" && (
+                    <Card
+                      className="border-2 border-amber-200 bg-amber-50 rounded-2xl shadow-sm"
+                      bodyStyle={{ padding: "16px 20px" }}
+                    >
+                      <div className="flex items-center gap-3">
+                        <div className="w-11 h-11 rounded-xl bg-amber-500 flex items-center justify-center shadow">
+                          <Coins className="w-5 h-5 text-white" />
+                        </div>
+                        <div>
+                          <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider mb-0.5">
+                            Xu tích lũy
+                          </p>
+                          <p className="text-2xl font-black text-amber-600">
+                            {totalCoinsEarned}
+                          </p>
+                        </div>
                       </div>
-                      <div>
-                        <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider mb-0.5">
-                          Xu tích lũy
-                        </p>
-                        <p className="text-2xl font-black text-amber-600">
-                          {totalCoinsEarned}
-                        </p>
-                      </div>
-                    </div>
-                  </Card>
+                    </Card>
+                  )}
                 </div>
               </div>
             </div>
@@ -442,9 +425,8 @@ export default function StudentQuiz() {
 
         {/* Round Selection & Filters */}
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
-          {/* Round Selector - Only show if not SCHOOL_INTERNAL and has rounds */}
-          {campaign?.campaignType !== "SCHOOL_INTERNAL" &&
-            campaign?.rounds?.length > 1 && (
+          {/* Round Selector - Only show if not SCHOOL_INTERNAL */}
+          {campaign?.campaignType !== "SCHOOL_INTERNAL" && (
               <motion.div
                 className="lg:col-span-4"
                 initial={{ opacity: 0, x: -20 }}
@@ -534,8 +516,7 @@ export default function StudentQuiz() {
           {/* Filters */}
           <motion.div
             className={
-              campaign?.campaignType !== "SCHOOL_INTERNAL" &&
-              campaign?.rounds?.length > 1
+              campaign?.campaignType !== "SCHOOL_INTERNAL"
                 ? "lg:col-span-8"
                 : "lg:col-span-12"
             }
@@ -547,22 +528,22 @@ export default function StudentQuiz() {
               className="border-2 border-border rounded-2xl shadow-sm h-full bg-white"
               bodyStyle={{ padding: "22px 24px" }}
             >
-              <div className="flex items-center gap-6 flex-wrap h-full">
-                <div className="flex items-center gap-2 pr-6 border-r border-border">
-                  <span className="text-[10px] uppercase font-black text-muted-foreground tracking-widest">
+              <div className="flex items-center gap-4 flex-wrap h-full">
+                <div className="flex items-center gap-2 pr-4 border-r border-border">
+                  <span className="text-[10px] uppercase font-black text-muted-foreground tracking-widest whitespace-nowrap">
                     Lọc theo độ khó
                   </span>
                 </div>
-                <div className="flex gap-2 flex-wrap">
+                <div className="flex gap-1.5 flex-nowrap">
                   {FILTER_OPTIONS.map(({ key, label, activeClass }) => (
                     <button
                       key={key}
                       onClick={() => setSelectedDifficulty(key)}
-                      className={`px-6 py-2.5 text-xs font-black rounded-xl border-2 transition-all duration-300 uppercase tracking-wider ${
+                      className={`px-3 py-1.5 text-[11px] font-bold rounded-lg border-2 transition-all duration-300 uppercase tracking-wider whitespace-nowrap ${
                         selectedDifficulty === key
                           ? key === "all"
-                            ? "bg-primary text-white border-primary shadow-lg shadow-primary/20 scale-105"
-                            : `${activeClass} shadow-lg scale-105`
+                            ? "bg-primary text-white border-primary shadow-md shadow-primary/20"
+                            : `${activeClass} shadow-md`
                           : "bg-white text-muted-foreground border-border hover:border-primary/30"
                       }`}
                     >
@@ -703,7 +684,7 @@ export default function StudentQuiz() {
                   <div className="flex flex-wrap items-center gap-4 flex-1">
                     <div className="flex flex-col">
                       <span className="text-xs text-gray-400 font-medium uppercase tracking-wider">
-                        Lần thử
+                        Lượt làm bài
                       </span>
                       <span className="font-bold text-gray-700">
                         #{item.attemptNumber}

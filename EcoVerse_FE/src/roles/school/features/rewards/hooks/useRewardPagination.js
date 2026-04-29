@@ -7,7 +7,8 @@ export function useRewardPagination(rewardsData) {
     delivered: 1,
     confirmed: 1,
     cancelled: 1,
-    partnership: 1
+    partnership: 1,
+    marketplace: 1
   });
 
   const PAGE_SIZE = 5;
@@ -22,7 +23,8 @@ export function useRewardPagination(rewardsData) {
       delivered: 1,
       confirmed: 1,
       cancelled: 1,
-      partnership: 1
+      partnership: 1,
+      marketplace: 1
     });
   }, [searchTerm]);
 
@@ -44,7 +46,8 @@ export function useRewardPagination(rewardsData) {
     delivered: filterData(rewardsData.deliveredRewards),
     confirmed: filterData(rewardsData.confirmedRewards),
     cancelled: filterData([...(rewardsData.rejectedRewards || []), ...(rewardsData.cancelledRewards || [])]),
-    partnership: filterData(rewardsData.partnershipRewards)
+    partnership: filterData(rewardsData.partnershipRewards),
+    marketplace: filterData(rewardsData.marketplaceItems)
   }), [rewardsData, searchTerm]);
 
   const paged = useMemo(() => {
@@ -59,7 +62,8 @@ export function useRewardPagination(rewardsData) {
       delivered: getPaged(filtered.delivered, pages.delivered),
       confirmed: getPaged(filtered.confirmed, pages.confirmed),
       cancelled: getPaged(filtered.cancelled, pages.cancelled),
-      partnership: getPaged(filtered.partnership, pages.partnership)
+      partnership: getPaged(filtered.partnership, pages.partnership),
+      marketplace: getPaged(filtered.marketplace, pages.marketplace)
     };
   }, [filtered, pages]);
 

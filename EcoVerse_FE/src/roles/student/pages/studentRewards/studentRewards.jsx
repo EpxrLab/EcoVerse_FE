@@ -334,14 +334,14 @@ function RequestCard({ request, onCancel }) {
 
   return (
     <Card
-      className="rounded-2xl border-2 hover:shadow-lg transition-all"
+      className="rounded-2xl border-2 hover:shadow-lg transition-all overflow-hidden"
       bodyStyle={{ padding: 0 }}
     >
       <div className="flex">
         <div className={`w-2 rounded-l-2xl flex-shrink-0 ${sc.stripe}`} />
-        <div className="flex-1 p-4">
-          <div className="flex items-start justify-between gap-4 mb-3">
-            <div className="flex items-center gap-4">
+        <div className="flex-1 p-4 min-w-0 overflow-hidden">
+          <div className="flex items-start justify-between gap-3 mb-3 flex-wrap">
+            <div className="flex items-center gap-3 min-w-0 flex-1">
               <div
                 className={`w-12 h-12 rounded-xl flex items-center justify-center text-2xl border overflow-hidden ${tc.color}`}
               >
@@ -357,9 +357,9 @@ function RequestCard({ request, onCancel }) {
               </div>
               <div>
                 <div className="flex items-center gap-2 mb-0.5">
-                  <h3 className="font-bold text-gray-800">
+                  <h3 className="font-bold text-gray-800 text-sm">
                     {request.rewardName}
-                    <span className="text-gray-400 font-normal ml-2">
+                    <span className="text-gray-400 font-normal ml-1">
                       x{request.quantity}
                     </span>
                   </h3>
@@ -382,7 +382,7 @@ function RequestCard({ request, onCancel }) {
               </div>
             </div>
             <span
-              className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold border flex-shrink-0 ${sc.tw}`}
+              className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-semibold border whitespace-nowrap flex-shrink-0 ${sc.tw}`}
             >
               {sc.icon}
               {sc.text}

@@ -6,7 +6,6 @@ import { LeaderboardFilters } from '../../features/leaderboard/components/Leader
 import { LeaderboardPodium } from '../../features/leaderboard/components/LeaderboardPodium';
 import { LeaderboardTable } from '../../features/leaderboard/components/LeaderboardTable';
 
-// Remove mock data generator if no longer needed
 
 export default function PartnershipLeaderboard() {
   const { campaigns: allCampaigns } = usePartnershipCampaigns();
@@ -17,29 +16,27 @@ export default function PartnershipLeaderboard() {
   );
 
   const [selectedCampaignId, setSelectedCampaignId] = useState(campaigns[0]?.id || '');
-  const [selectedRoundId, setSelectedRoundId] = useState('all');
+  const [selectedRoundId, setSelectedRoundId] = useState('');
   const [selectedCampaignDetail, setSelectedCampaignDetail] = useState(null);
   const [leaderboardData, setLeaderboardData] = useState([]);
   const [loading, setLoading] = useState(false);
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 10;
 
-  const selectedCampaign = useMemo(() =>
-    campaigns.find(c => c.id === selectedCampaignId),
-    [campaigns, selectedCampaignId]
-  );
-
   const rounds = useMemo(() => {
-    const baseRounds = [{ id: 'all', name: 'Toàn bộ chiến dịch' }];
-    if (!selectedCampaignDetail) return baseRounds;
+    if (!selectedCampaignDetail) return [];
 
-    const campaignRounds = (selectedCampaignDetail.rounds || selectedCampaignDetail.qualifying_rounds || []).map(r => ({
+    return (selectedCampaignDetail.rounds || selectedCampaignDetail.qualifying_rounds || []).map(r => ({
       id: r.id,
-      name: r.roundName
+      name: r.roundName,
+      isFinalRound: r.isFinalRound
     }));
-
-    return [...baseRounds, ...campaignRounds];
   }, [selectedCampaignDetail]);
+
+  const selectedRound = useMemo(() => 
+    rounds.find(r => r.id === selectedRoundId),
+    [rounds, selectedRoundId]
+  );
 
   useEffect(() => {
     if (campaigns.length > 0 && !selectedCampaignId) {
@@ -55,7 +52,14 @@ export default function PartnershipLeaderboard() {
       }
       try {
         const res = await partnershipCampaignService.getCampaignById(selectedCampaignId);
-        setSelectedCampaignDetail(res.data?.data);
+        const detail = res.data?.data;
+        setSelectedCampaignDetail(detail);
+        
+        // Auto select first round when campaign details are loaded
+        const availableRounds = detail?.rounds || detail?.qualifying_rounds || [];
+        if (availableRounds.length > 0) {
+          setSelectedRoundId(availableRounds[0].id);
+        }
       } catch (error) {
         console.error('Failed to fetch campaign detail', error);
         setSelectedCampaignDetail(null);
@@ -66,16 +70,11 @@ export default function PartnershipLeaderboard() {
 
   useEffect(() => {
     const fetchLeaderboard = async () => {
-      if (!selectedCampaignId) return;
+      if (!selectedCampaignId || !selectedRoundId) return;
       
       try {
         setLoading(true);
-        let response;
-        if (selectedRoundId === 'all') {
-          response = await partnershipCampaignService.getCampaignLeaderboard(selectedCampaignId);
-        } else {
-          response = await partnershipCampaignService.getRoundLeaderboard(selectedCampaignId, selectedRoundId);
-        }
+        const response = await partnershipCampaignService.getRoundLeaderboard(selectedCampaignId, selectedRoundId);
         
         const data = response.data?.data || [];
         // Map rank-based levels since API doesn't provide them
@@ -103,7 +102,7 @@ export default function PartnershipLeaderboard() {
 
   const handleCampaignChange = (value) => {
     setSelectedCampaignId(value);
-    setSelectedRoundId('all');
+    setSelectedRoundId(''); // Will be auto-selected in fetchCampaignDetail useEffect
     setCurrentPage(1);
   };
 
@@ -124,7 +123,14 @@ export default function PartnershipLeaderboard() {
             <Trophy className="w-6 h-6 text-accent-foreground drop-shadow-md" />
           </div>
           <div>
-            <h1 className="text-2xl font-bold text-foreground tracking-tight">Bảng xếp hạng</h1>
+            <div className="flex items-center gap-3">
+              <h1 className="text-2xl font-bold text-foreground tracking-tight">Bảng xếp hạng</h1>
+              {selectedRound?.isFinalRound && (
+                <span className="px-3 py-1 text-[10px] font-bold uppercase tracking-wider bg-accent/20 text-accent border border-accent/20 rounded-full animate-pulse">
+                  Chung kết
+                </span>
+              )}
+            </div>
             <p className="text-sm text-muted-foreground">Vinh danh những Chiến binh Xanh xuất sắc nhất</p>
           </div>
         </div>

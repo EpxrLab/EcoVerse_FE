@@ -159,7 +159,6 @@ function LevelCard({ item, isUnlocked, isCompleted, onPlay, campaignId }) {
                     <ClockCircleOutlined className="text-blue-400" />
                     {fmtTime(item.timeLimitSeconds)}
                   </span>
-                  {/* HIỂN THỊ BIẾN MỚI TẠI ĐÂY */}
                   <span
                     className={`flex items-center gap-1 font-medium ${isOutOfAttempts ? "text-orange-600" : "text-gray-500"}`}
                   >

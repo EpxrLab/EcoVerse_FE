@@ -91,7 +91,7 @@ export default function StudentLogin() {
   };
 
   return (
-    <div className="min-h-screen bg-[#f7fcf2] flex items-center justify-center p-4 relative overflow-hidden">
+    <div className="min-h-screen bg-[#f7fcf2] flex items-center justify-center p-4 relative overflow-x-hidden">
       {/* Organic background shapes */}
       <div className="absolute inset-0 overflow-hidden pointer-events-none">
         <div className="absolute top-[-10%] left-[-5%] w-[40%] h-[40%] bg-[#8ed645]/20 rounded-full blur-[100px]" />
@@ -111,10 +111,9 @@ export default function StudentLogin() {
         initial="hidden"
         animate="visible"
       >
-        {/* Back Button */}
         <motion.button
           onClick={() => navigate("/auth")}
-          className="fixed top-8 left-8 z-50 flex items-center gap-3
+          className="fixed top-4 left-4 md:top-8 md:left-8 z-50 flex items-center gap-3
                      bg-white/60 backdrop-blur-md px-6 py-3 rounded-full shadow-[0_8px_32px_rgba(56,176,0,0.1)]
                      text-[#1f2b11] font-black text-sm border border-white/50 transition-all group"
           whileHover={{ x: -4, backgroundColor: "rgba(255, 255, 255, 0.8)" }}
@@ -129,7 +128,7 @@ export default function StudentLogin() {
         </motion.button>
 
         <motion.div variants={cardVariants}>
-          <div className="bg-white/70 backdrop-blur-3xl rounded-[3.5rem] p-10 md:p-14 shadow-[0_48px_96px_-12px_rgba(142,214,69,0.15)] border border-white/60 relative overflow-hidden">
+          <div className="bg-white/70 backdrop-blur-3xl rounded-[3rem] p-6 sm:p-10 md:p-12 shadow-[0_48px_96px_-12px_rgba(142,214,69,0.15)] border border-white/60 relative overflow-hidden">
             {/* Internal polish blurs */}
             <div className="absolute -top-24 -right-24 w-48 h-48 bg-[#8ed645]/10 rounded-full blur-3xl" />
 
@@ -151,7 +150,7 @@ export default function StudentLogin() {
                     <SmileOutlined className="text-4xl text-white" />
                   </div>
                 </motion.div>
-                <h1 className="text-4xl md:text-5xl font-black text-[#1f2b11] font-greenhouse-heading tracking-tight mb-3">
+                <h1 className="text-3xl md:text-5xl font-black text-[#1f2b11] font-greenhouse-heading tracking-tight mb-3">
                   EcoVerse <span className="text-[#8ed645]">!</span>
                 </h1>
                 <p className="text-[#3c5221] font-black text-xs uppercase tracking-[0.25em] font-greenhouse-heading">

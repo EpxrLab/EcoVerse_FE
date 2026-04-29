@@ -206,15 +206,9 @@ function GameTypeTab({ gameTypes, setGameTypes, onRefresh }) {
         v ? <Tag color="green">Có</Tag> : <Tag color="default">Không</Tag>,
     },
     {
-      title: "Max Levels",
+      title: "Màn chơi/cấp",
       dataIndex: "maxLevels",
       key: "maxLevels",
-      align: "center",
-    },
-    {
-      title: "Thứ tự",
-      dataIndex: "displayOrder",
-      key: "displayOrder",
       align: "center",
     },
     {
@@ -243,7 +237,9 @@ function GameTypeTab({ gameTypes, setGameTypes, onRefresh }) {
                     cancelText="Hủy"
                     okButtonProps={{ danger: true }}
                   >
-                    <span className="text-red-500">Xóa</span>
+                    <div className="flex items-center w-full text-red-500">
+                      <span>Xóa</span>
+                    </div>
                   </Popconfirm>
                 ),
                 icon: <DeleteOutlined className="text-red-500" />,
@@ -431,7 +427,7 @@ function GameTypeTab({ gameTypes, setGameTypes, onRefresh }) {
             >
               <Switch />
             </Form.Item>
-            <Form.Item label="Max Levels" name="maxLevels">
+            <Form.Item label="Số màn chơi" name="maxLevels">
               <InputNumber min={0} className="w-full rounded-xl" />
             </Form.Item>
             <Form.Item label="Thứ tự hiển thị" name="displayOrder">
@@ -460,9 +456,15 @@ function PresetTab({ gameTypes }) {
 
   const fetchData = async () => {
     try {
+      if (!selectedGameId) {
+        setPresets([]);
+        return;
+      }
       const res = await getAllGameLevels(selectedGameId);
       const type = gameTypes.find((item) => item.id === selectedGameId);
-      setlevelAllow(type.maxLevels);
+      if (type) {
+        setlevelAllow(type.maxLevels);
+      }
       setPresets(res.data);
     } catch (error) {
       console.log(error);
@@ -501,10 +503,10 @@ function PresetTab({ gameTypes }) {
     try {
       const res = await deleteGameLevel(selectedGameId, id);
       if (res) {
-        toast.success("Xóa preset thành công!");
+        toast.success("Xóa cấp độ thành công!");
         fetchData();
       } else {
-        toast.error("Xóa preset thất bại!");
+        toast.error("Xóa cấp độ thất bại!");
       }
     } catch (error) {
       console.log(error);
@@ -516,8 +518,9 @@ function PresetTab({ gameTypes }) {
       const values = await form.validateFields();
       const payload = {
         ...values,
-        items: values.items?.map((item) => ({
+        items: values.items?.map((item, index) => ({
           ...item,
+          levelNumber: index + 1,
           scorePerCorrect: 10,
         })),
       };
@@ -550,7 +553,7 @@ function PresetTab({ gameTypes }) {
 
   const columns = [
     {
-      title: "Độ khó",
+      title: "Cấp độ",
       dataIndex: "difficulty",
       key: "difficulty",
       render: (v) => (
@@ -558,10 +561,10 @@ function PresetTab({ gameTypes }) {
       ),
     },
     {
-      title: "Số cấp độ",
+      title: "Số màn",
       key: "levelCount",
       align: "center",
-      render: (_, record) => <Tag>{record.items.length} levels</Tag>,
+      render: (_, record) => <Tag>{record.items.length} màn</Tag>,
     },
     {
       title: "",
@@ -617,7 +620,7 @@ function PresetTab({ gameTypes }) {
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
           <div className="flex-1">
             <label className="block text-sm font-semibold text-gray-700 mb-2">
-              Chọn loại Game để quản lý Preset:
+              Chọn loại Game để quản lý các Cấp Độ:
             </label>
             <Select
               placeholder="-- Chọn loại game --"
@@ -642,7 +645,7 @@ function PresetTab({ gameTypes }) {
               !selectedGameId ? "bg-gray-300" : "bg-green-500 border-green-500"
             }`}
           >
-            Tạo Preset
+            Tạo Cấp Độ
           </Button>
         </div>
       </div>
@@ -651,7 +654,7 @@ function PresetTab({ gameTypes }) {
         <>
           <div className="mb-4">
             <h3 className="text-lg font-semibold text-gray-800">
-              Presets của game:{" "}
+              Các Cấp Độ của game:{" "}
               <span className="text-blue-600">
                 {gameTypes.find((g) => g.id === selectedGameId)?.name}
               </span>
@@ -725,7 +728,7 @@ function PresetTab({ gameTypes }) {
         <Form form={form} layout="vertical" className="space-y-1">
           {/* Difficulty */}
           <Form.Item
-            label="Độ khó"
+            label="Cấp Độ"
             name="difficulty"
             rules={[{ required: true }]}
           >
@@ -741,7 +744,7 @@ function PresetTab({ gameTypes }) {
           {/* Dynamic Levels */}
           <div className="border rounded-2xl p-4 bg-gray-50/50">
             <div className="text-sm font-semibold text-gray-700 mb-3">
-              Danh sách Cấp độ (Levels)
+              Danh sách Màn chơi (Levels)
             </div>
             <Form.List name="items">
               {(fields, { add, remove }) => (
@@ -758,7 +761,7 @@ function PresetTab({ gameTypes }) {
                           icon={<MinusCircleOutlined />}
                           onClick={() => {
                             if (fields.length <= 1) {
-                              toast.error("Phải có ít nhất 1 level");
+                              toast.error("Phải có ít nhất 1 màn chơi");
                               return;
                             }
                             remove(name);
@@ -771,18 +774,23 @@ function PresetTab({ gameTypes }) {
                           {index + 1}
                         </div>
                         <span className="text-sm font-medium text-gray-600">
-                          Cấu hình Cấp độ
+                          Cấu hình Màn chơi
                         </span>
                       </div>
 
                       <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
                         <Form.Item
                           {...restField}
-                          label="Cấp độ"
+                          label="Màn chơi"
                           name={[name, "levelNumber"]}
                           rules={[{ required: true }]}
                         >
-                          <InputNumber min={1} className="w-full" />
+                          <InputNumber
+                            min={1}
+                            className="w-full"
+                            disabled
+                            value={index + 1}
+                          />
                         </Form.Item>
                         <Form.Item
                           {...restField}
@@ -850,28 +858,29 @@ function PresetTab({ gameTypes }) {
                       </div>
                     </div>
                   ))}
-                  <Button
-                    type="dashed"
-                    onClick={() => {
-                      if (fields.length >= levelAllow) {
-                        toast.error(`Chỉ được tạo tối đa ${levelAllow} level`);
-                        return;
-                      }
-
-                      add({
-                        levelNumber: fields.length + 1,
-                        itemCount: 10,
-                        timeLimitSeconds: 0,
-                        lives: isRunner ? 1 : 3,
-                        wasteCategories: ["RECYCLABLE"],
-                      });
-                    }}
-                    block
-                    icon={<PlusOutlined />}
-                    className="rounded-2xl h-12 border-2 border-green-200 text-green-600 hover:border-green-400 hover:text-green-700 bg-green-50/50"
-                  >
-                    Thêm Cấp độ mới
-                  </Button>
+                  {fields.length < levelAllow ? (
+                    <Button
+                      type="dashed"
+                      onClick={() => {
+                        add({
+                          levelNumber: fields.length + 1,
+                          itemCount: 10,
+                          timeLimitSeconds: 0,
+                          lives: isRunner ? 1 : 3,
+                          wasteCategories: ["RECYCLABLE"],
+                        });
+                      }}
+                      block
+                      icon={<PlusOutlined />}
+                      className="rounded-2xl h-12 border-2 border-green-200 text-green-600 hover:border-green-400 hover:text-green-700 bg-green-50/50"
+                    >
+                      Thêm Màn chơi mới
+                    </Button>
+                  ) : (
+                    <div className="text-center p-3 bg-blue-50 text-blue-600 rounded-xl border border-blue-100 font-medium text-sm">
+                      Đã đạt tới số lượng màn chơi tối đa ({levelAllow} màn)
+                    </div>
+                  )}
                 </div>
               )}
             </Form.List>
@@ -908,7 +917,7 @@ export default function AdminGameLevels() {
           <div>
             <h1 className="text-2xl font-bold text-gray-800">Quản lý Game</h1>
             <p className="text-sm text-gray-500">
-              Quản lý loại game và cấu hình preset cấp độ
+              Quản lý loại game và cấu hình bộ cấp độ
             </p>
           </div>
         </div>
@@ -939,7 +948,7 @@ export default function AdminGameLevels() {
                 label: (
                   <span className="flex items-center gap-2">
                     <TrophyOutlined />
-                    Cấp độ Game (Preset)
+                    Cấp độ Game
                   </span>
                 ),
                 children: <PresetTab gameTypes={gameTypes} />,
