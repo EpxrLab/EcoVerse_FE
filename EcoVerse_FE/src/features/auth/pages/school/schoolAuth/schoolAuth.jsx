@@ -227,7 +227,7 @@ export default function SchoolAuth() {
   };
 
   return (
-    <div className="min-h-screen bg-[#f1f9f1] flex items-center justify-center p-4 relative overflow-hidden">
+    <div className="min-h-screen bg-[#f1f9f1] flex items-center justify-center p-4 relative overflow-x-hidden">
       {/* Organic background blurs */}
       <div className="absolute inset-0 overflow-hidden pointer-events-none">
         <div className="absolute top-[-10%] left-[-5%] w-[40%] h-[40%] bg-[#1f941f]/20 rounded-full blur-[100px]" />
@@ -238,7 +238,7 @@ export default function SchoolAuth() {
 
       <motion.button
         onClick={() => navigate("/auth")}
-        className="fixed top-8 left-8 z-50
+        className="fixed top-4 left-4 md:top-8 md:left-8 z-50
                flex items-center gap-2
                bg-white/80 backdrop-blur-md
                px-5 py-2.5 rounded-full shadow-lg shadow-green-900/5
@@ -254,7 +254,7 @@ export default function SchoolAuth() {
       </motion.button>
 
       <motion.div
-        className="w-full max-w-lg relative z-10"
+        className="w-full max-w-xl relative z-10"
         variants={containerVariants}
         initial="hidden"
         animate="visible"
@@ -269,14 +269,14 @@ export default function SchoolAuth() {
           <div className="inline-flex items-center justify-center w-20 h-20 rounded-[2rem] bg-gradient-to-br from-[#1f941f] to-[#1f5e44] mb-6 shadow-2xl shadow-green-900/20">
             <HomeOutlined className="text-3xl text-white" />
           </div>
-          <h1 className="text-4xl md:text-5xl font-black text-[#2e3430] font-greenhouse-heading tracking-tight">
+          <h1 className="text-3xl md:text-5xl font-black text-[#2e3430] font-greenhouse-heading tracking-tight">
             EcoVerse
           </h1>
           <p className="text-[#5b605c] mt-3 font-greenhouse-body font-medium">Cổng đăng ký dành cho Trường học</p>
         </motion.div>
 
         <motion.div variants={cardVariants}>
-          <div className="bg-white/60 backdrop-blur-md rounded-[3rem] p-10 shadow-[0_32px_64px_rgba(45,106,79,0.1)] border border-white/50">
+          <div className="bg-white/60 backdrop-blur-md rounded-[3rem] p-6 sm:p-10 md:p-12 shadow-[0_32px_64px_rgba(45,106,79,0.1)] border border-white/50">
             <Tabs
               defaultActiveKey="login"
               centered
