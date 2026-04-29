@@ -536,22 +536,22 @@ export default function StudentGame() {
           className="border-2 border-gray-100 rounded-2xl shadow-sm bg-white"
           bodyStyle={{ padding: "16px 24px" }}
         >
-          <div className="flex items-center gap-6 flex-wrap">
-            <div className="flex items-center gap-2 pr-6 border-r border-gray-200">
-              <span className="text-[10px] uppercase font-black text-gray-500 tracking-widest">
+          <div className="flex items-center gap-4 flex-wrap">
+            <div className="flex items-center gap-2 pr-4 border-r border-gray-200">
+              <span className="text-[10px] uppercase font-black text-gray-500 tracking-widest whitespace-nowrap">
                 Lọc độ khó
               </span>
             </div>
-            <div className="flex gap-2 flex-wrap">
+            <div className="flex gap-1.5 flex-nowrap">
               {FILTER_OPTIONS.map(({ key, label, activeClass }) => (
                 <button
                   key={key}
                   onClick={() => setSelectedDifficulty(key)}
-                  className={`px-6 py-2.5 text-xs font-black rounded-xl border-2 transition-all duration-300 uppercase tracking-wider ${
+                  className={`px-3 py-1.5 text-[11px] font-bold rounded-lg border-2 transition-all duration-300 uppercase tracking-wider whitespace-nowrap ${
                     selectedDifficulty === key
                       ? key === "all"
-                        ? "bg-gray-800 text-white border-gray-800 shadow-lg scale-105"
-                        : `${activeClass} shadow-lg scale-105`
+                        ? "bg-gray-800 text-white border-gray-800 shadow-md"
+                        : `${activeClass} shadow-md`
                       : "bg-white text-gray-400 border-gray-200 hover:border-gray-300"
                   }`}
                 >

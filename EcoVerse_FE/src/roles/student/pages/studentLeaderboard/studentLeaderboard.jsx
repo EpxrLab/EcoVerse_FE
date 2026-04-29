@@ -66,7 +66,7 @@ const RankIcon = ({ rank }) => {
 // ─── PodiumSlot ───────────────────────────────────────────────────────────────
 
 function PodiumSlot({ entry, isFirst }) {
-  if (!entry) return <div className="w-36" />;
+  if (!entry) return <div className="w-28" />;
   const initial = (entry.studentName ?? "?").charAt(0).toUpperCase();
 
   return (
@@ -84,13 +84,13 @@ function PodiumSlot({ entry, isFirst }) {
       <div
         className={`rounded-full flex items-center justify-center font-black shadow-xl border-4 border-white mb-3
         ${AVATAR_GRADIENT[entry.rank] ?? "bg-primary text-white"}
-        ${isFirst ? "w-24 h-24 text-4xl" : "w-20 h-20 text-3xl"}`}
+        ${isFirst ? "w-20 h-20 text-3xl" : "w-16 h-16 text-2xl"}`}
       >
         {initial}
       </div>
 
       {/* Name / School */}
-      <div className="text-center mb-3 max-w-[130px]">
+      <div className="text-center mb-3 max-w-[110px]">
         <p
           className={`font-bold text-gray-800 leading-tight ${isFirst ? "text-base" : "text-sm"}`}
         >
@@ -111,11 +111,11 @@ function PodiumSlot({ entry, isFirst }) {
 
       {/* Podium block */}
       <div
-        className={`w-32 rounded-t-2xl flex items-center justify-center shadow-md
+        className={`w-24 rounded-t-2xl flex items-center justify-center shadow-md
         ${PODIUM_HEIGHT[entry.rank] ?? "h-16"} ${PODIUM_GRADIENT[entry.rank] ?? "bg-gray-200"}`}
       >
         <span
-          className={`font-black text-white ${isFirst ? "text-5xl" : "text-4xl"}`}
+          className={`font-black text-white ${isFirst ? "text-4xl" : "text-3xl"}`}
         >
           {entry.rank}
         </span>
@@ -368,7 +368,7 @@ export default function StudentLeaderboard() {
             <h2 className="text-xl font-bold text-center text-gray-800 mb-6">
               🏆 Top 3
             </h2>
-            <div className="flex items-end justify-center gap-3 overflow-x-auto pb-0">
+            <div className="flex items-end justify-center gap-2 sm:gap-3 overflow-hidden pb-0">
               {/* 2nd */}
               <PodiumSlot entry={topThree[1]} isFirst={false} />
               {/* 1st */}

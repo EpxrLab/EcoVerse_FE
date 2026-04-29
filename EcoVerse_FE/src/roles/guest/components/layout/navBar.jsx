@@ -58,9 +58,9 @@ const NavBar = () => {
       initial={{ y: -100 }}
       animate={{ y: 0 }}
       transition={{ duration: 0.5 }}
-      className={`fixed top-0 left-0 right-0 z-50 transition-all duration-500 ${
-        isScrolled
-          ? "bg-[#f9faf6]/80 backdrop-blur-[20px] shadow-[0_8px_32px_rgba(45,106,79,0.08)]"
+      className={`fixed top-0 left-0 right-0 z-[1000] transition-all duration-500 ${
+        isScrolled || isMobileMenuOpen
+          ? "bg-[#f9faf6]/95 backdrop-blur-[20px] shadow-[0_8px_32px_rgba(45,106,79,0.08)]"
           : "bg-transparent"
       }`}
     >
@@ -80,7 +80,7 @@ const NavBar = () => {
             >
               <LeafIcon className="w-6 h-6 text-white" />
             </motion.div>
-            <span className="text-2xl font-extrabold tracking-tight text-[#2e3430] font-greenhouse-heading">EcoVerse</span>
+            <span className="text-lg sm:text-xl md:text-2xl font-extrabold tracking-tight text-[#2e3430] font-greenhouse-heading">EcoVerse</span>
           </motion.a>
 
           {/* Desktop Nav */}
@@ -146,7 +146,7 @@ const NavBar = () => {
               animate={{ opacity: 1, height: "auto" }}
               exit={{ opacity: 0, height: 0 }}
               transition={{ duration: 0.3 }}
-              className="md:hidden py-4 border-t border-gray-200 overflow-hidden"
+              className="md:hidden py-6 border-t border-[#2d6a4f]/10 overflow-hidden px-2 box-border shadow-inner bg-white/50 backdrop-blur-md rounded-b-[2rem]"
             >
               <div className="flex flex-col gap-4">
                 {navLinks.map((link, index) => (
