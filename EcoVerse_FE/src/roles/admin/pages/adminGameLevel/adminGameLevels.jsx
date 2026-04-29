@@ -191,6 +191,7 @@ function GameTypeTab({ gameTypes, setGameTypes, onRefresh }) {
       render: (v) => <span className="font-semibold text-gray-800">{v}</span>,
     },
     {
+      title: "Mô tả ngắn",
       dataIndex: "shortDescription",
       key: "shortDescription",
       ellipsis: true,
@@ -207,12 +208,6 @@ function GameTypeTab({ gameTypes, setGameTypes, onRefresh }) {
       title: "Màn chơi/cấp",
       dataIndex: "maxLevels",
       key: "maxLevels",
-      align: "center",
-    },
-    {
-      title: "Thứ tự",
-      dataIndex: "displayOrder",
-      key: "displayOrder",
       align: "center",
     },
     {
@@ -921,7 +916,7 @@ export default function AdminGameLevels() {
           <div>
             <h1 className="text-2xl font-bold text-gray-800">Quản lý Game</h1>
             <p className="text-sm text-gray-500">
-              Quản lý loại game và cấu hình preset cấp độ
+              Quản lý loại game và cấu hình bộ cấp độ
             </p>
           </div>
         </div>
@@ -952,7 +947,7 @@ export default function AdminGameLevels() {
                 label: (
                   <span className="flex items-center gap-2">
                     <TrophyOutlined />
-                    Cấp độ Game (Preset)
+                    Cấp độ Game
                   </span>
                 ),
                 children: <PresetTab gameTypes={gameTypes} />,
