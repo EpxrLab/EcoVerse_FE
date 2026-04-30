@@ -1,6 +1,15 @@
 import { useState, useEffect } from "react";
 import { useNavigate, useParams } from "react-router";
-import { Card, Button, Progress, Spin } from "antd";
+import {
+  Card,
+  Button,
+  Progress,
+  Spin,
+  Modal,
+  Empty,
+  Tag,
+  Pagination,
+} from "antd";
 import {
   PlayCircleOutlined,
   LockOutlined,
@@ -9,11 +18,11 @@ import {
   AimOutlined,
   LoadingOutlined,
 } from "@ant-design/icons";
-import { Star, Lock, Play } from "lucide-react";
+import { Star, Lock, Play, History, Clock, ExternalLink } from "lucide-react";
 import { motion } from "framer-motion";
 import { Select, Space } from "antd";
 import { Layers, ChevronRight, RotateCcw } from "lucide-react";
-import { getCampaignDetails } from "../../services";
+import { getCampaignDetails, getGameHistory } from "../../services";
 import { toLocalISO } from "@/utils/dateUtils";
 
 // ─── CoinIcon ─────────────────────────────────────────────────────────────────
@@ -110,6 +119,11 @@ export default function StudentGame() {
   const [selectedRoundId, setSelectedRoundId] = useState(null);
   const [selectedDifficulty, setSelectedDifficulty] = useState("all");
   const [gameLevels, setGameLevels] = useState([]);
+  const [gameHistory, setGameHistory] = useState([]);
+  const [historyModalOpen, setHistoryModalOpen] = useState(false);
+  const [selectedLevel, setSelectedLevel] = useState(null);
+  const [historyLoading, setHistoryLoading] = useState(false);
+  const [historyPage, setHistoryPage] = useState(1);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [isPreviewMode, setIsPreviewMode] = useState(false);
@@ -230,6 +244,33 @@ export default function StudentGame() {
         },
       },
     );
+  };
+
+  const fetchGameHistoryData = async (configId) => {
+    setHistoryLoading(true);
+    try {
+      const res = await getGameHistory(campaignId, selectedRoundId, configId);
+      setGameHistory(res.data || []);
+    } catch (err) {
+      console.error("[StudentGame] Failed to fetch game history:", err);
+      setGameHistory([]);
+    } finally {
+      setHistoryLoading(false);
+    }
+  };
+
+  const handleOpenHistory = (level) => {
+    setSelectedLevel(level);
+    setHistoryModalOpen(true);
+    setHistoryPage(1);
+    fetchGameHistoryData(level.roundGameConfigId);
+  };
+
+  const formatTime = (seconds) => {
+    if (!seconds) return "00:00";
+    const mins = Math.floor(seconds / 60);
+    const secs = seconds % 60;
+    return `${mins.toString().padStart(2, "0")}:${secs.toString().padStart(2, "0")}`;
   };
 
   // ─── Loading State ──────────────────────────────────────────────────────────
@@ -611,9 +652,22 @@ export default function StudentGame() {
                         <Card
                           className={`rounded-2xl border-2 transition-all ${
                             level.locked ? "opacity-50" : "hover:shadow-xl"
-                          } ${level.completed ? "border-primary/20" : "border-gray-100"}`}
+                          } ${level.completed ? "border-primary/20" : "border-gray-100"} relative overflow-hidden`}
                           bodyStyle={{ padding: "24px" }}
                         >
+                          {/* History Toggle Button - Top Left */}
+                          <div className="absolute top-4 right-4 z-10">
+                            <Button
+                              size="small"
+                              shape="circle"
+                              icon={<History className="w-3.5 h-3.5" />}
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                handleOpenHistory(level);
+                              }}
+                              className="bg-white/80 backdrop-blur-sm border-gray-200 text-gray-400 hover:text-blue-500 hover:border-blue-200 shadow-sm transition-all"
+                            />
+                          </div>
                           <div className="space-y-4">
                             {/* Header */}
                             <div className="flex items-start justify-between">
@@ -632,8 +686,7 @@ export default function StudentGame() {
                                   )}
                                 </div>
                                 <h3 className="text-xl font-bold text-gray-800 mb-1">
-                                  {level.gameTypeName} - Level{" "}
-                                  {level.levelNumber}
+                                  {level.gameTypeName} - Màn {level.levelNumber}
                                 </h3>
                                 <p className="text-lg font-semibold text-gray-500">
                                   {level.typeCode === "RUN_SORTING"
@@ -657,7 +710,8 @@ export default function StudentGame() {
                                   {level.itemsCount || "—"}
                                 </span>
                               </div>
-                              {campaign?.campaignType !== "PARTNERSHIP_EVENT" && (
+                              {campaign?.campaignType !==
+                                "PARTNERSHIP_EVENT" && (
                                 <div className="flex items-center justify-between text-sm">
                                   <span className="text-gray-500 flex items-center gap-2">
                                     <CoinIcon className="w-4 h-4 text-amber-500" />
@@ -747,6 +801,183 @@ export default function StudentGame() {
           </div>
         )}
       </div>
+
+      {/* Game History Modal */}
+      <Modal
+        title={
+          <div className="flex items-center gap-2 text-lg font-bold">
+            <History className="w-5 h-5 text-primary" />
+            <span>
+              Lịch sử: {selectedLevel?.gameTypeName} - Level{" "}
+              {selectedLevel?.levelNumber}
+            </span>
+          </div>
+        }
+        open={historyModalOpen}
+        onCancel={() => setHistoryModalOpen(false)}
+        footer={null}
+        width={850}
+        className="rounded-2xl overflow-hidden"
+        bodyStyle={{ padding: "12px 24px 24px" }}
+      >
+        {historyLoading ? (
+          <div className="py-20 text-center">
+            <Spin tip="Đang tải lịch sử..." />
+          </div>
+        ) : gameHistory.length > 0 ? (
+          <div className="space-y-4 mt-4">
+            <div className="space-y-3">
+              {gameHistory
+                .slice((historyPage - 1) * 5, historyPage * 5)
+                .map((item, idx) => {
+                  const globalIdx = (historyPage - 1) * 5 + idx;
+                  return (
+                    <div
+                      key={item.sessionId || globalIdx}
+                      className="p-4 rounded-2xl border border-gray-100 bg-gray-50/50 hover:bg-white hover:shadow-lg transition-all duration-300 group"
+                    >
+                      <div className="flex flex-col sm:flex-row sm:items-center gap-4 sm:gap-6">
+                        {/* Status & Attempt */}
+                        <div className="flex items-center gap-4 min-w-[140px]">
+                          <div className="w-10 h-10 rounded-xl bg-gray-100 flex items-center justify-center font-black text-gray-500 shrink-0">
+                            #{gameHistory.length - globalIdx}
+                          </div>
+                          <div className="flex flex-col">
+                            <span className="text-[10px] text-gray-400 font-bold uppercase tracking-wider">
+                              Kết quả
+                            </span>
+                            {item.isPassed ? (
+                              <Tag
+                                color="success"
+                                className="rounded-lg font-bold border-0 bg-primary/10 text-primary w-fit m-0"
+                              >
+                                ĐẠT
+                              </Tag>
+                            ) : (
+                              <Tag
+                                color="error"
+                                className="rounded-lg font-bold border-0 bg-red-100 text-red-600 w-fit m-0"
+                              >
+                                K.ĐẠT
+                              </Tag>
+                            )}
+                          </div>
+                        </div>
+
+                        <div className="hidden sm:block w-px h-10 bg-gray-200" />
+
+                        {/* Performance Stats */}
+                        <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 flex-1">
+                          <div className="flex flex-col">
+                            <span className="text-[10px] text-gray-400 font-bold uppercase tracking-wider">
+                              Chính xác
+                            </span>
+                            <span
+                              className={`text-base font-black ${item.accuracyPercentage >= 80 ? "text-primary" : "text-amber-600"}`}
+                            >
+                              {item.accuracyPercentage}%
+                            </span>
+                          </div>
+
+                          <div className="flex flex-col">
+                            <span className="text-[10px] text-gray-400 font-bold uppercase tracking-wider">
+                              Thời gian
+                            </span>
+                            <div className="flex items-center gap-1.5 text-gray-700 font-bold text-base">
+                              <Clock className="w-4 h-4 text-gray-400" />
+                              {formatTime(item.timeTakenSeconds)}
+                            </div>
+                          </div>
+
+                          <div className="flex flex-col">
+                            <span className="text-[10px] text-gray-400 font-bold uppercase tracking-wider">
+                              Đúng / Tổng
+                            </span>
+                            <span className="text-base font-black text-gray-700">
+                              {item.correctItems} / {item.totalItems}
+                            </span>
+                          </div>
+
+                          <div className="flex flex-col">
+                            <span className="text-[10px] text-gray-400 font-bold uppercase tracking-wider">
+                              Xu nhận
+                            </span>
+                            <span className="text-base font-black text-amber-600 flex items-center gap-1">
+                              +{item.coinAwarded || 0}
+                              <CoinIcon className="w-4 h-4" />
+                            </span>
+                          </div>
+                        </div>
+
+                        <div className="hidden lg:block w-px h-10 bg-gray-200" />
+
+                        {/* Timing */}
+                        <div className="flex flex-col min-w-[150px] justify-center">
+                          <span className="text-[10px] text-gray-400 font-bold uppercase tracking-wider">
+                            Thời gian thực hiện
+                          </span>
+                          <div className="text-[11px] font-medium text-gray-500 space-y-0.5 mt-1">
+                            <p className="flex justify-between">
+                              <span>Bắt đầu:</span>
+                              <span className="text-gray-700 font-bold">
+                                {new Date(item.sessionStart).toLocaleTimeString(
+                                  "vi-VN",
+                                  { hour: "2-digit", minute: "2-digit" },
+                                )}{" "}
+                                {new Date(item.sessionStart).toLocaleDateString(
+                                  "vi-VN",
+                                )}
+                              </span>
+                            </p>
+                            <p className="flex justify-between">
+                              <span>Kết thúc:</span>
+                              <span className="text-gray-700 font-bold">
+                                {new Date(item.sessionEnd).toLocaleTimeString(
+                                  "vi-VN",
+                                  { hour: "2-digit", minute: "2-digit" },
+                                )}{" "}
+                                {new Date(item.sessionEnd).toLocaleDateString(
+                                  "vi-VN",
+                                )}
+                              </span>
+                            </p>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  );
+                })}
+            </div>
+
+            {gameHistory.length > 5 && (
+              <div className="flex justify-center pt-4">
+                <Pagination
+                  current={historyPage}
+                  onChange={setHistoryPage}
+                  pageSize={5}
+                  total={gameHistory.length}
+                  showSizeChanger={false}
+                  className="custom-pagination"
+                />
+              </div>
+            )}
+          </div>
+        ) : (
+          <div className="py-12">
+            <Empty
+              image={Empty.PRESENTED_IMAGE_SIMPLE}
+              description={
+                <div className="space-y-1">
+                  <p className="text-gray-500 font-medium">Chưa có lịch sử</p>
+                  <p className="text-xs text-gray-400">
+                    Bạn chưa tham gia chơi level này lần nào.
+                  </p>
+                </div>
+              }
+            />
+          </div>
+        )}
+      </Modal>
     </div>
   );
 }
