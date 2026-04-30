@@ -138,6 +138,16 @@ const submitGame = async (sessionId, payload) => {
   }
 };
 
+const getGameHistory = async (cId, rId, rGId) => {
+  try {
+    const res = await axios.get(
+      `/student/game/campaigns/${cId}/rounds/${rId}/configs/${rGId}/history`,
+    );
+    return res.data;
+  } catch (error) {
+    console.log(error);
+  }
+};
 
 const getRoundLeaderboard = async (roundId) => {
   try {
@@ -220,6 +230,7 @@ export {
   getAttemptResult,
   startGame,
   submitGame,
+  getGameHistory,
   getRoundLeaderboard,
   getMyRewardDeliveries,
   getQuizHistory,
