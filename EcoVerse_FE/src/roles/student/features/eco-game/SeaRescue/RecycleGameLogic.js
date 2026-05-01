@@ -162,7 +162,7 @@ export function initWorld(scene, state, manager) {
 
             child.material = new THREE.MeshBasicMaterial({
               map: skyMap,
-              color: skyMap ? 0xffffff : (oldMat.color || 0xffffff),
+              color: skyMap ? 0xffffff : oldMat.color || 0xffffff,
               side: THREE.DoubleSide,
               fog: false,
               depthWrite: false,
@@ -368,7 +368,7 @@ export function initTrash(
       id: wasteItems[0].wasteItemId || wasteItems[0].id,
       hasModel: !!wasteItems[0].preloadedModel,
       modelType: typeof wasteItems[0].preloadedModel,
-      url: wasteItems[0].imageUrl || wasteItems[0].imagePresignedUrl,
+      url: wasteItems[0].presignedModel3dUrl || wasteItems[0].imagePresignedUrl,
     });
   }
 
@@ -458,12 +458,7 @@ export function initTrash(
         bin: trashGroup.userData.wasteCategory.toLowerCase(),
         imageUrl: apiItem.imageUrl || apiItem.imagePresignedUrl,
         preloadedModel: apiItem.preloadedModel,
-        modelUrl:
-          apiItem.model3dPresignedUrl ||
-          (typeof apiItem.preloadedModel === "string" &&
-            apiItem.preloadedModel) ||
-          apiItem.imagePresignedUrl ||
-          apiItem.imageUrl,
+        modelUrl: apiItem.presignedModel3dUrl || apiItem.imagePresignedUrl,
         funFact: apiItem.funFact, // Captured for result display
       };
 
@@ -513,12 +508,7 @@ export function initTrash(
     }
     // Ưu tiên 2: URL từ presignedUrl hoặc preloadedModel (nếu là string)
     else {
-      const modelUrl =
-        apiItem.model3dPresignedUrl ||
-        (typeof apiItem.preloadedModel === "string" &&
-          apiItem.preloadedModel) ||
-        apiItem.imagePresignedUrl ||
-        apiItem.imageUrl;
+      const modelUrl = apiItem.presignedModel3dUrl || apiItem.imagePresignedUrl;
 
       if (modelUrl) {
         loader.load(
