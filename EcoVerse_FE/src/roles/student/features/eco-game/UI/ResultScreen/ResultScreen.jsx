@@ -15,7 +15,7 @@ export function ResultScreen({ result, onReplay, onBack }) {
     : totalItems > 0
       ? Math.round((correct / totalItems) * 100)
       : 0;
-  const coins = apiResult ? apiResult.coinAwarded : 0;
+  const coins = apiResult?.coinAwarded ? apiResult.coinAwarded : 0;
   const timeTaken = apiResult ? apiResult.timeTakenSeconds : 0;
   const feedbackMessage = apiResult?.feedbackMessage;
 
