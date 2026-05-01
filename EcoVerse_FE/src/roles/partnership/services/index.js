@@ -19,5 +19,5 @@ const updatePartnershipProfile = async (payload) => {
 };
 
 export { getAuthenticatedPartnership, updatePartnershipProfile };
-export * from './partnership.report.service';
+export * from './partnershipReport.service';
 export * from './partnershipCampaign.service';

@@ -1,5 +1,4 @@
 import { useState, useMemo, useEffect, useCallback } from 'react';
-import { studentStats, classOptions } from '../data/student.data';
 import { studentService } from '../services';
 
 export function useStudents() {
@@ -84,8 +83,6 @@ export function useStudents() {
     availableClasses,
     isLoading,
     refreshStudents: fetchStudents,
-    stats: studentStats,
-    classOptions,
     filters,
     setSearchTerm,
     setSelectedClass,

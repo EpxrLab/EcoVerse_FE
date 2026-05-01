@@ -320,7 +320,17 @@ export default class EcoGameRunner {
         this.playerModel.traverse((child) => {
           if (child.isMesh) {
             child.castShadow = true;
-            child.receiveShadow = true;
+            child.receiveShadow = false; // Disable self-shadowing acne
+            
+            // Ensure textures and colors render correctly
+            if (child.material) {
+              if (child.material.map) {
+                child.material.map.colorSpace = THREE.SRGBColorSpace;
+              }
+              // Prevent washing out from high intensity lights
+              if (child.material.roughness !== undefined) child.material.roughness = 1.0;
+              if (child.material.metalness !== undefined) child.material.metalness = 0.0;
+            }
           }
         });
 
@@ -349,15 +359,20 @@ export default class EcoGameRunner {
   }
 
   _createEnvironment() {
-    // Ambient light
-    const ambient = new THREE.AmbientLight(0xffffff, 0.6);
+    // Ambient light - soft overall light
+    const ambient = new THREE.AmbientLight(0xffffff, 0.4);
     this.scene.add(ambient);
     this._ambientLight = ambient;
 
+    // Hemisphere light - simulates sky/ground bounce for better colors
+    const hemiLight = new THREE.HemisphereLight(0xffffff, 0x444444, 0.6);
+    this.scene.add(hemiLight);
+
     // Directional light (sun)
-    const dirLight = new THREE.DirectionalLight(0xffffff, 0.8);
+    const dirLight = new THREE.DirectionalLight(0xffffff, 0.7);
     dirLight.position.set(5, 15, 10);
     dirLight.castShadow = true;
+    dirLight.shadow.bias = -0.0005; // Fix shadow acne
     dirLight.shadow.mapSize.width = 1024;
     dirLight.shadow.mapSize.height = 1024;
     dirLight.shadow.camera.near = 0.1;

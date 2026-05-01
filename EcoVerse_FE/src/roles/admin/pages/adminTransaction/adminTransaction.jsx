@@ -1,5 +1,5 @@
 import { useState, useMemo, useEffect } from "react";
-import { Card, Table, Tag, Select, Input, Button } from "antd";
+import { Card, Table, Tag, Select, Input, Button, Modal, Descriptions } from "antd";
 import {
   SearchOutlined,
   ReloadOutlined,
@@ -10,6 +10,7 @@ import {
   CheckCircleOutlined,
   ClockCircleOutlined,
   CloseCircleOutlined,
+  EyeOutlined,
 } from "@ant-design/icons";
 import {
   AreaChart,
@@ -132,6 +133,8 @@ export default function AdminRevenue() {
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState("ALL");
   const [typeFilter, setTypeFilter] = useState("ALL");
+  const [selectedTx, setSelectedTx] = useState(null);
+  const [isDetailOpen, setIsDetailOpen] = useState(false);
 
   const fetchData = async () => {
     try {
@@ -259,24 +262,15 @@ export default function AdminRevenue() {
       width: 220,
       render: (_, row) => (
         <div>
-          <div className="flex items-center gap-2">
-            <span className="font-mono text-sm font-bold text-blue-600">
-              {row.paymentCode}
-            </span>
-            {row.transactionRef && (
-              <Tag className="text-[10px] m-0 bg-gray-50 border-gray-200 text-gray-400">
-                {row.transactionRef}
-              </Tag>
-            )}
-          </div>
-          <p className="font-semibold text-gray-800 text-sm mt-1">
+          <span className="font-mono text-sm font-bold text-blue-600 block">
+            {row.paymentCode}
+          </span>
+          <p className="font-semibold text-gray-800 text-sm mt-0.5 truncate max-w-[180px]">
             {row.sub.subscriptionCode}
           </p>
-          <div className="flex items-center gap-1 mt-0.5 text-[11px] text-gray-400">
-            <span>{row.sub.planName}</span>
-            <span>•</span>
-            <span className="font-mono">{row.sub.planCode}</span>
-          </div>
+          <p className="text-[11px] text-gray-400 mt-0.5 truncate max-w-[180px]">
+            {row.sub.planName}
+          </p>
         </div>
       ),
     },
@@ -285,12 +279,12 @@ export default function AdminRevenue() {
       key: "subscriber",
       render: (_, row) => (
         <div>
-          <p className="font-medium text-gray-800 text-sm">
+          <p className="font-medium text-gray-800 text-sm truncate max-w-[150px]">
             {row.sub.subscriberName}
           </p>
           <Tag
             color={row.sub.subscriberType === "SCHOOL" ? "blue" : "cyan"}
-            className="rounded-full text-[11px] mt-0.5"
+            className="rounded-full text-[10px] mt-0.5"
           >
             {row.sub.subscriberType === "SCHOOL" ? "Trường học" : "Đối tác"}
           </Tag>
@@ -298,81 +292,84 @@ export default function AdminRevenue() {
       ),
     },
     {
-      title: "Số tiền & Thanh toán",
-      key: "payment",
+      title: "Số tiền",
+      key: "amount",
+      align: "right",
+      render: (_, row) => (
+        <span
+          className={`font-bold text-sm ${row.amount > 0 ? "text-gray-800" : "text-gray-400"}`}
+        >
+          {row.amount === 0
+            ? "Miễn phí"
+            : `${row.amount?.toLocaleString()} ${row.currency}`}
+        </span>
+      ),
+    },
+    {
+      title: "Trạng thái TT",
+      key: "payStatus",
+      align: "center",
       render: (_, row) => {
         const cfg = PAY_STATUS_CFG[row.status] ?? {
           label: row.status,
           color: "default",
         };
         return (
-          <div>
-            <p
-              className={`font-bold text-sm ${row.amount > 0 ? "text-gray-800" : "text-gray-400"}`}
-            >
-              {row.amount === 0
-                ? "Miễn phí"
-                : `${row.amount?.toLocaleString()} ${row.currency}`}
-            </p>
-            <div className="flex items-center gap-2 mt-1">
-              <Tag color={cfg.color} className="rounded-full text-[11px] m-0">
-                {cfg.label}
-              </Tag>
-              <span className="text-[11px] text-gray-400">
-                {row.paidAt ? fmtDateTime(row.paidAt) : "—"}
-              </span>
-            </div>
-          </div>
+          <Tag color={cfg.color} className="rounded-full text-[11px] m-0">
+            {cfg.label}
+          </Tag>
         );
       },
     },
     {
       title: "Trạng thái gói",
       key: "status",
+      align: "center",
       render: (_, row) => {
         const cfg = STATUS_CFG[row.sub.status] ?? {};
         return (
-          <div>
-            <span
-              className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-semibold border ${cfg.tw}`}
-            >
-              {cfg.icon}
-              {cfg.label}
-            </span>
-            <div className="text-[10px] text-gray-400 mt-1">
-              Tạo: {fmtDate(row.createdAt)}
-            </div>
-          </div>
+          <span
+            className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-semibold border ${cfg.tw}`}
+          >
+            {cfg.label}
+          </span>
         );
       },
     },
     {
-      title: "Thời hạn & Huỷ",
+      title: "Thời hạn",
       key: "dates",
       render: (_, row) => (
-        <div className="text-xs text-gray-500 space-y-0.5">
+        <div className="text-[11px] text-gray-500">
           <p>
-            Từ:{" "}
-            <span className="font-medium text-gray-700">
-              {fmtDate(row.sub.startDate)}
-            </span>
+            {fmtDate(row.sub.startDate)} - {fmtDate(row.sub.endDate)}
           </p>
-          <p>
-            Đến:{" "}
-            <span className="font-medium text-gray-700">
-              {fmtDate(row.sub.endDate)}
-            </span>
-          </p>
-          {row.sub.cancelledAt ? (
-            <p className="text-red-500 text-[11px]">
-              Huỷ: {fmtDate(row.sub.cancelledAt)}
-            </p>
-          ) : row.sub.autoRenew ? (
-            <Tag color="green" className="rounded-full text-[10px] m-0">
-              Tự gia hạn
-            </Tag>
-          ) : null}
         </div>
+      ),
+    },
+    {
+      title: "Thanh toán lúc",
+      key: "paidAt",
+      render: (_, row) => (
+        <span className="text-[11px] text-gray-400">
+          {row.paidAt ? fmtDateTime(row.paidAt) : "—"}
+        </span>
+      ),
+    },
+    {
+      title: "Tác vụ",
+      key: "action",
+      align: "center",
+      render: (_, row) => (
+        <Button
+          type="text"
+          icon={<EyeOutlined className="text-blue-500" />}
+          onClick={() => {
+            setSelectedTx(row);
+            setIsDetailOpen(true);
+          }}
+          className="hover:bg-blue-50 rounded-lg"
+        />
       ),
     },
   ];
@@ -741,6 +738,133 @@ export default function AdminRevenue() {
             />
           </Card>
         </motion.div>
+
+        {/* ── Transaction Detail Modal ── */}
+        <Modal
+          title={
+            <div className="flex items-center gap-2">
+              <div className="w-10 h-10 rounded-xl bg-blue-50 flex items-center justify-center">
+                <DollarOutlined className="text-blue-500 text-lg" />
+              </div>
+              <div>
+                <h3 className="text-lg font-bold m-0">Chi tiết giao dịch</h3>
+                <p className="text-xs text-gray-400 m-0 font-mono">
+                  {selectedTx?.paymentCode}
+                </p>
+              </div>
+            </div>
+          }
+          open={isDetailOpen}
+          onCancel={() => setIsDetailOpen(false)}
+          footer={[
+            <Button
+              key="close"
+              onClick={() => setIsDetailOpen(false)}
+              className="rounded-xl border-gray-200"
+            >
+              Đóng
+            </Button>,
+          ]}
+          width={700}
+          className="rounded-2xl overflow-hidden"
+        >
+          {selectedTx && (
+            <div className="py-2 space-y-6">
+              <Descriptions
+                title={<span className="text-base font-bold">Thông tin thanh toán</span>}
+                bordered
+                column={2}
+                size="small"
+                className="[&_.ant-descriptions-item-label]:bg-gray-50/50"
+              >
+                <Descriptions.Item label="Mã thanh toán">
+                  <span className="font-mono font-bold text-blue-600">
+                    {selectedTx.paymentCode}
+                  </span>
+                </Descriptions.Item>
+                <Descriptions.Item label="Số tiền">
+                  <span className="font-bold text-gray-800">
+                    {selectedTx.amount?.toLocaleString()} {selectedTx.currency}
+                  </span>
+                </Descriptions.Item>
+                <Descriptions.Item label="Trạng thái">
+                  <Tag
+                    color={PAY_STATUS_CFG[selectedTx.status]?.color}
+                    className="rounded-full m-0"
+                  >
+                    {PAY_STATUS_CFG[selectedTx.status]?.label}
+                  </Tag>
+                </Descriptions.Item>
+                <Descriptions.Item label="Mã giao dịch tham chiếu">
+                  <span className="font-mono text-gray-600">
+                    {selectedTx.transactionRef || "—"}
+                  </span>
+                </Descriptions.Item>
+                <Descriptions.Item label="Thời gian tạo">
+                  {fmtDateTime(selectedTx.createdAt)}
+                </Descriptions.Item>
+                <Descriptions.Item label="Thời gian thanh toán">
+                  {selectedTx.paidAt ? fmtDateTime(selectedTx.paidAt) : "—"}
+                </Descriptions.Item>
+              </Descriptions>
+
+              <Descriptions
+                title={<span className="text-base font-bold">Thông tin gói đăng ký</span>}
+                bordered
+                column={2}
+                size="small"
+                className="[&_.ant-descriptions-item-label]:bg-gray-50/50"
+              >
+                <Descriptions.Item label="Mã đăng ký">
+                  <span className="font-bold">{selectedTx.sub.subscriptionCode}</span>
+                </Descriptions.Item>
+                <Descriptions.Item label="Loại gói">
+                  {selectedTx.sub.planName} ({selectedTx.sub.planCode})
+                </Descriptions.Item>
+                <Descriptions.Item label="Đơn vị">
+                  {selectedTx.sub.subscriberName}
+                </Descriptions.Item>
+                <Descriptions.Item label="Loại đơn vị">
+                  <Tag
+                    color={selectedTx.sub.subscriberType === "SCHOOL" ? "blue" : "cyan"}
+                    className="rounded-full m-0"
+                  >
+                    {selectedTx.sub.subscriberType === "SCHOOL" ? "Trường học" : "Đối tác"}
+                  </Tag>
+                </Descriptions.Item>
+                <Descriptions.Item label="Trạng thái gói">
+                  <Tag
+                    color={STATUS_CFG[selectedTx.sub.status]?.color}
+                    className="rounded-full m-0"
+                  >
+                    {STATUS_CFG[selectedTx.sub.status]?.label}
+                  </Tag>
+                </Descriptions.Item>
+                <Descriptions.Item label="Tự động gia hạn">
+                  {selectedTx.sub.autoRenew ? "Có" : "Không"}
+                </Descriptions.Item>
+                <Descriptions.Item label="Ngày bắt đầu">
+                  {fmtDate(selectedTx.sub.startDate)}
+                </Descriptions.Item>
+                <Descriptions.Item label="Ngày kết thúc">
+                  {fmtDate(selectedTx.sub.endDate)}
+                </Descriptions.Item>
+                {selectedTx.sub.cancelledAt && (
+                  <>
+                    <Descriptions.Item label="Ngày huỷ" span={1}>
+                      <span className="text-red-500 font-bold">
+                        {fmtDate(selectedTx.sub.cancelledAt)}
+                      </span>
+                    </Descriptions.Item>
+                    <Descriptions.Item label="Lý do huỷ" span={1}>
+                      {selectedTx.sub.cancellationReason || "—"}
+                    </Descriptions.Item>
+                  </>
+                )}
+              </Descriptions>
+            </div>
+          )}
+        </Modal>
       </motion.div>
     </div>
   );

@@ -106,13 +106,14 @@ export function CampaignForm({
                 </Label>
                 <DatePicker
                   id={`${mode}-start-date`}
-                  showTime
+                  showTime={{ format: 'HH:mm', showNow: false }}
                   format="DD/MM/YYYY HH:mm"
                   className={cn(
                     "w-full h-10",
                     dateValidation.errors.start_date ? 'border-destructive' : ''
                   )}
                   placeholder="Chọn ngày bắt đầu"
+                  getPopupContainer={(trigger) => trigger.parentElement}
                   value={formData.start_date ? dayjs(formData.start_date) : null}
                   onChange={(date) => onFormChange({ start_date: date ? date.format('YYYY-MM-DDTHH:mm') : '' })}
                 />
@@ -128,13 +129,14 @@ export function CampaignForm({
                 </Label>
                 <DatePicker
                   id={`${mode}-end-date`}
-                  showTime
+                  showTime={{ format: 'HH:mm', showNow: false }}
                   format="DD/MM/YYYY HH:mm"
                   className={cn(
                     "w-full h-10",
                     dateValidation.errors.end_date ? 'border-destructive' : ''
                   )}
                   placeholder="Chọn ngày kết thúc"
+                  getPopupContainer={(trigger) => trigger.parentElement}
                   value={formData.end_date ? dayjs(formData.end_date) : null}
                   onChange={(date) => onFormChange({ end_date: date ? date.format('YYYY-MM-DDTHH:mm') : '' })}
                 />
@@ -150,13 +152,14 @@ export function CampaignForm({
                 </Label>
                 <DatePicker
                   id={`${mode}-invite-date`}
-                  showTime
+                  showTime={{ format: 'HH:mm', showNow: false }}
                   format="DD/MM/YYYY HH:mm"
                   className={cn(
                     "w-full h-10",
                     dateValidation.errors.invitation_send_date ? 'border-destructive' : ''
                   )}
                   placeholder="Chọn ngày gửi mời"
+                  getPopupContainer={(trigger) => trigger.parentElement}
                   value={formData.invitation_send_date ? dayjs(formData.invitation_send_date) : null}
                   onChange={(date) => onFormChange({ invitation_send_date: date ? date.format('YYYY-MM-DDTHH:mm') : '' })}
                 />
@@ -172,13 +175,14 @@ export function CampaignForm({
                 </Label>
                 <DatePicker
                   id={`${mode}-invite-deadline`}
-                  showTime
+                  showTime={{ format: 'HH:mm', showNow: false }}
                   format="DD/MM/YYYY HH:mm"
                   className={cn(
                     "w-full h-10",
                     dateValidation.errors.invitation_deadline ? 'border-destructive' : ''
                   )}
                   placeholder="Chọn hạn chấp nhận"
+                  getPopupContainer={(trigger) => trigger.parentElement}
                   value={formData.invitation_deadline ? dayjs(formData.invitation_deadline) : null}
                   onChange={(date) => onFormChange({ invitation_deadline: date ? date.format('YYYY-MM-DDTHH:mm') : '' })}
                 />

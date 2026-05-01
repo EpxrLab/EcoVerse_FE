@@ -1,6 +1,4 @@
 import { useState, useMemo, useEffect, useCallback } from 'react';
-import { mockStudentInvitations, mockSchoolInvitations } from '../../../data/campaign.data';
-import { defaultQuizzesData } from '../../../data/quiz.data';
 import { toast } from '@/shared/hooks/use-toast';
 import { campaignService, subscriptionService } from '@/roles/school/services';
 import { quizzesService } from '../../quizzes/services/quizzes.service';
@@ -68,14 +66,12 @@ export function useCampaigns() {
 
   // Format and link invitations
   const allFormattedCampaigns = useMemo(() => {
-    // Helper to attach invitations
     const attachInvitations = (list) => list.map(campaign => ({
       ...campaign,
-      student_invitations: Array.isArray(mockStudentInvitations) ?
-        mockStudentInvitations.filter(inv => inv.campaign_id === campaign?.id) : [],
+      student_invitations: [],
     }));
 
-    if (!Array.isArray(campaigns)) return attachInvitations(mockSchoolInvitations);
+    if (!Array.isArray(campaigns)) return [];
 
     // Map raw campaigns to UI format
     const mappedCampaigns = campaigns.map(c => {
@@ -181,7 +177,7 @@ export function useCampaigns() {
         isAI: false
       }));
 
-    return [...defaultQuizzesData, ...publishedApiQuizzes];
+    return publishedApiQuizzes;
   }, [apiQuizzes]);
 
   const addCampaign = (data) => {

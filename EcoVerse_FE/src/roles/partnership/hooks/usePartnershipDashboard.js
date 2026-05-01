@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { partnershipReportService } from '../services/partnership.report.service';
+import { partnershipReportService } from '../services/partnershipReport.service';
 
 export const usePartnershipDashboard = () => {
     const [stats, setStats] = useState({

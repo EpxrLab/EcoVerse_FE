@@ -35,9 +35,6 @@ const CoinIcon = ({ className = "w-4 h-4" }) => (
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
-// Schema BE: { studentId, studentName, schoolName, combinedAccuracyPercentage,
-//              avgTimeSeconds, rank, totalCoinsEarned }
-
 const PODIUM_HEIGHT = { 1: "h-32", 2: "h-24", 3: "h-20" };
 const PODIUM_GRADIENT = {
   1: "bg-amber-500",
@@ -201,7 +198,6 @@ export default function StudentLeaderboard() {
   }
 
   const topThree = entries.slice(0, 3);
-  const rest = entries.slice(3);
 
   // Tìm entry của current user trong leaderboard
   const myEntry = currentUser

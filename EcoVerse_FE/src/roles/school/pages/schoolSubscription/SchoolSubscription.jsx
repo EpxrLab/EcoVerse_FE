@@ -47,9 +47,6 @@ const getPlanIcon = (planCode) => {
   return Users;
 };
 
-
-
-
 export default function SchoolSubscription() {
   const [plans, setPlans] = useState([]);
   const [loading, setLoading] = useState(true);

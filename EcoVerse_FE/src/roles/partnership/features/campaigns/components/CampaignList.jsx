@@ -1,10 +1,11 @@
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/shared/components/ui/table';
 import { Badge } from '@/shared/components/ui/badge';
 import { Button } from '@/shared/components/ui/button';
-import { Eye, Calendar, School, Users, Send, MoreVertical, Edit, Trash2, RotateCcw, Gamepad2, FileQuestion, XCircle } from 'lucide-react';
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, DropdownMenuSeparator } from '@/shared/components/ui/dropdown-menu';
+import { Eye, Calendar, Send, MoreVertical, Edit, Trash2, RotateCcw, Gamepad2, FileQuestion, XCircle, AlertCircle } from 'lucide-react';
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/shared/components/ui/dropdown-menu';
 import toast from 'react-hot-toast';
 import { cn } from '@/shared/lib/utils';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/shared/components/ui/tooltip';
 
 export function CampaignList({ campaigns, onViewDetail, onEdit, onDelete, onActivate, onRevertToDraft, onAddGame, onAddQuiz, onCancel }) {
   const getStatusColor = (status) => {
@@ -67,144 +68,170 @@ export function CampaignList({ campaigns, onViewDetail, onEdit, onDelete, onActi
               </div>
             </TableHead>
             <TableHead className="text-center font-bold">
-              <div className="flex items-center justify-center gap-2">
-                <School className="w-4 h-4" />
-                Trường
-              </div>
-            </TableHead>
-            <TableHead className="text-center font-bold">
               Cấu hình
             </TableHead>
             <TableHead className="text-right font-bold">Thao tác</TableHead>
           </TableRow>
         </TableHeader>
-        <TableBody>
-          {campaigns.map((campaign) => (
-            <TableRow key={campaign.id} className="hover:bg-muted/30">
-              <TableCell>
-                <p className="font-semibold text-foreground">{campaign.campaignName}</p>
-              </TableCell>
-              <TableCell>
-                <Badge variant="outline" className={cn(getStatusColor(campaign.status))}>
-                  {getStatusLabel(campaign.status)}
-                </Badge>
-              </TableCell>
-              <TableCell>
-                <div className="text-sm">
-                  <p className="text-muted-foreground">
-                    {campaign.startDate ? new Date(campaign.startDate).toLocaleString('vi-VN') : "-"}
-                  </p>
-                  <p className="text-muted-foreground">
-                    {campaign.endDate ? new Date(campaign.endDate).toLocaleString('vi-VN') : "-"}
-                  </p>
-                </div>
-              </TableCell>
-              <TableCell>
-                {campaign.invitationDate ? (
-                  <p className="text-sm text-muted-foreground">
-                    {new Date(campaign.invitationDate).toLocaleString('vi-VN')}
-                  </p>
-                ) : (
-                  <span className="text-muted-foreground text-sm">Chưa đặt</span>
-                )}
-              </TableCell>
-              <TableCell className="text-center">
-                <span className="font-bold text-eco-blue">{campaign.schoolsCount || 0}</span>
-              </TableCell>
-              <TableCell>
-                <div className="flex items-center justify-center gap-3">
-                  <div className="flex flex-col items-center gap-1">
-                    <Gamepad2 className={cn("w-5 h-5", campaign.hasGame ? "text-eco-blue" : "text-muted-foreground/30")} />
-                    <span className={cn("text-[10px] uppercase font-bold", campaign.hasGame ? "text-eco-blue" : "text-muted-foreground/30")}>Game</span>
-                  </div>
-                  <div className="flex flex-col items-center gap-1">
-                    <FileQuestion className={cn("w-5 h-5", campaign.hasQuiz ? "text-eco-blue" : "text-muted-foreground/30")} />
-                    <span className={cn("text-[10px] uppercase font-bold", campaign.hasQuiz ? "text-eco-blue" : "text-muted-foreground/30")}>Quiz</span>
-                  </div>
-                </div>
-              </TableCell>
-              <TableCell className="text-right">
-                <DropdownMenu>
-                  <DropdownMenuTrigger asChild>
-                    <Button variant="ghost" size="sm">
-                      <MoreVertical className="w-4 h-4" />
-                    </Button>
-                  </DropdownMenuTrigger>
-                  <DropdownMenuContent align="end">
-                    <DropdownMenuItem onClick={() => onViewDetail(campaign)}>
-                      <Eye className="w-4 h-4 mr-2" />
-                      Xem chi tiết
-                    </DropdownMenuItem>
-                    
-                    {campaign.status === 'draft' && onActivate && (
-                      <DropdownMenuItem 
-                        onClick={() => {
-                          if (!campaign.hasGame || !campaign.hasQuiz) {
-                            toast.error("Cần cấu hình ít nhất 1 Game và 1 Quiz để kích hoạt chiến dịch");
-                            return;
-                          }
-                          onActivate(campaign);
-                        }} 
-                        className="text-eco-blue focus:text-eco-blue"
-                      >
-                        <Send className="w-4 h-4 mr-2" />
-                        Kích hoạt
-                      </DropdownMenuItem>
-                    )}
+        <TooltipProvider>
+          <TableBody>
+            {campaigns.map((campaign) => {
+              const rounds = campaign.rounds || campaign.qualifying_rounds || [];
+              const totalRounds = campaign.totalRounds || rounds.length;
+              
+              // Game warning logic
+              const roundsWithGame = rounds.filter(r => r.game_type_id || r.gameTypeId || r.gameId).length;
+              const needsGameWarning = totalRounds > 1 && roundsWithGame > 0 && roundsWithGame < totalRounds;
 
-                    {campaign.status === 'draft' && onAddGame && (
-                      <DropdownMenuItem onClick={() => onAddGame(campaign)}>
-                        <Gamepad2 className="w-4 h-4 mr-2" />
-                        Thêm Game
-                      </DropdownMenuItem>
-                    )}
-                    
-                    {campaign.status === 'draft' && onAddQuiz && (
-                      <DropdownMenuItem onClick={() => onAddQuiz(campaign)}>
-                        <FileQuestion className="w-4 h-4 mr-2" />
-                        Thêm Quiz
-                      </DropdownMenuItem>
-                    )}
+              // Quiz warning logic
+              const roundsWithQuiz = rounds.filter(r => (r.quiz_ids && r.quiz_ids.length > 0) || (r.quizzes && r.quizzes.length > 0) || r.hasQuiz).length;
+              const needsQuizWarning = totalRounds > 1 && roundsWithQuiz > 0 && roundsWithQuiz < totalRounds;
 
-                    {campaign.status === 'scheduled' && onRevertToDraft && (
-                      <DropdownMenuItem onClick={() => onRevertToDraft(campaign)} className="text-eco-orange focus:text-eco-orange">
-                        <RotateCcw className="w-4 h-4 mr-2" />
-                        Chuyển về nháp
-                      </DropdownMenuItem>
+              return (
+                <TableRow key={campaign.id} className="hover:bg-muted/30">
+                  <TableCell>
+                    <p className="font-semibold text-foreground">{campaign.campaignName}</p>
+                  </TableCell>
+                  <TableCell>
+                    <Badge variant="outline" className={cn(getStatusColor(campaign.status))}>
+                      {getStatusLabel(campaign.status)}
+                    </Badge>
+                  </TableCell>
+                  <TableCell>
+                    <div className="text-sm">
+                      <p className="text-muted-foreground">
+                        {campaign.startDate ? new Date(campaign.startDate).toLocaleString('vi-VN') : "-"}
+                      </p>
+                      <p className="text-muted-foreground">
+                        {campaign.endDate ? new Date(campaign.endDate).toLocaleString('vi-VN') : "-"}
+                      </p>
+                    </div>
+                  </TableCell>
+                  <TableCell>
+                    {campaign.invitationDate ? (
+                      <p className="text-sm text-muted-foreground">
+                        {new Date(campaign.invitationDate).toLocaleString('vi-VN')}
+                      </p>
+                    ) : (
+                      <span className="text-muted-foreground text-sm">Chưa đặt</span>
                     )}
+                  </TableCell>
+                  <TableCell>
+                    <div className="flex items-center justify-center gap-4">
+                      <div className="flex flex-col items-center gap-1 relative p-1">
+                        <Gamepad2 className={cn("w-5 h-5", campaign.hasGame ? "text-eco-blue" : "text-muted-foreground/30")} />
+                        <span className={cn("text-[10px] uppercase font-bold", campaign.hasGame ? "text-eco-blue" : "text-muted-foreground/30")}>Game</span>
+                        {needsGameWarning && (
+                          <Tooltip>
+                            <TooltipTrigger asChild>
+                              <AlertCircle className="w-3.5 h-3.5 text-eco-orange absolute top-0 -right-1 bg-background rounded-full shadow-sm cursor-help" />
+                            </TooltipTrigger>
+                            <TooltipContent>
+                              <p className="font-medium text-xs">Chiến dịch nhiều vòng nhưng chưa cấu hình Game cho tất cả các vòng ({roundsWithGame}/{totalRounds})</p>
+                            </TooltipContent>
+                          </Tooltip>
+                        )}
+                      </div>
+                      <div className="flex flex-col items-center gap-1 relative p-1">
+                        <FileQuestion className={cn("w-5 h-5", campaign.hasQuiz ? "text-eco-blue" : "text-muted-foreground/30")} />
+                        <span className={cn("text-[10px] uppercase font-bold", campaign.hasQuiz ? "text-eco-blue" : "text-muted-foreground/30")}>Quiz</span>
+                        {needsQuizWarning && (
+                          <Tooltip>
+                            <TooltipTrigger asChild>
+                              <AlertCircle className="w-3.5 h-3.5 text-eco-orange absolute top-0 -right-1 bg-background rounded-full shadow-sm cursor-help" />
+                            </TooltipTrigger>
+                            <TooltipContent>
+                              <p className="font-medium text-xs">Chiến dịch nhiều vòng nhưng chưa cấu hình Quiz cho tất cả các vòng ({roundsWithQuiz}/{totalRounds})</p>
+                            </TooltipContent>
+                          </Tooltip>
+                        )}
+                      </div>
+                    </div>
+                  </TableCell>
+                <TableCell className="text-right">
+                  <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                      <Button variant="ghost" size="sm">
+                        <MoreVertical className="w-4 h-4" />
+                      </Button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent align="end">
+                      <DropdownMenuItem onClick={() => onViewDetail(campaign)}>
+                        <Eye className="w-4 h-4 mr-2" />
+                        Xem chi tiết
+                      </DropdownMenuItem>
 
-                    {(campaign.status === 'draft' || campaign.status === 'cancelled') && (
-                      <DropdownMenuItem onClick={() => onEdit(campaign)}>
-                        <Edit className="w-4 h-4 mr-2" />
-                        Sửa
-                      </DropdownMenuItem>
-                    )}
+                      {campaign.status === 'draft' && onActivate && (
+                        <DropdownMenuItem
+                          onClick={() => {
+                            if (!campaign.hasGame || !campaign.hasQuiz) {
+                              toast.error("Cần cấu hình ít nhất 1 Game và 1 Quiz để kích hoạt chiến dịch");
+                              return;
+                            }
+                            onActivate(campaign);
+                          }}
+                          className="text-eco-blue focus:text-eco-blue"
+                        >
+                          <Send className="w-4 h-4 mr-2" />
+                          Kích hoạt
+                        </DropdownMenuItem>
+                      )}
 
-                    {campaign.status === 'inviting' && onCancel && (
-                      <DropdownMenuItem 
-                        onClick={() => onCancel(campaign)}
-                        className="text-destructive focus:text-destructive"
-                      >
-                        <XCircle className="w-4 h-4 mr-2" />
-                        Hủy chiến dịch
-                      </DropdownMenuItem>
-                    )}
+                      {campaign.status === 'draft' && onAddGame && (
+                        <DropdownMenuItem onClick={() => onAddGame(campaign)}>
+                          <Gamepad2 className="w-4 h-4 mr-2" />
+                          Thêm Game
+                        </DropdownMenuItem>
+                      )}
 
-                    {(campaign.status === 'draft' || campaign.status === 'cancelled') && onDelete && (
-                      <DropdownMenuItem 
-                        onClick={() => onDelete(campaign)}
-                        className="text-destructive focus:text-destructive"
-                      >
-                        <Trash2 className="w-4 h-4 mr-2" />
-                        Xóa
-                      </DropdownMenuItem>
-                    )}
-                  </DropdownMenuContent>
-                </DropdownMenu>
-              </TableCell>
-            </TableRow>
-          ))}
-        </TableBody>
+                      {campaign.status === 'draft' && onAddQuiz && (
+                        <DropdownMenuItem onClick={() => onAddQuiz(campaign)}>
+                          <FileQuestion className="w-4 h-4 mr-2" />
+                          Thêm Quiz
+                        </DropdownMenuItem>
+                      )}
+
+                      {campaign.status === 'scheduled' && onRevertToDraft && (
+                        <DropdownMenuItem onClick={() => onRevertToDraft(campaign)} className="text-eco-orange focus:text-eco-orange">
+                          <RotateCcw className="w-4 h-4 mr-2" />
+                          Chuyển về nháp
+                        </DropdownMenuItem>
+                      )}
+
+                      {(campaign.status === 'draft' || campaign.status === 'cancelled') && (
+                        <DropdownMenuItem onClick={() => onEdit(campaign)}>
+                          <Edit className="w-4 h-4 mr-2" />
+                          Sửa
+                        </DropdownMenuItem>
+                      )}
+
+                      {campaign.status === 'inviting' && onCancel && (
+                        <DropdownMenuItem
+                          onClick={() => onCancel(campaign)}
+                          className="text-destructive focus:text-destructive"
+                        >
+                          <XCircle className="w-4 h-4 mr-2" />
+                          Hủy chiến dịch
+                        </DropdownMenuItem>
+                      )}
+
+                      {(campaign.status === 'draft' || campaign.status === 'cancelled') && onDelete && (
+                        <DropdownMenuItem
+                          onClick={() => onDelete(campaign)}
+                          className="text-destructive focus:text-destructive"
+                        >
+                          <Trash2 className="w-4 h-4 mr-2" />
+                          Xóa
+                        </DropdownMenuItem>
+                      )}
+                    </DropdownMenuContent>
+                  </DropdownMenu>
+                </TableCell>
+              </TableRow>
+            );
+          })}
+          </TableBody>
+        </TooltipProvider>
       </Table>
     </div>
   );

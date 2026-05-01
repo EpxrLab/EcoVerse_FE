@@ -2,9 +2,7 @@ import { useState, useMemo, useEffect } from 'react';
 import { Trophy } from 'lucide-react';
 import { usePartnershipCampaigns } from '../../features/campaigns/hooks/usePartnershipCampaigns';
 import { partnershipCampaignService } from '../../services/partnershipCampaign.service';
-import { LeaderboardFilters } from '../../features/leaderboard/components/LeaderboardFilters';
-import { LeaderboardPodium } from '../../features/leaderboard/components/LeaderboardPodium';
-import { LeaderboardTable } from '../../features/leaderboard/components/LeaderboardTable';
+import { LeaderboardFilters, LeaderboardPodium, LeaderboardTable, StudentHistoryModal } from '../../features/leaderboard/components';
 
 
 export default function PartnershipLeaderboard() {
@@ -22,6 +20,10 @@ export default function PartnershipLeaderboard() {
   const [loading, setLoading] = useState(false);
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 10;
+
+  // History Modal State
+  const [historyModalOpen, setHistoryModalOpen] = useState(false);
+  const [selectedStudent, setSelectedStudent] = useState(null);
 
   const rounds = useMemo(() => {
     if (!selectedCampaignDetail) return [];
@@ -111,6 +113,11 @@ export default function PartnershipLeaderboard() {
     setCurrentPage(1);
   };
 
+  const handleRowClick = (student) => {
+    setSelectedStudent(student);
+    setHistoryModalOpen(true);
+  };
+
   return (
     <div className="space-y-6 animate-fade-in p-6 pb-12">
       {/* Header */}
@@ -157,6 +164,16 @@ export default function PartnershipLeaderboard() {
         totalItems={leaderboardData.length}
         itemsPerPage={itemsPerPage}
         onPageChange={setCurrentPage}
+        onRowClick={handleRowClick}
+      />
+
+      {/* Student History Modal */}
+      <StudentHistoryModal
+        isOpen={historyModalOpen}
+        onClose={() => setHistoryModalOpen(false)}
+        campaignId={selectedCampaignId}
+        roundId={selectedRoundId}
+        student={selectedStudent}
       />
     </div>
   );

@@ -308,7 +308,7 @@ export function useClasses() {
       // Refetch data after successful import
       await fetchClasses();
 
-      // Calculate mock results based on parsed rows if backend doesn't return counts
+      // Calculate fallback results based on parsed rows if backend doesn't return counts
       const classes = [...new Set((parsedRows || []).map(r => r.class_name).filter(Boolean))];
 
       return {
