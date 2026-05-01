@@ -1,12 +1,5 @@
 import { useState, useMemo, useEffect } from "react";
-import {
-  Card,
-  Table,
-  Tag,
-  Select,
-  Input,
-  Button,
-} from "antd";
+import { Card, Table, Tag, Select, Input, Button } from "antd";
 import {
   SearchOutlined,
   ReloadOutlined,
@@ -64,14 +57,14 @@ const STATUS_CFG = {
 };
 
 const PAY_STATUS_CFG = {
+  CANCELLED: { label: "Đã huỷ", color: "red" },
   COMPLETED: { label: "Hoàn thành", color: "green" },
-  PENDING: { label: "Chờ xử lý", color: "blue" },
+  PENDING: { label: "Chờ thanh toán", color: "blue" },
   FAILED: { label: "Thất bại", color: "red" },
   REFUNDED: { label: "Hoàn tiền", color: "orange" },
 };
 
 const CHART_COLORS = ["#3b82f6", "#22c55e", "#f59e0b", "#ef4444", "#8b5cf6"];
-
 
 const fmtVND = (v) => {
   if (!v && v !== 0) return "0";
@@ -159,10 +152,11 @@ export default function AdminRevenue() {
     [data],
   );
 
-  // ── Filtered subscriptions ──
+  // ── Filtered transactions (Combined) ──
   const filtered = useMemo(() => {
     const q = search.trim().toLowerCase();
-    return data.filter((s) => {
+    return allTransactions.filter((tx) => {
+      const s = tx.sub;
       const matchStatus = statusFilter === "ALL" || s.status === statusFilter;
       const matchType = typeFilter === "ALL" || s.subscriberType === typeFilter;
       const matchSearch =
@@ -170,10 +164,12 @@ export default function AdminRevenue() {
         s.subscriptionCode.toLowerCase().includes(q) ||
         s.subscriberName.toLowerCase().includes(q) ||
         s.planCode.toLowerCase().includes(q) ||
-        s.planName.toLowerCase().includes(q);
+        s.planName.toLowerCase().includes(q) ||
+        tx.paymentCode.toLowerCase().includes(q) ||
+        (tx.transactionRef && tx.transactionRef.toLowerCase().includes(q));
       return matchStatus && matchType && matchSearch;
     });
-  }, [data, search, statusFilter, typeFilter]);
+  }, [allTransactions, search, statusFilter, typeFilter]);
 
   // ── Summary stats ──
   const stats = useMemo(() => {
@@ -256,17 +252,31 @@ export default function AdminRevenue() {
 
   // ─── Table: Subscriptions ──────────────────────────────────────────────────
 
-  const subColumns = [
+  const columns = [
     {
-      title: "Gói đăng ký",
+      title: "Giao dịch / Gói",
       key: "sub",
+      width: 220,
       render: (_, row) => (
         <div>
-          <p className="font-semibold text-gray-800 text-sm">
-            {row.subscriptionCode}
+          <div className="flex items-center gap-2">
+            <span className="font-mono text-sm font-bold text-blue-600">
+              {row.paymentCode}
+            </span>
+            {row.transactionRef && (
+              <Tag className="text-[10px] m-0 bg-gray-50 border-gray-200 text-gray-400">
+                {row.transactionRef}
+              </Tag>
+            )}
+          </div>
+          <p className="font-semibold text-gray-800 text-sm mt-1">
+            {row.sub.subscriptionCode}
           </p>
-          <p className="text-xs text-gray-400">{row.planName}</p>
-          <p className="text-[11px] font-mono text-gray-300">{row.planCode}</p>
+          <div className="flex items-center gap-1 mt-0.5 text-[11px] text-gray-400">
+            <span>{row.sub.planName}</span>
+            <span>•</span>
+            <span className="font-mono">{row.sub.planCode}</span>
+          </div>
         </div>
       ),
     },
@@ -276,189 +286,93 @@ export default function AdminRevenue() {
       render: (_, row) => (
         <div>
           <p className="font-medium text-gray-800 text-sm">
-            {row.subscriberName}
+            {row.sub.subscriberName}
           </p>
           <Tag
-            color={row.subscriberType === "SCHOOL" ? "blue" : "cyan"}
+            color={row.sub.subscriberType === "SCHOOL" ? "blue" : "cyan"}
             className="rounded-full text-[11px] mt-0.5"
           >
-            {row.subscriberType === "SCHOOL" ? "Trường học" : "Đối tác"}
+            {row.sub.subscriberType === "SCHOOL" ? "Trường học" : "Đối tác"}
           </Tag>
         </div>
       ),
     },
     {
-      title: "Trạng thái",
-      key: "status",
-      render: (_, row) => {
-        const cfg = STATUS_CFG[row.status] ?? {};
-        return (
-          <span
-            className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-semibold border ${cfg.tw}`}
-          >
-            {cfg.icon}
-            {cfg.label}
-          </span>
-        );
-      },
-    },
-    {
-      title: "Thời hạn",
-      key: "dates",
-      render: (_, row) => (
-        <div className="text-xs text-gray-500 space-y-0.5">
-          <p>
-            Từ:{" "}
-            <span className="font-medium text-gray-700">
-              {fmtDate(row.startDate)}
-            </span>
-          </p>
-          <p>
-            Đến:{" "}
-            <span className="font-medium text-gray-700">
-              {fmtDate(row.endDate)}
-            </span>
-          </p>
-          {row.autoRenew && (
-            <Tag color="green" className="rounded-full text-[10px]">
-              Tự gia hạn
-            </Tag>
-          )}
-        </div>
-      ),
-    },
-    {
-      title: "Giao dịch",
-      key: "transactions",
-      render: (_, row) => {
-        const total = row.transactions.reduce(
-          (s, t) => s + (t.status === "COMPLETED" ? (t.amount ?? 0) : 0),
-          0,
-        );
-        const count = row.transactions.length;
-        return (
-          <div className="text-sm">
-            <p className="font-bold text-gray-800">
-              {fmtVND(total)}{" "}
-              <span className="text-gray-400 font-normal text-xs">VND</span>
-            </p>
-            <p className="text-xs text-gray-400">{count} giao dịch</p>
-          </div>
-        );
-      },
-    },
-    {
-      title: "Huỷ / Lý do",
-      key: "cancel",
-      render: (_, row) =>
-        row.cancelledAt ? (
-          <div className="text-xs">
-            <p className="text-red-500 font-medium">
-              {fmtDate(row.cancelledAt)}
-            </p>
-            {row.cancellationReason && (
-              <p className="text-gray-400 truncate max-w-[140px]">
-                {row.cancellationReason}
-              </p>
-            )}
-          </div>
-        ) : (
-          <span className="text-gray-300 text-xs">—</span>
-        ),
-    },
-    {
-      title: "Tạo lúc",
-      key: "createdAt",
-      render: (_, row) => (
-        <span className="text-xs text-gray-400">
-          {fmtDateTime(row.createdAt)}
-        </span>
-      ),
-    },
-  ];
-
-  // ─── Table: Transactions (flat) ───────────────────────────────────────────
-
-  const txColumns = [
-    {
-      title: "Mã thanh toán",
-      key: "code",
-      render: (_, row) => (
-        <div>
-          <p className="font-semibold text-gray-800 text-sm font-mono">
-            {row.paymentCode}
-          </p>
-          <p className="text-xs text-gray-400">{row.sub.subscriptionCode}</p>
-        </div>
-      ),
-    },
-    {
-      title: "Đơn vị",
-      key: "sub",
-      render: (_, row) => (
-        <div>
-          <p className="text-sm text-gray-700 font-medium">
-            {row.sub.subscriberName}
-          </p>
-          <p className="text-xs text-gray-400">{row.sub.planName}</p>
-        </div>
-      ),
-    },
-    {
-      title: "Số tiền",
-      key: "amount",
-      render: (_, row) => (
-        <p
-          className={`font-bold text-sm ${row.amount > 0 ? "text-gray-800" : "text-gray-400"}`}
-        >
-          {row.amount === 0
-            ? "Miễn phí"
-            : `${row.amount?.toLocaleString()} ${row.currency}`}
-        </p>
-      ),
-    },
-    {
-      title: "Trạng thái TT",
-      key: "status",
+      title: "Số tiền & Thanh toán",
+      key: "payment",
       render: (_, row) => {
         const cfg = PAY_STATUS_CFG[row.status] ?? {
           label: row.status,
           color: "default",
         };
         return (
-          <Tag color={cfg.color} className="rounded-full">
-            {cfg.label}
-          </Tag>
+          <div>
+            <p
+              className={`font-bold text-sm ${row.amount > 0 ? "text-gray-800" : "text-gray-400"}`}
+            >
+              {row.amount === 0
+                ? "Miễn phí"
+                : `${row.amount?.toLocaleString()} ${row.currency}`}
+            </p>
+            <div className="flex items-center gap-2 mt-1">
+              <Tag color={cfg.color} className="rounded-full text-[11px] m-0">
+                {cfg.label}
+              </Tag>
+              <span className="text-[11px] text-gray-400">
+                {row.paidAt ? fmtDateTime(row.paidAt) : "—"}
+              </span>
+            </div>
+          </div>
         );
       },
     },
     {
-      title: "Mã giao dịch",
-      dataIndex: "transactionRef",
-      key: "txRef",
-      render: (v) =>
-        v ? (
-          <span className="text-xs font-mono text-blue-600">{v}</span>
-        ) : (
-          <span className="text-gray-300 text-xs">—</span>
-        ),
+      title: "Trạng thái gói",
+      key: "status",
+      render: (_, row) => {
+        const cfg = STATUS_CFG[row.sub.status] ?? {};
+        return (
+          <div>
+            <span
+              className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-semibold border ${cfg.tw}`}
+            >
+              {cfg.icon}
+              {cfg.label}
+            </span>
+            <div className="text-[10px] text-gray-400 mt-1">
+              Tạo: {fmtDate(row.createdAt)}
+            </div>
+          </div>
+        );
+      },
     },
     {
-      title: "Thanh toán lúc",
-      key: "paidAt",
+      title: "Thời hạn & Huỷ",
+      key: "dates",
       render: (_, row) => (
-        <span className="text-xs text-gray-400">
-          {row.paidAt ? fmtDateTime(row.paidAt) : "—"}
-        </span>
-      ),
-    },
-    {
-      title: "Tạo lúc",
-      key: "createdAt",
-      render: (_, row) => (
-        <span className="text-xs text-gray-400">
-          {fmtDateTime(row.createdAt)}
-        </span>
+        <div className="text-xs text-gray-500 space-y-0.5">
+          <p>
+            Từ:{" "}
+            <span className="font-medium text-gray-700">
+              {fmtDate(row.sub.startDate)}
+            </span>
+          </p>
+          <p>
+            Đến:{" "}
+            <span className="font-medium text-gray-700">
+              {fmtDate(row.sub.endDate)}
+            </span>
+          </p>
+          {row.sub.cancelledAt ? (
+            <p className="text-red-500 text-[11px]">
+              Huỷ: {fmtDate(row.sub.cancelledAt)}
+            </p>
+          ) : row.sub.autoRenew ? (
+            <Tag color="green" className="rounded-full text-[10px] m-0">
+              Tự gia hạn
+            </Tag>
+          ) : null}
+        </div>
       ),
     },
   ];
@@ -742,7 +656,7 @@ export default function AdminRevenue() {
         {/* ── Charts ── */}
         <motion.div variants={fadeUp}>{chartsBlock}</motion.div>
 
-        {/* ── Bảng Đăng ký ── */}
+        {/* ── Bảng Giao dịch & Đăng ký (Consolidated) ── */}
         <motion.div variants={fadeUp}>
           <Card
             className="rounded-2xl border-0 shadow-sm"
@@ -750,7 +664,7 @@ export default function AdminRevenue() {
             title={
               <div className="flex items-center justify-between flex-wrap gap-2">
                 <span className="font-bold text-gray-800">
-                  Danh sách đăng ký
+                  Quản lý Giao dịch & Đăng ký
                 </span>
                 <span className="text-xs text-gray-400 font-normal">
                   {filtered.length} kết quả
@@ -762,7 +676,7 @@ export default function AdminRevenue() {
             <div className="px-4 pb-3 pt-1 border-b border-gray-100 flex flex-wrap gap-3 items-center">
               <Input
                 prefix={<SearchOutlined className="text-gray-300" />}
-                placeholder="Tìm theo mã, tên, gói..."
+                placeholder="Tìm mã thanh toán, đơn vị, gói..."
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
                 allowClear
@@ -773,7 +687,7 @@ export default function AdminRevenue() {
                 onChange={setStatusFilter}
                 className="w-44"
                 options={[
-                  { value: "ALL", label: "Tất cả trạng thái" },
+                  { value: "ALL", label: "Tất cả trạng thái gói" },
                   { value: "ACTIVE", label: "Đang hoạt động" },
                   { value: "EXPIRED", label: "Hết hạn" },
                   { value: "CANCELLED", label: "Đã huỷ" },
@@ -793,63 +707,10 @@ export default function AdminRevenue() {
             </div>
             <Table
               dataSource={filtered}
-              columns={subColumns}
-              rowKey="id"
+              columns={columns}
+              rowKey={(row) => `${row.paymentId}-${row.paymentCode}`}
               pagination={{
-                pageSize: 8,
-                showSizeChanger: false,
-                showTotal: (t) => `${t} đăng ký`,
-                className: "px-4 pb-4",
-              }}
-              locale={{
-                emptyText: (
-                  <div className="py-12 text-gray-400 text-sm text-center">
-                    Không tìm thấy đăng ký nào
-                  </div>
-                ),
-              }}
-              className="[&_.ant-table-thead_th]:bg-gray-50 [&_.ant-table-thead_th]:text-gray-500 [&_.ant-table-thead_th]:font-medium"
-              components={{
-                body: {
-                  row: ({ children, ...props }) => (
-                    <motion.tr
-                      {...props}
-                      initial={{ opacity: 0, x: -4 }}
-                      animate={{ opacity: 1, x: 0 }}
-                      transition={{ duration: 0.16 }}
-                      className="hover:bg-gray-50/80 transition-colors"
-                    >
-                      {children}
-                    </motion.tr>
-                  ),
-                },
-              }}
-            />
-          </Card>
-        </motion.div>
-
-        {/* ── Bảng Giao dịch ── */}
-        <motion.div variants={fadeUp}>
-          <Card
-            className="rounded-2xl border-0 shadow-sm"
-            bodyStyle={{ padding: 0 }}
-            title={
-              <div className="flex items-center justify-between flex-wrap gap-2">
-                <span className="font-bold text-gray-800">
-                  Lịch sử giao dịch
-                </span>
-                <span className="text-xs text-gray-400 font-normal">
-                  {allTransactions.length} giao dịch
-                </span>
-              </div>
-            }
-          >
-            <Table
-              dataSource={allTransactions}
-              columns={txColumns}
-              rowKey="paymentId"
-              pagination={{
-                pageSize: 8,
+                pageSize: 10,
                 showSizeChanger: false,
                 showTotal: (t) => `${t} giao dịch`,
                 className: "px-4 pb-4",
@@ -857,7 +718,7 @@ export default function AdminRevenue() {
               locale={{
                 emptyText: (
                   <div className="py-12 text-gray-400 text-sm text-center">
-                    Chưa có giao dịch
+                    Không tìm thấy dữ liệu phù hợp
                   </div>
                 ),
               }}

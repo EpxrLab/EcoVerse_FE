@@ -44,9 +44,7 @@ const { TextArea } = Input;
 
 const GAME_TYPE_OPTIONS = [
   { value: "RUN_SORTING", label: "Chạy & phân loại (RUN_SORTING)" },
-  { value: "IMAGE_MATCHING", label: "Nối hình ảnh (IMAGE_MATCHING)" },
-  { value: "SPEED_CLASSIFY", label: "Phân loại nhanh (SPEED_CLASSIFY)" },
-  { value: "WASTE_SORTING", label: "Phân loại rác (WASTE_SORTING)" },
+  { value: "GRABBER_SORTING", label: "Gắp rác (GRABBER_SORTING)" },
   { value: "COLLECT_SORTING", label: "Thu gom & phân loại (COLLECT_SORTING)" },
 ];
 
