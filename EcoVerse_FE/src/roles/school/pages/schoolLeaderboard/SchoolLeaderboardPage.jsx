@@ -22,8 +22,23 @@ import {
   School,
   Handshake,
   Flame,
+  Calendar,
+  Clock,
+  CheckCircle2,
+  XCircle,
+  Gamepad2,
+  ClipboardList,
+  TrendingUp,
+  Percent,
 } from "lucide-react";
 import { cn } from "@/shared/lib/utils";
+import {
+  Dialog,
+  DialogContent,
+} from "@/shared/components/ui/dialog";
+import { ScrollArea } from "@/shared/components/ui/scroll-area";
+import { Badge } from "@/shared/components/ui/badge";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/shared/components/ui/tabs";
 import { useCampaigns } from "../../features/campaigns/hooks/useCampaigns";
 import { campaignService } from "../../services/campaign.service";
 
@@ -63,12 +78,15 @@ const PODIUM_CONFIG = {
   },
 };
 
-function PodiumCard({ item, rank, isPartnership }) {
+function PodiumCard({ item, rank, isPartnership, onClick }) {
   const cfg = PODIUM_CONFIG[rank];
   if (!item) return <div className="flex-1" />;
 
   return (
-    <div className="flex-1 flex flex-col items-center gap-2">
+    <div 
+      className="flex-1 flex flex-col items-center gap-2 cursor-pointer group transition-transform hover:scale-105"
+      onClick={() => onClick && onClick(item)}
+    >
       {/* Icon trophy */}
       <div className="mb-1">{cfg.icon}</div>
 
@@ -115,11 +133,14 @@ function PodiumCard({ item, rank, isPartnership }) {
 }
 
 // ── Rank row for positions 4+ ─────────────────────────────────────────────────
-function RankRow({ item, isPartnership }) {
+function RankRow({ item, isPartnership, onClick }) {
   return (
-    <div className={cn(
-      "flex items-center gap-4 px-5 py-3.5 transition-all duration-150 hover:bg-muted/40 group",
-    )}>
+    <div 
+      onClick={() => onClick && onClick(item)}
+      className={cn(
+        "flex items-center gap-4 px-5 py-3.5 transition-all duration-150 hover:bg-muted/40 group cursor-pointer",
+      )}
+    >
       {/* Rank number */}
       <div className="w-8 text-center">
         <span className="text-sm font-black text-muted-foreground">#{item.rank}</span>
@@ -155,6 +176,189 @@ function RankRow({ item, isPartnership }) {
   );
 }
 
+function StudentHistoryModal({ isOpen, onClose, student, history, isLoading }) {
+  if (!student) return null;
+
+  return (
+    <Dialog open={isOpen} onOpenChange={onClose}>
+      <DialogContent className="max-w-4xl max-h-[90vh] p-0 overflow-hidden border-none shadow-2xl rounded-3xl">
+        <div className="bg-gradient-to-r from-eco-green to-eco-green-light p-8 text-white relative">
+          <div className="absolute top-0 right-0 p-8 opacity-10">
+            <Users className="w-32 h-32" />
+          </div>
+          <div className="relative flex items-center gap-6">
+            <div className="w-20 h-20 rounded-full bg-white/20 backdrop-blur-md flex items-center justify-center text-3xl font-black border-4 border-white/30 shadow-xl">
+              {student.studentName?.charAt(0)?.toUpperCase() || "?"}
+            </div>
+            <div>
+              <h2 className="text-3xl font-black drop-shadow-md">{student.studentName}</h2>
+              <div className="flex items-center gap-3 mt-1.5 text-white/90 font-medium">
+                <span className="flex items-center gap-1.5 bg-white/20 px-3 py-1 rounded-full text-xs">
+                  <Trophy className="w-3.5 h-3.5" /> Xếp hạng #{student.rank}
+                </span>
+                {student.schoolName && (
+                  <span className="flex items-center gap-1.5 bg-white/20 px-3 py-1 rounded-full text-xs">
+                    <School className="w-3.5 h-3.5" /> {student.schoolName}
+                  </span>
+                )}
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div className="p-6 bg-background">
+          {isLoading ? (
+            <div className="flex flex-col items-center justify-center py-20 gap-4">
+              <Loader2 className="w-12 h-12 text-eco-green animate-spin" />
+              <p className="text-muted-foreground font-bold animate-pulse">Đang truy xuất lịch sử học tập...</p>
+            </div>
+          ) : !history || ((history.gameHistories?.length || 0) === 0 && (history.quizHistories?.length || 0) === 0) ? (
+            <div className="text-center py-20">
+              <div className="w-20 h-20 bg-muted/50 rounded-full flex items-center justify-center mx-auto mb-4">
+                <ClipboardList className="w-10 h-10 text-muted-foreground opacity-30" />
+              </div>
+              <h3 className="text-xl font-bold text-foreground">Chưa có dữ liệu lịch sử</h3>
+              <p className="text-muted-foreground mt-2 max-w-xs mx-auto">Học sinh này chưa tham gia bất kỳ trò chơi hay bài kiểm tra nào trong vòng này.</p>
+            </div>
+          ) : (
+            <Tabs defaultValue="games" className="w-full">
+              <TabsList className="grid w-full grid-cols-2 mb-8 bg-muted/50 p-1 rounded-2xl h-14">
+                <TabsTrigger value="games" className="rounded-xl font-black text-sm data-[state=active]:bg-white data-[state=active]:text-eco-green data-[state=active]:shadow-md transition-all h-12">
+                  <Gamepad2 className="w-4 h-4 mr-2" /> Trò chơi ({history.gameHistories?.length || 0})
+                </TabsTrigger>
+                <TabsTrigger value="quizzes" className="rounded-xl font-black text-sm data-[state=active]:bg-white data-[state=active]:text-eco-green data-[state=active]:shadow-md transition-all h-12">
+                  <ClipboardList className="w-4 h-4 mr-2" /> Quiz ({history.quizHistories?.length || 0})
+                </TabsTrigger>
+              </TabsList>
+
+              <ScrollArea className="h-[450px] pr-4 -mr-4">
+                <TabsContent value="games" className="space-y-6 mt-0">
+                  {history.gameHistories?.map((game, gIdx) => (
+                    <div key={gIdx} className="space-y-3">
+                      <div className="flex items-center gap-2 px-2">
+                        <div className="w-2 h-6 bg-eco-green rounded-full" />
+                        <h4 className="font-black text-lg text-foreground">{game.gameTypeName}</h4>
+                      </div>
+                      <div className="grid gap-4">
+                        {game.sessions?.map((session, sIdx) => (
+                          <div key={sIdx} className="group relative bg-card hover:bg-muted/30 border-2 border-border/50 hover:border-eco-green/30 rounded-2xl p-5 transition-all duration-300">
+                            <div className="flex flex-wrap items-center justify-between gap-4">
+                              <div className="flex items-center gap-4">
+                                <div className={cn(
+                                  "w-12 h-12 rounded-xl flex items-center justify-center shrink-0 shadow-sm",
+                                  session.isPassed ? "bg-eco-green/10 text-eco-green" : "bg-red-50 text-red-500"
+                                )}>
+                                  {session.isPassed ? <CheckCircle2 className="w-6 h-6" /> : <XCircle className="w-6 h-6" />}
+                                </div>
+                                <div>
+                                  <div className="flex items-center gap-2">
+                                    <span className="font-black text-foreground">Cấp độ {session.currentLevel}</span>
+                                    <Badge variant="outline" className={cn(
+                                      "text-[10px] px-2 py-0 h-5 font-bold uppercase",
+                                      session.isPassed ? "border-eco-green text-eco-green bg-eco-green/5" : "border-red-300 text-red-500 bg-red-50"
+                                    )}>
+                                      {session.isPassed ? "Hoàn thành" : "Thất bại"}
+                                    </Badge>
+                                  </div>
+                                  <p className="text-xs text-muted-foreground flex items-center gap-1.5 mt-1 font-medium">
+                                    <Calendar className="w-3 h-3" /> {new Date(session.sessionStart).toLocaleDateString('vi-VN')}
+                                    <Clock className="w-3 h-3 ml-2" /> {new Date(session.sessionStart).toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' })}
+                                  </p>
+                                </div>
+                              </div>
+
+                              <div className="flex items-center gap-8">
+                                <div className="text-center">
+                                  <p className="text-xs text-muted-foreground font-bold uppercase tracking-wider mb-1">Độ chính xác</p>
+                                  <div className="flex items-center justify-center gap-1.5">
+                                    <Percent className="w-3.5 h-3.5 text-eco-green" />
+                                    <span className="text-lg font-black text-foreground">{session.accuracyPercentage}%</span>
+                                  </div>
+                                </div>
+                                <div className="text-center hidden sm:block">
+                                  <p className="text-xs text-muted-foreground font-bold uppercase tracking-wider mb-1">Thời gian</p>
+                                  <div className="flex items-center justify-center gap-1.5">
+                                    <Clock className="w-3.5 h-3.5 text-amber-500" />
+                                    <span className="text-lg font-black text-foreground">{session.timeTakenSeconds}s</span>
+                                  </div>
+                                </div>
+                                <div className="text-center">
+                                  <p className="text-xs text-muted-foreground font-bold uppercase tracking-wider mb-1">Xu nhận</p>
+                                  <div className="flex items-center justify-center gap-1">
+                                    <span className="text-lg font-black text-amber-500">+{session.coinAwarded}</span>
+                                    <span className="text-xs font-bold text-amber-500 ml-0.5">XU</span>
+                                  </div>
+                                </div>
+                              </div>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  ))}
+                </TabsContent>
+
+                <TabsContent value="quizzes" className="space-y-6 mt-0">
+                  {history.quizHistories?.map((quiz, qIdx) => (
+                    <div key={qIdx} className="space-y-3">
+                      <div className="flex items-center gap-2 px-2">
+                        <div className="w-2 h-6 bg-eco-green rounded-full" />
+                        <h4 className="font-black text-lg text-foreground">{quiz.quizTitle}</h4>
+                      </div>
+                      <div className="grid gap-4">
+                        {quiz.attempts?.map((attempt, aIdx) => (
+                          <div key={aIdx} className="group relative bg-card hover:bg-muted/30 border-2 border-border/50 hover:border-eco-green/30 rounded-2xl p-5 transition-all duration-300">
+                            <div className="flex flex-wrap items-center justify-between gap-4">
+                              <div className="flex items-center gap-4">
+                                <div className={cn(
+                                  "w-12 h-12 rounded-xl flex items-center justify-center shrink-0 shadow-sm font-black text-lg",
+                                  attempt.isPassed ? "bg-eco-green/10 text-eco-green" : "bg-red-50 text-red-500"
+                                )}>
+                                  #{attempt.attemptNumber}
+                                </div>
+                                <div>
+                                  <div className="flex items-center gap-2">
+                                    <span className="font-black text-foreground">Lần {attempt.attemptNumber}</span>
+                                    <Badge variant="outline" className={cn(
+                                      "text-[10px] px-2 py-0 h-5 font-bold uppercase",
+                                      attempt.isPassed ? "border-eco-green text-eco-green bg-eco-green/5" : "border-red-300 text-red-500 bg-red-50"
+                                    )}>
+                                      {attempt.isPassed ? "Đạt" : "Không đạt"}
+                                    </Badge>
+                                  </div>
+                                  <p className="text-xs text-muted-foreground flex items-center gap-1.5 mt-1 font-medium">
+                                    <Clock className="w-3 h-3" /> Thời gian: {attempt.timeTakenSeconds}s
+                                  </p>
+                                </div>
+                              </div>
+
+                              <div className="flex items-center gap-12">
+                                <div className="text-right">
+                                  <p className="text-xs text-muted-foreground font-bold uppercase tracking-wider mb-1">Điểm số</p>
+                                  <div className="flex items-center justify-end gap-2">
+                                    <TrendingUp className={cn("w-4 h-4", attempt.isPassed ? "text-eco-green" : "text-red-500")} />
+                                    <span className={cn("text-2xl font-black", attempt.isPassed ? "text-eco-green" : "text-red-500")}>
+                                      {attempt.scorePercentage}%
+                                    </span>
+                                  </div>
+                                </div>
+                              </div>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  ))}
+                </TabsContent>
+              </ScrollArea>
+            </Tabs>
+          )}
+        </div>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
 // ── Main page ─────────────────────────────────────────────────────────────────
 export default function SchoolLeaderboardPage() {
   const { allCampaigns } = useCampaigns();
@@ -166,6 +370,12 @@ export default function SchoolLeaderboardPage() {
   const [currentPage, setCurrentPage] = useState(1);
   const [leaderboardData, setLeaderboardData] = useState([]);
   const [isLoading, setIsLoading] = useState(false);
+
+  // History State
+  const [selectedStudent, setSelectedStudent] = useState(null);
+  const [studentHistory, setStudentHistory] = useState(null);
+  const [isHistoryLoading, setIsHistoryLoading] = useState(false);
+  const [isHistoryModalOpen, setIsHistoryModalOpen] = useState(false);
 
   const relevantCampaigns = useMemo(() => {
     const list = allCampaigns.filter(c => {
@@ -210,6 +420,24 @@ export default function SchoolLeaderboardPage() {
 
   useEffect(() => { fetchLeaderboard(); }, [selectedCampaignId, selectedRoundId]);
 
+  const handleStudentClick = async (student) => {
+    setSelectedStudent(student);
+    setIsHistoryModalOpen(true);
+    setIsHistoryLoading(true);
+    try {
+      if (selectedCampaignId && selectedRoundId) {
+        const res = await campaignService.getStudentHistory(selectedCampaignId, selectedRoundId, student.studentId);
+        setStudentHistory(res?.data?.data || null);
+      } else {
+        setStudentHistory(null);
+      }
+    } catch {
+      setStudentHistory(null);
+    } finally {
+      setIsHistoryLoading(false);
+    }
+  };
+
   useEffect(() => {
     const list = campaignType === "school" ? relevantCampaigns.school : relevantCampaigns.partnership;
     const initialId = list[0]?.id || "";
@@ -225,13 +453,25 @@ export default function SchoolLeaderboardPage() {
   }, [campaignType, relevantCampaigns.school, relevantCampaigns.partnership]);
 
   useEffect(() => {
-    if (campaignType === "partnership" && selectedCampaignId) {
+    if (selectedCampaignId) {
       const fetchRounds = async () => {
         try {
-          const res = await campaignService.getPartnershipInvitationDetail(selectedCampaignId);
-          const rds = res.data?.data?.rounds || [];
-          setRounds(rds);
-          setSelectedRoundId(rds[0]?.roundId || "");
+          let res;
+          if (campaignType === "partnership") {
+            res = await campaignService.getPartnershipInvitationDetail(selectedCampaignId);
+            const rds = res.data?.data?.rounds || [];
+            setRounds(rds);
+            setSelectedRoundId(rds[0]?.roundId || "");
+          } else {
+            res = await campaignService.getCampaignById(selectedCampaignId);
+            const rds = res.data?.data?.rounds || [];
+            const formattedRounds = rds.map(r => ({
+              roundId: r.id,
+              roundName: r.roundName || `Vòng ${r.roundNumber || 1}`
+            }));
+            setRounds(formattedRounds);
+            setSelectedRoundId(formattedRounds[0]?.roundId || "");
+          }
         } catch {
           setRounds([]);
           setSelectedRoundId("");
@@ -246,8 +486,8 @@ export default function SchoolLeaderboardPage() {
 
   const filteredLeaderboard = useMemo(() =>
     leaderboardData.filter(item =>
-      item.studentName?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      item.schoolName?.toLowerCase().includes(searchQuery.toLowerCase())
+      (item.studentName || "").toLowerCase().includes(searchQuery.toLowerCase()) ||
+      (item.schoolName || "").toLowerCase().includes(searchQuery.toLowerCase())
     ), [leaderboardData, searchQuery]);
 
   const top3 = filteredLeaderboard.slice(0, 3);
@@ -408,9 +648,12 @@ export default function SchoolLeaderboardPage() {
                         value={selectedRoundId}
                         onValueChange={v => { setSelectedRoundId(v); setCurrentPage(1); }}
                       >
-                        <SelectTrigger className="h-10 border-2 border-amber-300/60 rounded-xl font-semibold w-full">
+                        <SelectTrigger className={cn(
+                          "h-10 border-2 rounded-xl font-semibold w-full",
+                          isPartnership ? "border-amber-300/60" : "border-eco-green/30"
+                        )}>
                           <div className="flex items-center gap-2 min-w-0">
-                            <Target className="w-4 h-4 text-amber-500 shrink-0" />
+                            <Target className={cn("w-4 h-4 shrink-0", isPartnership ? "text-amber-500" : "text-eco-green")} />
                             <SelectValue placeholder="Chọn vòng..." />
                           </div>
                         </SelectTrigger>
@@ -483,9 +726,9 @@ export default function SchoolLeaderboardPage() {
                 </p>
                 {/* Reorder: 2nd | 1st | 3rd */}
                 <div className="flex items-end justify-center gap-4 max-w-md mx-auto">
-                  <PodiumCard item={top3[1]} rank={2} isPartnership={isPartnership} />
-                  <PodiumCard item={top3[0]} rank={1} isPartnership={isPartnership} />
-                  <PodiumCard item={top3[2]} rank={3} isPartnership={isPartnership} />
+                  <PodiumCard item={top3[1]} rank={2} isPartnership={isPartnership} onClick={handleStudentClick} />
+                  <PodiumCard item={top3[0]} rank={1} isPartnership={isPartnership} onClick={handleStudentClick} />
+                  <PodiumCard item={top3[2]} rank={3} isPartnership={isPartnership} onClick={handleStudentClick} />
                 </div>
               </div>
             )}
@@ -500,7 +743,7 @@ export default function SchoolLeaderboardPage() {
                 </div>
                 <div className="divide-y divide-border/50">
                   {paginatedRest.map(item => (
-                    <RankRow key={`${item.studentId}-${item.rank}`} item={item} isPartnership={isPartnership} />
+                    <RankRow key={`${item.studentId}-${item.rank}`} item={item} isPartnership={isPartnership} onClick={handleStudentClick} />
                   ))}
                 </div>
               </>
@@ -535,6 +778,15 @@ export default function SchoolLeaderboardPage() {
           </>
         )}
       </Card>
+
+      {/* ── Student History Modal ────────────────────────────────────────── */}
+      <StudentHistoryModal
+        isOpen={isHistoryModalOpen}
+        onClose={() => setIsHistoryModalOpen(false)}
+        student={selectedStudent}
+        history={studentHistory}
+        isLoading={isHistoryLoading}
+      />
     </div>
   );
 }
