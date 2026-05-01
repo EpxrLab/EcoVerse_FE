@@ -1,7 +1,7 @@
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/shared/components/ui/table';
 import { Avatar, AvatarFallback } from '@/shared/components/ui/avatar';
 import { Button } from '@/shared/components/ui/button';
-import { School, ChevronLeft, ChevronRight, Coins, Gamepad2, BookOpen } from 'lucide-react';
+import { School, ChevronLeft, ChevronRight, Gamepad2, BookOpen } from 'lucide-react';
 import { cn } from '@/shared/lib/utils';
 
 const getInitials = (name) => {
@@ -9,7 +9,7 @@ const getInitials = (name) => {
   return parts[parts.length - 1]?.charAt(0).toUpperCase() || '?';
 };
 
-export function LeaderboardTable({ data, currentPage, totalPages, totalItems, itemsPerPage, onPageChange }) {
+export function LeaderboardTable({ data, currentPage, totalPages, totalItems, itemsPerPage, onPageChange, onRowClick }) {
   return (
     <div className="space-y-4">
       <div className="bg-card border rounded-2xl shadow-sm overflow-hidden">
@@ -39,8 +39,9 @@ export function LeaderboardTable({ data, currentPage, totalPages, totalItems, it
               return (
                 <TableRow
                   key={student.studentId}
+                  onClick={() => onRowClick?.(student)}
                   className={cn(
-                    'group transition-colors border-b border-border/30 last:border-0',
+                    'group transition-colors border-b border-border/30 last:border-0 cursor-pointer',
                     isTop3 ? 'bg-primary/[0.03] hover:bg-primary/[0.06]' : 'hover:bg-muted/40'
                   )}
                 >

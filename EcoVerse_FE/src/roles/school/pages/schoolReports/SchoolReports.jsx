@@ -21,7 +21,6 @@ import { Progress } from "@/shared/components/ui/progress";
 import { reportService } from "../../services/report.service";
 import { cn } from "@/shared/lib/utils";
 import * as XLSX from "xlsx";
-import { toLocalISO } from "@/utils/dateUtils";
 
 export default function SchoolReports() {
   const [activeTab, setActiveTab] = useState("students");

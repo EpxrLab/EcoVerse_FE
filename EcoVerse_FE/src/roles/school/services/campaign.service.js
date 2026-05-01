@@ -102,5 +102,9 @@ export const campaignService = {
 
   assignStudentsToCampaign: (id, studentIds) => {
     return axios.put(`/school/campaigns/${id}/assigned-students`, { studentIds });
+  },
+
+  getStudentHistory: (campaignId, roundId, studentId) => {
+    return axios.get(`/school/campaigns/${campaignId}/rounds/${roundId}/students/${studentId}/history`);
   }
 };

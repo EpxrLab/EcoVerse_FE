@@ -217,10 +217,11 @@ export function CampaignForm({
                       <Label htmlFor="startDate">Ngày bắt đầu chiến dịch *</Label>
                       <DatePicker
                         id="startDate"
-                        showTime
+                        showTime={{ format: 'HH:mm', showNow: false }}
                         format="DD/MM/YYYY HH:mm"
                         className="w-full h-10"
                         placeholder="Chọn ngày bắt đầu"
+                        getPopupContainer={(trigger) => trigger.parentElement}
                         value={formData.startDate ? dayjs(formData.startDate) : null}
                         onChange={(date) => {
                           const newStartDate = date ? date.format('YYYY-MM-DDTHH:mm') : '';
@@ -239,10 +240,11 @@ export function CampaignForm({
                       <Label htmlFor="endDate">Ngày kết thúc chiến dịch *</Label>
                       <DatePicker
                         id="endDate"
-                        showTime
+                        showTime={{ format: 'HH:mm', showNow: false }}
                         format="DD/MM/YYYY HH:mm"
                         className="w-full h-10"
                         placeholder="Chọn ngày kết thúc"
+                        getPopupContainer={(trigger) => trigger.parentElement}
                         value={formData.endDate ? dayjs(formData.endDate) : null}
                         onChange={(date) => {
                           const newEndDate = date ? date.format('YYYY-MM-DDTHH:mm') : '';
@@ -261,10 +263,11 @@ export function CampaignForm({
                       <Label htmlFor="registrationDate">Ngày mở đăng ký *</Label>
                       <DatePicker
                         id="registrationDate"
-                        showTime
+                        showTime={{ format: 'HH:mm', showNow: false }}
                         format="DD/MM/YYYY HH:mm"
                         className="w-full h-10"
                         placeholder="Chọn ngày mở đăng ký"
+                        getPopupContainer={(trigger) => trigger.parentElement}
                         value={formData.registrationDate ? dayjs(formData.registrationDate) : null}
                         onChange={(date) => onFormChange({ registrationDate: date ? date.format('YYYY-MM-DDTHH:mm') : '' })}
                       />
@@ -273,10 +276,11 @@ export function CampaignForm({
                       <Label htmlFor="registrationDeadline">Hạn chót đăng ký *</Label>
                       <DatePicker
                         id="registrationDeadline"
-                        showTime
+                        showTime={{ format: 'HH:mm', showNow: false }}
                         format="DD/MM/YYYY HH:mm"
                         className="w-full h-10"
                         placeholder="Chọn hạn chót đăng ký"
+                        getPopupContainer={(trigger) => trigger.parentElement}
                         value={formData.registrationDeadline ? dayjs(formData.registrationDeadline) : null}
                         onChange={(date) => onFormChange({ registrationDeadline: date ? date.format('YYYY-MM-DDTHH:mm') : '' })}
                       />
@@ -296,10 +300,11 @@ export function CampaignForm({
                       <Label htmlFor="invitationDate">Ngày gửi lời mời *</Label>
                       <DatePicker
                         id="invitationDate"
-                        showTime
+                        showTime={{ format: 'HH:mm', showNow: false }}
                         format="DD/MM/YYYY HH:mm"
                         className="w-full h-10"
                         placeholder="Chọn ngày gửi lời mời"
+                        getPopupContainer={(trigger) => trigger.parentElement}
                         value={formData.invitationDate ? dayjs(formData.invitationDate) : null}
                         onChange={(date) => onFormChange({ invitationDate: date ? date.format('YYYY-MM-DDTHH:mm') : '' })}
                       />
@@ -308,10 +313,11 @@ export function CampaignForm({
                       <Label htmlFor="invitationDeadline">Hạn chót xác nhận lời mời *</Label>
                       <DatePicker
                         id="invitationDeadline"
-                        showTime
+                        showTime={{ format: 'HH:mm', showNow: false }}
                         format="DD/MM/YYYY HH:mm"
                         className="w-full h-10"
                         placeholder="Chọn hạn chót xác nhận"
+                        getPopupContainer={(trigger) => trigger.parentElement}
                         value={formData.invitationDeadline ? dayjs(formData.invitationDeadline) : null}
                         onChange={(date) => onFormChange({ invitationDeadline: date ? date.format('YYYY-MM-DDTHH:mm') : '' })}
                       />
@@ -321,8 +327,12 @@ export function CampaignForm({
                       <Input
                         id="maxStudentsPerSchool"
                         type="number"
+                        min={0}
                         value={formData.maxStudentsPerSchool}
-                        onChange={(e) => onFormChange({ maxStudentsPerSchool: parseInt(e.target.value) || 0 })}
+                        onChange={(e) => {
+                          const val = Math.max(0, parseInt(e.target.value) || 0);
+                          onFormChange({ maxStudentsPerSchool: val });
+                        }}
                       />
                     </div>
                      <div className="space-y-2">
@@ -330,9 +340,10 @@ export function CampaignForm({
                       <Input
                         id="totalStudentQuota"
                         type="number"
+                        min={0}
                         value={formData.totalStudentQuota}
                         onChange={(e) => {
-                          const quota = parseInt(e.target.value) || 0;
+                          const quota = Math.max(0, parseInt(e.target.value) || 0);
                           const updates = { totalStudentQuota: quota };
                           if (formData.rounds.length > 0) {
                             const newRounds = [...formData.rounds];
@@ -348,9 +359,10 @@ export function CampaignForm({
                       <Input
                         id="topRankingCount"
                         type="number"
+                        min={0}
                         value={formData.topRankingCount}
                         onChange={(e) => {
-                          const count = parseInt(e.target.value) || 0;
+                          const count = Math.max(0, parseInt(e.target.value) || 0);
                           const updates = { topRankingCount: count };
                           
                           // Sync rewards array length with ranking count
@@ -522,10 +534,11 @@ export function CampaignForm({
                           <Label>{round.isFinalRound ? 'Top của giải' : 'Số lượng thăng hạng'}</Label>
                           <Input
                             type="number"
+                            min={0}
                             value={round.advanceCount}
                             disabled={round.isFinalRound}
                             onChange={(e) => {
-                              const val = parseInt(e.target.value) || 0;
+                              const val = Math.max(0, parseInt(e.target.value) || 0);
                               const newRounds = [...formData.rounds];
                               newRounds[index].advanceCount = val;
                               
@@ -541,10 +554,11 @@ export function CampaignForm({
                         <div className="space-y-2">
                           <Label>Thời gian bắt đầu *</Label>
                           <DatePicker
-                            showTime
+                            showTime={{ format: 'HH:mm', showNow: false }}
                             format="DD/MM/YYYY HH:mm"
                             className="w-full h-10"
                             placeholder="Chọn ngày bắt đầu"
+                            getPopupContainer={(trigger) => trigger.parentElement}
                             value={round.startTime ? dayjs(round.startTime) : null}
                             onChange={(date) => {
                               const newRounds = [...formData.rounds];
@@ -556,10 +570,11 @@ export function CampaignForm({
                         <div className="space-y-2">
                           <Label>Thời gian kết thúc *</Label>
                           <DatePicker
-                            showTime
+                            showTime={{ format: 'HH:mm', showNow: false }}
                             format="DD/MM/YYYY HH:mm"
                             className="w-full h-10"
                             placeholder="Chọn ngày kết thúc"
+                            getPopupContainer={(trigger) => trigger.parentElement}
                             value={round.endTime ? dayjs(round.endTime) : null}
                             onChange={(date) => {
                               const newEndTime = date ? date.format('YYYY-MM-DDTHH:mm') : '';

@@ -45,23 +45,25 @@ export function usePartnershipCampaigns() {
     try {
       setLoading(true);
       const res = await partnershipCampaignService.getCampaigns();
-      const normalizedData = (res.data?.data || []).map(campaign => ({
-        ...campaign,
-        status: (s => {
-          const status = s?.toLowerCase();
-          if (status === 'active') return 'on_going';
-          if (status === 'joining') return 'inviting';
-          return status || '';
-        })(campaign.status),
-        startDate: toLocalISO(campaign.startDate),
-        endDate: toLocalISO(campaign.endDate),
-        registrationDate: toLocalISO(campaign.registrationDate),
-        registrationDeadline: toLocalISO(campaign.registrationDeadline || campaign.registrationDateDeadline),
-        invitationDate: toLocalISO(campaign.invitationDate),
-        invitationDeadline: toLocalISO(campaign.invitationDeadline),
-        hasGame: campaign.hasGame ?? false,
-        hasQuiz: campaign.hasQuiz ?? false,
-        rounds: (campaign.rounds || campaign.qualifying_rounds || []).map(r => ({
+      const rawCampaigns = res.data?.data || [];
+
+      // Fetch full details for each campaign to get rounds data
+      // This is necessary because the list API may not return the rounds array
+      const detailedCampaigns = await Promise.all(
+        rawCampaigns.map(async (c) => {
+          try {
+            const detailRes = await partnershipCampaignService.getCampaignById(c.id);
+            // Merge list item with detail item to preserve all fields
+            return { ...c, ...(detailRes.data?.data || {}) };
+          } catch (e) {
+            console.error(`Failed to fetch details for campaign ${c.id}`, e);
+            return c;
+          }
+        })
+      );
+
+      const normalizedData = detailedCampaigns.map(campaign => {
+        const rounds = (campaign.rounds || campaign.qualifying_rounds || []).map(r => ({
           ...r,
           startTime: toLocalISO(r.startTime),
           endTime: toLocalISO(r.endTime),
@@ -76,8 +78,31 @@ export function usePartnershipCampaigns() {
             }
             return config || {};
           })(),
-        })),
-      }));
+        }));
+
+        // Calculate flags based on rounds if they are missing or false
+        const hasGame = campaign.hasGame || rounds.some(r => r.game_type_id || r.gameTypeId || r.gameId);
+        const hasQuiz = campaign.hasQuiz || rounds.some(r => (r.quiz_ids && r.quiz_ids.length > 0) || (r.quizzes && r.quizzes.length > 0) || r.hasQuiz);
+
+        return {
+          ...campaign,
+          status: (s => {
+            const status = s?.toLowerCase();
+            if (status === 'active') return 'on_going';
+            if (status === 'joining') return 'inviting';
+            return status || '';
+          })(campaign.status),
+          startDate: toLocalISO(campaign.startDate),
+          endDate: toLocalISO(campaign.endDate),
+          registrationDate: toLocalISO(campaign.registrationDate),
+          registrationDeadline: toLocalISO(campaign.registrationDeadline || campaign.registrationDateDeadline),
+          invitationDate: toLocalISO(campaign.invitationDate),
+          invitationDeadline: toLocalISO(campaign.invitationDeadline),
+          hasGame,
+          hasQuiz,
+          rounds,
+        };
+      });
       setCampaigns(normalizedData);
     } catch (error) {
       console.error('Failed to fetch campaigns', error);
