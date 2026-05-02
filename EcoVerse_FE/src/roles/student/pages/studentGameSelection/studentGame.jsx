@@ -128,6 +128,7 @@ export default function StudentGame() {
   const [error, setError] = useState(null);
   const [isPreviewMode, setIsPreviewMode] = useState(false);
   const [isCompletedMode, setIsCompletedMode] = useState(false);
+  const isPartnership = campaign?.campaignType === "PARTNERSHIP_EVENT";
 
   useEffect(() => {
     let cancelled = false;
@@ -867,7 +868,13 @@ export default function StudentGame() {
                         <div className="hidden sm:block w-px h-10 bg-gray-200" />
 
                         {/* Performance Stats */}
-                        <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 flex-1">
+                        <div
+                          className={`grid gap-4 flex-1 ${
+                            isPartnership
+                              ? "grid-cols-2 sm:grid-cols-3" // Nếu là Partnership: 3 cột trên desktop
+                              : "grid-cols-2 sm:grid-cols-4" // Nếu bình thường: 4 cột trên desktop
+                          }`}
+                        >
                           <div className="flex flex-col">
                             <span className="text-[10px] text-gray-400 font-bold uppercase tracking-wider">
                               Chính xác
@@ -898,15 +905,17 @@ export default function StudentGame() {
                             </span>
                           </div>
 
-                          <div className="flex flex-col">
-                            <span className="text-[10px] text-gray-400 font-bold uppercase tracking-wider">
-                              Xu nhận
-                            </span>
-                            <span className="text-base font-black text-amber-600 flex items-center gap-1">
-                              +{item.coinAwarded || 0}
-                              <CoinIcon className="w-4 h-4" />
-                            </span>
-                          </div>
+                          {!isPartnership && (
+                            <div className="flex flex-col">
+                              <span className="text-[10px] text-gray-400 font-bold uppercase tracking-wider">
+                                Xu nhận
+                              </span>
+                              <span className="text-base font-black text-amber-600 flex items-center gap-1">
+                                +{item.coinAwarded || 0}
+                                <CoinIcon className="w-4 h-4" />
+                              </span>
+                            </div>
+                          )}
                         </div>
 
                         <div className="hidden lg:block w-px h-10 bg-gray-200" />

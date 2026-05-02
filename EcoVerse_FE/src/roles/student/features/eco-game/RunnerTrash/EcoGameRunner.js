@@ -567,7 +567,6 @@ export default class EcoGameRunner {
     let mesh;
     let trashUserData;
 
-    // Use API wasteItems with valid imagePresignedUrl
     const apiItems = this.wasteItems.filter(
       (w) => w.presignedModel3dUrl || w.imagePresignedUrl,
     );
