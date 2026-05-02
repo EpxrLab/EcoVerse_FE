@@ -10,7 +10,7 @@ import EcoGameRunner from "./RunnerTrash/EcoGameRunner";
 import EcoGameSorter from "./EcoGameSorter";
 import EcoSeaRescue from "./SeaRescue/EcoSeaRescue";
 import EcoGrabber from "./EcoGrabber/EcoGrabber";
-import { DEFAULT_LEVEL_CONFIG, mergeLevelConfig } from "./gameConfig";
+import { mergeLevelConfig } from "./gameConfig";
 
 export default class EcoGame {
   constructor() {
@@ -271,10 +271,8 @@ export default class EcoGame {
       this.levelConfig.sorter,
       this.levelConfig,
     );
-    await this.sorter.init(onProgress);
-    this.activeStage = this.sorter;
 
-    // Register callbacks
+    // Register callbacks BEFORE init so initial updates propagate
     this.sorter.onScoreUpdate((score, remaining) => {
       if (this._hudCallbacks.onSortingUpdate) {
         this._hudCallbacks.onSortingUpdate(score, remaining);
@@ -290,6 +288,9 @@ export default class EcoGame {
     this.sorter.onStageComplete((score) => {
       this._showResult(score);
     });
+
+    await this.sorter.init(onProgress);
+    this.activeStage = this.sorter;
   }
 
   _showResult(score, extra = {}) {
