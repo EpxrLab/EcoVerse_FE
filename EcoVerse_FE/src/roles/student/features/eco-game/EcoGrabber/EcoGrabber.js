@@ -545,14 +545,17 @@ export default class EcoGrabber {
     _spawnTrash() {
         const count = this.config.totalTrash;
         const usedPositions = [];
-        const hasApiItems = this.wasteItems && this.wasteItems.length > 0;
+        const validApiItems = this.wasteItems ? this.wasteItems.filter(
+            (w) => w.presignedModel3dUrl || w.imagePresignedUrl || w.preloadedModel
+        ) : [];
+        const hasApiItems = validApiItems.length > 0;
 
         for (let i = 0; i < count; i++) {
             let mesh;
             let def;
 
             if (hasApiItems) {
-                const apiItem = this.wasteItems[i % this.wasteItems.length];
+                const apiItem = validApiItems[i % validApiItems.length];
                 const itemId = apiItem.wasteItemId || apiItem.id;
                 const cachedModel = this._modelCache.get(itemId);
 
@@ -789,7 +792,7 @@ export default class EcoGrabber {
             }
 
             // Priority 2: Load from URL
-            const url = item.model3dPresignedUrl || item.modelUrl;
+            const url = item.presignedModel3dUrl || item.imagePresignedUrl;
             if (!url || typeof url !== "string") {
                 loaded++;
                 return;
@@ -1343,12 +1346,11 @@ export default class EcoGrabber {
 
         // ── Manual Control ──
         if (this.grabState === GrabState.MANUAL) {
-            // Rotation (A/D or Arrows)
             if (this.keys["KeyA"] || this.keys["ArrowLeft"]) {
-                this.craneAngle += this.config.rotationSpeed * delta;
+                this.craneAngle -= this.config.rotationSpeed * delta;
             }
             if (this.keys["KeyD"] || this.keys["ArrowRight"]) {
-                this.craneAngle -= this.config.rotationSpeed * delta;
+                this.craneAngle += this.config.rotationSpeed * delta;
             }
             this.armGroup.rotation.y = this.craneAngle;
 
