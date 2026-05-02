@@ -29,67 +29,10 @@ const GrabState = {
     ASCENDING: "ASCENDING",
 };
 
-// Trash definitions (low-poly procedural)
-const GRABBER_TRASH_DEFS = [
-    {
-        id: "plastic_bag",
-        name: "Túi nilon",
-        bin: "general",
-        weight: 1,
-        color: 0xffffff, // Brighter white
-        shape: "bag",
-    },
-    {
-        id: "plastic_bottle",
-        name: "Chai nhựa",
-        bin: "recyclable",
-        weight: 1,
-        color: 0x00ffff, // Cyan/Bright blue
-        shape: "bottle",
-    },
-    {
-        id: "can",
-        name: "Vỏ lon",
-        bin: "recyclable",
-        weight: 1.5,
-        color: 0xffd700, // Gold/Bright Yellow
-        shape: "can",
-    },
-    {
-        id: "tire",
-        name: "Lốp xe cũ",
-        bin: "general",
-        weight: 4,
-        color: 0xff00ff, // Magenta (to stand out)
-        shape: "tire",
-    },
-    {
-        id: "tv",
-        name: "TV hỏng",
-        bin: "hazardous",
-        weight: 5,
-        color: 0x39ff14, // Neon Green
-        shape: "tv",
-    },
-    {
-        id: "fish_bone",
-        name: "Xương cá",
-        bin: "organic",
-        weight: 2,
-        color: 0xff8c00, // Bright Orange
-        shape: "fishbone",
-    },
-];
-
 // ─── Utility ──────────────────────────────────────────────────────────────────
 
 function randRange(min, max) {
     return Math.random() * (max - min) + min;
-}
-
-function createRoundedBoxGeometry(w, h, d, r = 0.05) {
-    // Simple box with bevel – approximated with RoundedBoxGeometry fallback
-    return new THREE.BoxGeometry(w, h, d, 2, 2, 2);
 }
 
 // ─── Main Class ───────────────────────────────────────────────────────────────
@@ -106,14 +49,14 @@ export default class EcoGrabber {
         this.scene = scene;
         this.camera = camera;
         this.stateManager = stateManager;
-        this._wasteItems = wasteItems;
+        this.wasteItems = wasteItems;
 
         // Config with defaults
         this.config = {
             gameTime: config.gameTime ?? 90,
-            rotationSpeed: config.rotationSpeed ?? 1.2,
-            descentSpeed: config.descentSpeed ?? 5,
-            ascentSpeed: config.ascentSpeed ?? 4,
+            rotationSpeed: config.rotationSpeed ?? 2.2, // Increased from 1.2
+            descentSpeed: config.descentSpeed ?? 12,    // Increased from 5
+            ascentSpeed: config.ascentSpeed ?? 10,     // Increased from 4
             totalTrash: config.totalTrash ?? 10,
             requiredPercentage: config.requiredPercentage ?? 60,
             penaltyTime: config.penaltyTime ?? 5,
@@ -154,6 +97,11 @@ export default class EcoGrabber {
         this._modelCache = new Map(); // Store GLB models from API
         this.seaFloor = null;
         this.targetShadow = null;
+        this.rockModel = null;
+        this.anemoneModels = [];
+        this.clownFishModels = [];
+        this.fishAnimatedModels = [];
+        this.turtleModels = [];
 
         // VFX state
         this.waterClarity = 0; // 0=dirty, 1=clean
@@ -161,11 +109,11 @@ export default class EcoGrabber {
         this.coralBloom = 0;
 
         // Callbacks (same interface as Runner/SeaRescue)
-        this._onTrashCollected = null;
-        this._onDistanceUpdate = null;
-        this._onStageComplete = null;
-        this._onTimerUpdate = null;
-        this._onInstructionUpdate = null;
+        this._cbTrashCollected = [];
+        this._cbDistanceUpdate = [];
+        this._cbStageComplete = [];
+        this._cbTimerUpdate = [];
+        this._cbInstructionUpdate = [];
 
         // Audio
         this.audioListener = null;
@@ -185,32 +133,21 @@ export default class EcoGrabber {
         this._setupCamera();
         if (onProgress) onProgress(10);
 
-        // Create environment
-        this._createLighting();
-        if (onProgress) onProgress(20);
-
-        this._createWater();
-        if (onProgress) onProgress(30);
-
-        this._createSeaFloor();
+        // 1. Load Models First (Ensure assets are ready for environment creation)
+        await this._loadEnvironmentModels();
+        await this._loadTrashModels(onProgress);
         if (onProgress) onProgress(40);
 
+        // 2. Create environment
+        this._createLighting();
+        this._createWater();
+        this._createSeaFloor(); // Now can use this.rockModel
         this._createCoral();
-        if (onProgress) onProgress(50);
-
-        // Create crane
         this._createCrane();
-        if (onProgress) onProgress(60);
-
-        // Load API models if available
-        await this._loadTrashModels(onProgress);
         if (onProgress) onProgress(70);
 
-        // Spawn trash
+        // 3. Spawn objects
         this._spawnTrash();
-        if (onProgress) onProgress(80);
-
-        // Spawn marine life
         this._spawnMarineLife();
         if (onProgress) onProgress(90);
 
@@ -311,31 +248,71 @@ export default class EcoGrabber {
         this.scene.add(this.seaFloor);
 
         // Rocks
-        for (let i = 0; i < 8; i++) {
-            const rockGeo = new THREE.DodecahedronGeometry(randRange(0.5, 1.5), 0);
-            const rockMat = new THREE.MeshStandardMaterial({
-                color: new THREE.Color().setHSL(0.08, 0.15, randRange(0.3, 0.5)),
-                flatShading: true,
-                roughness: 0.85,
-            });
-            const rock = new THREE.Mesh(rockGeo, rockMat);
+        const usedRockPositions = [];
+        for (let i = 0; i < 12; i++) {
+            let rock;
+            if (this.rockModel) {
+                const wrapper = new THREE.Group();
+                const model = this.rockModel.clone(true);
+
+                // Align model bottom to wrapper pivot
+                const box = new THREE.Box3().setFromObject(model);
+                const center = box.getCenter(new THREE.Vector3());
+                const size = box.getSize(new THREE.Vector3());
+                model.position.set(-center.x, -(center.y - size.y / 2), -center.z);
+                wrapper.add(model);
+
+                rock = wrapper;
+                // Make some rocks much larger (up to 3x-4x)
+                const baseScale = i < 3 ? randRange(2.5, 4.0) : randRange(0.8, 2.0);
+                rock.scale.setScalar(baseScale);
+            } else {
+                // Fallback to procedural if model fails
+                const rockGeo = new THREE.DodecahedronGeometry(randRange(0.5, 1.5), 0);
+                const rockMat = new THREE.MeshStandardMaterial({
+                    color: new THREE.Color().setHSL(0.08, 0.15, randRange(0.3, 0.5)),
+                    flatShading: true,
+                    roughness: 0.85,
+                });
+                rock = new THREE.Mesh(rockGeo, rockMat);
+                if (i < 3) rock.scale.multiplyScalar(2.5);
+            }
+
+            // Spawn xung quanh cần cẩu (360 degrees)
+            let x, z, pos;
+            let attempts = 0;
+            const minSpace = rock.scale.x > 2 ? 6.0 : 3.5;
+
+            do {
+                const angle = randRange(0, Math.PI * 2);
+                const dist = randRange(this.minReach + 1, this.maxReach + 3);
+                x = Math.cos(angle) * dist;
+                z = Math.sin(angle) * dist;
+                pos = new THREE.Vector2(x, z);
+                attempts++;
+            } while (
+                attempts < 30 &&
+                usedRockPositions.some(p => p.distanceTo(pos) < minSpace)
+            );
+            usedRockPositions.push(pos);
+
             rock.position.set(
-                randRange(-15, 15),
-                WATER_DEPTH + randRange(0.2, 0.8),
-                randRange(-15, 15),
+                x,
+                WATER_DEPTH + randRange(1.5, 2.5), // Further increased height to ensure it's fully above bumps
+                z
             );
             rock.rotation.set(
                 randRange(0, Math.PI),
                 randRange(0, Math.PI),
                 randRange(0, Math.PI),
             );
-            rock.scale.y = randRange(0.5, 1);
+            if (!this.rockModel) rock.scale.y *= randRange(0.5, 1);
             rock.castShadow = true;
             rock.userData = {
                 type: "rock",
-                weight: 8, // Heavy!
+                weight: i < 3 ? 15 : 8, // Larger rocks are heavier
                 grabbed: false,
-                name: "Cục đá",
+                name: i < 3 ? "Tảng đá lớn" : "Cục đá",
             };
             this.rocks.push(rock);
             this.scene.add(rock);
@@ -345,54 +322,81 @@ export default class EcoGrabber {
     // ─── Coral ────────────────────────────────────────────────────────────────
 
     _createCoral() {
-        const coralColors = [0xff6b6b, 0xff9ff3, 0xfeca57, 0x48dbfb, 0xff6348];
-
         for (let i = 0; i < 12; i++) {
-            const coralGroup = new THREE.Group();
-            const color =
-                coralColors[Math.floor(Math.random() * coralColors.length)];
+            let coralGroup;
 
-            // Main branch
-            const branchGeo = new THREE.CylinderGeometry(0.08, 0.2, randRange(1, 2.5), 6);
-            const branchMat = new THREE.MeshStandardMaterial({
-                color,
-                flatShading: true,
-                roughness: 0.7,
-            });
-            const branch = new THREE.Mesh(branchGeo, branchMat);
-            branch.position.y = branchGeo.parameters.height / 2;
-            coralGroup.add(branch);
+            if (this.anemoneModels && this.anemoneModels.length > i) {
+                coralGroup = new THREE.Group();
+                const model = this.anemoneModels[i];
 
-            // Top bulb (coral head)
-            const bulbGeo = new THREE.SphereGeometry(
-                randRange(0.3, 0.6),
-                6,
-                6,
-            );
-            const bulb = new THREE.Mesh(bulbGeo, branchMat);
-            bulb.position.y = branchGeo.parameters.height + 0.2;
-            coralGroup.add(bulb);
+                // Align model bottom to wrapper pivot
+                const box = new THREE.Box3().setFromObject(model);
+                const center = box.getCenter(new THREE.Vector3());
+                const size = box.getSize(new THREE.Vector3());
+                model.position.set(-center.x, -(center.y - size.y / 2), -center.z);
 
-            // Sub-branches
-            const subCount = Math.floor(randRange(1, 4));
-            for (let j = 0; j < subCount; j++) {
-                const subGeo = new THREE.CylinderGeometry(0.04, 0.1, randRange(0.5, 1.2), 5);
-                const sub = new THREE.Mesh(subGeo, branchMat);
-                const angle = (j / subCount) * Math.PI * 2;
-                sub.position.set(
-                    Math.cos(angle) * 0.3,
-                    randRange(0.3, 1),
-                    Math.sin(angle) * 0.3,
+                coralGroup.add(model);
+            } else {
+                coralGroup = new THREE.Group();
+                const coralColors = [0xff6b6b, 0xff9ff3, 0xfeca57, 0x48dbfb, 0xff6348];
+                const color =
+                    coralColors[Math.floor(Math.random() * coralColors.length)];
+
+                // Main branch
+                const branchGeo = new THREE.CylinderGeometry(0.08, 0.2, randRange(1, 2.5), 6);
+                const branchMat = new THREE.MeshStandardMaterial({
+                    color,
+                    flatShading: true,
+                    roughness: 0.7,
+                });
+                const branch = new THREE.Mesh(branchGeo, branchMat);
+                branch.position.y = branchGeo.parameters.height / 2;
+                coralGroup.add(branch);
+
+                // Top bulb (coral head)
+                const bulbGeo = new THREE.SphereGeometry(
+                    randRange(0.3, 0.6),
+                    6,
+                    6,
                 );
-                sub.rotation.z = randRange(-0.5, 0.5);
-                coralGroup.add(sub);
+                const bulb = new THREE.Mesh(bulbGeo, branchMat);
+                bulb.position.y = branchGeo.parameters.height + 0.2;
+                coralGroup.add(bulb);
+
+                // Sub-branches
+                const subCount = Math.floor(randRange(1, 4));
+                for (let j = 0; j < subCount; j++) {
+                    const subGeo = new THREE.CylinderGeometry(0.04, 0.1, randRange(0.5, 1.2), 5);
+                    const sub = new THREE.Mesh(subGeo, branchMat);
+                    const angle = (j / subCount) * Math.PI * 2;
+                    sub.position.set(
+                        Math.cos(angle) * 0.3,
+                        randRange(0.3, 1),
+                        Math.sin(angle) * 0.3,
+                    );
+                    sub.rotation.z = randRange(-0.5, 0.5);
+                    coralGroup.add(sub);
+                }
             }
 
-            coralGroup.position.set(
-                randRange(-14, 14),
-                WATER_DEPTH,
-                randRange(-14, 14),
-            );
+            let x, z;
+            if (i < 4) {
+                // Giữa map (gần gốc cần cẩu)
+                const angle = randRange(0, Math.PI * 2);
+                const dist = randRange(0.5, 3.0);
+                x = Math.cos(angle) * dist;
+                z = Math.sin(angle) * dist;
+            } else {
+                // Ngoài rìa map (xa tầm gắp)
+                const angle = randRange(0, Math.PI * 2);
+                const dist = randRange(14, 18);
+                x = Math.cos(angle) * dist;
+                z = Math.sin(angle) * dist;
+            }
+
+            coralGroup.position.set(x, WATER_DEPTH, z);
+            coralGroup.rotation.y = randRange(0, Math.PI * 2);
+
             // Start small, will bloom as trash is cleared
             coralGroup.scale.setScalar(0.5);
             coralGroup.userData.baseScale = 0.5;
@@ -553,12 +557,26 @@ export default class EcoGrabber {
                 const cachedModel = this._modelCache.get(itemId);
 
                 if (cachedModel) {
-                    mesh = cachedModel.clone(true);
+                    const wrapper = new THREE.Group();
+                    const model = cachedModel.clone(true);
+
                     // Normalize and scale
-                    const box = new THREE.Box3().setFromObject(mesh);
+                    const box = new THREE.Box3().setFromObject(model);
+                    const center = box.getCenter(new THREE.Vector3());
                     const size = box.getSize(new THREE.Vector3());
                     const maxDim = Math.max(size.x, size.y, size.z);
-                    if (maxDim > 0) mesh.scale.multiplyScalar(1.8 / maxDim);
+
+                    const targetScale = 2.8 / maxDim;
+                    model.scale.setScalar(targetScale);
+
+                    // Align model bottom to wrapper pivot
+                    model.position.set(
+                        -center.x * targetScale,
+                        -(center.y - size.y / 2) * targetScale,
+                        -center.z * targetScale
+                    );
+                    wrapper.add(model);
+                    mesh = wrapper;
 
                     mesh.traverse((child) => {
                         if (child.isMesh) {
@@ -579,6 +597,7 @@ export default class EcoGrabber {
                         ORGANIC: "organic", HAZARDOUS: "hazardous", GENERAL: "general", OTHER: "general"
                     };
                     def = {
+                        ...apiItem,
                         id: itemId,
                         name: apiItem.itemName || apiItem.name,
                         bin: binMap[cat] || "general",
@@ -586,29 +605,34 @@ export default class EcoGrabber {
                         color: 0xffffff // handled by textures
                     };
                 } else {
-                    def = GRABBER_TRASH_DEFS[i % GRABBER_TRASH_DEFS.length];
-                    mesh = this._createTrashMesh(def);
+                    // Skip spawning if no model found for API item
+                    continue;
                 }
             } else {
-                def = GRABBER_TRASH_DEFS[i % GRABBER_TRASH_DEFS.length];
-                mesh = this._createTrashMesh(def);
+                // If no API items, skip spawning entirely (loại bỏ rác mặc định)
+                break;
             }
 
             // Find non-overlapping position within REACH
             let pos;
             let attempts = 0;
             do {
-                const angle = Math.random() * Math.PI * 2;
-                const dist = randRange(this.minReach, this.maxReach - 1.5);
+                const angle = randRange(-0.25 * Math.PI, 0.75 * Math.PI);
+                const dist = randRange(this.minReach, this.maxReach - 2);
                 pos = new THREE.Vector3(
                     Math.cos(angle) * dist,
-                    WATER_DEPTH + randRange(0.5, 4),
+                    WATER_DEPTH + randRange(1.2, 3.5), // Increased Y to avoid burial
                     Math.sin(angle) * dist,
                 );
                 attempts++;
             } while (
                 attempts < 50 &&
-                usedPositions.some((p) => p.distanceTo(pos) < 3.5)
+                (usedPositions.some((p) => p.distanceTo(pos) < 3.5) ||
+                    this.rocks.some((r) => {
+                        const rockDist = new THREE.Vector3(r.position.x, pos.y, r.position.z).distanceTo(pos);
+                        const threshold = r.scale.x > 2 ? 5.5 : 3.5;
+                        return rockDist < threshold;
+                    }))
             );
             usedPositions.push(pos);
 
@@ -632,172 +656,114 @@ export default class EcoGrabber {
         }
     }
 
-    _createTrashMesh(def) {
-        let mesh;
-        const mat = new THREE.MeshStandardMaterial({
-            color: def.color,
-            flatShading: true,
-            roughness: 0.6,
-            metalness: 0.2,
-            emissive: def.color,
-            emissiveIntensity: 0.2, // Glow to stand out
+
+
+    async _loadEnvironmentModels() {
+        const loader = new GLTFLoader();
+
+        const loadRock = new Promise((resolve) => {
+            loader.load(
+                "/assets/rock.glb",
+                (gltf) => {
+                    this.rockModel = gltf.scene;
+                    // Pre-calculate normalization for rock
+                    const box = new THREE.Box3().setFromObject(this.rockModel);
+                    const size = box.getSize(new THREE.Vector3());
+                    const maxDim = Math.max(size.x, size.y, size.z);
+                    if (maxDim > 0) {
+                        this.rockModel.scale.setScalar(1.5 / maxDim);
+                    }
+                    this.rockModel.traverse((child) => {
+                        if (child.isMesh) {
+                            child.castShadow = true;
+                            child.receiveShadow = true;
+                            // Ensure no clipping planes from the model are active
+                            if (child.material) {
+                                child.material.clippingPlanes = null;
+                                child.material.clipShadows = false;
+                            }
+                        }
+                    });
+                    resolve();
+                },
+                undefined,
+                (err) => {
+                    console.warn("Failed to load /assets/rock.glb", err);
+                    resolve();
+                },
+            );
         });
 
-        switch (def.shape) {
-            case "bottle": {
-                const group = new THREE.Group();
-                const body = new THREE.Mesh(
-                    new THREE.CylinderGeometry(0.2, 0.2, 0.7, 6),
-                    mat,
+        this.anemoneModels = [];
+        const loadAnemones = Array.from({ length: 12 }).map(() => {
+            return new Promise((resolve) => {
+                loader.load(
+                    "/assets/anemone.glb",
+                    (gltf) => {
+                        const model = gltf.scene;
+                        const box = new THREE.Box3().setFromObject(model);
+                        const size = box.getSize(new THREE.Vector3());
+                        const maxDim = Math.max(size.x, size.y, size.z);
+                        if (maxDim > 0) {
+                            model.scale.setScalar(4.0 / maxDim);
+                        }
+                        model.traverse((child) => {
+                            if (child.isMesh) {
+                                child.castShadow = true;
+                                child.receiveShadow = true;
+                            }
+                        });
+                        this.anemoneModels.push(model);
+                        resolve();
+                    },
+                    undefined,
+                    (err) => {
+                        console.warn("Failed to load /assets/anemone.glb", err);
+                        resolve();
+                    }
                 );
-                const neck = new THREE.Mesh(
-                    new THREE.CylinderGeometry(0.1, 0.15, 0.3, 6),
-                    mat,
-                );
-                neck.position.y = 0.5;
-                const cap = new THREE.Mesh(
-                    new THREE.CylinderGeometry(0.12, 0.12, 0.08, 6),
-                    new THREE.MeshStandardMaterial({
-                        color: 0xff5722,
-                        flatShading: true,
-                    }),
-                );
-                cap.position.y = 0.65;
-                group.add(body, neck, cap);
-                mesh = group;
-                break;
-            }
-            case "can": {
-                const canGroup = new THREE.Group();
-                const canBody = new THREE.Mesh(
-                    new THREE.CylinderGeometry(0.22, 0.22, 0.5, 8),
-                    mat,
-                );
-                const rimMat = new THREE.MeshStandardMaterial({
-                    color: 0xbdbdbd,
-                    metalness: 0.6,
-                    flatShading: true,
-                });
-                const topRim = new THREE.Mesh(
-                    new THREE.TorusGeometry(0.22, 0.03, 4, 8),
-                    rimMat,
-                );
-                topRim.rotation.x = Math.PI / 2;
-                topRim.position.y = 0.25;
-                canGroup.add(canBody, topRim);
-                mesh = canGroup;
-                break;
-            }
-            case "bag": {
-                const bagGroup = new THREE.Group();
-                const bagBody = new THREE.Mesh(
-                    new THREE.SphereGeometry(0.4, 6, 5),
-                    new THREE.MeshStandardMaterial({
-                        color: def.color,
-                        flatShading: true,
-                        roughness: 0.8,
-                        transparent: true,
-                        opacity: 0.7,
-                    }),
-                );
-                bagBody.scale.set(1, 0.7, 0.8);
-                // Handles
-                const handleGeo = new THREE.TorusGeometry(0.15, 0.02, 4, 8, Math.PI);
-                const handleMat = new THREE.MeshStandardMaterial({
-                    color: def.color,
-                    transparent: true,
-                    opacity: 0.7,
-                });
-                const handle1 = new THREE.Mesh(handleGeo, handleMat);
-                handle1.position.set(-0.1, 0.25, 0);
-                handle1.rotation.z = 0.2;
-                const handle2 = new THREE.Mesh(handleGeo, handleMat);
-                handle2.position.set(0.1, 0.25, 0);
-                handle2.rotation.z = -0.2;
-                bagGroup.add(bagBody, handle1, handle2);
-                mesh = bagGroup;
-                break;
-            }
-            case "tire": {
-                mesh = new THREE.Mesh(
-                    new THREE.TorusGeometry(0.6, 0.25, 8, 12),
-                    mat,
-                );
-                break;
-            }
-            case "tv": {
-                const tvGroup = new THREE.Group();
-                const tvBody = new THREE.Mesh(
-                    new THREE.BoxGeometry(0.9, 0.7, 0.5),
-                    mat,
-                );
-                const screenMat = new THREE.MeshStandardMaterial({
-                    color: 0x1a1a2e,
-                    roughness: 0.3,
-                    metalness: 0.2,
-                });
-                const screen = new THREE.Mesh(
-                    new THREE.BoxGeometry(0.7, 0.5, 0.02),
-                    screenMat,
-                );
-                screen.position.z = 0.26;
-                // Antenna
-                const antennaGeo = new THREE.CylinderGeometry(0.015, 0.015, 0.4, 4);
-                const antMat = new THREE.MeshStandardMaterial({ color: 0x666666 });
-                const ant1 = new THREE.Mesh(antennaGeo, antMat);
-                ant1.position.set(-0.2, 0.5, 0);
-                ant1.rotation.z = 0.3;
-                const ant2 = new THREE.Mesh(antennaGeo, antMat);
-                ant2.position.set(0.2, 0.5, 0);
-                ant2.rotation.z = -0.3;
-                tvGroup.add(tvBody, screen, ant1, ant2);
-                mesh = tvGroup;
-                break;
-            }
-            case "fishbone": {
-                const boneGroup = new THREE.Group();
-                // Spine
-                const spineGeo = new THREE.CylinderGeometry(0.04, 0.04, 1.2, 4);
-                const boneMat = new THREE.MeshStandardMaterial({
-                    color: def.color,
-                    flatShading: true,
-                });
-                const spine = new THREE.Mesh(spineGeo, boneMat);
-                spine.rotation.z = Math.PI / 2;
-                boneGroup.add(spine);
-                // Ribs
-                for (let r = -4; r <= 4; r++) {
-                    if (r === 0) continue;
-                    const ribGeo = new THREE.CylinderGeometry(0.02, 0.02, 0.35, 3);
-                    const rib = new THREE.Mesh(ribGeo, boneMat);
-                    rib.position.x = r * 0.12;
-                    rib.position.y = r > 0 ? 0.15 : -0.15;
-                    rib.rotation.z = r > 0 ? 0.4 : -0.4;
-                    boneGroup.add(rib);
-                }
-                // Head
-                const headGeo = new THREE.SphereGeometry(0.15, 5, 5);
-                const head = new THREE.Mesh(headGeo, boneMat);
-                head.position.x = 0.65;
-                head.scale.set(1.2, 1, 0.7);
-                boneGroup.add(head);
-                // Tail
-                const tailGeo = new THREE.ConeGeometry(0.12, 0.25, 4);
-                const tail = new THREE.Mesh(tailGeo, boneMat);
-                tail.position.x = -0.65;
-                tail.rotation.z = Math.PI / 2;
-                boneGroup.add(tail);
-                mesh = boneGroup;
-                break;
-            }
-            default: {
-                mesh = new THREE.Mesh(new THREE.BoxGeometry(0.5, 0.5, 0.5), mat);
-            }
-        }
+            });
+        });
 
-        mesh.castShadow = true;
-        mesh.scale.setScalar(1.5); // Increase visibility
-        return mesh;
+        this.clownFishModels = [];
+        this.fishAnimatedModels = [];
+        const loadFish = (url, array, count, scaleTarget) => {
+            return Array.from({ length: count }).map(() => {
+                return new Promise((resolve) => {
+                    loader.load(
+                        url,
+                        (gltf) => {
+                            const model = gltf.scene;
+                            const box = new THREE.Box3().setFromObject(model);
+                            const size = box.getSize(new THREE.Vector3());
+                            const maxDim = Math.max(size.x, size.y, size.z);
+                            if (maxDim > 0) {
+                                model.scale.setScalar(scaleTarget / maxDim);
+                            }
+                            model.traverse((child) => {
+                                if (child.isMesh) {
+                                    child.castShadow = true;
+                                    child.receiveShadow = true;
+                                }
+                            });
+                            array.push({ scene: model, animations: gltf.animations });
+                            resolve();
+                        },
+                        undefined,
+                        (err) => {
+                            console.warn("Failed to load " + url, err);
+                            resolve();
+                        }
+                    );
+                });
+            });
+        };
+
+        const clownFishPromises = loadFish("/assets/clown_fish.glb", this.clownFishModels, 5, 1.2);
+        const animatedFishPromises = loadFish("/assets/fish_animated.glb", this.fishAnimatedModels, 5, 1.6);
+        const turtlePromises = loadFish("/assets/turtle.glb", this.turtleModels, 2, 3.0);
+
+        return Promise.all([loadRock, ...loadAnemones, ...clownFishPromises, ...animatedFishPromises, ...turtlePromises]);
     }
 
     // ─── Model Loading ────────────────────────────────────────────────────────
@@ -811,7 +777,19 @@ export default class EcoGrabber {
         let loaded = 0;
 
         const promises = this.wasteItems.map(async (item) => {
-            const url = item.model3dPresignedUrl || item.modelUrl || item.preloadedModel;
+            // Priority 1: Use preloaded model if available (already a Three.js object)
+            if (item.preloadedModel) {
+                this._modelCache.set(item.wasteItemId || item.id, item.preloadedModel);
+                loaded++;
+                if (onProgress) {
+                    const pct = 50 + (loaded / total) * 20;
+                    onProgress(Math.round(pct));
+                }
+                return;
+            }
+
+            // Priority 2: Load from URL
+            const url = item.model3dPresignedUrl || item.modelUrl;
             if (!url || typeof url !== "string") {
                 loaded++;
                 return;
@@ -831,7 +809,7 @@ export default class EcoGrabber {
                     },
                     undefined,
                     (err) => {
-                        console.warn(`Failed to load model for ${item.name}:`, err);
+                        console.warn(`Failed to load model for ${item.itemName || item.name}:`, err);
                         loaded++;
                         resolve();
                     },
@@ -849,23 +827,24 @@ export default class EcoGrabber {
         for (let i = 0; i < 2; i++) {
             const turtle = this._createTurtle();
             const y = WATER_DEPTH + randRange(3, 7);
-            const radius = randRange(6, 12);
-            const speed = randRange(0.3, 0.6);
-            const phase = randRange(0, Math.PI * 2);
+            const startX = randRange(-12, 12);
+            const startZ = randRange(-12, 12);
+            const speed = randRange(0.4, 0.8);
 
-            turtle.position.set(
-                Math.cos(phase) * radius,
-                y,
-                Math.sin(phase) * radius,
-            );
+            turtle.position.set(startX, y, startZ);
             turtle.userData = {
                 type: "marine",
                 name: "Rùa biển",
-                radius,
                 speed,
-                phase,
+                direction: new THREE.Vector3(
+                    randRange(-1, 1),
+                    0,
+                    randRange(-1, 1),
+                ).normalize(),
                 y,
-                swimType: "circle",
+                swimType: "linear",
+                turnTimer: 0,
+                turnInterval: randRange(4, 8),
             };
 
             this.marineLife.push(turtle);
@@ -882,6 +861,7 @@ export default class EcoGrabber {
 
             fish.position.set(startX, y, startZ);
             fish.userData = {
+                ...fish.userData,
                 type: "marine",
                 name: "Cá",
                 speed,
@@ -902,6 +882,28 @@ export default class EcoGrabber {
     }
 
     _createTurtle() {
+        if (this.turtleModels && this.turtleModels.length > 0) {
+            const turtleData = this.turtleModels.pop();
+            const group = new THREE.Group();
+            const model = turtleData.scene;
+
+            // Align model
+            const box = new THREE.Box3().setFromObject(model);
+            const center = box.getCenter(new THREE.Vector3());
+            const size = box.getSize(new THREE.Vector3());
+            model.position.set(-center.x, -(center.y - size.y / 2), -center.z);
+            group.add(model);
+
+            // Setup animation
+            if (turtleData.animations && turtleData.animations.length > 0) {
+                const mixer = new THREE.AnimationMixer(model);
+                const action = mixer.clipAction(turtleData.animations[0]);
+                action.play();
+                group.userData.mixer = mixer;
+            }
+            return group;
+        }
+
         const group = new THREE.Group();
 
         // Shell
@@ -979,6 +981,37 @@ export default class EcoGrabber {
     }
 
     _createFish() {
+        let fishData;
+        if (Math.random() > 0.5 && this.clownFishModels && this.clownFishModels.length > 0) {
+            fishData = this.clownFishModels.pop();
+        } else if (this.fishAnimatedModels && this.fishAnimatedModels.length > 0) {
+            fishData = this.fishAnimatedModels.pop();
+        } else if (this.clownFishModels && this.clownFishModels.length > 0) {
+            fishData = this.clownFishModels.pop();
+        }
+
+        if (fishData) {
+            const group = new THREE.Group();
+            const model = fishData.scene;
+
+            // Align model
+            const box = new THREE.Box3().setFromObject(model);
+            const center = box.getCenter(new THREE.Vector3());
+            const size = box.getSize(new THREE.Vector3());
+            model.position.set(-center.x, -(center.y - size.y / 2), -center.z);
+            group.add(model);
+
+            // Setup animation
+            if (fishData.animations && fishData.animations.length > 0) {
+                const mixer = new THREE.AnimationMixer(model);
+                const action = mixer.clipAction(fishData.animations[0]);
+                action.play();
+                group.userData.mixer = mixer;
+            }
+            return group;
+        }
+
+        // Fallback
         const group = new THREE.Group();
         const fishColors = [0xff6b6b, 0xfeca57, 0x48dbfb, 0xff9ff3, 0x00d2d3];
         const color = fishColors[Math.floor(Math.random() * fishColors.length)];
@@ -1032,6 +1065,24 @@ export default class EcoGrabber {
         try {
             this.audioListener = new THREE.AudioListener();
             this.camera.add(this.audioListener);
+
+            const audioLoader = new THREE.AudioLoader();
+
+            // Background music
+            this.bgMusic = new THREE.Audio(this.audioListener);
+            audioLoader.load('/assets/audio/music_game.mp3', (buffer) => {
+                this.bgMusic.setBuffer(buffer);
+                this.bgMusic.setLoop(true);
+                this.bgMusic.setVolume(0.2);
+                this.bgMusic.play();
+            });
+
+            // Collect sound
+            this.collectSound = new THREE.Audio(this.audioListener);
+            audioLoader.load('/assets/audio/collect.mp3', (buffer) => {
+                this.collectSound.setBuffer(buffer);
+                this.collectSound.setVolume(0.6);
+            });
         } catch (e) {
             console.warn("Audio not available:", e);
         }
@@ -1040,7 +1091,6 @@ export default class EcoGrabber {
     // ─── Event Listeners ──────────────────────────────────────────────────────
 
     _addEventListeners() {
-        const canvas = this.scene?.userData?.renderer?.domElement;
         window.addEventListener("click", this._onClick);
         window.addEventListener("touchstart", this._onTouch, { passive: false });
         window.addEventListener("keydown", this._onKeyDown);
@@ -1063,7 +1113,7 @@ export default class EcoGrabber {
         this.keys[e.code] = false;
     };
 
-    _handleClick(e) {
+    _handleClick() {
         if (this.isGameOver) return;
         this._processInput();
     }
@@ -1079,8 +1129,8 @@ export default class EcoGrabber {
             // Drop claw
             this.grabState = GrabState.DESCENDING;
             this._setClawOpen(true);
-            if (this._onInstructionUpdate)
-                this._onInstructionUpdate("Đang thả móc... Click để đóng gắp!");
+            if (this._cbInstructionUpdate)
+                this._cbInstructionUpdate.forEach(cb => cb("Đang thả móc... Click để đóng gắp!"));
         } else if (this.grabState === GrabState.DESCENDING) {
             // Force grab at current depth
             this._tryGrab();
@@ -1124,14 +1174,14 @@ export default class EcoGrabber {
             closestObj.userData.grabbed = true;
             this.grabbedObject = closestObj;
             const name = closestObj.userData.name || "vật thể";
-            if (this._onInstructionUpdate)
-                this._onInstructionUpdate(`Đã gắp trúng ${name}! Đang kéo lên... 🎣`);
+            if (this._cbInstructionUpdate)
+                this._cbInstructionUpdate.forEach(cb => cb(`Đã gắp trúng ${name}! Đang kéo lên... 🎣`));
             this.grabState = GrabState.ASCENDING;
             this._setClawOpen(false);
         } else {
             // Nothing grabbed — still ascend
-            if (this._onInstructionUpdate)
-                this._onInstructionUpdate("Không gắp được gì! Kéo lên...");
+            if (this._cbInstructionUpdate)
+                this._cbInstructionUpdate.forEach(cb => cb("Không gắp được gì! Kéo lên..."));
             this.grabState = GrabState.ASCENDING;
             this._setClawOpen(false);
         }
@@ -1154,14 +1204,14 @@ export default class EcoGrabber {
             this.trashCollected++;
             this.score += Math.ceil(def.weight * 10);
 
-            // Pass trash info to callback — EcoGame.startStage1 will addTrash to stateManager
-            if (this._onTrashCollected) {
-                this._onTrashCollected({
-                    id: def.id,
-                    name: def.name,
-                    bin: def.bin,
-                    color: def.color,
-                });
+            // Pass trash info to callbacks — EcoGame.startStage1 will addTrash to stateManager
+            if (this._cbTrashCollected) {
+                this._cbTrashCollected.forEach(cb => cb(def));
+            }
+
+            if (this.collectSound && this.collectSound.buffer) {
+                if (this.collectSound.isPlaying) this.collectSound.stop();
+                this.collectSound.play();
             }
 
             // Update VFX
@@ -1188,8 +1238,8 @@ export default class EcoGrabber {
         this._setClawOpen(true);
         this.grabState = GrabState.MANUAL;
 
-        if (this._onInstructionUpdate)
-            this._onInstructionUpdate("Sử dụng WASD để di chuyển & Click/Space để gắp!");
+        if (this._cbInstructionUpdate)
+            this._cbInstructionUpdate.forEach(cb => cb("Sử dụng WASD để di chuyển & Click/Space để gắp!"));
     }
 
     // ─── Environment VFX ──────────────────────────────────────────────────────
@@ -1235,6 +1285,7 @@ export default class EcoGrabber {
             const y = WATER_DEPTH + randRange(2, 8);
             fish.position.set(randRange(-12, 12), y, randRange(-12, 12));
             fish.userData = {
+                ...fish.userData,
                 type: "marine",
                 name: "Cá",
                 speed: randRange(1, 3),
@@ -1253,11 +1304,11 @@ export default class EcoGrabber {
         }
 
         // Update distance callback with clarity percentage
-        if (this._onDistanceUpdate) {
-            this._onDistanceUpdate(
+        if (this._cbDistanceUpdate) {
+            this._cbDistanceUpdate.forEach(cb => cb(
                 Math.round(this.waterClarity * 100),
                 this.score,
-            );
+            ));
         }
     }
 
@@ -1268,8 +1319,8 @@ export default class EcoGrabber {
         this.isGameOver = true;
         this._removeEventListeners();
 
-        if (this._onStageComplete) {
-            this._onStageComplete(reason, this.trashCollected);
+        if (this._cbStageComplete) {
+            this._cbStageComplete.forEach(cb => cb(reason, this.trashCollected));
         }
     }
 
@@ -1280,7 +1331,9 @@ export default class EcoGrabber {
 
         // Timer
         this.timeLeft -= delta;
-        if (this._onTimerUpdate) this._onTimerUpdate(Math.ceil(this.timeLeft));
+        if (this._cbTimerUpdate) {
+            this._cbTimerUpdate.forEach(cb => cb(Math.ceil(this.timeLeft)));
+        }
 
         if (this.timeLeft <= 0) {
             this.timeLeft = 0;
@@ -1397,6 +1450,9 @@ export default class EcoGrabber {
         // ── Marine life animation ──
         this.marineLife.forEach((marine) => {
             const data = marine.userData;
+            if (data.mixer) {
+                data.mixer.update(delta);
+            }
             if (data.swimType === "circle") {
                 data.phase += data.speed * delta;
                 marine.position.x = Math.cos(data.phase) * data.radius;
@@ -1503,28 +1559,37 @@ export default class EcoGrabber {
     // ─── Callbacks (same interface as Runner/SeaRescue) ───────────────────────
 
     onTrashCollected(callback) {
-        this._onTrashCollected = callback;
+        if (!this._cbTrashCollected) this._cbTrashCollected = [];
+        this._cbTrashCollected.push(callback);
     }
 
     onDistanceUpdate(callback) {
-        this._onDistanceUpdate = callback;
+        if (!this._cbDistanceUpdate) this._cbDistanceUpdate = [];
+        this._cbDistanceUpdate.push(callback);
     }
 
     onStageComplete(callback) {
-        this._onStageComplete = callback;
+        if (!this._cbStageComplete) this._cbStageComplete = [];
+        this._cbStageComplete.push(callback);
     }
 
     onTimerUpdate(callback) {
-        this._onTimerUpdate = callback;
+        if (!this._cbTimerUpdate) this._cbTimerUpdate = [];
+        this._cbTimerUpdate.push(callback);
     }
 
     onInstructionUpdate(callback) {
-        this._onInstructionUpdate = callback;
+        if (!this._cbInstructionUpdate) this._cbInstructionUpdate = [];
+        this._cbInstructionUpdate.push(callback);
     }
 
     // ─── Dispose ──────────────────────────────────────────────────────────────
 
     dispose() {
+        if (this.bgMusic && this.bgMusic.isPlaying) {
+            this.bgMusic.stop();
+        }
+
         this._removeEventListeners();
         this.isGameOver = true;
 
@@ -1554,16 +1619,16 @@ export default class EcoGrabber {
         // Crane
         disposeGroup(this.craneGroup);
 
-        // Trash
-        this.trashObjects.forEach((t) => disposeGroup(t));
+        // Trash (DO NOT dispose meshes, they are shared/cached and needed for Stage 2)
+        this.trashObjects.forEach((t) => this.scene.remove(t));
         this.trashObjects = [];
 
-        // Marine life
-        this.marineLife.forEach((m) => disposeGroup(m));
+        // Marine life (DO NOT dispose meshes, they are shared/cached)
+        this.marineLife.forEach((m) => this.scene.remove(m));
         this.marineLife = [];
 
         // Coral
-        this.coralObjects.forEach((c) => disposeGroup(c));
+        this.coralObjects.forEach((c) => this.scene.remove(c));
         this.coralObjects = [];
 
         // Bubbles

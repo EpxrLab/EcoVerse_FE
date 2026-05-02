@@ -117,8 +117,19 @@ export default class EcoGameRunner {
       this.spawnTimer = 0;
       this.nextSpawnTime = 1.0;
 
-      // Cache for dynamically loaded 3D models from API imagePresignedUrl
+      // Cache for dynamically loaded 3D models from API
       this.modelCache = {};
+
+      // Populate modelCache from preloaded items
+      this.wasteItems.forEach((item) => {
+        if (
+          item.preloadedModel &&
+          (item.presignedModel3dUrl || item.imagePresignedUrl)
+        ) {
+          const url = item.presignedModel3dUrl || item.imagePresignedUrl;
+          this.modelCache[url] = item.preloadedModel;
+        }
+      });
 
       // Load static obstacle model (Rock)
       const loader = new GLTFLoader(manager);
@@ -321,7 +332,7 @@ export default class EcoGameRunner {
           if (child.isMesh) {
             child.castShadow = true;
             child.receiveShadow = false; // Disable self-shadowing acne
-            
+
             // Ensure textures and colors render correctly
             if (child.material) {
               if (child.material.map) {
@@ -410,7 +421,7 @@ export default class EcoGameRunner {
       (buffer) => {
         this.bgm.setBuffer(buffer);
         this.bgm.setLoop(true);
-        this.bgm.setVolume(0.4);
+        this.bgm.setVolume(0.2);
         if (this.isRunning && !this.gameOver) {
           this.bgm.play();
         }
@@ -675,7 +686,7 @@ export default class EcoGameRunner {
 
       // Load dynamically using the best available URL if not cached
       if (this.modelCache[currentModelUrl]) {
-        finalizeMesh(this.modelCache[currentModelUrl].clone());
+        finalizeMesh(this.modelCache[currentModelUrl].clone(true));
       } else {
         const loader = new GLTFLoader();
         loader.load(
@@ -684,17 +695,17 @@ export default class EcoGameRunner {
             this.modelCache[currentModelUrl] = gltf.scene;
             // Only finalize if game is still active
             if (!this.gameOver) {
-              finalizeMesh(gltf.scene.clone());
+              finalizeMesh(gltf.scene.clone(true));
             }
           },
           undefined,
           (err) => {
             console.error("URL gây lỗi:", currentModelUrl);
             console.error("Thông tin lỗi từ Loader:", err);
-            // finalizeMesh(this._createBoxTrashMesh(0xff0000));
           },
         );
       }
+      return; // Handled by finalizeMesh
     } else {
       this.totalTrashSpawned++;
       // Fallback to hardcoded geometry

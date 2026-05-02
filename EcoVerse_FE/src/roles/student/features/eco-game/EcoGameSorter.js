@@ -8,8 +8,6 @@ import * as THREE from "three";
 import gsap from "gsap";
 import { GLTFLoader } from "three/examples/jsm/loaders/GLTFLoader";
 import {
-  BinType,
-  SPAWNABLE_TRASH,
   DynamicBinTypes,
 } from "./EcoGameStateManager";
 import { DEFAULT_LEVEL_CONFIG } from "./gameConfig";
@@ -795,7 +793,7 @@ export default class EcoGameSorter {
   _onPointerUp(event) {
     if (!this.isDragging || !this.selectedObject) {
       // Release capture even if not dragging
-      try { this.renderer.domElement.releasePointerCapture(event.pointerId); } catch(e) {}
+      try { this.renderer.domElement.releasePointerCapture(event.pointerId); } catch (e) { }
       return;
     }
 
@@ -804,7 +802,7 @@ export default class EcoGameSorter {
     this.selectedObject = null;
 
     // Release pointer capture
-    try { this.renderer.domElement.releasePointerCapture(event.pointerId); } catch(e) {}
+    try { this.renderer.domElement.releasePointerCapture(event.pointerId); } catch (e) { }
 
     // Check if dropped on a bin
     const itemPos = droppedItem.position;

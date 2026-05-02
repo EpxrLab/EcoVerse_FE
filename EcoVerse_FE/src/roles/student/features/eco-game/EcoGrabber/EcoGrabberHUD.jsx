@@ -154,19 +154,6 @@ export function EcoGrabberHUD({ game, levelConfig }) {
             </div>
           </div>
 
-          {/* Score */}
-          <div
-            className="px-4 py-2 rounded-2xl text-white"
-            style={{
-              background: "rgba(0,0,0,0.4)",
-              backdropFilter: "blur(6px)",
-            }}
-          >
-            <div className="text-xs opacity-70 uppercase tracking-wider">
-              ⭐ Điểm
-            </div>
-            <div className="text-2xl font-bold tabular-nums">{score}</div>
-          </div>
         </div>
 
         {/* Clarity bar (below main stats) */}
