@@ -46,6 +46,7 @@ const GAME_TYPE_OPTIONS = [
   { value: "RUN_SORTING", label: "Chạy & phân loại (RUN_SORTING)" },
   { value: "GRABBER_SORTING", label: "Gắp rác (GRABBER_SORTING)" },
   { value: "COLLECT_SORTING", label: "Thu gom & phân loại (COLLECT_SORTING)" },
+  { value: "GRABBER_SORTING", label: "Gắp & phân loại (GRABBER_SORTING)" },
 ];
 
 const WASTE_CATEGORIES = [

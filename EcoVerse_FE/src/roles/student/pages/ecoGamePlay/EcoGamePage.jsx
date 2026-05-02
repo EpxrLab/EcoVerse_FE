@@ -118,14 +118,22 @@ export default function EcoGamePage() {
           }),
         );
 
+        // Helper to determine stage 1 game engine
+        const getStage1Type = (code) => {
+          if (code === "COLLECT_SORTING") return "searescue";
+          if (code === "GRABBER_SORTING") return "grabber";
+          return "runner"; // Default to runner
+        };
+
+        const stage1Game = getStage1Type(typeCode);
+
         // Build the final config for EcoGame
-        const isCollectGame = typeCode === "COLLECT_SORTING";
         const finalConfig = {
           id: apiData.roundGameConfigId,
           sessionId: apiData.sessionId,
           name: apiData.gameTypeName || "",
           difficulty: apiData.resolvedDifficulty?.toLowerCase() || "medium",
-          stage1Game: isCollectGame ? "searescue" : "runner",
+          stage1Game,
           scorePerCorrect: apiData.scorePerCorrect || 0,
           runner: {
             itemCount: apiData.itemCount,
@@ -137,8 +145,13 @@ export default function EcoGamePage() {
             totalTrash: apiData.itemCount || 12,
             maxHp: apiData.lives || 10,
           },
+          grabber: {
+            gameTime: apiData.timeLimitSeconds > 0 ? apiData.timeLimitSeconds : 90,
+            totalTrash: apiData.itemCount || 10,
+            requiredPercentage: 60,
+          },
           sorter: {
-            timeLimit: apiData.timeLimitSeconds || 0,
+            timeLimit: Math.max(apiData.timeLimitSeconds || 0, 60),
           },
           wasteItems: preloadedItems,
           itemCount: apiData.itemCount,
