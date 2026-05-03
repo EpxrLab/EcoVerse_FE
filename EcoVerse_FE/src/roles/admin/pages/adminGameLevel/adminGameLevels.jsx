@@ -861,12 +861,20 @@ function PresetTab({ gameTypes }) {
                     <Button
                       type="dashed"
                       onClick={() => {
+                        const currentItems = form.getFieldValue("items") || [];
+                        const lastItem = currentItems[currentItems.length - 1];
+                        const nextItemCount = lastItem
+                          ? (lastItem.itemCount || 10) + 2
+                          : 10;
+
                         add({
                           levelNumber: fields.length + 1,
-                          itemCount: 10,
-                          timeLimitSeconds: 0,
+                          itemCount: nextItemCount,
+                          timeLimitSeconds: lastItem ? lastItem.timeLimitSeconds : 0,
                           lives: isNoLivesGame ? 1 : 3,
-                          wasteCategories: ["RECYCLABLE"],
+                          wasteCategories: lastItem
+                            ? lastItem.wasteCategories
+                            : ["RECYCLABLE"],
                         });
                       }}
                       block
