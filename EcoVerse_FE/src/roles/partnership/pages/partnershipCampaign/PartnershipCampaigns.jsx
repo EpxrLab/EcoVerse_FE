@@ -212,9 +212,6 @@ export default function PartnershipCampaigns() {
         formData={formData}
         onFormChange={updateFormData}
         availableSchools={availableSchools}
-        availableQuizzes={availableQuizzes}
-        setAvailableQuizzes={setAvailableQuizzes}
-        availableGameLevels={availableGameLevels}
         onSubmit={handleSubmit}
         isEditing={isEditing}
         currentSubscription={currentSubscription}
@@ -243,8 +240,6 @@ export default function PartnershipCampaigns() {
         isOpen={isDetailOpen}
         onClose={handleCloseDetail}
         campaign={selectedCampaign}
-        availableQuizzes={availableQuizzes}
-        availableGameLevels={availableGameLevels}
       />
 
       {/* Confirmation Dialog */}

@@ -259,6 +259,7 @@ export default function SchoolSubscription() {
                   </div>
 
                   <ul className="space-y-3">
+
                     <li className="flex items-start gap-3 text-sm">
                       <div className={cn("w-5 h-5 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5", `bg-${colorClass}/20`)}>
                         <Users className={cn("w-3 h-3", `text-${colorClass}`)} />

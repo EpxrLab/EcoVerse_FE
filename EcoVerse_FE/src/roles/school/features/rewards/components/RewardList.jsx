@@ -217,7 +217,6 @@ export function RewardList({ rewards, status, onMarkDelivered, onConfirm, onAppr
     <Table>
       <TableHeader>
         <TableRow className="bg-eco-blue/5 hover:bg-eco-blue/5">
-          <TableHead className="font-bold">Mã quà tặng</TableHead>
           <TableHead className="font-bold">Học sinh</TableHead>
           <TableHead className="font-bold">Chiến dịch</TableHead>
           <TableHead className="font-bold">Phần thưởng</TableHead>
@@ -231,7 +230,6 @@ export function RewardList({ rewards, status, onMarkDelivered, onConfirm, onAppr
       <TableBody>
         {rewards.map((reward) => (
           <TableRow key={reward.id} className="hover:bg-eco-blue/3">
-            <TableCell className="font-mono text-sm">{reward.requestCode || reward.id}</TableCell>
             <TableCell>
               <p className="font-semibold">{reward.student}</p>
             </TableCell>

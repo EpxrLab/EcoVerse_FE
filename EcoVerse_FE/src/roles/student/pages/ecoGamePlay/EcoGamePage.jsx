@@ -3,7 +3,6 @@ import {
   useLocation,
   useNavigate,
   useParams,
-  useSearchParams,
 } from "react-router";
 import { Spin, Progress } from "antd";
 import { LoadingOutlined } from "@ant-design/icons";

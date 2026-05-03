@@ -25,24 +25,49 @@ export function CampaignForm({
   currentSubscription,
 }) {
   const toggleSchool = (schoolId) => {
-    const exists = formData.schoolIds.includes(schoolId);
+    const exists = (formData.invitedSchools || []).some(s => s.schoolId === schoolId);
+    let newInvitedSchools = [];
+    
     if (exists) {
-      onFormChange({
-        schoolIds: formData.schoolIds.filter(id => id !== schoolId)
-      });
+      newInvitedSchools = formData.invitedSchools.filter(s => s.schoolId !== schoolId);
     } else {
       // Check subscription limit for inviting schools
       if (currentSubscription && currentSubscription.maxSchoolsPerCampaign !== null) {
-        if (formData.schoolIds.length >= currentSubscription.maxSchoolsPerCampaign) {
+        if ((formData.invitedSchools || []).length >= currentSubscription.maxSchoolsPerCampaign) {
           toast.error(`Gói đăng ký của bạn chỉ cho phép mời tối đa ${currentSubscription.maxSchoolsPerCampaign} trường tham gia mỗi chiến dịch.`);
           return;
         }
       }
 
-      onFormChange({
-        schoolIds: [...formData.schoolIds, schoolId]
-      });
+      // Check if school meets minimum student requirement
+      const school = availableSchools.find(s => (s.schoolId || s.id) === schoolId);
+      const studentCount = school?.managedStudentCount || school?.studentCount || school?.student_count || 0;
+      if (formData.minStudentsPerSchool > 0 && studentCount < formData.minStudentsPerSchool) {
+        toast.error(`Trường này không đủ số lượng học sinh tối thiểu (${formData.minStudentsPerSchool} HS).`);
+        return;
+      }
+
+      newInvitedSchools = [
+        ...(formData.invitedSchools || []),
+        { schoolId, maxStudentsInvited: 0 }
+      ];
     }
+
+    // Precise distribution: base + remainder for first N schools
+    const total = formData.totalStudentQuota || 0;
+    const len = newInvitedSchools.length;
+    if (len > 0) {
+      const base = Math.floor(total / len);
+      const remainder = total % len;
+      newInvitedSchools = newInvitedSchools.map((s, i) => ({
+        ...s,
+        maxStudentsInvited: base + (i < remainder ? 1 : 0)
+      }));
+    }
+
+    onFormChange({
+      invitedSchools: newInvitedSchools
+    });
   };
 
   const [currentStep, setCurrentStep] = React.useState(0);
@@ -85,6 +110,36 @@ export function CampaignForm({
   };
 
   const handleNext = () => {
+    if (currentStep === 0) {
+      // Filter out schools that no longer meet the minimum student requirement when moving to Step 1
+      const val = formData.minStudentsPerSchool;
+      if ((formData.invitedSchools || []).length > 0) {
+        const filteredSchools = formData.invitedSchools.filter(invited => {
+          const school = availableSchools.find(s => (s.schoolId || s.id) === invited.schoolId);
+          const studentCount = school?.managedStudentCount || school?.studentCount || school?.student_count || 0;
+          return studentCount >= val;
+        });
+
+        if (filteredSchools.length !== formData.invitedSchools.length) {
+          const len = filteredSchools.length;
+          let newInvitedSchools = filteredSchools;
+          if (len > 0) {
+            const total = formData.totalStudentQuota || 0;
+            const base = Math.floor(total / len);
+            const remainder = total % len;
+            newInvitedSchools = filteredSchools.map((s, i) => ({
+              ...s,
+              maxStudentsInvited: base + (i < remainder ? 1 : 0)
+            }));
+          } else {
+            newInvitedSchools = [];
+          }
+          onFormChange({ invitedSchools: newInvitedSchools });
+          toast('Một số trường đã bị loại bỏ do không đủ số học sinh tối thiểu.', { icon: 'ℹ️' });
+        }
+      }
+    }
+
     if (currentStep < steps.length - 1) {
       setCurrentStep(prev => prev + 1);
     }
@@ -99,20 +154,51 @@ export function CampaignForm({
   const isStepValid = () => {
     switch (currentStep) {
       case 0:
+        const now = dayjs();
+        const invStart = dayjs(formData.invitationDate);
+        const invEnd = dayjs(formData.invitationDeadline);
+        const regStart = dayjs(formData.registrationDate);
+        const regEnd = dayjs(formData.registrationDeadline);
+        const camStart = dayjs(formData.startDate);
+        const camEnd = dayjs(formData.endDate);
+
         return (
-          formData.campaignName && 
-          formData.startDate && 
-          formData.endDate && 
-          formData.registrationDate &&
-          formData.registrationDeadline &&
-          formData.invitationDate &&
-          formData.invitationDeadline &&
-          formData.endDate >= formData.startDate
+          camStart.isAfter(now.subtract(1, 'minute')) &&
+          camEnd.isAfter(camStart) &&
+          regStart.isBefore(camStart) &&
+          regEnd.isAfter(regStart) &&
+          invStart.isAfter(regEnd) &&
+          invStart.isBefore(invEnd) &&
+          invStart.isBefore(camStart) &&
+          invEnd.isBefore(camStart)
         );
       case 1:
-        return formData.schoolIds.length > 0;
+        const totalAllocated = (formData.invitedSchools || []).reduce((sum, s) => sum + (parseInt(s.maxStudentsInvited) || 0), 0);
+        return (formData.invitedSchools || []).length > 0 && totalAllocated === formData.totalStudentQuota;
       case 2:
-        return formData.rounds.length > 0 && formData.rounds.every(r => r.roundName && r.startTime && r.endTime);
+        if (formData.rounds.length === 0) return false;
+        
+        const camStartStep2 = dayjs(formData.startDate);
+        const camEndStep2 = dayjs(formData.endDate);
+
+        return formData.rounds.every((r, idx) => {
+          if (!r.roundName || !r.startTime || !r.endTime) return false;
+          
+          const rStart = dayjs(r.startTime);
+          const rEnd = dayjs(r.endTime);
+          
+          // Basic round range check
+          if (!rEnd.isAfter(rStart)) return false;
+          if (rStart.isBefore(camStartStep2.subtract(1, 'minute')) || rEnd.isAfter(camEndStep2.add(1, 'minute'))) return false;
+          
+          // Sequential check
+          if (idx > 0) {
+            const prevEnd = dayjs(formData.rounds[idx-1].endTime);
+            if (rStart.isBefore(prevEnd.subtract(1, 'minute'))) return false;
+          }
+          
+          return true;
+        });
       case 3:
         return formData.rewards.length > 0 && formData.rewards.every(r => r.rewardName && r.rankPosition);
       default:
@@ -222,7 +308,7 @@ export function CampaignForm({
                         needConfirm={false}
                         className="w-full h-10"
                         placeholder="Chọn ngày bắt đầu"
-                        getPopupContainer={(trigger) => trigger.parentElement}
+                        status={(formData.startDate && dayjs(formData.startDate).isBefore(dayjs().subtract(1, 'minute'))) || (formData.startDate && formData.endDate && !dayjs(formData.startDate).isBefore(dayjs(formData.endDate))) ? 'error' : ''}
                         value={formData.startDate ? dayjs(formData.startDate) : null}
                         onChange={(date) => {
                           const newStartDate = date ? date.format('YYYY-MM-DDTHH:mm') : '';
@@ -236,6 +322,12 @@ export function CampaignForm({
                           });
                         }}
                       />
+                      {formData.startDate && dayjs(formData.startDate).isBefore(dayjs().subtract(1, 'minute')) && (
+                        <p className="text-[10px] text-destructive mt-1">Ngày bắt đầu phải từ hiện tại trở đi</p>
+                      )}
+                      {formData.startDate && formData.endDate && !dayjs(formData.startDate).isBefore(dayjs(formData.endDate)) && (
+                        <p className="text-[10px] text-destructive mt-1">Phải trước ngày kết thúc</p>
+                      )}
                     </div>
                     <div className="space-y-2">
                       <Label htmlFor="endDate">Ngày kết thúc chiến dịch *</Label>
@@ -246,7 +338,7 @@ export function CampaignForm({
                         needConfirm={false}
                         className="w-full h-10"
                         placeholder="Chọn ngày kết thúc"
-                        getPopupContainer={(trigger) => trigger.parentElement}
+                        status={formData.endDate && formData.startDate && !dayjs(formData.endDate).isAfter(dayjs(formData.startDate)) ? 'error' : ''}
                         value={formData.endDate ? dayjs(formData.endDate) : null}
                         onChange={(date) => {
                           const newEndDate = date ? date.format('YYYY-MM-DDTHH:mm') : '';
@@ -260,6 +352,9 @@ export function CampaignForm({
                           });
                         }}
                       />
+                      {formData.endDate && formData.startDate && !dayjs(formData.endDate).isAfter(dayjs(formData.startDate)) && (
+                        <p className="text-[10px] text-destructive mt-1">Ngày kết thúc phải sau ngày bắt đầu</p>
+                      )}
                     </div>
                     <div className="space-y-2">
                       <Label htmlFor="registrationDate">Ngày mở đăng ký *</Label>
@@ -270,10 +365,16 @@ export function CampaignForm({
                         needConfirm={false}
                         className="w-full h-10"
                         placeholder="Chọn ngày mở đăng ký"
-                        getPopupContainer={(trigger) => trigger.parentElement}
+                        status={(formData.registrationDate && formData.startDate && !dayjs(formData.registrationDate).isBefore(dayjs(formData.startDate))) || (formData.registrationDate && formData.registrationDeadline && !dayjs(formData.registrationDate).isBefore(dayjs(formData.registrationDeadline))) ? 'error' : ''}
                         value={formData.registrationDate ? dayjs(formData.registrationDate) : null}
                         onChange={(date) => onFormChange({ registrationDate: date ? date.format('YYYY-MM-DDTHH:mm') : '' })}
                       />
+                      {formData.registrationDate && formData.startDate && !dayjs(formData.registrationDate).isBefore(dayjs(formData.startDate)) && (
+                        <p className="text-[10px] text-destructive mt-1">Phải trước ngày bắt đầu chiến dịch</p>
+                      )}
+                      {formData.registrationDate && formData.registrationDeadline && !dayjs(formData.registrationDate).isBefore(dayjs(formData.registrationDeadline)) && (
+                        <p className="text-[10px] text-destructive mt-1">Phải trước hạn chót đăng ký</p>
+                      )}
                     </div>
                     <div className="space-y-2">
                       <Label htmlFor="registrationDeadline">Hạn chót đăng ký *</Label>
@@ -284,10 +385,13 @@ export function CampaignForm({
                         needConfirm={false}
                         className="w-full h-10"
                         placeholder="Chọn hạn chót đăng ký"
-                        getPopupContainer={(trigger) => trigger.parentElement}
+                        status={formData.registrationDeadline && formData.registrationDate && !dayjs(formData.registrationDeadline).isAfter(dayjs(formData.registrationDate)) ? 'error' : ''}
                         value={formData.registrationDeadline ? dayjs(formData.registrationDeadline) : null}
                         onChange={(date) => onFormChange({ registrationDeadline: date ? date.format('YYYY-MM-DDTHH:mm') : '' })}
                       />
+                      {formData.registrationDeadline && formData.registrationDate && !dayjs(formData.registrationDeadline).isAfter(dayjs(formData.registrationDate)) && (
+                        <p className="text-[10px] text-destructive mt-1">Phải sau ngày mở đăng ký</p>
+                      )}
                     </div>
                   </div>
                 </div>
@@ -309,10 +413,16 @@ export function CampaignForm({
                         needConfirm={false}
                         className="w-full h-10"
                         placeholder="Chọn ngày gửi lời mời"
-                        getPopupContainer={(trigger) => trigger.parentElement}
+                        status={(formData.invitationDate && formData.registrationDeadline && !dayjs(formData.invitationDate).isAfter(dayjs(formData.registrationDeadline))) || (formData.invitationDate && formData.invitationDeadline && !dayjs(formData.invitationDate).isBefore(dayjs(formData.invitationDeadline))) || (formData.invitationDate && formData.startDate && !dayjs(formData.invitationDate).isBefore(dayjs(formData.startDate))) ? 'error' : ''}
                         value={formData.invitationDate ? dayjs(formData.invitationDate) : null}
                         onChange={(date) => onFormChange({ invitationDate: date ? date.format('YYYY-MM-DDTHH:mm') : '' })}
                       />
+                      {formData.invitationDate && formData.registrationDeadline && !dayjs(formData.invitationDate).isAfter(dayjs(formData.registrationDeadline)) && (
+                        <p className="text-[10px] text-destructive mt-1">Phải sau hạn chót đăng ký</p>
+                      )}
+                      {formData.invitationDate && ( (formData.invitationDeadline && !dayjs(formData.invitationDate).isBefore(dayjs(formData.invitationDeadline))) || (formData.startDate && !dayjs(formData.invitationDate).isBefore(dayjs(formData.startDate))) ) && (
+                        <p className="text-[10px] text-destructive mt-1">Phải trước hạn chót xác nhận và ngày bắt đầu</p>
+                      )}
                     </div>
                     <div className="space-y-2">
                       <Label htmlFor="invitationDeadline">Hạn chót xác nhận lời mời *</Label>
@@ -323,21 +433,28 @@ export function CampaignForm({
                         needConfirm={false}
                         className="w-full h-10"
                         placeholder="Chọn hạn chót xác nhận"
-                        getPopupContainer={(trigger) => trigger.parentElement}
+                        status={(formData.invitationDeadline && formData.invitationDate && !dayjs(formData.invitationDeadline).isAfter(dayjs(formData.invitationDate))) || (formData.invitationDeadline && formData.startDate && !dayjs(formData.invitationDeadline).isBefore(dayjs(formData.startDate))) ? 'error' : ''}
                         value={formData.invitationDeadline ? dayjs(formData.invitationDeadline) : null}
                         onChange={(date) => onFormChange({ invitationDeadline: date ? date.format('YYYY-MM-DDTHH:mm') : '' })}
                       />
+                      {formData.invitationDeadline && formData.invitationDate && !dayjs(formData.invitationDeadline).isAfter(dayjs(formData.invitationDate)) && (
+                        <p className="text-[10px] text-destructive mt-1">Phải sau ngày gửi lời mời</p>
+                      )}
+                      {formData.invitationDeadline && formData.startDate && !dayjs(formData.invitationDeadline).isBefore(dayjs(formData.startDate)) && (
+                        <p className="text-[10px] text-destructive mt-1">Phải trước ngày bắt đầu chiến dịch</p>
+                      )}
                     </div>
                     <div className="space-y-2">
-                      <Label htmlFor="maxStudentsPerSchool">Số học sinh tối đa mỗi trường *</Label>
+                      <Label htmlFor="minStudentsPerSchool">Số học sinh tối thiểu mỗi trường</Label>
                       <Input
-                        id="maxStudentsPerSchool"
+                        id="minStudentsPerSchool"
                         type="number"
                         min={0}
-                        value={formData.maxStudentsPerSchool}
+                        placeholder="VD: 50"
+                        value={formData.minStudentsPerSchool}
                         onChange={(e) => {
                           const val = Math.max(0, parseInt(e.target.value) || 0);
-                          onFormChange({ maxStudentsPerSchool: val });
+                          onFormChange({ minStudentsPerSchool: val });
                         }}
                       />
                     </div>
@@ -351,6 +468,18 @@ export function CampaignForm({
                         onChange={(e) => {
                           const quota = Math.max(0, parseInt(e.target.value) || 0);
                           const updates = { totalStudentQuota: quota };
+                          
+                          // Precise distribution: base + remainder for first N schools
+                          if ((formData.invitedSchools || []).length > 0) {
+                            const len = formData.invitedSchools.length;
+                            const base = Math.floor(quota / len);
+                            const remainder = quota % len;
+                            updates.invitedSchools = formData.invitedSchools.map((s, i) => ({
+                              ...s,
+                              maxStudentsInvited: base + (i < remainder ? 1 : 0)
+                            }));
+                          }
+
                           if (formData.rounds.length > 0) {
                             const newRounds = [...formData.rounds];
                             newRounds[0].maxParticipants = quota;
@@ -398,12 +527,38 @@ export function CampaignForm({
 
             {currentStep === 1 && (
               <div className="space-y-4 animate-fade-in">
-                <div className="flex items-center justify-between">
-                  <Label className="text-base font-bold">Chọn trường tham gia</Label>
-                  <Badge variant="outline" className="text-sm">
-                    <School className="w-4 h-4 mr-1" />
-                    {formData.schoolIds.length} trường
-                  </Badge>
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                  <div>
+                    <Label className="text-base font-bold">Chọn trường tham gia</Label>
+                    <div className="flex items-center gap-2 mt-1">
+                      {(() => {
+                        const totalAllocated = (formData.invitedSchools || []).reduce((sum, s) => sum + (parseInt(s.maxStudentsInvited) || 0), 0);
+                        const isMatched = totalAllocated === formData.totalStudentQuota;
+                        return (
+                          <p className={cn(
+                            "text-xs font-medium px-2 py-0.5 rounded-full border",
+                            isMatched 
+                              ? "bg-eco-green/10 text-eco-green border-eco-green/20" 
+                              : "bg-destructive/10 text-destructive border-destructive/20"
+                          )}>
+                            Đã phân bổ: {totalAllocated}/{formData.totalStudentQuota} HS
+                            {!isMatched && ` (Còn ${formData.totalStudentQuota - totalAllocated > 0 ? 'thiếu' : 'dư'} ${Math.abs(formData.totalStudentQuota - totalAllocated)})`}
+                          </p>
+                        );
+                      })()}
+                    </div>
+                  </div>
+                  <div className="flex flex-wrap items-center gap-3">
+                    <Badge variant="outline" className="text-sm bg-eco-blue/5 text-eco-blue border-eco-blue/20 h-9">
+                      <Users className="w-4 h-4 mr-1" />
+                      Tổng chỉ tiêu: {formData.totalStudentQuota}
+                    </Badge>
+                    
+                    <Badge variant="outline" className="text-sm h-9">
+                      <School className="w-4 h-4 mr-1" />
+                      {(formData.invitedSchools || []).length} trường
+                    </Badge>
+                  </div>
                 </div>
 
                 <div className="border-2 rounded-xl p-4 space-y-3 max-h-[400px] overflow-y-auto">
@@ -414,39 +569,79 @@ export function CampaignForm({
                   ) : (
                       availableSchools.map((school) => {
                         const id = school.schoolId || school.id;
-                        const isSelected = formData.schoolIds.includes(id);
+                        const invitedSchool = (formData.invitedSchools || []).find(s => s.schoolId === id);
+                        const isSelected = !!invitedSchool;
+                        const studentCount = school.managedStudentCount || school.studentCount || school.student_count || 0;
+                        const isEligible = formData.minStudentsPerSchool === 0 || studentCount >= formData.minStudentsPerSchool;
 
                         return (
                           <div
                             key={id}
                             className={cn(
-                              "p-4 rounded-lg border-2 transition-colors",
+                              "p-4 rounded-lg border-2 transition-colors relative",
                               isSelected
                                 ? "bg-eco-blue/5 border-eco-blue/30"
-                                : "border-border hover:bg-muted/50"
+                                : !isEligible 
+                                  ? "bg-muted/20 border-muted opacity-60 grayscale-[0.5]"
+                                  : "border-border hover:bg-muted/50"
                             )}
                           >
-                            <div className="flex items-start gap-3">
-                              <Checkbox
-                                checked={isSelected}
-                                onCheckedChange={() => toggleSchool(id)}
-                                className="mt-1"
-                              />
-                              <div className="flex-1">
-                                <p className="font-semibold text-foreground">{school.schoolName || school.school_name}</p>
-                                <div className="flex items-center gap-3 mt-1">
-                                  <div className="flex items-center gap-1 text-sm text-muted-foreground">
-                                    <MapPin className="w-3 h-3" />
-                                    <span>{school.ward || school.district}, {school.province || school.city}</span>
+                            <div className="flex flex-col sm:flex-row sm:items-center gap-4">
+                              <div className="flex items-start gap-3 flex-1">
+                                <Checkbox
+                                  checked={isSelected}
+                                  onCheckedChange={() => toggleSchool(id)}
+                                  disabled={!isEligible && !isSelected}
+                                  className="mt-1"
+                                />
+                                <div className="flex-1">
+                                  <div className="flex items-center justify-between">
+                                    <p className="font-semibold text-foreground">{school.schoolName || school.school_name}</p>
+                                    {!isEligible && (
+                                      <Badge variant="destructive" className="text-[10px] py-0 h-4">
+                                        Không đủ HS tối thiểu
+                                      </Badge>
+                                    )}
                                   </div>
-                                  {(school.student_count || school.studentCount) && (
-                                    <Badge variant="outline" className="text-xs">
+                                  <div className="flex items-center gap-3 mt-1">
+                                    <div className="flex items-center gap-1 text-sm text-muted-foreground">
+                                      <MapPin className="w-3 h-3" />
+                                      <span>{school.ward || school.district}, {school.province || school.city}</span>
+                                    </div>
+                                    <Badge variant="outline" className={cn(
+                                      "text-xs",
+                                      !isEligible ? "text-destructive border-destructive/20 bg-destructive/5" : "text-eco-blue border-eco-blue/20 bg-eco-blue/5"
+                                    )}>
                                       <Users className="w-3 h-3 mr-1" />
-                                      {school.studentCount || school.student_count} HS
+                                      {studentCount} học sinh
                                     </Badge>
-                                  )}
+                                  </div>
                                 </div>
                               </div>
+
+                              {isSelected && (
+                                <div className="flex items-center gap-2 pl-7 sm:pl-0">
+                                  <Label className="text-xs font-semibold whitespace-nowrap text-eco-orange">Chỉ tiêu mời:</Label>
+                                  <Input
+                                    type="number"
+                                    min={0}
+                                    max={formData.totalStudentQuota}
+                                    className="w-20 h-8 text-xs font-bold bg-background border-eco-orange/30 focus-visible:ring-eco-orange"
+                                    value={invitedSchool.maxStudentsInvited}
+                                    onChange={(e) => {
+                                      let val = Math.max(0, parseInt(e.target.value) || 0);
+                                      if (val > formData.totalStudentQuota) {
+                                        val = formData.totalStudentQuota;
+                                        toast.error(`Chỉ tiêu của trường không được vượt quá tổng chỉ tiêu chiến dịch (${formData.totalStudentQuota} HS)`);
+                                      }
+                                      const updated = formData.invitedSchools.map(s => 
+                                        s.schoolId === id ? { ...s, maxStudentsInvited: val } : s
+                                      );
+                                      onFormChange({ invitedSchools: updated });
+                                    }}
+                                  />
+                                </div>
+                              )}
                             </div>
                           </div>
                         );
@@ -565,7 +760,6 @@ export function CampaignForm({
                             needConfirm={false}
                             className="w-full h-10"
                             placeholder="Chọn ngày bắt đầu"
-                            getPopupContainer={(trigger) => trigger.parentElement}
                             value={round.startTime ? dayjs(round.startTime) : null}
                             onChange={(date) => {
                               const newRounds = [...formData.rounds];
@@ -582,7 +776,6 @@ export function CampaignForm({
                             needConfirm={false}
                             className="w-full h-10"
                             placeholder="Chọn ngày kết thúc"
-                            getPopupContainer={(trigger) => trigger.parentElement}
                             value={round.endTime ? dayjs(round.endTime) : null}
                             onChange={(date) => {
                               const newEndTime = date ? date.format('YYYY-MM-DDTHH:mm') : '';

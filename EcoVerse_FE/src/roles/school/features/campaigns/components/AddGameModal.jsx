@@ -30,6 +30,8 @@ const DEFAULT_COIN = 20;
 
 const WASTE_LABEL = { ORGANIC: 'Hữu cơ', RECYCLABLE: 'Tái chế', GENERAL: 'Chung', HAZARDOUS: 'Nguy hại' };
 
+const DIFFICULTY_ORDER = { EASY: 1, MEDIUM: 2, HARD: 3 };
+
 // ─── Component ────────────────────────────────────────────────────────────────
 export function AddGameModal({ isOpen, onClose, campaign, onSubmit }) {
   const [step, setStep] = useState(1);
@@ -112,7 +114,12 @@ export function AddGameModal({ isOpen, onClose, campaign, onSubmit }) {
     (async () => {
       try {
         const res = await campaignService.getGameTypePresets(selectedGameTypeId);
-        setPresets(res.data?.data || []);
+        const rawPresets = res.data?.data || [];
+        // Sort by logical order: Easy -> Medium -> Hard
+        const sortedPresets = [...rawPresets].sort((a, b) => 
+          (DIFFICULTY_ORDER[a.difficulty] || 99) - (DIFFICULTY_ORDER[b.difficulty] || 99)
+        );
+        setPresets(sortedPresets);
       } catch {
         setError('Không thể tải preset');
       } finally {
@@ -287,7 +294,7 @@ export function AddGameModal({ isOpen, onClose, campaign, onSubmit }) {
                       onChange={e => setCoinPerSession(e.target.value)}
                       className="pr-28 text-lg font-semibold h-12"
                     />
-                    <span className="absolute right-3 top-1/2 -translate-y-1/2 text-sm text-muted-foreground">coin / session</span>
+                    <span className="absolute right-3 top-1/2 -translate-y-1/2 text-sm text-muted-foreground">Xu / session</span>
                   </div>
                   <Button variant="secondary" onClick={() => setCoinPerSession(DEFAULT_COIN)} className="h-12 shrink-0">
                     <RotateCcw className="w-4 h-4 mr-2" />
@@ -506,7 +513,7 @@ export function AddGameModal({ isOpen, onClose, campaign, onSubmit }) {
 
                   <div className="p-4 text-center bg-eco-orange/10">
                     <p className="text-2xl font-bold text-eco-orange">{coinPerSession}</p>
-                    <p className="text-xs text-muted-foreground">Coin / session</p>
+                    <p className="text-xs text-muted-foreground">Xu / lượt chơi</p>
                   </div>
                 </div>
               </div>
