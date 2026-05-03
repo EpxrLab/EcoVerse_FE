@@ -1,11 +1,14 @@
 import { useEffect, useState, useMemo } from "react";
 import { useNavigate, useParams } from "react-router";
-import { Card, Button, Select, Space } from "antd";
+import { Card, Button, Select, Space, Dropdown } from "antd";
 import {
   TrophyOutlined,
   HomeOutlined,
   ClockCircleOutlined,
   AimOutlined,
+  EyeOutlined,
+  HistoryOutlined,
+  FileSearchOutlined,
 } from "@ant-design/icons";
 import { Crown, Medal, Layers, ChevronRight, Lock } from "lucide-react";
 import { motion } from "framer-motion";
@@ -199,6 +202,7 @@ export default function StudentLeaderboard() {
   }, [campaign]);
 
   const isPartnership = campaign?.campaignType === "PARTNERSHIP_EVENT";
+  const isCampaignFinished = campaign?.status === "COMPLETED";
 
   if (!campaign) {
     return (
@@ -523,6 +527,44 @@ export default function StudentLeaderboard() {
                                 </span>
                               )}
                             </p>
+
+                            {isCampaignFinished && (
+                              <Dropdown
+                                menu={{
+                                  items: [
+                                    {
+                                      key: "game",
+                                      label: "Xem lịch sử chơi Game",
+                                      icon: <HistoryOutlined />,
+                                      onClick: () =>
+                                        navigate(
+                                          `/student/campaign/${campaignId}/game`,
+                                        ),
+                                    },
+                                    {
+                                      key: "quiz",
+                                      label: "Xem lịch sử Quiz",
+                                      icon: <FileSearchOutlined />,
+                                      onClick: () =>
+                                        navigate(
+                                          `/student/campaign/${campaignId}/quiz`,
+                                        ),
+                                    },
+                                  ],
+                                }}
+                                trigger={["click"]}
+                                placement="bottomRight"
+                              >
+                                <Button
+                                  size="small"
+                                  type="text"
+                                  icon={
+                                    <EyeOutlined className="text-gray-400" />
+                                  }
+                                  className="hover:bg-primary/5 rounded-full flex items-center justify-center"
+                                />
+                              </Dropdown>
+                            )}
                           </div>
                           <p className="text-xs text-gray-400 truncate">
                             {entry.schoolName}
