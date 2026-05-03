@@ -247,11 +247,16 @@ export default function StudentGame() {
     );
   };
 
-  const fetchGameHistoryData = async (configId) => {
+  const fetchGameHistoryData = async (configId, levelNumber, presetId) => {
     setHistoryLoading(true);
     try {
       const res = await getGameHistory(campaignId, selectedRoundId, configId);
-      setGameHistory(res.data || []);
+      // Filter sessions that match the selected level number AND presetId
+      const filteredHistory = (res.data || []).filter(
+        (item) =>
+          item.currentLevel === levelNumber && item.presetId === presetId,
+      );
+      setGameHistory(filteredHistory);
     } catch (err) {
       console.error("[StudentGame] Failed to fetch game history:", err);
       setGameHistory([]);
@@ -264,7 +269,11 @@ export default function StudentGame() {
     setSelectedLevel(level);
     setHistoryModalOpen(true);
     setHistoryPage(1);
-    fetchGameHistoryData(level.roundGameConfigId);
+    fetchGameHistoryData(
+      level.roundGameConfigId,
+      level.levelNumber,
+      level.presetId,
+    );
   };
 
   const formatTime = (seconds) => {
@@ -356,7 +365,7 @@ export default function StudentGame() {
                     <div className="w-12 h-12 rounded-xl bg-primary/10 flex items-center justify-center">
                       <CheckCircleOutlined className="text-xl text-primary" />
                     </div>
-                    <div className="text-left">
+                    <div className="text-left whitespace-nowrap">
                       <p className="text-sm text-gray-500">Level hoàn thành</p>
                       <p className="text-2xl font-bold text-gray-800">
                         {completedLevels.length}/{gameLevels.length}
@@ -374,7 +383,7 @@ export default function StudentGame() {
                       <div className="w-12 h-12 rounded-xl bg-amber-500 flex items-center justify-center shadow-lg">
                         <CoinIcon />
                       </div>
-                      <div className="text-left">
+                      <div className="text-left whitespace-nowrap">
                         <p className="text-sm text-gray-500">Xu kiếm được</p>
                         <p className="text-2xl font-bold text-amber-600">
                           {totalCoins}
@@ -817,7 +826,7 @@ export default function StudentGame() {
         open={historyModalOpen}
         onCancel={() => setHistoryModalOpen(false)}
         footer={null}
-        width={850}
+        width={1100}
         className="rounded-2xl overflow-hidden"
         bodyStyle={{ padding: "12px 24px 24px" }}
       >
@@ -837,14 +846,14 @@ export default function StudentGame() {
                       key={item.sessionId || globalIdx}
                       className="p-4 rounded-2xl border border-gray-100 bg-gray-50/50 hover:bg-white hover:shadow-lg transition-all duration-300 group"
                     >
-                      <div className="flex flex-col sm:flex-row sm:items-center gap-4 sm:gap-6">
+                      <div className="flex flex-col xl:flex-row xl:items-center gap-4 xl:gap-6">
                         {/* Status & Attempt */}
-                        <div className="flex items-center gap-4 min-w-[140px]">
+                        <div className="flex items-center gap-4 min-w-[120px]">
                           <div className="w-10 h-10 rounded-xl bg-gray-100 flex items-center justify-center font-black text-gray-500 shrink-0">
                             #{gameHistory.length - globalIdx}
                           </div>
                           <div className="flex flex-col">
-                            <span className="text-[10px] text-gray-400 font-bold uppercase tracking-wider">
+                            <span className="text-[10px] text-gray-400 font-bold uppercase tracking-wider whitespace-nowrap">
                               Kết quả
                             </span>
                             {item.isPassed ? (
@@ -865,18 +874,18 @@ export default function StudentGame() {
                           </div>
                         </div>
 
-                        <div className="hidden sm:block w-px h-10 bg-gray-200" />
+                        <div className="hidden xl:block w-px h-10 bg-gray-200" />
 
                         {/* Performance Stats */}
                         <div
                           className={`grid gap-4 flex-1 ${
                             isPartnership
-                              ? "grid-cols-2 sm:grid-cols-3" // Nếu là Partnership: 3 cột trên desktop
-                              : "grid-cols-2 sm:grid-cols-4" // Nếu bình thường: 4 cột trên desktop
+                              ? "grid-cols-2 md:grid-cols-3"
+                              : "grid-cols-2 md:grid-cols-4"
                           }`}
                         >
                           <div className="flex flex-col">
-                            <span className="text-[10px] text-gray-400 font-bold uppercase tracking-wider">
+                            <span className="text-[10px] text-gray-400 font-bold uppercase tracking-wider whitespace-nowrap">
                               Chính xác
                             </span>
                             <span
@@ -887,7 +896,7 @@ export default function StudentGame() {
                           </div>
 
                           <div className="flex flex-col">
-                            <span className="text-[10px] text-gray-400 font-bold uppercase tracking-wider">
+                            <span className="text-[10px] text-gray-400 font-bold uppercase tracking-wider whitespace-nowrap">
                               Thời gian
                             </span>
                             <div className="flex items-center gap-1.5 text-gray-700 font-bold text-base">
@@ -897,7 +906,7 @@ export default function StudentGame() {
                           </div>
 
                           <div className="flex flex-col">
-                            <span className="text-[10px] text-gray-400 font-bold uppercase tracking-wider">
+                            <span className="text-[10px] text-gray-400 font-bold uppercase tracking-wider whitespace-nowrap">
                               Đúng / Tổng
                             </span>
                             <span className="text-base font-black text-gray-700">
@@ -907,7 +916,7 @@ export default function StudentGame() {
 
                           {!isPartnership && (
                             <div className="flex flex-col">
-                              <span className="text-[10px] text-gray-400 font-bold uppercase tracking-wider">
+                              <span className="text-[10px] text-gray-400 font-bold uppercase tracking-wider whitespace-nowrap">
                                 Xu nhận
                               </span>
                               <span className="text-base font-black text-amber-600 flex items-center gap-1">
@@ -918,17 +927,17 @@ export default function StudentGame() {
                           )}
                         </div>
 
-                        <div className="hidden lg:block w-px h-10 bg-gray-200" />
+                        <div className="hidden xl:block w-px h-10 bg-gray-200" />
 
                         {/* Timing */}
-                        <div className="flex flex-col min-w-[150px] justify-center">
-                          <span className="text-[10px] text-gray-400 font-bold uppercase tracking-wider">
+                        <div className="flex flex-col sm:min-w-[220px] justify-center bg-gray-100/50 p-3 rounded-xl border border-gray-100">
+                          <span className="text-[10px] text-gray-400 font-bold uppercase tracking-wider whitespace-nowrap mb-2 block">
                             Thời gian thực hiện
                           </span>
-                          <div className="text-[11px] font-medium text-gray-500 space-y-0.5 mt-1">
-                            <p className="flex justify-between">
-                              <span>Bắt đầu:</span>
-                              <span className="text-gray-700 font-bold">
+                          <div className="text-[11px] font-medium text-gray-500 space-y-1.5">
+                            <div className="flex items-center justify-between gap-4">
+                              <span className="opacity-70">Bắt đầu:</span>
+                              <span className="text-gray-700 font-black">
                                 {new Date(item.sessionStart).toLocaleTimeString(
                                   "vi-VN",
                                   { hour: "2-digit", minute: "2-digit" },
@@ -937,10 +946,10 @@ export default function StudentGame() {
                                   "vi-VN",
                                 )}
                               </span>
-                            </p>
-                            <p className="flex justify-between">
-                              <span>Kết thúc:</span>
-                              <span className="text-gray-700 font-bold">
+                            </div>
+                            <div className="flex items-center justify-between gap-4">
+                              <span className="opacity-70">Kết thúc:</span>
+                              <span className="text-gray-700 font-black">
                                 {new Date(item.sessionEnd).toLocaleTimeString(
                                   "vi-VN",
                                   { hour: "2-digit", minute: "2-digit" },
@@ -949,7 +958,7 @@ export default function StudentGame() {
                                   "vi-VN",
                                 )}
                               </span>
-                            </p>
+                            </div>
                           </div>
                         </div>
                       </div>

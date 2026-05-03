@@ -113,7 +113,7 @@ function RoundCard({ round, campaignId, navigate }) {
       transition={{ duration: 0.2 }}
       onClick={() => {
         if (isAccessible) {
-          navigate(`/student/campaign/${campaignId}/round/${round.id}`);
+          navigate(`/student/campaign/${campaignId}/game`);
         }
       }}
     >

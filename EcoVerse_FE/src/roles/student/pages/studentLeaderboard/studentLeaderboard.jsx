@@ -1,13 +1,16 @@
 import { useEffect, useState, useMemo } from "react";
 import { useNavigate, useParams } from "react-router";
-import { Card, Button, Select, Space } from "antd";
+import { Card, Button, Select, Space, Dropdown } from "antd";
 import {
   TrophyOutlined,
   HomeOutlined,
   ClockCircleOutlined,
   AimOutlined,
+  EyeOutlined,
+  HistoryOutlined,
+  FileSearchOutlined,
 } from "@ant-design/icons";
-import { Crown, Medal, Layers, ChevronRight } from "lucide-react";
+import { Crown, Medal, Layers, ChevronRight, Lock } from "lucide-react";
 import { motion } from "framer-motion";
 import {
   getAuthenticatedStudentProfile,
@@ -62,7 +65,7 @@ const RankIcon = ({ rank }) => {
 
 // ─── PodiumSlot ───────────────────────────────────────────────────────────────
 
-function PodiumSlot({ entry, isFirst }) {
+function PodiumSlot({ entry, isFirst, isPartnership }) {
   if (!entry) return <div className="w-28" />;
   const initial = (entry.studentName ?? "?").charAt(0).toUpperCase();
 
@@ -96,14 +99,16 @@ function PodiumSlot({ entry, isFirst }) {
         <p className="text-[11px] text-gray-400 truncate mt-0.5">
           {entry.schoolName}
         </p>
-        <div className="flex items-center justify-center gap-1 mt-1.5">
-          <CoinIcon className="w-4 h-4 text-amber-500" />
-          <span
-            className={`font-bold text-amber-600 ${isFirst ? "text-base" : "text-sm"}`}
-          >
-            {entry.totalCoinsEarned?.toLocaleString()}
-          </span>
-        </div>
+        {!isPartnership && (
+          <div className="flex items-center justify-center gap-1 mt-1.5">
+            <CoinIcon className="w-4 h-4 text-amber-500" />
+            <span
+              className={`font-bold text-amber-600 ${isFirst ? "text-base" : "text-sm"}`}
+            >
+              {entry.totalCoinsEarned?.toLocaleString()}
+            </span>
+          </div>
+        )}
       </div>
 
       {/* Podium block */}
@@ -175,10 +180,29 @@ export default function StudentLeaderboard() {
     })();
   }, [campaignId, selectedRoundId]);
 
-  const selectedRound = useMemo(() => 
-    campaign?.rounds?.find(r => r.id === selectedRoundId),
-    [campaign?.rounds, selectedRoundId]
+  const selectedRound = useMemo(
+    () => campaign?.rounds?.find((r) => r.id === selectedRoundId),
+    [campaign?.rounds, selectedRoundId],
   );
+
+  const isCampaignCompleted = useMemo(() => {
+    if (!campaign) return false;
+    // Check if ALL game levels and ALL mandatory quizzes are passed across all rounds
+    return (campaign.rounds ?? []).every((round) => {
+      const gamesPassed = (round.games ?? []).every((game) =>
+        (game.presets ?? []).every((preset) =>
+          (preset.items ?? []).every((item) => item.isPassed),
+        ),
+      );
+      const quizzesPassed = (round.quizzes ?? []).every((quiz) =>
+        quiz.isRequired ? quiz.isPassed : true,
+      );
+      return gamesPassed && quizzesPassed;
+    });
+  }, [campaign]);
+
+  const isPartnership = campaign?.campaignType === "PARTNERSHIP_EVENT";
+  const isCampaignFinished = campaign?.status === "COMPLETED";
 
   if (!campaign) {
     return (
@@ -280,23 +304,15 @@ export default function StudentLeaderboard() {
                       <p className="text-3xl font-black text-white leading-none">
                         #{myEntry.rank}
                       </p>
-                      <div className="flex items-center gap-1 mt-0.5">
-                        <CoinIcon className="w-3.5 h-3.5 text-amber-500" />
-                        <span className="text-sm font-bold text-white">
-                          {myEntry.totalCoinsEarned?.toLocaleString()} xu
-                        </span>
-                      </div>
+                      {!isPartnership && (
+                        <div className="flex items-center gap-1 mt-0.5">
+                          <CoinIcon className="w-3.5 h-3.5 text-amber-500" />
+                          <span className="text-sm font-bold text-white">
+                            {myEntry.totalCoinsEarned?.toLocaleString()} xu
+                          </span>
+                        </div>
+                      )}
                     </div>
-                  </div>
-                  <div className="flex gap-3 mt-2 text-xs text-white/70">
-                    <span className="flex items-center gap-1">
-                      <AimOutlined className="text-white/80" />
-                      {myEntry.combinedAccuracyPercentage?.toFixed(1)}%
-                    </span>
-                    <span className="flex items-center gap-1">
-                      <ClockCircleOutlined className="text-white/80" />
-                      {fmtTime(myEntry.avgTimeSeconds)}
-                    </span>
                   </div>
                 </Card>
               )}
@@ -305,109 +321,167 @@ export default function StudentLeaderboard() {
         </Card>
       </motion.div>
 
-      {/* ── Round Selection ── */}
-      {campaign?.rounds?.length > 0 && (
+      {/* ── Main Content Area ── */}
+      {!isCampaignCompleted ? (
         <motion.div
-          initial={{ opacity: 0, y: 10 }}
+          initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.15 }}
+          className="pt-10"
         >
-          <Card
-            className="border-2 border-primary/20 rounded-2xl shadow-sm hover:border-primary/40 transition-colors bg-white max-w-sm"
-            bodyStyle={{ padding: "20px" }}
-          >
-            <Space direction="vertical" className="w-full" size="middle">
-              <div className="flex items-center gap-2 text-primary font-black px-1 uppercase tracking-wider text-xs">
-                <Layers className="w-4 h-4" />
-                <span>Vòng thi đấu</span>
+          <Card className="border-0 shadow-2xl rounded-[2.5rem] overflow-hidden bg-white/80 backdrop-blur-md border border-gray-100">
+            <div className="py-20 flex flex-col items-center text-center px-6">
+              <div className="w-24 h-24 rounded-[2rem] bg-amber-50 flex items-center justify-center mb-8 shadow-inner">
+                <Lock className="w-12 h-12 text-amber-500" />
               </div>
-              <Select
-                className="w-full h-12"
-                placeholder="Chọn vòng"
-                value={selectedRoundId}
-                onChange={setSelectedRoundId}
-                size="large"
-                suffixIcon={<ChevronRight className="w-4 h-4" />}
-                dropdownClassName="rounded-xl overflow-hidden shadow-xl"
-                options={
-                  campaign?.rounds?.map((round) => {
-                    const status = round.status;
-                    const statusLabel =
-                      status === "UPCOMING"
-                        ? " (Chưa mở)"
-                        : status === "COMPLETED"
-                          ? " (Đã kết thúc)"
-                          : "";
-                    return {
-                      label: `${round.roundName || `Vòng ${round.roundNumber}`}${statusLabel}`,
-                      value: round.id,
-                    };
-                  }) || []
-                }
-              />
-            </Space>
-          </Card>
-        </motion.div>
-      )}
-
-      {/* ── Podium Top 3 ── */}
-      {topThree.length > 0 && (
-        <motion.div
-          initial={{ opacity: 0, y: 16 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.12 }}
-        >
-          <Card
-            className="border-2 shadow-md rounded-3xl"
-            bodyStyle={{ padding: "28px 24px 0" }}
-          >
-            <h2 className="text-xl font-bold text-center text-gray-800 mb-6">
-              🏆 Top 3
-            </h2>
-            <div className="flex items-end justify-center gap-2 sm:gap-3 overflow-hidden pb-0">
-              {/* 2nd */}
-              <PodiumSlot entry={topThree[1]} isFirst={false} />
-              {/* 1st */}
-              <PodiumSlot entry={topThree[0]} isFirst={true} />
-              {/* 3rd */}
-              <PodiumSlot entry={topThree[2]} isFirst={false} />
+              <h2 className="text-3xl font-black text-gray-800 mb-4 tracking-tight">
+                Bảng xếp hạng đang tạm khóa
+              </h2>
+              <p className="text-gray-500 max-w-lg text-lg leading-relaxed mb-10">
+                Để đảm bảo tính công bằng và chính xác, bảng xếp hạng chỉ hiển
+                thị khi bạn đã hoàn thành{" "}
+                <span className="font-bold text-primary">tất cả</span> các vòng
+                chơi và quiz trong chiến dịch này.
+              </p>
+              <div className="flex flex-col sm:flex-row gap-4 w-full max-w-md">
+                <Button
+                  type="primary"
+                  size="large"
+                  onClick={() => navigate(`/student/campaign/${campaignId}`)}
+                  className="h-14 rounded-2xl bg-primary border-primary hover:bg-primary/90 font-black text-base shadow-xl shadow-primary/20 flex-1"
+                >
+                  Quay lại Dashboard
+                </Button>
+                <Button
+                  size="large"
+                  onClick={() =>
+                    navigate(`/student/campaign/${campaignId}/game`)
+                  }
+                  className="h-14 rounded-2xl border-2 border-gray-100 font-bold text-base text-gray-600 hover:border-primary/30 hover:text-primary flex-1"
+                >
+                  Hoàn thành nhiệm vụ
+                </Button>
+              </div>
             </div>
           </Card>
         </motion.div>
-      )}
+      ) : (
+        <>
+          {/* ── Round Selection ── */}
+          {campaign?.rounds?.length > 0 && (
+            <motion.div
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.15 }}
+            >
+              <Card
+                className="border-2 border-primary/20 rounded-2xl shadow-sm hover:border-primary/40 transition-colors bg-white max-w-sm"
+                bodyStyle={{ padding: "20px" }}
+              >
+                <Space direction="vertical" className="w-full" size="middle">
+                  <div className="flex items-center gap-2 text-primary font-black px-1 uppercase tracking-wider text-xs">
+                    <Layers className="w-4 h-4" />
+                    <span>Vòng thi đấu</span>
+                  </div>
+                  <Select
+                    className="w-full h-12"
+                    placeholder="Chọn vòng"
+                    value={selectedRoundId}
+                    onChange={setSelectedRoundId}
+                    size="large"
+                    suffixIcon={<ChevronRight className="w-4 h-4" />}
+                    dropdownClassName="rounded-xl overflow-hidden shadow-xl"
+                    options={
+                      campaign?.rounds?.map((round) => {
+                        const status = round.status;
+                        const statusLabel =
+                          status === "UPCOMING"
+                            ? " (Chưa mở)"
+                            : status === "COMPLETED"
+                              ? " (Đã kết thúc)"
+                              : "";
+                        return {
+                          label: `${round.roundName || `Vòng ${round.roundNumber}`}${statusLabel}`,
+                          value: round.id,
+                        };
+                      }) || []
+                    }
+                  />
+                </Space>
+              </Card>
+            </motion.div>
+          )}
 
-      {/* ── Full leaderboard table ── */}
-      <motion.div
-        initial={{ opacity: 0, y: 16 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ delay: 0.22 }}
-      >
-        <Card
-          className="border-2 rounded-3xl shadow-sm"
-          bodyStyle={{ padding: "20px" }}
-        >
-          <h3 className="text-lg font-bold text-gray-800 mb-4">
-            Bảng xếp hạng đầy đủ
-          </h3>
+          {/* ── Podium Top 3 ── */}
+          {topThree.length > 0 && (
+            <motion.div
+              initial={{ opacity: 0, y: 16 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.12 }}
+            >
+              <Card
+                className="border-2 shadow-md rounded-3xl"
+                bodyStyle={{ padding: "28px 24px 0" }}
+              >
+                <h2 className="text-xl font-bold text-center text-gray-800 mb-6">
+                  🏆 Top 3
+                </h2>
+                <div className="flex items-end justify-center gap-2 sm:gap-3 overflow-hidden pb-0">
+                  {/* 2nd */}
+                  <PodiumSlot
+                    entry={topThree[1]}
+                    isFirst={false}
+                    isPartnership={isPartnership}
+                  />
+                  {/* 1st */}
+                  <PodiumSlot
+                    entry={topThree[0]}
+                    isFirst={true}
+                    isPartnership={isPartnership}
+                  />
+                  {/* 3rd */}
+                  <PodiumSlot
+                    entry={topThree[2]}
+                    isFirst={false}
+                    isPartnership={isPartnership}
+                  />
+                </div>
+              </Card>
+            </motion.div>
+          )}
 
+          {/* ── Full leaderboard table ── */}
           <motion.div
-            className="space-y-2.5"
-            variants={stagger}
-            initial="hidden"
-            animate="visible"
+            initial={{ opacity: 0, y: 16 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.22 }}
           >
-            {entries.map((entry) => {
-              const isMe = currentUser && entry.studentId === currentUser.id;
-              const initial = (entry.studentName ?? "?")
-                .charAt(0)
-                .toUpperCase();
-              const avatarColor =
-                AVATAR_GRADIENT[entry.rank] ?? "bg-primary text-white";
+            <Card
+              className="border-2 rounded-3xl shadow-sm"
+              bodyStyle={{ padding: "20px" }}
+            >
+              <h3 className="text-lg font-bold text-gray-800 mb-4">
+                Bảng xếp hạng đầy đủ
+              </h3>
 
-              return (
-                <motion.div key={entry.studentId} variants={row}>
-                  <div
-                    className={`flex items-center gap-4 px-5 py-4 rounded-2xl border-2 transition-all duration-200
+              <motion.div
+                className="space-y-2.5"
+                variants={stagger}
+                initial="hidden"
+                animate="visible"
+              >
+                {entries.map((entry) => {
+                  const isMe =
+                    currentUser && entry.studentId === currentUser.id;
+                  const initial = (entry.studentName ?? "?")
+                    .charAt(0)
+                    .toUpperCase();
+                  const avatarColor =
+                    AVATAR_GRADIENT[entry.rank] ?? "bg-primary text-white";
+
+                  return (
+                    <motion.div key={entry.studentId} variants={row}>
+                      <div
+                        className={`flex items-center gap-4 px-5 py-4 rounded-2xl border-2 transition-all duration-200
                     ${
                       isMe
                         ? "border-primary bg-primary/5 shadow-lg shadow-primary/10"
@@ -415,97 +489,143 @@ export default function StudentLeaderboard() {
                           ? "border-amber-100 bg-amber-50/30 hover:shadow-sm"
                           : "border-border bg-white hover:border-primary/20 hover:shadow-sm"
                     }`}
-                  >
-                    {/* Rank */}
-                    <div className="w-12 flex-shrink-0 flex flex-col items-center">
-                      {entry.rank <= 3 ? (
-                        <>
-                          <RankIcon rank={entry.rank} />
-                          <span className="text-[10px] font-black text-muted-foreground mt-1 uppercase">
-                            #{entry.rank}
-                          </span>
-                        </>
-                      ) : (
-                        <span className="text-xl font-black text-muted-foreground/30">
-                          #{entry.rank}
-                        </span>
-                      )}
-                    </div>
-
-                    {/* Avatar */}
-                    <div
-                      className={`w-12 h-12 rounded-full flex items-center justify-center font-black text-xl flex-shrink-0
-                      shadow-inner ${avatarColor}`}
-                    >
-                      {initial}
-                    </div>
-
-                    {/* Name + School */}
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-center gap-2">
-                        <p
-                          className={`font-black text-foreground truncate ${isMe ? "text-primary" : "text-sm"}`}
-                        >
-                          {entry.studentName}
-                          {isMe && (
-                            <span className="ml-2 text-[9px] bg-primary text-white px-2 py-0.5 rounded-full font-black uppercase tracking-widest">
-                              Bạn
+                      >
+                        {/* Rank */}
+                        <div className="w-12 flex-shrink-0 flex flex-col items-center">
+                          {entry.rank <= 3 ? (
+                            <>
+                              <RankIcon rank={entry.rank} />
+                              <span className="text-[10px] font-black text-muted-foreground mt-1 uppercase">
+                                #{entry.rank}
+                              </span>
+                            </>
+                          ) : (
+                            <span className="text-xl font-black text-muted-foreground/30">
+                              #{entry.rank}
                             </span>
                           )}
-                        </p>
-                      </div>
-                      <p className="text-xs text-gray-400 truncate">
-                        {entry.schoolName}
-                      </p>
-                    </div>
-
-                    {/* Stats */}
-                    <div className="flex items-center gap-4 flex-shrink-0">
-                      {/* Xu */}
-                      <div className="text-center min-w-[52px]">
-                        <div className="flex items-center justify-center gap-1">
-                          <CoinIcon className="w-3.5 h-3.5 text-amber-500" />
-                          <span className="font-bold text-amber-600 text-sm">
-                            {entry.totalCoinsEarned?.toLocaleString()}
-                          </span>
                         </div>
-                        <p className="text-[10px] text-gray-400">Xu</p>
-                      </div>
 
-                      {/* Độ chính xác */}
-                      <div className="text-center min-w-[52px] hidden sm:block">
-                        <p className="font-bold text-primary text-sm flex items-center justify-center gap-0.5">
-                          <AimOutlined className="text-xs" />
-                          {entry.combinedAccuracyPercentage?.toFixed(1)}%
-                        </p>
-                        <p className="text-[10px] text-gray-400">Chính xác</p>
-                      </div>
+                        {/* Avatar */}
+                        <div
+                          className={`w-12 h-12 rounded-full flex items-center justify-center font-black text-xl flex-shrink-0
+                      shadow-inner ${avatarColor}`}
+                        >
+                          {initial}
+                        </div>
 
-                      {/* Thời gian TB */}
-                      <div className="text-center min-w-[52px] hidden md:block">
-                        <p className="font-bold text-primary text-sm flex items-center justify-center gap-0.5">
-                          <ClockCircleOutlined className="text-xs" />
-                          {fmtTime(entry.avgTimeSeconds)}
-                        </p>
-                        <p className="text-[10px] text-gray-400">
-                          TG trung bình
-                        </p>
+                        {/* Name + School */}
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center gap-2">
+                            <p
+                              className={`font-black text-foreground truncate ${isMe ? "text-primary" : "text-sm"}`}
+                            >
+                              {entry.studentName}
+                              {isMe && (
+                                <span className="ml-2 text-[9px] bg-primary text-white px-2 py-0.5 rounded-full font-black uppercase tracking-widest">
+                                  Bạn
+                                </span>
+                              )}
+                            </p>
+
+                            {isCampaignFinished && (
+                              <Dropdown
+                                menu={{
+                                  items: [
+                                    {
+                                      key: "game",
+                                      label: "Xem lịch sử chơi Game",
+                                      icon: <HistoryOutlined />,
+                                      onClick: () =>
+                                        navigate(
+                                          `/student/campaign/${campaignId}/game`,
+                                        ),
+                                    },
+                                    {
+                                      key: "quiz",
+                                      label: "Xem lịch sử Quiz",
+                                      icon: <FileSearchOutlined />,
+                                      onClick: () =>
+                                        navigate(
+                                          `/student/campaign/${campaignId}/quiz`,
+                                        ),
+                                    },
+                                  ],
+                                }}
+                                trigger={["click"]}
+                                placement="bottomRight"
+                              >
+                                <Button
+                                  size="small"
+                                  type="text"
+                                  icon={
+                                    <EyeOutlined className="text-gray-400" />
+                                  }
+                                  className="hover:bg-primary/5 rounded-full flex items-center justify-center"
+                                />
+                              </Dropdown>
+                            )}
+                          </div>
+                          <p className="text-xs text-gray-400 truncate">
+                            {entry.schoolName}
+                          </p>
+                        </div>
+
+                        {/* Stats */}
+                        <div className="flex items-center gap-4 flex-shrink-0">
+                          {/* Xu */}
+                          {!isPartnership && (
+                            <div className="text-center min-w-[52px]">
+                              <div className="flex items-center justify-center gap-1">
+                                <CoinIcon className="w-3.5 h-3.5 text-amber-500" />
+                                <span className="font-bold text-amber-600 text-sm">
+                                  {entry.totalCoinsEarned?.toLocaleString()}
+                                </span>
+                              </div>
+                              <p className="text-[10px] text-gray-400">Xu</p>
+                            </div>
+                          )}
+
+                          {/* Độ chính xác */}
+                          <div className="text-center min-w-[52px] hidden sm:block">
+                            <p className="font-bold text-primary text-sm flex items-center justify-center gap-0.5">
+                              <AimOutlined className="text-xs" />
+                              {entry.combinedAccuracyPercentage?.toFixed(1)}%
+                            </p>
+                            <p className="text-[10px] text-gray-400">
+                              Chính xác
+                            </p>
+                          </div>
+
+                          {/* Thời gian TB */}
+                          <div className="text-center min-w-[52px] hidden md:block">
+                            <p className="font-bold text-primary text-sm flex items-center justify-center gap-0.5">
+                              <ClockCircleOutlined className="text-xs" />
+                              {fmtTime(entry.avgTimeSeconds)}
+                            </p>
+                            <p className="text-[10px] text-gray-400">
+                              TG trung bình
+                            </p>
+                          </div>
+                        </div>
                       </div>
-                    </div>
+                    </motion.div>
+                  );
+                })}
+
+                {entries.length === 0 && (
+                  <div className="flex flex-col items-center gap-3 py-14 text-gray-400">
+                    <TrophyOutlined className="text-5xl opacity-20" />
+                    <p className="text-sm font-medium">
+                      Chưa có dữ liệu xếp hạng
+                    </p>
                   </div>
-                </motion.div>
-              );
-            })}
-
-            {entries.length === 0 && (
-              <div className="flex flex-col items-center gap-3 py-14 text-gray-400">
-                <TrophyOutlined className="text-5xl opacity-20" />
-                <p className="text-sm font-medium">Chưa có dữ liệu xếp hạng</p>
-              </div>
-            )}
+                )}
+              </motion.div>
+            </Card>
           </motion.div>
-        </Card>
-      </motion.div>
+        </>
+      )}
     </div>
   );
 }

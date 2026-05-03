@@ -449,7 +449,9 @@ function PresetTab({ gameTypes }) {
   );
 
   const selectedGame = gameTypes.find((g) => g.id === selectedGameId);
-  const isRunner = selectedGame?.typeCode === "RUN_SORTING";
+  const isNoLivesGame = ["RUN_SORTING", "GRABBER_SORTING"].includes(
+    selectedGame?.typeCode,
+  );
 
   const fetchData = async () => {
     try {
@@ -482,7 +484,7 @@ function PresetTab({ gameTypes }) {
           levelNumber: 1,
           itemCount: 10,
           timeLimitSeconds: 0,
-          lives: isRunner ? 1 : 3,
+          lives: isNoLivesGame ? 1 : 3,
           wasteCategories: ["RECYCLABLE"],
         },
       ],
@@ -814,7 +816,7 @@ function PresetTab({ gameTypes }) {
                           <InputNumber
                             min={0}
                             className="w-full"
-                            disabled={isRunner}
+                            disabled={isNoLivesGame}
                           />
                         </Form.Item>
                         <Form.Item
@@ -859,12 +861,20 @@ function PresetTab({ gameTypes }) {
                     <Button
                       type="dashed"
                       onClick={() => {
+                        const currentItems = form.getFieldValue("items") || [];
+                        const lastItem = currentItems[currentItems.length - 1];
+                        const nextItemCount = lastItem
+                          ? (lastItem.itemCount || 10) + 2
+                          : 10;
+
                         add({
                           levelNumber: fields.length + 1,
-                          itemCount: 10,
-                          timeLimitSeconds: 0,
-                          lives: isRunner ? 1 : 3,
-                          wasteCategories: ["RECYCLABLE"],
+                          itemCount: nextItemCount,
+                          timeLimitSeconds: lastItem ? lastItem.timeLimitSeconds : 0,
+                          lives: isNoLivesGame ? 1 : 3,
+                          wasteCategories: lastItem
+                            ? lastItem.wasteCategories
+                            : ["RECYCLABLE"],
                         });
                       }}
                       block
