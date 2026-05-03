@@ -219,6 +219,7 @@ export function CampaignForm({
                         id="startDate"
                         showTime={{ format: 'HH:mm', showNow: false }}
                         format="DD/MM/YYYY HH:mm"
+                        needConfirm={false}
                         className="w-full h-10"
                         placeholder="Chọn ngày bắt đầu"
                         getPopupContainer={(trigger) => trigger.parentElement}
@@ -242,6 +243,7 @@ export function CampaignForm({
                         id="endDate"
                         showTime={{ format: 'HH:mm', showNow: false }}
                         format="DD/MM/YYYY HH:mm"
+                        needConfirm={false}
                         className="w-full h-10"
                         placeholder="Chọn ngày kết thúc"
                         getPopupContainer={(trigger) => trigger.parentElement}
@@ -265,6 +267,7 @@ export function CampaignForm({
                         id="registrationDate"
                         showTime={{ format: 'HH:mm', showNow: false }}
                         format="DD/MM/YYYY HH:mm"
+                        needConfirm={false}
                         className="w-full h-10"
                         placeholder="Chọn ngày mở đăng ký"
                         getPopupContainer={(trigger) => trigger.parentElement}
@@ -278,6 +281,7 @@ export function CampaignForm({
                         id="registrationDeadline"
                         showTime={{ format: 'HH:mm', showNow: false }}
                         format="DD/MM/YYYY HH:mm"
+                        needConfirm={false}
                         className="w-full h-10"
                         placeholder="Chọn hạn chót đăng ký"
                         getPopupContainer={(trigger) => trigger.parentElement}
@@ -302,6 +306,7 @@ export function CampaignForm({
                         id="invitationDate"
                         showTime={{ format: 'HH:mm', showNow: false }}
                         format="DD/MM/YYYY HH:mm"
+                        needConfirm={false}
                         className="w-full h-10"
                         placeholder="Chọn ngày gửi lời mời"
                         getPopupContainer={(trigger) => trigger.parentElement}
@@ -315,6 +320,7 @@ export function CampaignForm({
                         id="invitationDeadline"
                         showTime={{ format: 'HH:mm', showNow: false }}
                         format="DD/MM/YYYY HH:mm"
+                        needConfirm={false}
                         className="w-full h-10"
                         placeholder="Chọn hạn chót xác nhận"
                         getPopupContainer={(trigger) => trigger.parentElement}
@@ -556,6 +562,7 @@ export function CampaignForm({
                           <DatePicker
                             showTime={{ format: 'HH:mm', showNow: false }}
                             format="DD/MM/YYYY HH:mm"
+                            needConfirm={false}
                             className="w-full h-10"
                             placeholder="Chọn ngày bắt đầu"
                             getPopupContainer={(trigger) => trigger.parentElement}
@@ -572,6 +579,7 @@ export function CampaignForm({
                           <DatePicker
                             showTime={{ format: 'HH:mm', showNow: false }}
                             format="DD/MM/YYYY HH:mm"
+                            needConfirm={false}
                             className="w-full h-10"
                             placeholder="Chọn ngày kết thúc"
                             getPopupContainer={(trigger) => trigger.parentElement}
