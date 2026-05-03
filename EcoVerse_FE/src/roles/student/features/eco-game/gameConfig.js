@@ -42,6 +42,17 @@ export const DEFAULT_LEVEL_CONFIG = {
     requiredPercentage: 80,
   },
 
+  // Stage 1 - Grabber (Crane) configuration
+  grabber: {
+    gameTime: 90,            // Total time in seconds
+    rotationSpeed: 1.2,      // Radians per second for crane arm rotation
+    descentSpeed: 5,         // Units per second for claw descent
+    ascentSpeed: 4,          // Units per second for claw ascent
+    totalTrash: 10,          // Number of trash objects to spawn
+    requiredPercentage: 60,  // Minimum % of trash to collect to pass
+    penaltyTime: 5,          // Seconds lost for grabbing marine life
+  },
+
   // Stage 2 - Sorter configuration
   sorter: {
     timeLimit: 0, // 0 = no time limit, otherwise seconds
@@ -150,6 +161,10 @@ export function mergeLevelConfig(apiConfig = {}) {
     searescue: {
       ...DEFAULT_LEVEL_CONFIG.searescue,
       ...(apiConfig.searescue || {}),
+    },
+    grabber: {
+      ...DEFAULT_LEVEL_CONFIG.grabber,
+      ...(apiConfig.grabber || {}),
     },
     sorter: {
       ...DEFAULT_LEVEL_CONFIG.sorter,

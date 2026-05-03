@@ -108,6 +108,7 @@ export function CampaignForm({
                   id={`${mode}-start-date`}
                   showTime={{ format: 'HH:mm', showNow: false }}
                   format="DD/MM/YYYY HH:mm"
+                  needConfirm={false}
                   className={cn(
                     "w-full h-10",
                     dateValidation.errors.start_date ? 'border-destructive' : ''
@@ -131,6 +132,7 @@ export function CampaignForm({
                   id={`${mode}-end-date`}
                   showTime={{ format: 'HH:mm', showNow: false }}
                   format="DD/MM/YYYY HH:mm"
+                  needConfirm={false}
                   className={cn(
                     "w-full h-10",
                     dateValidation.errors.end_date ? 'border-destructive' : ''
@@ -154,6 +156,7 @@ export function CampaignForm({
                   id={`${mode}-invite-date`}
                   showTime={{ format: 'HH:mm', showNow: false }}
                   format="DD/MM/YYYY HH:mm"
+                  needConfirm={false}
                   className={cn(
                     "w-full h-10",
                     dateValidation.errors.invitation_send_date ? 'border-destructive' : ''
@@ -177,6 +180,7 @@ export function CampaignForm({
                   id={`${mode}-invite-deadline`}
                   showTime={{ format: 'HH:mm', showNow: false }}
                   format="DD/MM/YYYY HH:mm"
+                  needConfirm={false}
                   className={cn(
                     "w-full h-10",
                     dateValidation.errors.invitation_deadline ? 'border-destructive' : ''
