@@ -356,7 +356,7 @@ export default function StudentGame() {
                     <div className="w-12 h-12 rounded-xl bg-primary/10 flex items-center justify-center">
                       <CheckCircleOutlined className="text-xl text-primary" />
                     </div>
-                    <div className="text-left">
+                    <div className="text-left whitespace-nowrap">
                       <p className="text-sm text-gray-500">Level hoàn thành</p>
                       <p className="text-2xl font-bold text-gray-800">
                         {completedLevels.length}/{gameLevels.length}
@@ -374,7 +374,7 @@ export default function StudentGame() {
                       <div className="w-12 h-12 rounded-xl bg-amber-500 flex items-center justify-center shadow-lg">
                         <CoinIcon />
                       </div>
-                      <div className="text-left">
+                      <div className="text-left whitespace-nowrap">
                         <p className="text-sm text-gray-500">Xu kiếm được</p>
                         <p className="text-2xl font-bold text-amber-600">
                           {totalCoins}
@@ -817,7 +817,7 @@ export default function StudentGame() {
         open={historyModalOpen}
         onCancel={() => setHistoryModalOpen(false)}
         footer={null}
-        width={850}
+        width={1100}
         className="rounded-2xl overflow-hidden"
         bodyStyle={{ padding: "12px 24px 24px" }}
       >
@@ -844,7 +844,7 @@ export default function StudentGame() {
                             #{gameHistory.length - globalIdx}
                           </div>
                           <div className="flex flex-col">
-                            <span className="text-[10px] text-gray-400 font-bold uppercase tracking-wider">
+                            <span className="text-[10px] text-gray-400 font-bold uppercase tracking-wider whitespace-nowrap">
                               Kết quả
                             </span>
                             {item.isPassed ? (
@@ -876,7 +876,7 @@ export default function StudentGame() {
                           }`}
                         >
                           <div className="flex flex-col">
-                            <span className="text-[10px] text-gray-400 font-bold uppercase tracking-wider">
+                            <span className="text-[10px] text-gray-400 font-bold uppercase tracking-wider whitespace-nowrap">
                               Chính xác
                             </span>
                             <span
@@ -887,7 +887,7 @@ export default function StudentGame() {
                           </div>
 
                           <div className="flex flex-col">
-                            <span className="text-[10px] text-gray-400 font-bold uppercase tracking-wider">
+                            <span className="text-[10px] text-gray-400 font-bold uppercase tracking-wider whitespace-nowrap">
                               Thời gian
                             </span>
                             <div className="flex items-center gap-1.5 text-gray-700 font-bold text-base">
@@ -897,7 +897,7 @@ export default function StudentGame() {
                           </div>
 
                           <div className="flex flex-col">
-                            <span className="text-[10px] text-gray-400 font-bold uppercase tracking-wider">
+                            <span className="text-[10px] text-gray-400 font-bold uppercase tracking-wider whitespace-nowrap">
                               Đúng / Tổng
                             </span>
                             <span className="text-base font-black text-gray-700">
@@ -907,7 +907,7 @@ export default function StudentGame() {
 
                           {!isPartnership && (
                             <div className="flex flex-col">
-                              <span className="text-[10px] text-gray-400 font-bold uppercase tracking-wider">
+                              <span className="text-[10px] text-gray-400 font-bold uppercase tracking-wider whitespace-nowrap">
                                 Xu nhận
                               </span>
                               <span className="text-base font-black text-amber-600 flex items-center gap-1">
@@ -922,7 +922,7 @@ export default function StudentGame() {
 
                         {/* Timing */}
                         <div className="flex flex-col min-w-[150px] justify-center">
-                          <span className="text-[10px] text-gray-400 font-bold uppercase tracking-wider">
+                          <span className="text-[10px] text-gray-400 font-bold uppercase tracking-wider whitespace-nowrap">
                             Thời gian thực hiện
                           </span>
                           <div className="text-[11px] font-medium text-gray-500 space-y-0.5 mt-1">

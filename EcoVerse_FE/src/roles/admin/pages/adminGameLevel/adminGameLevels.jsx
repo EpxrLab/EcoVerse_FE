@@ -449,7 +449,9 @@ function PresetTab({ gameTypes }) {
   );
 
   const selectedGame = gameTypes.find((g) => g.id === selectedGameId);
-  const isRunner = selectedGame?.typeCode === "RUN_SORTING";
+  const isNoLivesGame = ["RUN_SORTING", "GRABBER_SORTING"].includes(
+    selectedGame?.typeCode,
+  );
 
   const fetchData = async () => {
     try {
@@ -482,7 +484,7 @@ function PresetTab({ gameTypes }) {
           levelNumber: 1,
           itemCount: 10,
           timeLimitSeconds: 0,
-          lives: isRunner ? 1 : 3,
+          lives: isNoLivesGame ? 1 : 3,
           wasteCategories: ["RECYCLABLE"],
         },
       ],
@@ -814,7 +816,7 @@ function PresetTab({ gameTypes }) {
                           <InputNumber
                             min={0}
                             className="w-full"
-                            disabled={isRunner}
+                            disabled={isNoLivesGame}
                           />
                         </Form.Item>
                         <Form.Item
@@ -863,7 +865,7 @@ function PresetTab({ gameTypes }) {
                           levelNumber: fields.length + 1,
                           itemCount: 10,
                           timeLimitSeconds: 0,
-                          lives: isRunner ? 1 : 3,
+                          lives: isNoLivesGame ? 1 : 3,
                           wasteCategories: ["RECYCLABLE"],
                         });
                       }}
