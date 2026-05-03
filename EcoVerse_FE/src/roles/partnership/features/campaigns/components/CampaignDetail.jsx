@@ -1,10 +1,33 @@
+import React, { useState, useEffect } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/shared/components/ui/dialog';
 import { ScrollArea } from '@/shared/components/ui/scroll-area';
 import { Badge } from '@/shared/components/ui/badge';
-import { Calendar, School, Send, FileQuestion, Package } from 'lucide-react';
+import { Calendar, School, Send, FileQuestion, Package, Users } from 'lucide-react';
 import { cn } from '@/shared/lib/utils';
+import { partnershipCampaignService } from '../../../services/partnershipCampaign.service';
 
-export function CampaignDetail({ isOpen, onClose, campaign, availableQuizzes = [], availableGameLevels = [] }) {
+export function CampaignDetail({ isOpen, onClose, campaign }) {
+  const [deliveries, setDeliveries] = useState([]);
+  const [loadingDeliveries, setLoadingDeliveries] = useState(false);
+
+  useEffect(() => {
+    const fetchDeliveries = async () => {
+      if (isOpen && campaign?.id && campaign.status === 'completed') {
+        try {
+          setLoadingDeliveries(true);
+          const res = await partnershipCampaignService.getRewardDeliveries(campaign.id);
+          setDeliveries(res.data?.data || []);
+        } catch (error) {
+          console.error('Failed to fetch reward deliveries:', error);
+        } finally {
+          setLoadingDeliveries(false);
+        }
+      }
+    };
+
+    fetchDeliveries();
+  }, [isOpen, campaign?.id, campaign?.status]);
+
   if (!campaign) return null;
 
   const getStatusColor = (status) => {
@@ -213,28 +236,54 @@ export function CampaignDetail({ isOpen, onClose, campaign, availableQuizzes = [
                     Giải thưởng ({campaign.rewards.length})
                   </h3>
                   <div className="grid grid-cols-1 gap-4">
-                    {campaign.rewards.map((reward, index) => (
-                      <div key={index} className="flex gap-4 p-4 border rounded-xl bg-card">
-                        {(reward.imagePresignedUrl || reward.imageUrl) && (
-                          <img 
-                            src={reward.imagePresignedUrl || reward.imageUrl} 
-                            alt={reward.rewardName} 
-                            className="w-24 h-24 object-cover rounded-lg border"
-                          />
-                        )}
-                        <div className="flex-1 space-y-1">
-                          <div className="flex items-center justify-between">
-                            <h4 className="font-bold text-foreground">Hạng {reward.rankPosition}: {reward.rewardName}</h4>
-                            {reward.sponsorName && (
-                              <Badge variant="outline" className="text-eco-blue border-eco-blue/20">
-                                {reward.sponsorName}
-                              </Badge>
+                    {campaign.rewards.map((reward, index) => {
+                      const delivery = (deliveries || []).find(d => d.rankPosition === reward.rankPosition && d.rewardName === reward.rewardName);
+                      
+                      return (
+                        <div key={index} className="flex gap-4 p-4 border rounded-xl bg-card relative overflow-hidden">
+                          
+                          {(reward.imagePresignedUrl || reward.imageUrl) && (
+                            <img 
+                              src={reward.imagePresignedUrl || reward.imageUrl} 
+                              alt={reward.rewardName} 
+                              className="w-24 h-24 object-cover rounded-lg border"
+                            />
+                          )}
+                          <div className="flex-1 space-y-1">
+                            <div className="flex items-center justify-between">
+                              <h4 className="font-bold text-foreground">Hạng {reward.rankPosition}: {reward.rewardName}</h4>
+                              {reward.sponsorName && (
+                                <Badge variant="outline" className="text-eco-blue border-eco-blue/20">
+                                  {reward.sponsorName}
+                                </Badge>
+                              )}
+                            </div>
+                            <p className="text-sm text-muted-foreground">{reward.description}</p>
+                            
+                            {/* Winner Info for Completed Campaigns */}
+                            {campaign.status === 'completed' && delivery && (
+                              <div className="mt-3 pt-3 border-t border-dashed space-y-2">
+                                <div className="flex items-center gap-2">
+                                  <div className="w-6 h-6 rounded-full bg-eco-green/10 flex items-center justify-center">
+                                    <Users className="w-3 h-3 text-eco-green" />
+                                  </div>
+                                  <div className="flex-1">
+                                    <p className="text-sm font-bold text-foreground leading-none">
+                                      {delivery.studentName} 
+                                      <span className="text-xs font-normal text-muted-foreground ml-2">({delivery.studentCode})</span>
+                                    </p>
+                                    <p className="text-[11px] text-muted-foreground mt-0.5 flex items-center gap-1">
+                                      <School className="w-2.5 h-2.5" />
+                                      {delivery.schoolName}
+                                    </p>
+                                  </div>
+                                </div>
+                              </div>
                             )}
                           </div>
-                          <p className="text-sm text-muted-foreground">{reward.description}</p>
                         </div>
-                      </div>
-                    ))}
+                      );
+                    })}
                   </div>
                 </div>
               )}
