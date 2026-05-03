@@ -83,6 +83,11 @@ export default class EcoGameSorter {
 
     this.domRect = null;
     this._timerId = null;
+
+    // Audio
+    this.audioListener = null;
+    this.correctSound = null;
+    this.wrongSound = null;
   }
 
   // ─── Initialization ─────────────────────────────────────────────────────────
@@ -94,6 +99,7 @@ export default class EcoGameSorter {
     this._createBins();
     await this._createTrashItems(onProgress);
     this._setupCamera();
+    this._setupAudio();
     this._addEventListeners();
     this._onResize(); // Initial rect cache
 
@@ -101,6 +107,57 @@ export default class EcoGameSorter {
       this._startTime = Date.now();
       this._startTimer();
     }
+  }
+
+  _setupAudio() {
+    // Find or create AudioListener on camera
+    this.audioListener = this.camera.children.find((c) => c.type === "AudioListener");
+    if (!this.audioListener) {
+      this.audioListener = new THREE.AudioListener();
+      this.camera.add(this.audioListener);
+    }
+
+    const audioLoader = new THREE.AudioLoader();
+
+    // Correct Sound
+    this.correctSound = new THREE.Audio(this.audioListener);
+    audioLoader.load(
+      "/assets/audio/correct.mp3",
+      (buffer) => {
+        if (this.correctSound) {
+          this.correctSound.setBuffer(buffer);
+          this.correctSound.setVolume(0.6);
+        }
+      },
+      undefined,
+      (err) => console.warn("Sorter: correct.mp3 not found", err)
+    );
+
+    // Wrong Sound
+    this.wrongSound = new THREE.Audio(this.audioListener);
+    audioLoader.load(
+      "/assets/audio/Wrong.mp3",
+      (buffer) => {
+        if (this.wrongSound) {
+          this.wrongSound.setBuffer(buffer);
+          this.wrongSound.setVolume(0.5);
+        }
+      },
+      undefined,
+      (err) => console.warn("Sorter: Wrong.mp3 not found", err)
+    );
+  }
+
+  _playSfx(sfx) {
+    if (!sfx || !sfx.buffer) return;
+
+    // Resume context if suspended (browser policy)
+    if (this.audioListener && this.audioListener.context.state === "suspended") {
+      this.audioListener.context.resume();
+    }
+
+    if (sfx.isPlaying) sfx.stop();
+    sfx.play();
   }
 
   _startTimer() {
@@ -850,6 +907,9 @@ export default class EcoGameSorter {
   _handleCorrectSort(item, bin) {
     this.itemsRemaining--;
 
+    // Play correct sound
+    this._playSfx(this.correctSound);
+
     // Success animation: fly into bin and shrink
     const tl = gsap.timeline({
       onComplete: () => {
@@ -896,6 +956,9 @@ export default class EcoGameSorter {
   }
 
   _handleWrongSort(item) {
+    // Play wrong sound
+    this._playSfx(this.wrongSound);
+
     // Shake animation + return to original position
     const tl = gsap.timeline();
 
@@ -1025,6 +1088,12 @@ export default class EcoGameSorter {
         }
       });
     });
+
+    // Cleanup Audio
+    if (this.correctSound?.isPlaying) this.correctSound.stop();
+    if (this.wrongSound?.isPlaying) this.wrongSound.stop();
+    this.correctSound = null;
+    this.wrongSound = null;
 
     this.trashMeshes = [];
     this.binMeshes = [];

@@ -187,10 +187,10 @@ export function usePartnershipCampaigns() {
     invitationDate: '',
     invitationDeadline: '',
     bannerImageUrl: '',
-    maxStudentsPerSchool: 0,
+    minStudentsPerSchool: 0,
     totalStudentQuota: 0,
     topRankingCount: 0,
-    schoolIds: [],
+    invitedSchools: [],
     rewards: [
       {
         rankPosition: 1,
@@ -305,11 +305,11 @@ export function usePartnershipCampaigns() {
       registrationDeadline: '',
       invitationDate: '',
       invitationDeadline: '',
-      maxStudentsPerSchool: 0,
+      minStudentsPerSchool: 0,
       totalStudentQuota: 0,
       topRankingCount: 0,
       bannerImageUrl: '',
-      schoolIds: [],
+      invitedSchools: [],
       rewards: [
         {
           rankPosition: 1,
@@ -347,11 +347,14 @@ export function usePartnershipCampaigns() {
         registrationDeadline: toUTCISO(formData.registrationDeadline),
         invitationDate: toUTCISO(formData.invitationDate),
         invitationDeadline: toUTCISO(formData.invitationDeadline),
-        maxStudentsPerSchool: parseInt(formData.maxStudentsPerSchool) || 0,
+        minStudentsPerSchool: parseInt(formData.minStudentsPerSchool) || 0,
         totalStudentQuota: parseInt(formData.totalStudentQuota) || 0,
         topRankingCount: parseInt(formData.topRankingCount) || 0,
         bannerImageUrl: formData.bannerImageUrl || '',
-        schoolIds: formData.schoolIds,
+        invitedSchools: formData.invitedSchools.map(s => ({
+          schoolId: s.schoolId,
+          maxStudentsInvited: parseInt(s.maxStudentsInvited) || 0
+        })),
         rewards: formData.rewards.map(r => ({
           ...(r.id ? { id: r.id } : {}),
           rankPosition: parseInt(r.rankPosition) || 1,
@@ -411,10 +414,13 @@ export function usePartnershipCampaigns() {
           invitationDate: toLocalISO(detail.invitationDate || ''),
           invitationDeadline: toLocalISO(detail.invitationDeadline || ''),
           bannerImageUrl: detail.bannerImageUrl || '',
-          maxStudentsPerSchool: detail.maxStudentsPerSchool || 0,
+          minStudentsPerSchool: detail.minStudentsPerSchool || 0,
           totalStudentQuota: detail.totalStudentQuota || 0,
           topRankingCount: detail.topRankingCount || 0,
-          schoolIds: (detail.invitedSchools || []).map(s => s.schoolId),
+          invitedSchools: (detail.invitedSchools || []).map(s => ({
+            schoolId: s.schoolId,
+            maxStudentsInvited: s.maxStudentsInvited || 0
+          })),
           rewards: rewards.length > 0 ? rewards.map(r => ({
             id: r.id,
             rankPosition: r.rankPosition,
