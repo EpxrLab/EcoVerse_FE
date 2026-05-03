@@ -425,9 +425,8 @@ export default function StudentQuiz() {
 
         {/* Round Selection & Filters */}
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
-          {/* Round Selector - Only show if not SCHOOL_INTERNAL and has rounds */}
-          {campaign?.campaignType !== "SCHOOL_INTERNAL" &&
-            campaign?.rounds?.length > 1 && (
+          {/* Round Selector - Only show if not SCHOOL_INTERNAL */}
+          {campaign?.campaignType !== "SCHOOL_INTERNAL" && (
               <motion.div
                 className="lg:col-span-4"
                 initial={{ opacity: 0, x: -20 }}
@@ -517,8 +516,7 @@ export default function StudentQuiz() {
           {/* Filters */}
           <motion.div
             className={
-              campaign?.campaignType !== "SCHOOL_INTERNAL" &&
-              campaign?.rounds?.length > 1
+              campaign?.campaignType !== "SCHOOL_INTERNAL"
                 ? "lg:col-span-8"
                 : "lg:col-span-12"
             }
@@ -530,22 +528,22 @@ export default function StudentQuiz() {
               className="border-2 border-border rounded-2xl shadow-sm h-full bg-white"
               bodyStyle={{ padding: "22px 24px" }}
             >
-              <div className="flex items-center gap-6 flex-wrap h-full">
-                <div className="flex items-center gap-2 pr-6 border-r border-border">
-                  <span className="text-[10px] uppercase font-black text-muted-foreground tracking-widest">
+              <div className="flex items-center gap-4 flex-wrap h-full">
+                <div className="flex items-center gap-2 pr-4 border-r border-border">
+                  <span className="text-[10px] uppercase font-black text-muted-foreground tracking-widest whitespace-nowrap">
                     Lọc theo độ khó
                   </span>
                 </div>
-                <div className="flex gap-2 flex-wrap">
+                <div className="flex gap-1.5 flex-nowrap">
                   {FILTER_OPTIONS.map(({ key, label, activeClass }) => (
                     <button
                       key={key}
                       onClick={() => setSelectedDifficulty(key)}
-                      className={`px-6 py-2.5 text-xs font-black rounded-xl border-2 transition-all duration-300 uppercase tracking-wider ${
+                      className={`px-3 py-1.5 text-[11px] font-bold rounded-lg border-2 transition-all duration-300 uppercase tracking-wider whitespace-nowrap ${
                         selectedDifficulty === key
                           ? key === "all"
-                            ? "bg-primary text-white border-primary shadow-lg shadow-primary/20 scale-105"
-                            : `${activeClass} shadow-lg scale-105`
+                            ? "bg-primary text-white border-primary shadow-md shadow-primary/20"
+                            : `${activeClass} shadow-md`
                           : "bg-white text-muted-foreground border-border hover:border-primary/30"
                       }`}
                     >

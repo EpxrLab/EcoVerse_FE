@@ -34,7 +34,7 @@ const itemVariants = {
 
 const Hero = () => {
   return (
-    <section className="relative min-h-screen flex items-center justify-center overflow-hidden bg-[#f9faf6]">
+    <section className="relative min-h-[auto] md:min-h-screen flex items-center justify-center overflow-x-hidden bg-[#f9faf6]">
       <div className="absolute inset-0 overflow-hidden pointer-events-none">
         {/* Subtle geometric particles */}
         {[...Array(6)].map((_, i) => (
@@ -65,7 +65,7 @@ const Hero = () => {
         <div className="absolute top-[20%] right-[15%] w-[30%] h-[30%] bg-[#2d6a4f]/5 rounded-full blur-[80px]" />
       </div>
 
-      <div className="container mx-auto px-4 pt-20 pb-12 relative z-10">
+      <div className="container mx-auto px-4 pt-24 pb-12 md:pt-20 md:pb-12 relative z-10">
         <motion.div
           className="max-w-5xl mx-auto text-center"
           variants={containerVariants}
@@ -83,10 +83,9 @@ const Hero = () => {
             </span>
           </motion.div>
 
-          {/* Main heading */}
           <motion.h1
             variants={itemVariants}
-            className="text-5xl md:text-8xl font-black mb-8 leading-[1.1] tracking-tight font-greenhouse-heading"
+            className="text-4xl sm:text-5xl md:text-8xl font-black mb-8 leading-[1.1] tracking-tight font-greenhouse-heading"
           >
             <span className="text-[#2e3430]">Phân Loại Rác Tại Ecoverse</span>
             <br />
@@ -136,7 +135,7 @@ const Hero = () => {
             {stats.map((stat, index) => (
               <motion.div
                 key={index}
-                className="group relative bg-white/60 backdrop-blur-md rounded-[2.5rem] p-10 shadow-[0_4px_24px_rgba(45,106,79,0.04)] border-none hover:shadow-[0_24px_48px_rgba(45,106,79,0.08)] transition-all overflow-hidden"
+                className="group relative bg-white/60 backdrop-blur-md rounded-[2.5rem] p-6 sm:p-8 md:p-10 shadow-[0_4px_24px_rgba(45,106,79,0.04)] border-none hover:shadow-[0_24px_48px_rgba(45,106,79,0.08)] transition-all overflow-hidden"
                 whileHover={{ y: -8 }}
               >
                 {/* Minimal accent line */}

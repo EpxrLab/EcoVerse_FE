@@ -57,7 +57,7 @@ export default function OptionPage() {
   const navigate = useNavigate();
 
   return (
-    <div className="min-h-screen bg-[#f9faf6] relative overflow-hidden">
+    <div className="min-h-screen bg-[#f9faf6] relative overflow-x-hidden">
       {/* Back to home button */}
       <motion.button
         initial={{ opacity: 0, x: -20 }}
@@ -87,12 +87,12 @@ export default function OptionPage() {
           initial={{ opacity: 0, y: -30 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.6, ease: "easeOut" }}
-          className="text-center mb-16"
+          className="text-center mb-10 md:mb-16"
         >
           <div className="inline-flex items-center justify-center w-20 h-20 bg-gradient-to-br from-[#2d6a4f] to-[#1f5e44] rounded-[2rem] shadow-2xl shadow-green-900/20 mb-8">
             <span className="text-3xl font-black text-white font-greenhouse-heading">E</span>
           </div>
-          <h1 className="text-5xl md:text-7xl font-black mb-6 font-greenhouse-heading tracking-tight text-[#2e3430]">
+          <h1 className="text-4xl sm:text-5xl md:text-7xl font-black mb-6 font-greenhouse-heading tracking-tight text-[#2e3430]">
             Chào Mừng Đến{" "}
             <span className="bg-gradient-to-r from-[#2d6a4f] to-[#1f5e44] bg-clip-text text-transparent">
               Ecoverse
@@ -117,7 +117,7 @@ export default function OptionPage() {
                 variants={cardVariants}
                 whileTap={{ scale: 0.97 }}
                 onClick={() => navigate(role.path)}
-                className="group relative h-full bg-white/60 backdrop-blur-md rounded-[3rem] p-10 shadow-[0_8px_32px_rgba(45,106,79,0.05)] hover:shadow-[0_40px_80px_-20px_rgba(45,106,79,0.15)] transition-all duration-500 overflow-hidden cursor-pointer"
+                className="group relative h-full bg-white/60 backdrop-blur-md rounded-[3rem] p-8 md:p-10 shadow-[0_8px_32px_rgba(45,106,79,0.05)] hover:shadow-[0_40px_80px_-20px_rgba(45,106,79,0.15)] transition-all duration-500 overflow-hidden cursor-pointer"
               >
                 {/* Background Number Decal */}
                 <div className="absolute top-10 right-10 text-9xl font-black text-[#2d6a4f]/5 select-none transition-all duration-700 group-hover:text-[#2d6a4f]/10 group-hover:-translate-y-4 font-greenhouse-heading">

@@ -8,8 +8,6 @@ import * as THREE from "three";
 import gsap from "gsap";
 import { GLTFLoader } from "three/examples/jsm/loaders/GLTFLoader";
 import {
-  BinType,
-  SPAWNABLE_TRASH,
   DynamicBinTypes,
 } from "./EcoGameStateManager";
 import { DEFAULT_LEVEL_CONFIG } from "./gameConfig";
@@ -85,6 +83,11 @@ export default class EcoGameSorter {
 
     this.domRect = null;
     this._timerId = null;
+
+    // Audio
+    this.audioListener = null;
+    this.correctSound = null;
+    this.wrongSound = null;
   }
 
   // ─── Initialization ─────────────────────────────────────────────────────────
@@ -96,6 +99,7 @@ export default class EcoGameSorter {
     this._createBins();
     await this._createTrashItems(onProgress);
     this._setupCamera();
+    this._setupAudio();
     this._addEventListeners();
     this._onResize(); // Initial rect cache
 
@@ -103,6 +107,57 @@ export default class EcoGameSorter {
       this._startTime = Date.now();
       this._startTimer();
     }
+  }
+
+  _setupAudio() {
+    // Find or create AudioListener on camera
+    this.audioListener = this.camera.children.find((c) => c.type === "AudioListener");
+    if (!this.audioListener) {
+      this.audioListener = new THREE.AudioListener();
+      this.camera.add(this.audioListener);
+    }
+
+    const audioLoader = new THREE.AudioLoader();
+
+    // Correct Sound
+    this.correctSound = new THREE.Audio(this.audioListener);
+    audioLoader.load(
+      "/assets/audio/correct.mp3",
+      (buffer) => {
+        if (this.correctSound) {
+          this.correctSound.setBuffer(buffer);
+          this.correctSound.setVolume(0.6);
+        }
+      },
+      undefined,
+      (err) => console.warn("Sorter: correct.mp3 not found", err)
+    );
+
+    // Wrong Sound
+    this.wrongSound = new THREE.Audio(this.audioListener);
+    audioLoader.load(
+      "/assets/audio/Wrong.mp3",
+      (buffer) => {
+        if (this.wrongSound) {
+          this.wrongSound.setBuffer(buffer);
+          this.wrongSound.setVolume(0.5);
+        }
+      },
+      undefined,
+      (err) => console.warn("Sorter: Wrong.mp3 not found", err)
+    );
+  }
+
+  _playSfx(sfx) {
+    if (!sfx || !sfx.buffer) return;
+
+    // Resume context if suspended (browser policy)
+    if (this.audioListener && this.audioListener.context.state === "suspended") {
+      this.audioListener.context.resume();
+    }
+
+    if (sfx.isPlaying) sfx.stop();
+    sfx.play();
   }
 
   _startTimer() {
@@ -643,10 +698,22 @@ export default class EcoGameSorter {
   }
 
   _setupCamera() {
+    // Adjust FOV based on aspect ratio to prevent clipping on wide screens
+    const aspect = window.innerWidth / window.innerHeight;
+    // Wider screens need a wider FOV to see all bins + scenery
+    const baseFov = 60;
+    const targetFov = aspect > 1.6 ? baseFov + (aspect - 1.6) * 12 : baseFov;
+    this.camera.fov = Math.min(targetFov, 85);
+    this.camera.updateProjectionMatrix();
+
+    // Pull camera back further on wide aspect ratios
+    const camZ = aspect > 1.6 ? 7 + (aspect - 1.6) * 2 : 7;
+    const camY = aspect > 1.6 ? 7 + (aspect - 1.6) * 1.5 : 7;
+
     gsap.to(this.camera.position, {
       x: 0,
-      y: 7,
-      z: 7,
+      y: camY,
+      z: camZ,
       duration: 1,
       ease: "power2.inOut",
     });
@@ -663,17 +730,26 @@ export default class EcoGameSorter {
 
   _addEventListeners() {
     const domElement = this.renderer.domElement;
+    // Prevent touch scrolling / long-press context menu on mobile
+    domElement.style.touchAction = "none";
+    domElement.style.userSelect = "none";
+    domElement.style.webkitUserSelect = "none";
     domElement.addEventListener("pointerdown", this._onPointerDown);
     domElement.addEventListener("pointermove", this._onPointerMove);
     domElement.addEventListener("pointerup", this._onPointerUp);
+    domElement.addEventListener("pointercancel", this._onPointerUp);
+    domElement.addEventListener("contextmenu", (e) => e.preventDefault());
     window.addEventListener("resize", this._onResize);
   }
 
   _removeEventListeners() {
     const domElement = this.renderer.domElement;
-    domElement.removeEventListener("pointerdown", this._onPointerDown);
-    domElement.removeEventListener("pointermove", this._onPointerMove);
-    domElement.removeEventListener("pointerup", this._onPointerUp);
+    if (domElement) {
+      domElement.removeEventListener("pointerdown", this._onPointerDown);
+      domElement.removeEventListener("pointermove", this._onPointerMove);
+      domElement.removeEventListener("pointerup", this._onPointerUp);
+      domElement.removeEventListener("pointercancel", this._onPointerUp);
+    }
     window.removeEventListener("resize", this._onResize);
   }
 
@@ -681,6 +757,16 @@ export default class EcoGameSorter {
     if (this.renderer.domElement) {
       this.domRect = this.renderer.domElement.getBoundingClientRect();
     }
+    // Re-adjust camera for new aspect ratio
+    const aspect = window.innerWidth / window.innerHeight;
+    const baseFov = 60;
+    const targetFov = aspect > 1.6 ? baseFov + (aspect - 1.6) * 12 : baseFov;
+    this.camera.fov = Math.min(targetFov, 85);
+    this.camera.updateProjectionMatrix();
+
+    const camZ = aspect > 1.6 ? 7 + (aspect - 1.6) * 2 : 7;
+    const camY = aspect > 1.6 ? 7 + (aspect - 1.6) * 1.5 : 7;
+    this.camera.position.set(0, camY, camZ);
   }
 
   _getPointerPosition(event) {
@@ -691,6 +777,7 @@ export default class EcoGameSorter {
   }
 
   _onPointerDown(event) {
+    event.preventDefault();
     this._getPointerPosition(event);
     this.raycaster.setFromCamera(this.mouse, this.camera);
 
@@ -721,6 +808,9 @@ export default class EcoGameSorter {
         this.originalPosition.copy(target.userData.originalPos);
         const baseScale = target.userData.baseScale;
 
+        // Capture pointer to keep receiving events even if pointer leaves canvas
+        this.renderer.domElement.setPointerCapture(event.pointerId);
+
         // Lift animation
         gsap.to(target.position, {
           y: ITEM_Y + 0.8,
@@ -740,6 +830,7 @@ export default class EcoGameSorter {
 
   _onPointerMove(event) {
     if (!this.isDragging || !this.selectedObject) return;
+    event.preventDefault();
 
     this._getPointerPosition(event);
     this.raycaster.setFromCamera(this.mouse, this.camera);
@@ -757,11 +848,18 @@ export default class EcoGameSorter {
   }
 
   _onPointerUp(event) {
-    if (!this.isDragging || !this.selectedObject) return;
+    if (!this.isDragging || !this.selectedObject) {
+      // Release capture even if not dragging
+      try { this.renderer.domElement.releasePointerCapture(event.pointerId); } catch (e) { }
+      return;
+    }
 
     this.isDragging = false;
     const droppedItem = this.selectedObject;
     this.selectedObject = null;
+
+    // Release pointer capture
+    try { this.renderer.domElement.releasePointerCapture(event.pointerId); } catch (e) { }
 
     // Check if dropped on a bin
     const itemPos = droppedItem.position;
@@ -809,6 +907,9 @@ export default class EcoGameSorter {
   _handleCorrectSort(item, bin) {
     this.itemsRemaining--;
 
+    // Play correct sound
+    this._playSfx(this.correctSound);
+
     // Success animation: fly into bin and shrink
     const tl = gsap.timeline({
       onComplete: () => {
@@ -855,6 +956,9 @@ export default class EcoGameSorter {
   }
 
   _handleWrongSort(item) {
+    // Play wrong sound
+    this._playSfx(this.wrongSound);
+
     // Shake animation + return to original position
     const tl = gsap.timeline();
 
@@ -984,6 +1088,12 @@ export default class EcoGameSorter {
         }
       });
     });
+
+    // Cleanup Audio
+    if (this.correctSound?.isPlaying) this.correctSound.stop();
+    if (this.wrongSound?.isPlaying) this.wrongSound.stop();
+    this.correctSound = null;
+    this.wrongSound = null;
 
     this.trashMeshes = [];
     this.binMeshes = [];

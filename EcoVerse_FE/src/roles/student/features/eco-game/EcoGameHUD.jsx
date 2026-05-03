@@ -5,6 +5,7 @@ import { useState, useEffect, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { EcoSeaRescueHUD } from "./SeaRescue/EcoSeaRescueHUD";
 import { RunnerHUD } from "./RunnerTrash/RunnerHUD";
+import { EcoGrabberHUD } from "./EcoGrabber/EcoGrabberHUD";
 import { SorterHUD } from "./UI/EcoSorter/SorterHUD";
 import { ResultScreen } from "./UI/ResultScreen/ResultScreen";
 
@@ -152,6 +153,7 @@ export default function EcoGameHUD({
   }, [showExitConfirm, onPauseChange, game]);
 
   const isSeaRescue = levelConfig?.stage1Game === "searescue";
+  const isGrabber = levelConfig?.stage1Game === "grabber";
 
   useEffect(() => {
     if (!game) return;
@@ -259,6 +261,21 @@ export default function EcoGameHUD({
               game={game}
               levelConfig={levelConfig}
               onComplete={() => game?.triggerStage2()}
+            />
+          </div>
+        ) : isGrabber ? (
+          <div
+            key="grabber"
+            style={{
+              position: "absolute",
+              inset: 0,
+              zIndex: 1000,
+              pointerEvents: "none",
+            }}
+          >
+            <EcoGrabberHUD
+              game={game}
+              levelConfig={levelConfig}
             />
           </div>
         ) : (

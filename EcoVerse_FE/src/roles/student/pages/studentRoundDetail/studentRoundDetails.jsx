@@ -15,7 +15,6 @@ import {
   ThunderboltOutlined,
 } from "@ant-design/icons";
 import { motion } from "framer-motion";
-import { toLocalISO } from "@/utils/dateUtils";
 import { getCurrentRoundContent } from "../../services";
 import { RotateCcw } from "lucide-react";
 
@@ -350,7 +349,7 @@ export default function StudentRoundDetails() {
 
   useEffect(() => {
     if (!roundData) return;
-    setRoundGameConfigId(roundData.games?.[0].roundGameConfigId);
+    setRoundGameConfigId(roundData.games?.[0]?.roundGameConfigId || "");
   }, [roundData]);
 
   if (!roundData)

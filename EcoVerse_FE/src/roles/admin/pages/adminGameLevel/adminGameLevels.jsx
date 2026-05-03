@@ -44,10 +44,8 @@ const { TextArea } = Input;
 
 const GAME_TYPE_OPTIONS = [
   { value: "RUN_SORTING", label: "Chạy & phân loại (RUN_SORTING)" },
-  { value: "IMAGE_MATCHING", label: "Nối hình ảnh (IMAGE_MATCHING)" },
-  { value: "SPEED_CLASSIFY", label: "Phân loại nhanh (SPEED_CLASSIFY)" },
-  { value: "WASTE_SORTING", label: "Phân loại rác (WASTE_SORTING)" },
   { value: "COLLECT_SORTING", label: "Thu gom & phân loại (COLLECT_SORTING)" },
+  { value: "GRABBER_SORTING", label: "Gắp & phân loại (GRABBER_SORTING)" },
 ];
 
 const WASTE_CATEGORIES = [
@@ -191,6 +189,7 @@ function GameTypeTab({ gameTypes, setGameTypes, onRefresh }) {
       render: (v) => <span className="font-semibold text-gray-800">{v}</span>,
     },
     {
+      title: "Mô tả ngắn",
       dataIndex: "shortDescription",
       key: "shortDescription",
       ellipsis: true,
@@ -207,12 +206,6 @@ function GameTypeTab({ gameTypes, setGameTypes, onRefresh }) {
       title: "Màn chơi/cấp",
       dataIndex: "maxLevels",
       key: "maxLevels",
-      align: "center",
-    },
-    {
-      title: "Thứ tự",
-      dataIndex: "displayOrder",
-      key: "displayOrder",
       align: "center",
     },
     {
@@ -456,13 +449,21 @@ function PresetTab({ gameTypes }) {
   );
 
   const selectedGame = gameTypes.find((g) => g.id === selectedGameId);
-  const isRunner = selectedGame?.typeCode === "RUN_SORTING";
+  const isNoLivesGame = ["RUN_SORTING", "GRABBER_SORTING"].includes(
+    selectedGame?.typeCode,
+  );
 
   const fetchData = async () => {
     try {
+      if (!selectedGameId) {
+        setPresets([]);
+        return;
+      }
       const res = await getAllGameLevels(selectedGameId);
       const type = gameTypes.find((item) => item.id === selectedGameId);
-      setlevelAllow(type.maxLevels);
+      if (type) {
+        setlevelAllow(type.maxLevels);
+      }
       setPresets(res.data);
     } catch (error) {
       console.log(error);
@@ -483,7 +484,7 @@ function PresetTab({ gameTypes }) {
           levelNumber: 1,
           itemCount: 10,
           timeLimitSeconds: 0,
-          lives: isRunner ? 1 : 3,
+          lives: isNoLivesGame ? 1 : 3,
           wasteCategories: ["RECYCLABLE"],
         },
       ],
@@ -815,7 +816,7 @@ function PresetTab({ gameTypes }) {
                           <InputNumber
                             min={0}
                             className="w-full"
-                            disabled={isRunner}
+                            disabled={isNoLivesGame}
                           />
                         </Form.Item>
                         <Form.Item
@@ -856,30 +857,37 @@ function PresetTab({ gameTypes }) {
                       </div>
                     </div>
                   ))}
-                  <Button
-                    type="dashed"
-                    onClick={() => {
-                      if (fields.length >= levelAllow) {
-                        toast.error(
-                          `Chỉ được tạo tối đa ${levelAllow} màn chơi`,
-                        );
-                        return;
-                      }
+                  {fields.length < levelAllow ? (
+                    <Button
+                      type="dashed"
+                      onClick={() => {
+                        const currentItems = form.getFieldValue("items") || [];
+                        const lastItem = currentItems[currentItems.length - 1];
+                        const nextItemCount = lastItem
+                          ? (lastItem.itemCount || 10) + 2
+                          : 10;
 
-                      add({
-                        levelNumber: fields.length + 1,
-                        itemCount: 10,
-                        timeLimitSeconds: 0,
-                        lives: isRunner ? 1 : 3,
-                        wasteCategories: ["RECYCLABLE"],
-                      });
-                    }}
-                    block
-                    icon={<PlusOutlined />}
-                    className="rounded-2xl h-12 border-2 border-green-200 text-green-600 hover:border-green-400 hover:text-green-700 bg-green-50/50"
-                  >
-                    Thêm Màn chơi mới
-                  </Button>
+                        add({
+                          levelNumber: fields.length + 1,
+                          itemCount: nextItemCount,
+                          timeLimitSeconds: lastItem ? lastItem.timeLimitSeconds : 0,
+                          lives: isNoLivesGame ? 1 : 3,
+                          wasteCategories: lastItem
+                            ? lastItem.wasteCategories
+                            : ["RECYCLABLE"],
+                        });
+                      }}
+                      block
+                      icon={<PlusOutlined />}
+                      className="rounded-2xl h-12 border-2 border-green-200 text-green-600 hover:border-green-400 hover:text-green-700 bg-green-50/50"
+                    >
+                      Thêm Màn chơi mới
+                    </Button>
+                  ) : (
+                    <div className="text-center p-3 bg-blue-50 text-blue-600 rounded-xl border border-blue-100 font-medium text-sm">
+                      Đã đạt tới số lượng màn chơi tối đa ({levelAllow} màn)
+                    </div>
+                  )}
                 </div>
               )}
             </Form.List>
@@ -916,7 +924,7 @@ export default function AdminGameLevels() {
           <div>
             <h1 className="text-2xl font-bold text-gray-800">Quản lý Game</h1>
             <p className="text-sm text-gray-500">
-              Quản lý loại game và cấu hình preset cấp độ
+              Quản lý loại game và cấu hình bộ cấp độ
             </p>
           </div>
         </div>
@@ -947,7 +955,7 @@ export default function AdminGameLevels() {
                 label: (
                   <span className="flex items-center gap-2">
                     <TrophyOutlined />
-                    Cấp độ Game (Preset)
+                    Cấp độ Game
                   </span>
                 ),
                 children: <PresetTab gameTypes={gameTypes} />,

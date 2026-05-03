@@ -50,7 +50,7 @@ const Features = () => {
   };
 
   return (
-    <section className="py-32 bg-[#f2f4f0] relative overflow-hidden">
+    <section className="py-16 md:py-32 bg-[#f2f4f0] relative overflow-hidden">
       {/* Visual textures */}
       <div className="absolute top-0 left-0 w-full h-full pointer-events-none opacity-[0.03]" 
            style={{ backgroundImage: 'radial-gradient(#2d6a4f 1px, transparent 1px)', backgroundSize: '40px 40px' }} />
@@ -64,7 +64,7 @@ const Features = () => {
           viewport={{ once: true }}
           transition={{ duration: 0.6 }}
         >
-          <h2 className="text-4xl md:text-6xl font-black mb-8 font-greenhouse-heading tracking-tight text-[#2e3430]">
+          <h2 className="text-4xl sm:text-5xl md:text-6xl font-black mb-8 font-greenhouse-heading tracking-tight text-[#2e3430]">
             Cách Thức{" "}
             <span className="bg-gradient-to-r from-[#2d6a4f] to-[#1f5e44] bg-clip-text text-transparent">
               Hoạt Động
@@ -88,7 +88,7 @@ const Features = () => {
             return (
               <motion.div key={index} variants={itemVariants}>
                 <div
-                  className="h-full relative bg-white/60 backdrop-blur-md rounded-[3rem] p-12 shadow-[0_8px_32px_rgba(45,106,79,0.05)] hover:shadow-[0_40px_80px_-20px_rgba(45,106,79,0.15)] transition-all duration-500 overflow-hidden group"
+                  className="h-full relative bg-white/60 backdrop-blur-md rounded-[3rem] p-8 sm:p-12 shadow-[0_8px_32px_rgba(45,106,79,0.05)] hover:shadow-[0_40px_80px_-20px_rgba(45,106,79,0.15)] transition-all duration-500 overflow-hidden group"
                 >
                   {/* Background Number Decal */}
                   <div className="absolute top-10 right-10 text-9xl font-black text-[#2d6a4f]/5 select-none transition-all duration-700 group-hover:text-[#2d6a4f]/10 group-hover:-translate-y-4">

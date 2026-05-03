@@ -69,7 +69,7 @@ export function InvitationList({
         </TableHeader>
         <TableBody>
           {invitations.map((invitation, index) => {
-             // Calculate a mock deadline if not present (e.g., 7 days after creation or 5 days before start)
+             // Calculate a fallback deadline if not present (e.g., 7 days after creation or 5 days before start)
              const deadline = invitation.registration_deadline || 
                (invitation.start_date ? new Date(new Date(invitation.start_date).getTime() - 5 * 24 * 60 * 60 * 1000).toISOString() : null);
 
@@ -186,7 +186,7 @@ export function InvitationList({
                        invitation.campaignPartnershipStatus === 'JOINING' && (
                         <DropdownMenuItem onClick={() => onAddStudent(invitation)} className="text-eco-green focus:text-eco-green focus:bg-eco-green/10">
                           <Users className="mr-2 h-4 w-4" />
-                          <span>Thêm học sinh</span>
+                          <span>Mời học sinh</span>
                         </DropdownMenuItem>
                       )}
                     </DropdownMenuContent>

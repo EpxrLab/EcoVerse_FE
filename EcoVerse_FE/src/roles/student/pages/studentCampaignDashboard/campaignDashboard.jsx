@@ -113,7 +113,7 @@ function RoundCard({ round, campaignId, navigate }) {
       transition={{ duration: 0.2 }}
       onClick={() => {
         if (isAccessible) {
-          navigate(`/student/campaign/${campaignId}/round/${round.id}`);
+          navigate(`/student/campaign/${campaignId}/game`);
         }
       }}
     >
@@ -368,7 +368,7 @@ export default function CampaignDashboard() {
                           `/student/campaign/${campaignId}/round/${activeRound.id}`,
                         )
                       }
-                      className="h-16 px-10 rounded-2xl bg-white text-emerald-600 border-white hover:bg-emerald-50 hover:scale-105 transition-all font-black text-xl shadow-2xl shadow-black/20 flex items-center gap-3 mx-auto lg:mx-0"
+                      className="h-12 px-8 rounded-2xl bg-white text-emerald-600 border-white hover:bg-emerald-50 hover:scale-105 transition-all font-black text-base shadow-2xl shadow-black/20 flex items-center gap-2 mx-auto lg:mx-0"
                     >
                       THAM GIA THI ĐẤU NGAY
                       <RightOutlined className="animate-bounce-x" />

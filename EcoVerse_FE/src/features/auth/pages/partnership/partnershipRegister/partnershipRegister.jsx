@@ -317,8 +317,8 @@ export default function PartnershipRegister() {
                 transition={{ duration: 0.3 }}
               >
                 <Card
-                  className="rounded-3xl shadow-xl border-0"
-                  bodyStyle={{ padding: "32px 28px" }}
+                  className="rounded-3xl shadow-xl border-0 sm:[&>.ant-card-body]:!p-8"
+                  bodyStyle={{ padding: "1.5rem" }}
                 >
                   <div className="space-y-5">
                     <div className="flex items-center gap-2 mb-1">
@@ -611,7 +611,8 @@ export default function PartnershipRegister() {
               >
                 <Card
                   className="rounded-3xl shadow-xl border-0"
-                  bodyStyle={{ padding: "32px 28px" }}
+                  bodyStyle={{ padding: "1.5rem" }}
+                  className="sm:[&>.ant-card-body]:!p-8"
                 >
                   <div className="space-y-5">
                     <div className="flex items-center gap-2 mb-1">

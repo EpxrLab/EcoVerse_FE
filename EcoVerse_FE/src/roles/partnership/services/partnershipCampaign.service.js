@@ -75,5 +75,9 @@ export const partnershipCampaignService = {
   // Leaderboard
   getRoundLeaderboard: (id, roundId) => {
     return axios.get(`/partnership/campaigns/${id}/rounds/${roundId}/leaderboard`);
+  },
+
+  getStudentHistory: (id, roundId, studentId) => {
+    return axios.get(`/partnership/campaigns/${id}/rounds/${roundId}/students/${studentId}/history`);
   }
 };

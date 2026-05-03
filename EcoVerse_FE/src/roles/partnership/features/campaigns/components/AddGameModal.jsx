@@ -26,6 +26,8 @@ const DIFFICULTY_META = {
 
 const WASTE_LABEL = { ORGANIC: 'Hữu cơ', RECYCLABLE: 'Tái chế', GENERAL: 'Chung', HAZARDOUS: 'Nguy hại' };
 
+const DIFFICULTY_ORDER = { EASY: 1, MEDIUM: 2, HARD: 3 };
+
 // ─── Component ────────────────────────────────────────────────────────────────
 export function AddGameModal({ isOpen, onClose, campaign, onSubmit }) {
   const [activeRoundTab, setActiveRoundTab] = useState(0);
@@ -113,7 +115,12 @@ export function AddGameModal({ isOpen, onClose, campaign, onSubmit }) {
     (async () => {
       try {
         const res = await partnershipCampaignService.getGameTypePresets(selectedGameTypeId);
-        setPresets(res.data?.data || []);
+        const rawPresets = res.data?.data || [];
+        // Sort by logical order: Easy -> Medium -> Hard
+        const sortedPresets = [...rawPresets].sort((a, b) => 
+          (DIFFICULTY_ORDER[a.difficulty] || 99) - (DIFFICULTY_ORDER[b.difficulty] || 99)
+        );
+        setPresets(sortedPresets);
       } catch {
         setError('Không thể tải preset');
       } finally {

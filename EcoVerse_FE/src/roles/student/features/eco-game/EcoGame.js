@@ -2,14 +2,15 @@
  * EcoGame - Main Orchestrator
  *
  * Manages the Three.js renderer, scene, camera, and delegates
- * to the Stage 1 Game (Runner or Sea Rescue) and EcoGameSorter (Stage 2).
+ * to the Stage 1 Game (Runner, Sea Rescue, or Grabber) and EcoGameSorter (Stage 2).
  */
 import * as THREE from "three";
 import EcoGameStateManager, { GameState } from "./EcoGameStateManager";
 import EcoGameRunner from "./RunnerTrash/EcoGameRunner";
 import EcoGameSorter from "./EcoGameSorter";
 import EcoSeaRescue from "./SeaRescue/EcoSeaRescue";
-import { DEFAULT_LEVEL_CONFIG, mergeLevelConfig } from "./gameConfig";
+import EcoGrabber from "./EcoGrabber/EcoGrabber";
+import { mergeLevelConfig } from "./gameConfig";
 
 export default class EcoGame {
   constructor() {
@@ -88,6 +89,7 @@ export default class EcoGame {
    * Start Stage 1 — chọn game dựa vào levelConfig.stage1Game
    * 'runner'     → EcoGameRunner (endless runner mặc định)
    * 'searescue'  → EcoSeaRescue  (game tàu thu gom rác biển)
+   * 'grabber'    → EcoGrabber    (game cần cẩu gắp rác 3D)
    */
   async startStage1(onProgress = null) {
     // Clean up any existing stage
@@ -107,6 +109,14 @@ export default class EcoGame {
         this.camera,
         this.stateManager,
         this.levelConfig.searescue ?? {},
+        this.levelConfig.wasteItems ?? [],
+      );
+    } else if (gameType === "grabber") {
+      this.stage1Game = new EcoGrabber(
+        this.scene,
+        this.camera,
+        this.stateManager,
+        this.levelConfig.grabber ?? {},
         this.levelConfig.wasteItems ?? [],
       );
     } else {
@@ -152,6 +162,10 @@ export default class EcoGame {
         const seaConfig = this.levelConfig.searescue || {};
         totalTrash = seaConfig.totalTrash || 12;
         reqPercent = seaConfig.requiredPercentage || 80;
+      } else if (gameType === "grabber") {
+        const grabConfig = this.levelConfig.grabber || {};
+        totalTrash = grabConfig.totalTrash || 10;
+        reqPercent = grabConfig.requiredPercentage || 60;
       } else {
         const runnerConfig = this.levelConfig.runner || {};
         totalTrash = runnerConfig.itemCount || 20;
@@ -176,16 +190,22 @@ export default class EcoGame {
           failMessage =
             gameType === "searescue"
               ? "Thuyền bị hỏng! Bạn cần thu thập ít nhất " +
+              reqPercent +
+              "% rác."
+              : gameType === "grabber"
+                ? "Cần cẩu bị hỏng! Bạn cần gắp ít nhất " +
                 reqPercent +
                 "% rác."
-              : "Bạn đã va chạm! Bạn cần nhặt đủ ít nhất " +
+                : "Bạn đã va chạm! Bạn cần nhặt đủ ít nhất " +
                 reqPercent +
                 "% rác để tiếp tục.";
         } else if (reason === "timeout") {
           failMessage =
             gameType === "searescue"
               ? `Hết giờ! Bạn mới thu gom được ${Math.round(percentage)}%, cần đạt ${reqPercent}% để tiếp tục.`
-              : "Bạn buộc phải nhặt đủ rác trong thời gian quy định tại stage 1 để qua màn phân loại.";
+              : gameType === "grabber"
+                ? `Hết giờ! Bạn mới gắp được ${Math.round(percentage)}% rác, cần đạt ${reqPercent}% để tiếp tục.`
+                : "Bạn buộc phải nhặt đủ rác trong thời gian quy định tại stage 1 để qua màn phân loại.";
         } else {
           failMessage = `Bạn mới thu gom được ${Math.round(percentage)}%, cần đạt ${reqPercent}% để tiếp tục!`;
         }
@@ -251,10 +271,8 @@ export default class EcoGame {
       this.levelConfig.sorter,
       this.levelConfig,
     );
-    await this.sorter.init(onProgress);
-    this.activeStage = this.sorter;
 
-    // Register callbacks
+    // Register callbacks BEFORE init so initial updates propagate
     this.sorter.onScoreUpdate((score, remaining) => {
       if (this._hudCallbacks.onSortingUpdate) {
         this._hudCallbacks.onSortingUpdate(score, remaining);
@@ -270,6 +288,9 @@ export default class EcoGame {
     this.sorter.onStageComplete((score) => {
       this._showResult(score);
     });
+
+    await this.sorter.init(onProgress);
+    this.activeStage = this.sorter;
   }
 
   _showResult(score, extra = {}) {

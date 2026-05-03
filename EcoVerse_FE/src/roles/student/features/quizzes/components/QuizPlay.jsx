@@ -255,7 +255,7 @@ export default function QuizPlay({ quiz: _quiz, onFinish, onCancel }) {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [showResult, setShowResult] = useState(false);
   const [quizResult, setQuizResult] = useState(null);
-  const [isSidebarOpen, setIsSidebarOpen] = useState(true);
+  const [isSidebarOpen, setIsSidebarOpen] = useState(() => typeof window !== 'undefined' ? window.innerWidth >= 768 : true);
 
   const { refreshStudentData } = useStudentContext();
 
@@ -536,67 +536,82 @@ export default function QuizPlay({ quiz: _quiz, onFinish, onCancel }) {
           <AlertTriangle size={16} className="animate-pulse flex-shrink-0" />
         </motion.div>
 
-        <div className="flex flex-1 overflow-hidden">
+        <div className="flex flex-1 overflow-hidden relative">
           {/* Sidebar */}
           <AnimatePresence>
             {isSidebarOpen && (
-              <motion.aside
-                initial={{ width: 0, opacity: 0 }}
-                animate={{ width: 260, opacity: 1 }}
-                exit={{ width: 0, opacity: 0 }}
-                transition={{ duration: 0.22, ease: "easeOut" }}
-                className="border-r border-slate-200 bg-white p-5 overflow-hidden flex-shrink-0"
-              >
-                <Text className="text-[11px] font-bold text-slate-400 uppercase block mb-3">
-                  Tiến độ — {answeredCount}/{questions.length}
-                </Text>
-                <Progress
-                  percent={progressPercent}
-                  strokeColor="var(--primary)"
-                  size="small"
-                  className="mb-5"
+              <>
+                {/* Mobile Backdrop */}
+                <motion.div
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  exit={{ opacity: 0 }}
+                  onClick={() => window.innerWidth < 768 && setIsSidebarOpen(false)}
+                  className="absolute inset-0 bg-slate-900/20 z-10 md:hidden backdrop-blur-sm"
                 />
+                <motion.aside
+                  initial={{ width: 0, opacity: 0 }}
+                  animate={{ width: 280, opacity: 1 }}
+                  exit={{ width: 0, opacity: 0 }}
+                  transition={{ duration: 0.22, ease: "easeOut" }}
+                  className="absolute md:relative z-20 h-full border-r border-slate-200 bg-white overflow-hidden flex-shrink-0 shadow-2xl md:shadow-none"
+                >
+                  <div className="w-[280px] p-5 h-full overflow-y-auto">
+                    <Text className="text-[11px] font-bold text-slate-400 uppercase block mb-3">
+                      Tiến độ — {answeredCount}/{questions.length}
+                    </Text>
+                    <Progress
+                      percent={progressPercent}
+                      strokeColor="var(--primary)"
+                      size="small"
+                      className="mb-5"
+                    />
 
-                <div className="grid grid-cols-5 gap-1.5">
-                  {questions.map((q, idx) => {
-                    const isAnswered = answers.some(
-                      (a) => a.questionId === q.id,
-                    );
-                    const isCurrent = currentQuestionIndex === idx;
-                    return (
-                      <button
-                        key={q.id}
-                        onClick={() => setCurrentQuestionIndex(idx)}
-                        className={`h-9 rounded-lg text-xs font-semibold border transition-all
-                          ${
-                            isCurrent
-                              ? "border-primary text-primary bg-primary/10 ring-1 ring-primary/40"
-                              : isAnswered
-                                ? "bg-slate-800 text-white border-slate-800"
-                                : "bg-white text-slate-400 border-slate-200 hover:border-slate-400"
-                          }`}
-                      >
-                        {idx + 1}
-                      </button>
-                    );
-                  })}
-                </div>
+                    <div className="grid grid-cols-5 gap-1.5">
+                      {questions.map((q, idx) => {
+                        const isAnswered = answers.some(
+                          (a) => a.questionId === q.id,
+                        );
+                        const isCurrent = currentQuestionIndex === idx;
+                        return (
+                          <button
+                            key={q.id}
+                            onClick={() => {
+                              setCurrentQuestionIndex(idx);
+                              if (window.innerWidth < 768) setIsSidebarOpen(false);
+                            }}
+                            className={`h-9 rounded-lg text-xs font-semibold border transition-all
+                              ${
+                                isCurrent
+                                  ? "border-primary text-primary bg-primary/10 ring-1 ring-primary/40"
+                                  : isAnswered
+                                    ? "bg-slate-800 text-white border-slate-800"
+                                    : "bg-white text-slate-400 border-slate-200 hover:border-slate-400 shadow-sm"
+                              }`}
+                          >
+                            {idx + 1}
+                          </button>
+                        );
+                      })}
+                    </div>
 
-                <div className="mt-5 space-y-1.5 text-xs text-slate-400">
-                  <div className="flex items-center gap-2">
-                    <div className="w-4 h-4 rounded bg-slate-800" />
-                    <span>Đã trả lời</span>
+                    <div className="mt-8 space-y-3 text-[13px] font-medium text-slate-500 bg-slate-50 p-4 rounded-xl border border-slate-100">
+                      <div className="flex items-center gap-3">
+                        <div className="w-4 h-4 rounded shadow-sm bg-slate-800" />
+                        <span>Đã trả lời</span>
+                      </div>
+                      <div className="flex items-center gap-3">
+                        <div className="w-4 h-4 rounded shadow-sm border-2 border-primary/40 bg-primary/10" />
+                        <span className="text-primary font-bold">Câu hiện tại</span>
+                      </div>
+                      <div className="flex items-center gap-3">
+                        <div className="w-4 h-4 rounded shadow-sm border border-slate-200 bg-white" />
+                        <span>Chưa trả lời</span>
+                      </div>
+                    </div>
                   </div>
-                  <div className="flex items-center gap-2">
-                    <div className="w-4 h-4 rounded border-2 border-primary/40 bg-primary/10" />
-                    <span>Câu hiện tại</span>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <div className="w-4 h-4 rounded border border-slate-200 bg-white" />
-                    <span>Chưa trả lời</span>
-                  </div>
-                </div>
-              </motion.aside>
+                </motion.aside>
+              </>
             )}
           </AnimatePresence>
 

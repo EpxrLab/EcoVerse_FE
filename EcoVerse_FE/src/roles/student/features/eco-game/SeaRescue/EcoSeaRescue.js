@@ -3,8 +3,6 @@ import {
   TOTAL_TRASH,
   GAME_TIME,
   PLAYER_MAX_HP,
-  REQUIRED_PERCENTAGE,
-  isMobileDevice,
   initWorld,
   initStorage,
   initPlayer,
@@ -45,15 +43,15 @@ export default class EcoSeaRescue {
 
     // ── HUD reactive setters ───────────────────────────────────────────────
     this._hudSetters = {
-      setInventoryCount: () => {},
-      setRecycledCount: () => {},
-      setHp: () => {},
-      setTimeLeft: () => {},
-      setCurrentZone: () => {},
-      setInventoryFull: () => {},
-      setHudPulse: () => {},
-      setDamageFlash: () => {},
-      setScreenShake: () => {},
+      setInventoryCount: () => { },
+      setRecycledCount: () => { },
+      setHp: () => { },
+      setTimeLeft: () => { },
+      setCurrentZone: () => { },
+      setInventoryFull: () => { },
+      setHudPulse: () => { },
+      setDamageFlash: () => { },
+      setScreenShake: () => { },
     };
 
     this._onTrashCollected = null;
@@ -93,7 +91,7 @@ export default class EcoSeaRescue {
         if (!this.bgm) return;
         this.bgm.setBuffer(buffer);
         this.bgm.setLoop(true);
-        this.bgm.setVolume(0.4);
+        this.bgm.setVolume(0.2);
 
         // Start playing as soon as context is ready and user has interacted
         const tryPlay = () => {
@@ -156,7 +154,7 @@ export default class EcoSeaRescue {
       ctx
         .resume()
         .then(fn)
-        .catch(() => {});
+        .catch(() => { });
     } else {
       fn();
     }
@@ -276,7 +274,7 @@ export default class EcoSeaRescue {
         const now = Date.now();
         const elapsedMs = now - this._startTime - this._accumulatedPausedTime;
         const elapsedSec = Math.floor(elapsedMs / 1000);
-        
+
         this._timeLeft = Math.max(0, this.config.gameTime - elapsedSec);
         this._hudSetters.setTimeLeft(this._timeLeft);
 

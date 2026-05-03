@@ -117,8 +117,19 @@ export default class EcoGameRunner {
       this.spawnTimer = 0;
       this.nextSpawnTime = 1.0;
 
-      // Cache for dynamically loaded 3D models from API imagePresignedUrl
+      // Cache for dynamically loaded 3D models from API
       this.modelCache = {};
+
+      // Populate modelCache from preloaded items
+      this.wasteItems.forEach((item) => {
+        if (
+          item.preloadedModel &&
+          (item.presignedModel3dUrl || item.imagePresignedUrl)
+        ) {
+          const url = item.presignedModel3dUrl || item.imagePresignedUrl;
+          this.modelCache[url] = item.preloadedModel;
+        }
+      });
 
       // Load static obstacle model (Rock)
       const loader = new GLTFLoader(manager);
@@ -320,7 +331,17 @@ export default class EcoGameRunner {
         this.playerModel.traverse((child) => {
           if (child.isMesh) {
             child.castShadow = true;
-            child.receiveShadow = true;
+            child.receiveShadow = false; // Disable self-shadowing acne
+
+            // Ensure textures and colors render correctly
+            if (child.material) {
+              if (child.material.map) {
+                child.material.map.colorSpace = THREE.SRGBColorSpace;
+              }
+              // Prevent washing out from high intensity lights
+              if (child.material.roughness !== undefined) child.material.roughness = 1.0;
+              if (child.material.metalness !== undefined) child.material.metalness = 0.0;
+            }
           }
         });
 
@@ -349,15 +370,20 @@ export default class EcoGameRunner {
   }
 
   _createEnvironment() {
-    // Ambient light
-    const ambient = new THREE.AmbientLight(0xffffff, 0.6);
+    // Ambient light - soft overall light
+    const ambient = new THREE.AmbientLight(0xffffff, 0.4);
     this.scene.add(ambient);
     this._ambientLight = ambient;
 
+    // Hemisphere light - simulates sky/ground bounce for better colors
+    const hemiLight = new THREE.HemisphereLight(0xffffff, 0x444444, 0.6);
+    this.scene.add(hemiLight);
+
     // Directional light (sun)
-    const dirLight = new THREE.DirectionalLight(0xffffff, 0.8);
+    const dirLight = new THREE.DirectionalLight(0xffffff, 0.7);
     dirLight.position.set(5, 15, 10);
     dirLight.castShadow = true;
+    dirLight.shadow.bias = -0.0005; // Fix shadow acne
     dirLight.shadow.mapSize.width = 1024;
     dirLight.shadow.mapSize.height = 1024;
     dirLight.shadow.camera.near = 0.1;
@@ -395,7 +421,7 @@ export default class EcoGameRunner {
       (buffer) => {
         this.bgm.setBuffer(buffer);
         this.bgm.setLoop(true);
-        this.bgm.setVolume(0.4);
+        this.bgm.setVolume(0.2);
         if (this.isRunning && !this.gameOver) {
           this.bgm.play();
         }
@@ -552,7 +578,6 @@ export default class EcoGameRunner {
     let mesh;
     let trashUserData;
 
-    // Use API wasteItems with valid imagePresignedUrl
     const apiItems = this.wasteItems.filter(
       (w) => w.presignedModel3dUrl || w.imagePresignedUrl,
     );
@@ -660,7 +685,7 @@ export default class EcoGameRunner {
 
       // Load dynamically using the best available URL if not cached
       if (this.modelCache[currentModelUrl]) {
-        finalizeMesh(this.modelCache[currentModelUrl].clone());
+        finalizeMesh(this.modelCache[currentModelUrl].clone(true));
       } else {
         const loader = new GLTFLoader();
         loader.load(
@@ -669,17 +694,17 @@ export default class EcoGameRunner {
             this.modelCache[currentModelUrl] = gltf.scene;
             // Only finalize if game is still active
             if (!this.gameOver) {
-              finalizeMesh(gltf.scene.clone());
+              finalizeMesh(gltf.scene.clone(true));
             }
           },
           undefined,
           (err) => {
             console.error("URL gây lỗi:", currentModelUrl);
             console.error("Thông tin lỗi từ Loader:", err);
-            // finalizeMesh(this._createBoxTrashMesh(0xff0000));
           },
         );
       }
+      return; // Handled by finalizeMesh
     } else {
       this.totalTrashSpawned++;
       // Fallback to hardcoded geometry
@@ -1029,7 +1054,7 @@ export default class EcoGameRunner {
       this.nextSpawnTime =
         this.config.spawnIntervalMin +
         Math.random() *
-          (this.config.spawnIntervalMax - this.config.spawnIntervalMin);
+        (this.config.spawnIntervalMax - this.config.spawnIntervalMin);
 
       // prioritized trash spawning if we haven't reached the limit
       const remainingTrash = this.maxTrashToSpawn - this.totalTrashSpawned;
