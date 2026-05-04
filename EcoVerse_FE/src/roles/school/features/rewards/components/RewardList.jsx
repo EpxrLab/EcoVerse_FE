@@ -1,7 +1,7 @@
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/shared/components/ui/table';
 import { Button } from '@/shared/components/ui/button';
 import { Badge } from '@/shared/components/ui/badge';
-import { Check, MoreHorizontal, PackageCheck, XCircle } from 'lucide-react';
+import { Check, MoreHorizontal, PackageCheck, XCircle, Clock, Gift } from 'lucide-react';
 import {
   DropdownMenu,
   DropdownMenuTrigger,
@@ -11,7 +11,7 @@ import {
 } from "@/shared/components/ui/dropdown-menu";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/shared/components/ui/dialog";
 
-export function RewardList({ rewards, status, onMarkDelivered, onConfirm, onApprove, onReject, onDeliver }) {
+export function RewardList({ rewards, status, onConfirm, onApprove, onReject, onDeliver, onViewLogs }) {
   if (status === 'pending') {
     return (
       <Table>
@@ -23,7 +23,7 @@ export function RewardList({ rewards, status, onMarkDelivered, onConfirm, onAppr
             <TableHead className="text-center font-bold">Xu</TableHead>
             <TableHead className="text-center font-bold">Trạng thái</TableHead>
             <TableHead className="font-bold">Ngày yêu cầu</TableHead>
-            <TableHead className="text-right font-bold w-[100px]">Thao tác</TableHead>
+            <TableHead className="text-right font-bold w-[60px]">Thao tác</TableHead>
           </TableRow>
         </TableHeader>
         <TableBody>
@@ -90,6 +90,10 @@ export function RewardList({ rewards, status, onMarkDelivered, onConfirm, onAppr
                         Đánh dấu đã giao
                       </DropdownMenuItem>
                     )}
+                    <DropdownMenuItem onClick={() => onViewLogs(reward)} className="font-medium cursor-pointer">
+                      <Clock className="mr-2 h-4 w-4" />
+                      Xem lịch sử
+                    </DropdownMenuItem>
                   </DropdownMenuContent>
                 </DropdownMenu>
               </TableCell>
@@ -113,6 +117,7 @@ export function RewardList({ rewards, status, onMarkDelivered, onConfirm, onAppr
             <TableHead className="font-bold">Ngày xác nhận</TableHead>
             <TableHead className="text-center font-bold">Ảnh xác nhận</TableHead>
             <TableHead className="text-center font-bold">Phụ huynh xác nhận</TableHead>
+            <TableHead className="text-right font-bold w-[60px]">Thao tác</TableHead>
           </TableRow>
         </TableHeader>
         <TableBody>
@@ -166,6 +171,23 @@ export function RewardList({ rewards, status, onMarkDelivered, onConfirm, onAppr
                   </Badge>
                 )}
               </TableCell>
+              <TableCell className="text-right">
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <Button variant="ghost" className="h-8 w-8 p-0">
+                      <span className="sr-only">Open menu</span>
+                      <MoreHorizontal className="h-4 w-4" />
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="end">
+                    <DropdownMenuLabel>Thao tác</DropdownMenuLabel>
+                    <DropdownMenuItem onClick={() => onViewLogs(reward)} className="font-medium cursor-pointer">
+                      <Clock className="mr-2 h-4 w-4" />
+                      Xem lịch sử
+                    </DropdownMenuItem>
+                  </DropdownMenuContent>
+                </DropdownMenu>
+              </TableCell>
             </TableRow>
           ))}
         </TableBody>
@@ -185,6 +207,7 @@ export function RewardList({ rewards, status, onMarkDelivered, onConfirm, onAppr
             <TableHead className="text-center font-bold">Xu (Hoàn)</TableHead>
             <TableHead className="font-bold">Ngày hủy</TableHead>
             <TableHead className="font-bold">Lý do</TableHead>
+            <TableHead className="text-right font-bold w-[60px]">Thao tác</TableHead>
           </TableRow>
         </TableHeader>
         <TableBody>
@@ -205,6 +228,23 @@ export function RewardList({ rewards, status, onMarkDelivered, onConfirm, onAppr
               <TableCell className="text-center font-bold text-eco-green">+{reward.coins}</TableCell>
               <TableCell className="text-muted-foreground">{reward.cancelledDate || reward.requestDate}</TableCell>
               <TableCell><Badge variant="destructive">{reward.reason}</Badge></TableCell>
+              <TableCell className="text-right">
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <Button variant="ghost" className="h-8 w-8 p-0">
+                      <span className="sr-only">Open menu</span>
+                      <MoreHorizontal className="h-4 w-4" />
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="end">
+                    <DropdownMenuLabel>Thao tác</DropdownMenuLabel>
+                    <DropdownMenuItem onClick={() => onViewLogs(reward)} className="font-medium cursor-pointer">
+                      <Clock className="mr-2 h-4 w-4" />
+                      Xem lịch sử
+                    </DropdownMenuItem>
+                  </DropdownMenuContent>
+                </DropdownMenu>
+              </TableCell>
             </TableRow>
           ))}
         </TableBody>
