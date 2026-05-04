@@ -13,6 +13,7 @@ import { Gift, Flag, Trophy, Package, Truck, CheckCircle, Clock, MapPin, Loader2
 import { cn } from '@/shared/lib/utils';
 import { usePartnershipCampaigns } from '../../features/campaigns/hooks/usePartnershipCampaigns';
 import { toast } from 'sonner';
+import { RewardStatusLogsDialog } from '../../features/rewards/components/RewardStatusLogsDialog';
 
 export default function PartnershipRewards() {
   const { campaigns, fetchRewardDeliveries, markRewardShipped, loading: campaignLoading } = usePartnershipCampaigns();
@@ -24,6 +25,9 @@ export default function PartnershipRewards() {
   const [selectedDelivery, setSelectedDelivery] = useState(null);
   const [shippingNotes, setShippingNotes] = useState('');
   const [trackingCode, setTrackingCode] = useState('');
+
+  const [isLogDialogOpen, setIsLogDialogOpen] = useState(false);
+  const [selectedDeliveryForLogs, setSelectedDeliveryForLogs] = useState(null);
 
   // Local Campaigns list for the selector
   const activeAndCompletedCampaigns = campaigns.filter(c =>c.status === 'completed');
@@ -105,8 +109,7 @@ export default function PartnershipRewards() {
   };
 
   const getTableColSpan = (tab) => {
-    let cols = 6; // Hạng, Học sinh, Trường, Tổng điểm, Trạng thái, Hình ảnh quà
-    if (tab === 'pending') cols += 1; // Thao tác
+    let cols = 7; // Hạng, Học sinh, Trường, Tổng điểm, Trạng thái, Hình ảnh quà, Thao tác
     if (tab !== 'pending') cols += 3; // Ngày gửi, Ngày nhận, Ảnh xác nhận
     return cols;
   };
@@ -114,6 +117,11 @@ export default function PartnershipRewards() {
   const handleSendReward = (delivery) => {
     setSelectedDelivery(delivery);
     setIsShippingDialogOpen(true);
+  };
+
+  const handleViewLogs = (delivery) => {
+    setSelectedDeliveryForLogs(delivery);
+    setIsLogDialogOpen(true);
   };
 
   const handleConfirmShipping = async () => {
@@ -177,9 +185,7 @@ export default function PartnershipRewards() {
               </>
             )}
             <TableHead className="text-center font-bold">Hình ảnh quà</TableHead>
-            {currentTab === 'pending' && (
-              <TableHead className="text-right font-bold w-32">Thao tác</TableHead>
-            )}
+            <TableHead className="text-right font-bold w-32">Thao tác</TableHead>
           </TableRow>
         </TableHeader>
         <TableBody>
@@ -304,18 +310,30 @@ export default function PartnershipRewards() {
                     <span className="text-muted-foreground text-[11px] italic">Chưa có ảnh</span>
                   )}
                 </TableCell>
-                {currentTab === 'pending' && (
-                  <TableCell className="text-right">
-                    <Button 
-                      size="sm" 
-                      onClick={() => handleSendReward(delivery)}
-                      className="bg-eco-blue hover:bg-eco-blue/90 text-[11px] h-8 px-3 font-bold gap-2"
+                <TableCell className="text-right">
+                  <div className="flex justify-end gap-2">
+                    <Button
+                      size="icon"
+                      variant="ghost"
+                      onClick={() => handleViewLogs(delivery)}
+                      className="h-8 w-8 text-muted-foreground hover:text-eco-blue hover:bg-eco-blue/5"
+                      title="Xem lịch sử"
                     >
-                      <Truck className="w-3 h-3" />
-                      Gửi quà
+                      <Clock className="w-4 h-4" />
                     </Button>
-                  </TableCell>
-                )}
+                    
+                    {currentTab === 'pending' && (
+                      <Button 
+                        size="sm" 
+                        onClick={() => handleSendReward(delivery)}
+                        className="bg-eco-blue hover:bg-eco-blue/90 text-[11px] h-8 px-3 font-bold gap-2"
+                      >
+                        <Truck className="w-3 h-3" />
+                        Gửi quà
+                      </Button>
+                    )}
+                  </div>
+                </TableCell>
               </TableRow>
             ))
           )}
@@ -548,6 +566,13 @@ export default function PartnershipRewards() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+      
+      <RewardStatusLogsDialog
+        isOpen={isLogDialogOpen}
+        onOpenChange={setIsLogDialogOpen}
+        deliveryId={selectedDeliveryForLogs?.id}
+        studentName={selectedDeliveryForLogs?.studentName}
+      />
     </div>
   );
 }

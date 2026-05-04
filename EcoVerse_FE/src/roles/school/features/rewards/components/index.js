@@ -4,3 +4,4 @@ export { MarketplaceItems } from './MarketplaceItems';
 export { RewardFormDialog } from './RewardFormDialog';
 export { DeliveryFormDialog } from './DeliveryFormDialog';
 export { RejectionFormDialog } from './RejectionFormDialog';
+export { RewardStatusLogsDialog } from './RewardStatusLogsDialog';

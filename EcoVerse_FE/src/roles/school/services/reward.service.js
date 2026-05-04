@@ -43,5 +43,8 @@ export const rewardService = {
 
   markRewardDelivered: (deliveryId, payload) => {
     return axios.put(`/school/reward-deliveries/${deliveryId}/deliver`, payload);
+  },
+  getRewardRequestStatusLogs: (requestId) => {
+    return axios.get(`/rewards/requests/${requestId}/status-logs`);
   }
 };

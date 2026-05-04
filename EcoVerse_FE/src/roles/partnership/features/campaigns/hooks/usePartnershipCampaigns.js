@@ -760,6 +760,15 @@ export function usePartnershipCampaigns() {
     handleAddQuizSubmit,
     fetchRewardDeliveries,
     markRewardShipped,
+    fetchRewardStatusLogs: async (params) => {
+      try {
+        const res = await partnershipCampaignService.getRewardStatusLogs(params);
+        return res.data?.data || null;
+      } catch (error) {
+        console.error('Failed to fetch reward status logs', error);
+        return null;
+      }
+    },
     currentSubscription,
     isLoadingSubscription,
     fetchSubscription
