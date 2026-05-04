@@ -108,247 +108,249 @@ export function CampaignList({
 
   return (
     <Card className="border-2">
-      <Table>
-        <TableHeader>
-          <TableRow className={`${tableHeaderBg} hover:${tableHeaderBg}`}>
-            <TableHead className="font-bold">Tên chiến dịch</TableHead>
-            <TableHead className="font-bold">Thời gian</TableHead>
-            <TableHead className="text-right font-bold">Thao tác</TableHead>
-          </TableRow>
-        </TableHeader>
-        <TableBody>
-          {paginatedCampaigns.map((campaign) => {
-            const StatusIcon = statusConfig[campaign.status]?.icon || AlertCircle;
-            return (
-              <TableRow key={campaign.id} className={rowHoverBg}>
-                <TableCell>
-                  <div className="space-y-1">
-                    <div className="flex items-center gap-2 flex-wrap">
-                      <p className="font-semibold">{campaign.name}</p>
-                      <Badge className={statusConfig[campaign.status]?.color || 'bg-muted'} variant="secondary">
-                        <StatusIcon className="w-3 h-3 mr-1" />
-                        {statusConfig[campaign.status]?.label || campaign.status}
-                      </Badge>
-                      {campaign.origin === 'partnership' ? (
-                        <Badge variant="outline" className="bg-eco-blue/10 text-eco-blue border-eco-blue/20">
-                          Đối tác
+      <div className="overflow-x-auto">
+        <Table>
+          <TableHeader>
+            <TableRow className={`${tableHeaderBg} hover:${tableHeaderBg}`}>
+              <TableHead className="font-bold">Tên chiến dịch</TableHead>
+              <TableHead className="font-bold">Thời gian</TableHead>
+              <TableHead className="text-right font-bold">Thao tác</TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            {paginatedCampaigns.map((campaign) => {
+              const StatusIcon = statusConfig[campaign.status]?.icon || AlertCircle;
+              return (
+                <TableRow key={campaign.id} className={rowHoverBg}>
+                  <TableCell>
+                    <div className="space-y-1">
+                      <div className="flex items-center gap-2 flex-wrap">
+                        <p className="font-semibold">{campaign.name}</p>
+                        <Badge className={statusConfig[campaign.status]?.color || 'bg-muted'} variant="secondary">
+                          <StatusIcon className="w-3 h-3 mr-1" />
+                          {statusConfig[campaign.status]?.label || campaign.status}
                         </Badge>
-                      ) : (
-                        <Badge variant="outline" className="bg-eco-green/10 text-eco-green border-eco-green/20">
-                          Trường
-                        </Badge>
-                      )}
-                      {/* Game & Quiz Status Indicators */}
-                      {campaign.has_game ? (
-                        <Badge variant="outline" className="bg-indigo-500/5 text-indigo-600 border-indigo-500/10 text-[10px] gap-1 py-0.5 font-medium">
-                          <Gamepad2 className="w-3 h-3 text-indigo-500" />
-                          Có Game
-                        </Badge>
-                      ) : (
-                        campaign.status === 'draft' && campaign.origin !== 'partnership' && (
-                          <Badge variant="outline" className="text-amber-600 border-amber-300 bg-amber-50 text-[10px] gap-1 py-0.5">
-                            <AlertCircle className="w-3 h-3" />
-                            Chưa có Game
+                        {campaign.origin === 'partnership' ? (
+                          <Badge variant="outline" className="bg-eco-blue/10 text-eco-blue border-eco-blue/20">
+                            Đối tác
                           </Badge>
-                        )
-                      )}
-                      
-                      {campaign.has_quiz ? (
-                        <Badge variant="outline" className="bg-eco-orange/5 text-eco-orange border-eco-orange/10 text-[10px] gap-1 py-0.5 font-medium">
-                          <Brain className="w-3 h-3 text-eco-orange" />
-                          Có Quiz
-                        </Badge>
-                      ) : (
-                        campaign.status === 'draft' && campaign.origin !== 'partnership' && (
-                          <Badge variant="outline" className="text-orange-600 border-orange-300 bg-orange-50 text-[10px] gap-1 py-0.5">
-                            <AlertCircle className="w-3 h-3" />
-                            Chưa có Quiz
+                        ) : (
+                          <Badge variant="outline" className="bg-eco-green/10 text-eco-green border-eco-green/20">
+                            Trường
                           </Badge>
+                        )}
+                        {/* Game & Quiz Status Indicators */}
+                        {campaign.has_game ? (
+                          <Badge variant="outline" className="bg-indigo-500/5 text-indigo-600 border-indigo-500/10 text-[10px] gap-1 py-0.5 font-medium">
+                            <Gamepad2 className="w-3 h-3 text-indigo-500" />
+                            Có Game
+                          </Badge>
+                        ) : (
+                          campaign.status === 'draft' && campaign.origin !== 'partnership' && (
+                            <Badge variant="outline" className="text-amber-600 border-amber-300 bg-amber-50 text-[10px] gap-1 py-0.5">
+                              <AlertCircle className="w-3 h-3" />
+                              Chưa có Game
+                            </Badge>
+                          )
+                        )}
+                        
+                        {campaign.has_quiz ? (
+                          <Badge variant="outline" className="bg-eco-orange/5 text-eco-orange border-eco-orange/10 text-[10px] gap-1 py-0.5 font-medium">
+                            <Brain className="w-3 h-3 text-eco-orange" />
+                            Có Quiz
+                          </Badge>
+                        ) : (
+                          campaign.status === 'draft' && campaign.origin !== 'partnership' && (
+                            <Badge variant="outline" className="text-orange-600 border-orange-300 bg-orange-50 text-[10px] gap-1 py-0.5">
+                              <AlertCircle className="w-3 h-3" />
+                              Chưa có Quiz
+                            </Badge>
+                          )
+                        )}
+                      </div>
+                      {campaign.origin === 'partnership' && campaign.partnership_name ? (
+                        <div className="flex items-center gap-1.5 text-xs text-eco-blue mt-1">
+                          <Building2 className="w-3 h-3" />
+                          <span>{campaign.partnership_name}</span>
+                        </div>
+                      ) : (
+                        campaign.description && (
+                          <p className="text-xs text-muted-foreground line-clamp-1">
+                            {campaign.description}
+                          </p>
                         )
                       )}
                     </div>
-                    {campaign.origin === 'partnership' && campaign.partnership_name ? (
-                      <div className="flex items-center gap-1.5 text-xs text-eco-blue mt-1">
-                        <Building2 className="w-3 h-3" />
-                        <span>{campaign.partnership_name}</span>
-                      </div>
-                    ) : (
-                      campaign.description && (
-                        <p className="text-xs text-muted-foreground line-clamp-1">
-                          {campaign.description}
-                        </p>
-                      )
-                    )}
-                  </div>
-                </TableCell>
-                <TableCell>
-                  <div className="space-y-1.5">
-                    <div className="flex items-center gap-1.5 text-sm text-muted-foreground">
-                      <Calendar className="w-4 h-4" />
-                      <span>
-                        {(() => {
-                          const start = new Date(campaign.start_date);
-                          const end = new Date(campaign.end_date);
-                          const isValidStart = campaign.start_date && !isNaN(start.getTime());
-                          const isValidEnd = campaign.end_date && !isNaN(end.getTime());
-                          
-                          return (
-                            <>
-                              {isValidStart ? format(start, 'HH:mm dd/MM', { locale: vi }) : '??'}
-                              {' - '}
-                              {isValidEnd ? format(end, 'HH:mm dd/MM/yyyy', { locale: vi }) : '??'}
-                            </>
-                          );
-                        })()}
-                      </span>
-                    </div>
-                    {/* Invitation Timing */}
-                    {(campaign.invitation_send_date || campaign.invitation_deadline) && (
-                      <div className="flex items-center gap-2 text-[10px] whitespace-nowrap">
-                        {campaign.invitation_send_date && (
-                          <span className="flex items-center gap-1 text-eco-blue bg-eco-blue/5 px-1.5 py-0.5 rounded border border-eco-blue/10">
-                            <Send className="w-2.5 h-2.5" />
-                             {(() => {
-                               const d = new Date(campaign.invitation_send_date);
-                               return !isNaN(d.getTime()) ? format(d, 'HH:mm dd/MM', { locale: vi }) : '---';
-                             })()}
-                          </span>
-                        )}
-                        {campaign.invitation_deadline && (
-                          <span className="flex items-center gap-1 text-eco-orange bg-eco-orange/5 px-1.5 py-0.5 rounded border border-eco-orange/10">
-                            <Clock className="w-2.5 h-2.5" />
-                             Hạn: {(() => {
-                               const d = new Date(campaign.invitation_deadline);
-                               return !isNaN(d.getTime()) ? format(d, 'HH:mm dd/MM', { locale: vi }) : '---';
-                             })()}
-                          </span>
-                        )}
-                      </div>
-                    )}
-                  </div>
-                </TableCell>
-                <TableCell className="text-right">
-                  <div className="flex items-center justify-end gap-2">
-                    <DropdownMenu>
-                      <DropdownMenuTrigger asChild>
-                        <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
-                          <MoreHorizontal className="w-4 h-4" />
-                          <span className="sr-only">Mở menu</span>
-                        </Button>
-                      </DropdownMenuTrigger>
-                      <DropdownMenuContent align="end">
-                        <DropdownMenuItem onClick={() => onView(campaign)}>
-                          <Eye className="w-4 h-4 mr-2" />
-                          Chi tiết
-                        </DropdownMenuItem>
-
-                        {campaign.status === 'scheduled' && onRevertToDraft && (
-                           <DropdownMenuItem onClick={() => onRevertToDraft(campaign.id)} className="text-eco-orange focus:text-eco-orange">
-                            <RotateCcw className="w-4 h-4 mr-2" />
-                            Chuyển về nháp
-                          </DropdownMenuItem>
-                        )}
-                        
-                        <DropdownMenuSeparator />
-
-                        {campaign.status === 'draft' && (
-                          <>
-                            <DropdownMenuItem onClick={() => onEdit(campaign)}>
-                              <Edit className="w-4 h-4 mr-2" />
-                              Chỉnh sửa
-                            </DropdownMenuItem>
-                            {campaign.origin !== 'partnership' && onAddGame && (
-                              <DropdownMenuItem onClick={() => onAddGame(campaign)}>
-                                <Gamepad2 className="w-4 h-4 mr-2" />
-                                Thêm Game
-                              </DropdownMenuItem>
-                            )}
-                            {campaign.origin !== 'partnership' && onAddQuiz && (
-                              <DropdownMenuItem onClick={() => onAddQuiz(campaign)}>
-                                <Brain className="w-4 h-4 mr-2" />
-                                Thêm Quiz
-                              </DropdownMenuItem>
-                            )}
-                            <DropdownMenuItem 
-                              onClick={() => {
-                                if (!campaign.has_game || !campaign.has_quiz) {
-                                  toast.error("Cần cấu hình ít nhất 1 Game và 1 Quiz để kích hoạt chiến dịch");
-                                  return;
-                                }
-                                if (onActivate) onActivate(campaign.id);
-                                else onChangeStatus(campaign.id, 'on_going');
-                              }}
-                            >
-                              <Play className="w-4 h-4 mr-2" />
-                              Kích hoạt
-                            </DropdownMenuItem>
-                          </>
-                        )}
-                        {campaign.status === 'on_going' && (
-                          <>
-                            {campaign.origin === 'partnership' && onManageRewards && (
-                              <DropdownMenuItem onClick={() => onManageRewards(campaign)}>
-                                <Gift className="w-4 h-4 mr-2" />
-                                Quản lý quà tặng
-                              </DropdownMenuItem>
-                            )}
-                          </>
-                        )}
-                        
-                        {campaign.status === 'completed' && (
-                          <>
-                            {campaign.origin === 'partnership' && onManageRewards && (
-                              <DropdownMenuItem onClick={() => onManageRewards(campaign)}>
-                                <Gift className="w-4 h-4 mr-2" />
-                                Quản lý quà tặng
-                              </DropdownMenuItem>
-                            )}
-                          </>
-                        )}
-                        
-                        {campaign.origin !== 'partnership' && campaign.status !== 'scheduled' && campaign.status !== 'on_going' && (
-                          <>
-                            <DropdownMenuSeparator />
+                  </TableCell>
+                  <TableCell>
+                    <div className="space-y-1.5 whitespace-nowrap">
+                      <div className="flex items-center gap-1.5 text-sm text-muted-foreground">
+                        <Calendar className="w-4 h-4" />
+                        <span>
+                          {(() => {
+                            const start = new Date(campaign.start_date);
+                            const end = new Date(campaign.end_date);
+                            const isValidStart = campaign.start_date && !isNaN(start.getTime());
+                            const isValidEnd = campaign.end_date && !isNaN(end.getTime());
                             
-                            {(campaign.status === 'inviting' || campaign.status === 'EXTENDED') ? (
+                            return (
                               <>
-                                {campaign.status === 'EXTENDED' && (
-                                  <DropdownMenuItem
-                                    onClick={() => onCancel ? onCancel(campaign.id) : onDelete(campaign.id)}
-                                    className="text-destructive focus:text-destructive focus:bg-destructive/10"
-                                  >
-                                    <XCircle className="w-4 h-4 mr-2" />
-                                    Hủy chiến dịch
-                                  </DropdownMenuItem>
-                                )}
-                                <DropdownMenuItem
-                                  onClick={() => onExtend && onExtend(campaign.id)}
-                                  className="text-eco-orange focus:text-eco-orange focus:bg-eco-orange/10"
-                                >
-                                  <Calendar className="w-4 h-4 mr-2" />
-                                  Gia hạn thêm
-                                </DropdownMenuItem>
+                                {isValidStart ? format(start, 'HH:mm dd/MM', { locale: vi }) : '??'}
+                                {' - '}
+                                {isValidEnd ? format(end, 'HH:mm dd/MM/yyyy', { locale: vi }) : '??'}
                               </>
-                            ) : (
-                              <DropdownMenuItem
-                                onClick={() => onDelete(campaign.id)}
-                                className="text-destructive focus:text-destructive focus:bg-destructive/10"
-                              >
-                                <Trash2 className="w-4 h-4 mr-2" />
-                                Xóa
+                            );
+                          })()}
+                        </span>
+                      </div>
+                      {/* Invitation Timing */}
+                      {(campaign.invitation_send_date || campaign.invitation_deadline) && (
+                        <div className="flex items-center gap-2 text-[10px] whitespace-nowrap">
+                          {campaign.invitation_send_date && (
+                            <span className="flex items-center gap-1 text-eco-blue bg-eco-blue/5 px-1.5 py-0.5 rounded border border-eco-blue/10">
+                              <Send className="w-2.5 h-2.5" />
+                               {(() => {
+                                 const d = new Date(campaign.invitation_send_date);
+                                 return !isNaN(d.getTime()) ? format(d, 'HH:mm dd/MM', { locale: vi }) : '---';
+                               })()}
+                            </span>
+                          )}
+                          {campaign.invitation_deadline && (
+                            <span className="flex items-center gap-1 text-eco-orange bg-eco-orange/5 px-1.5 py-0.5 rounded border border-eco-orange/10">
+                              <Clock className="w-2.5 h-2.5" />
+                               Hạn: {(() => {
+                                 const d = new Date(campaign.invitation_deadline);
+                                 return !isNaN(d.getTime()) ? format(d, 'HH:mm dd/MM', { locale: vi }) : '---';
+                               })()}
+                            </span>
+                          )}
+                        </div>
+                      )}
+                    </div>
+                  </TableCell>
+                  <TableCell className="text-right">
+                    <div className="flex items-center justify-end gap-2">
+                      <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                          <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
+                            <MoreHorizontal className="w-4 h-4" />
+                            <span className="sr-only">Mở menu</span>
+                          </Button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent align="end">
+                          <DropdownMenuItem onClick={() => onView(campaign)}>
+                            <Eye className="w-4 h-4 mr-2" />
+                            Chi tiết
+                          </DropdownMenuItem>
+  
+                          {campaign.status === 'scheduled' && onRevertToDraft && (
+                             <DropdownMenuItem onClick={() => onRevertToDraft(campaign.id)} className="text-eco-orange focus:text-eco-orange">
+                              <RotateCcw className="w-4 h-4 mr-2" />
+                              Chuyển về nháp
+                            </DropdownMenuItem>
+                          )}
+                          
+                          <DropdownMenuSeparator />
+  
+                          {campaign.status === 'draft' && (
+                            <>
+                              <DropdownMenuItem onClick={() => onEdit(campaign)}>
+                                <Edit className="w-4 h-4 mr-2" />
+                                Chỉnh sửa
                               </DropdownMenuItem>
-                            )}
-                          </>
-                        )}
-                      </DropdownMenuContent>
-                    </DropdownMenu>
-                  </div>
-                </TableCell>
-              </TableRow>
-            );
-          })}
-        </TableBody>
-      </Table>
+                              {campaign.origin !== 'partnership' && onAddGame && (
+                                <DropdownMenuItem onClick={() => onAddGame(campaign)}>
+                                  <Gamepad2 className="w-4 h-4 mr-2" />
+                                  Thêm Game
+                                </DropdownMenuItem>
+                              )}
+                              {campaign.origin !== 'partnership' && onAddQuiz && (
+                                <DropdownMenuItem onClick={() => onAddQuiz(campaign)}>
+                                  <Brain className="w-4 h-4 mr-2" />
+                                  Thêm Quiz
+                                </DropdownMenuItem>
+                              )}
+                              <DropdownMenuItem 
+                                onClick={() => {
+                                  if (!campaign.has_game || !campaign.has_quiz) {
+                                    toast.error("Cần cấu hình ít nhất 1 Game và 1 Quiz để kích hoạt chiến dịch");
+                                    return;
+                                  }
+                                  if (onActivate) onActivate(campaign.id);
+                                  else onChangeStatus(campaign.id, 'on_going');
+                                }}
+                              >
+                                <Play className="w-4 h-4 mr-2" />
+                                Kích hoạt
+                              </DropdownMenuItem>
+                            </>
+                          )}
+                          {campaign.status === 'on_going' && (
+                            <>
+                              {campaign.origin === 'partnership' && onManageRewards && (
+                                <DropdownMenuItem onClick={() => onManageRewards(campaign)}>
+                                  <Gift className="w-4 h-4 mr-2" />
+                                  Quản lý quà tặng
+                                </DropdownMenuItem>
+                              )}
+                            </>
+                          )}
+                          
+                          {campaign.status === 'completed' && (
+                            <>
+                              {campaign.origin === 'partnership' && onManageRewards && (
+                                <DropdownMenuItem onClick={() => onManageRewards(campaign)}>
+                                  <Gift className="w-4 h-4 mr-2" />
+                                  Quản lý quà tặng
+                                </DropdownMenuItem>
+                              )}
+                            </>
+                          )}
+                          
+                          {campaign.origin !== 'partnership' && campaign.status !== 'scheduled' && campaign.status !== 'on_going' && (
+                            <>
+                              <DropdownMenuSeparator />
+                              
+                              {(campaign.status === 'inviting' || campaign.status === 'EXTENDED') ? (
+                                <>
+                                  {campaign.status === 'EXTENDED' && (
+                                    <DropdownMenuItem
+                                      onClick={() => onCancel ? onCancel(campaign.id) : onDelete(campaign.id)}
+                                      className="text-destructive focus:text-destructive focus:bg-destructive/10"
+                                    >
+                                      <XCircle className="w-4 h-4 mr-2" />
+                                      Hủy chiến dịch
+                                    </DropdownMenuItem>
+                                  )}
+                                  <DropdownMenuItem
+                                    onClick={() => onExtend && onExtend(campaign.id)}
+                                    className="text-eco-orange focus:text-eco-orange focus:bg-eco-orange/10"
+                                  >
+                                    <Calendar className="w-4 h-4 mr-2" />
+                                    Gia hạn thêm
+                                  </DropdownMenuItem>
+                                </>
+                              ) : (
+                                <DropdownMenuItem
+                                  onClick={() => onDelete(campaign.id)}
+                                  className="text-destructive focus:text-destructive focus:bg-destructive/10"
+                                >
+                                  <Trash2 className="w-4 h-4 mr-2" />
+                                  Xóa
+                                </DropdownMenuItem>
+                              )}
+                            </>
+                          )}
+                        </DropdownMenuContent>
+                      </DropdownMenu>
+                    </div>
+                  </TableCell>
+                </TableRow>
+              );
+            })}
+          </TableBody>
+        </Table>
+      </div>
 
       {/* Pagination Footer */}
       {totalPages > 1 && (

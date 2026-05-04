@@ -100,50 +100,52 @@ export default function PartnershipCampaigns() {
 
       {/* Campaign Tabs */}
       <Tabs defaultValue="on_going" className="space-y-5">
-        <TabsList className="bg-muted/50 p-1 border-2 border-eco-blue/15">
+      <div className="overflow-x-auto pb-1 scrollbar-hide">
+        <TabsList className="bg-muted/50 p-1 border-2 border-eco-blue/15 inline-flex w-auto min-w-full">
           <TabsTrigger 
             value="draft" 
-            className="gap-2 font-medium data-[state=active]:bg-card data-[state=active]:text-muted-foreground"
+            className="gap-2 font-medium data-[state=active]:bg-card data-[state=active]:text-muted-foreground whitespace-nowrap"
           >
             <FileText className="w-4 h-4" />
             Nháp ({stats.draft})
           </TabsTrigger>
           <TabsTrigger 
             value="scheduled" 
-            className="gap-2 font-medium data-[state=active]:bg-card data-[state=active]:text-purple-500"
+            className="gap-2 font-medium data-[state=active]:bg-card data-[state=active]:text-purple-500 whitespace-nowrap"
           >
             <Clock className="w-4 h-4" />
             Đã lên lịch ({stats.scheduled})
           </TabsTrigger>
           <TabsTrigger 
             value="inviting" 
-            className="gap-2 font-medium data-[state=active]:bg-card data-[state=active]:text-eco-orange"
+            className="gap-2 font-medium data-[state=active]:bg-card data-[state=active]:text-eco-orange whitespace-nowrap"
           >
             <Clock className="w-4 h-4" />
             Đang mời ({stats.inviting})
           </TabsTrigger>
           <TabsTrigger 
             value="on_going" 
-            className="gap-2 font-medium data-[state=active]:bg-card data-[state=active]:text-eco-blue"
+            className="gap-2 font-medium data-[state=active]:bg-card data-[state=active]:text-eco-blue whitespace-nowrap"
           >
             <Clock className="w-4 h-4" />
             Đang diễn ra ({stats.on_going})
           </TabsTrigger>
           <TabsTrigger 
             value="completed" 
-            className="gap-2 font-medium data-[state=active]:bg-card data-[state=active]:text-eco-green"
+            className="gap-2 font-medium data-[state=active]:bg-card data-[state=active]:text-eco-green whitespace-nowrap"
           >
             <CheckCircle className="w-4 h-4" />
             Hoàn thành ({stats.completed})
           </TabsTrigger>
           <TabsTrigger 
             value="cancelled" 
-            className="gap-2 font-medium data-[state=active]:bg-card data-[state=active]:text-destructive"
+            className="gap-2 font-medium data-[state=active]:bg-card data-[state=active]:text-destructive whitespace-nowrap"
           >
             <XCircle className="w-4 h-4" />
             Đã hủy ({stats.cancelled})
           </TabsTrigger>
         </TabsList>
+      </div>
 
         <TabsContent value="draft">
           <CampaignList 

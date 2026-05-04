@@ -4,8 +4,79 @@
  * Displays: Timer, Trash collected, Score, Water clarity,
  * and context-sensitive instructions.
  */
-import { useEffect, useState, useCallback } from "react";
+import { useEffect, useState, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
+
+const isMobileDevice = () =>
+  /Android|iPhone|iPad|iPod|Opera Mini|IEMobile/i.test(navigator.userAgent);
+
+// ─── Mobile Joystick ─────────────────────────────────────────────────────────
+
+function MobileJoystick({ onMove, onEnd }) {
+  const [isMobile, setIsMobile] = useState(false);
+  const containerRef = useRef(null);
+
+  useEffect(() => {
+    setIsMobile(isMobileDevice());
+  }, []);
+
+  if (!isMobile) return null;
+
+  const handleTouch = (e, isEnd = false) => {
+    if (isEnd) {
+      onEnd();
+      return;
+    }
+    if (!e.touches || !containerRef.current) return;
+    const t = e.touches[0];
+    const rect = containerRef.current.getBoundingClientRect();
+    const centerX = rect.left + rect.width / 2;
+    const centerY = rect.top + rect.height / 2;
+    const dx = (t.clientX - centerX) / (rect.width / 2);
+    const dy = (t.clientY - centerY) / (rect.height / 2);
+
+    // Clamp to -1, 1
+    const x = Math.max(-1, Math.min(1, dx));
+    const y = Math.max(-1, Math.min(1, dy));
+    onMove(x, y);
+  };
+
+  return (
+    <div
+      ref={containerRef}
+      onTouchStart={(e) => handleTouch(e)}
+      onTouchMove={(e) => handleTouch(e)}
+      onTouchEnd={() => handleTouch(null, true)}
+      className="absolute bottom-10 left-10 w-32 h-32 rounded-full border-2 border-white/30 bg-white/10 backdrop-blur-md flex items-center justify-center"
+      style={{ zIndex: 1100, pointerEvents: "auto" }}
+    >
+      <div className="w-12 h-12 rounded-full bg-white/40 border border-white/50" />
+    </div>
+  );
+}
+
+// ─── Mobile Grab Button ──────────────────────────────────────────────────────
+
+function GrabButton({ onClick }) {
+  const [isMobile, setIsMobile] = useState(false);
+
+  useEffect(() => {
+    setIsMobile(isMobileDevice());
+  }, []);
+
+  if (!isMobile) return null;
+
+  return (
+    <button
+      onClick={onClick}
+      className="absolute bottom-10 right-10 w-24 h-24 rounded-full bg-yellow-500/80 border-4 border-white/50 text-white flex items-center justify-center shadow-2xl active:scale-95 transition-transform"
+      style={{ zIndex: 1100, pointerEvents: "auto" }}
+    >
+      <div className="text-4xl">🏗️</div>
+      <div className="absolute -top-1 font-bold text-xs uppercase tracking-widest text-yellow-100">GẮP</div>
+    </button>
+  );
+}
 
 // ─── Instruction Banner ───────────────────────────────────────────────────────
 
@@ -164,6 +235,13 @@ export function EcoGrabberHUD({ game, levelConfig }) {
 
       {/* Bottom instruction */}
       <InstructionBanner text={instruction} />
+
+      {/* Mobile Controls */}
+      <MobileJoystick
+        onMove={(x, y) => game?.stage1Game?.setJoystick(x, y)}
+        onEnd={() => game?.stage1Game?.resetJoystick()}
+      />
+      <GrabButton onClick={() => game?.stage1Game?.triggerInput()} />
     </>
   );
 }

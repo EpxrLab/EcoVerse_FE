@@ -327,15 +327,15 @@ export default function SchoolAdminLayout() {
           schoolInfo={schoolInfo}
           isProfileLoading={isProfileLoading}
         />
-        <main className="flex-1 flex flex-col">
-          <header className="h-16 border-b-2 border-border bg-card flex items-center justify-between px-6 sticky top-0 z-10">
-            <div className="flex items-center gap-4">
+        <main className="flex-1 flex flex-col min-w-0">
+          <header className="h-16 border-b-2 border-border bg-card flex items-center justify-between px-4 sm:px-6 sticky top-0 z-10 shrink-0">
+            <div className="flex items-center gap-2 sm:gap-4">
               <SidebarTrigger className="text-muted-foreground hover:text-foreground p-2 hover:bg-muted/60 rounded-xl transition-colors" />
               <div className="flex items-center gap-2.5">
                 <div className="w-9 h-9 rounded-xl bg-primary/12 flex items-center justify-center">
                   <Leaf className="w-5 h-5 text-primary" />
                 </div>
-                <div>
+                <div className="hidden xs:block">
                   <span className="text-sm font-bold text-foreground">
                     EcoVerse
                   </span>
@@ -345,10 +345,10 @@ export default function SchoolAdminLayout() {
                 </div>
               </div>
             </div>
-            <div className="flex items-center gap-3">
+            <div className="flex items-center gap-2 sm:gap-3">
               <NotificationDropdown />
               <div
-                className="flex items-center gap-3 pl-3 border-l-2 border-border cursor-pointer hover:opacity-80 transition-opacity"
+                className="flex items-center gap-2 sm:gap-3 pl-2 sm:pl-3 border-l-2 border-border cursor-pointer hover:opacity-80 transition-opacity"
                 onClick={() => {
                   navigate("/school/profile");
                 }}
@@ -375,7 +375,7 @@ export default function SchoolAdminLayout() {
           </header>
 
           {/* Content Area */}
-          <div className="flex-1 overflow-auto p-6 bg-background">
+          <div className="flex-1 overflow-auto p-4 sm:p-6 bg-background">
             <Outlet />
           </div>
         </main>
