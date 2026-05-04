@@ -453,6 +453,10 @@ function PresetTab({ gameTypes }) {
     selectedGame?.typeCode,
   );
 
+  const existingDifficulties = filteredPresets.map((p) => p.difficulty);
+  const allDifficultiesCreated =
+    existingDifficulties.length >= DIFFICULTY_OPTIONS.length;
+
   const fetchData = async () => {
     try {
       if (!selectedGameId) {
@@ -475,10 +479,14 @@ function PresetTab({ gameTypes }) {
   }, [selectedGameId]);
 
   const openCreate = () => {
+    const availableDifficulty = DIFFICULTY_OPTIONS.find(
+      (opt) => !existingDifficulties.includes(opt.value),
+    )?.value;
+
     setEditingItem(null);
     form.resetFields();
     form.setFieldsValue({
-      difficulty: "EASY",
+      difficulty: availableDifficulty || "EASY",
       items: [
         {
           levelNumber: 1,
@@ -639,12 +647,14 @@ function PresetTab({ gameTypes }) {
             type="primary"
             icon={<PlusOutlined />}
             onClick={openCreate}
-            disabled={!selectedGameId} // Disable nếu chưa chọn game
+            disabled={!selectedGameId || allDifficultiesCreated} // Disable nếu chưa chọn game hoặc đã tạo hết cấp độ
             className={`rounded-xl h-11 font-semibold ${
-              !selectedGameId ? "bg-gray-300" : "bg-green-500 border-green-500"
+              !selectedGameId || allDifficultiesCreated
+                ? "bg-gray-300"
+                : "bg-green-500 border-green-500"
             }`}
           >
-            Tạo Cấp Độ
+            {allDifficultiesCreated ? "Đã đủ các cấp" : "Tạo Cấp Độ"}
           </Button>
         </div>
       </div>
@@ -733,8 +743,18 @@ function PresetTab({ gameTypes }) {
           >
             <Select placeholder="Chọn độ khó" size="large">
               {DIFFICULTY_OPTIONS.map((d) => (
-                <Select.Option key={d.value} value={d.value}>
+                <Select.Option
+                  key={d.value}
+                  value={d.value}
+                  disabled={
+                    existingDifficulties.includes(d.value) &&
+                    editingItem?.difficulty !== d.value
+                  }
+                >
                   {d.label}
+                  {existingDifficulties.includes(d.value) &&
+                    editingItem?.difficulty !== d.value &&
+                    " (Đã có)"}
                 </Select.Option>
               ))}
             </Select>
