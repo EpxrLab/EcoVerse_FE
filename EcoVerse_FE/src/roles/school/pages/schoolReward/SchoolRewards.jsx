@@ -253,7 +253,7 @@ export default function SchoolRewards() {
 
       {/* Tabs */}
       <Tabs defaultValue="pending" className="space-y-5">
-        <TabsList className="bg-muted/50 p-1 border-2 border-eco-green/15 flex-wrap h-auto gap-1">
+        <TabsList className="bg-muted/50 p-1 border-2 border-eco-green/15 flex-wrap h-auto gap-1 justify-start w-fit">
           <TabsTrigger value="pending" className="gap-2 font-medium data-[state=active]:bg-card data-[state=active]:text-eco-orange">
             <Clock className="w-4 h-4" />
             Chờ duyệt ({filtered.pending.length})

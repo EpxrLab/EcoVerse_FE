@@ -189,21 +189,20 @@ export function useClasses() {
       }
     }
 
-    // We use the className and gradeLevel from formData
     const className = formData.className;
     const gradeLevel = formData.gradeLevel;
 
-
     try {
       const payload = {
-        studentFullName: formData.student_name,
+        fullName: formData.student_name,
+        studentCode: formData.student_code || '',
         className: className,
         gradeLevel: String(gradeLevel),
         dateOfBirth: formData.date_of_birth || null,
         gender: formData.gender === 'male' ? 'MALE' : formData.gender === 'female' ? 'FEMALE' : 'OTHER',
         address: formData.address || '',
         parentFullName: formData.parent_name || '',
-        parentPhone: formData.parent_phone || '',
+        parentPhoneNumber: formData.parent_phone || '',
         parentEmail: formData.parent_email || ''
       };
 
@@ -224,14 +223,15 @@ export function useClasses() {
 
     try {
       const payload = {
-        studentFullName: formData.student_name,
+        fullName: formData.student_name,
+        studentCode: formData.student_code || '',
         className: formData.className,
         gradeLevel: String(formData.gradeLevel),
         dateOfBirth: formData.date_of_birth || null,
-        gender: formData.gender === 'male' ? 'MALE' : formData.gender === 'female' ? 'FEMALE' : 'OTHER', // Defaulting other to OTHER if expected, or handling it based on backend enum
+        gender: formData.gender === 'male' ? 'MALE' : formData.gender === 'female' ? 'FEMALE' : 'OTHER',
         address: formData.address || '',
         parentFullName: formData.parent_name || '',
-        parentPhone: formData.parent_phone || '',
+        parentPhoneNumber: formData.parent_phone || '',
         parentEmail: formData.parent_email || ''
       };
 

@@ -101,7 +101,7 @@ export default function PartnershipCampaigns() {
       {/* Campaign Tabs */}
       <Tabs defaultValue="on_going" className="space-y-5">
       <div className="overflow-x-auto pb-1 scrollbar-hide">
-        <TabsList className="bg-muted/50 p-1 border-2 border-eco-blue/15 inline-flex w-auto min-w-full">
+        <TabsList className="bg-muted/50 p-1 border-2 border-eco-blue/15 inline-flex w-fit justify-start">
           <TabsTrigger 
             value="draft" 
             className="gap-2 font-medium data-[state=active]:bg-card data-[state=active]:text-muted-foreground whitespace-nowrap"

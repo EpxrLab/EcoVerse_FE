@@ -104,6 +104,7 @@ export function useProfile() {
     provinces,
     wards,
     fetchProfile,
+    fetchWards,
     updateProfile,
     handleFileUpload,
   };

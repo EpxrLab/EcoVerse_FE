@@ -289,6 +289,7 @@ export function StudentListView({
                             </div>
                             <div>
                               <p className="font-semibold text-base text-foreground">{student.student_name}</p>
+                              <p className="text-xs text-muted-foreground font-medium">{student.student_code}</p>
                               {student.parent_name && (
                                 <button 
                                   onClick={() => handleParentClick(student.id)}

@@ -136,7 +136,7 @@ export default function SchoolReports() {
 
       <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-card/50 p-2 rounded-2xl border border-border/50 backdrop-blur-sm">
-          <TabsList className="bg-transparent h-12 gap-1 p-0">
+          <TabsList className="bg-transparent h-12 gap-1 p-0 justify-start">
             <TabsTrigger 
               value="students" 
               className="rounded-xl h-10 px-6 data-[state=active]:bg-eco-green data-[state=active]:text-primary-foreground data-[state=active]:shadow-lg data-[state=active]:shadow-eco-green/20 font-bold transition-all"
