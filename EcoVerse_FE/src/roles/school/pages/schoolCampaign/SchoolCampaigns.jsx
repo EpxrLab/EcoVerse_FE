@@ -457,7 +457,7 @@ export default function SchoolCampaigns() {
       {/* Tabs */}
       <Tabs defaultValue="draft" className="space-y-5">
       <div className="overflow-x-auto pb-1 scrollbar-hide">
-        <TabsList className="bg-muted/50 p-1 border-2 border-eco-green/15 inline-flex w-auto min-w-full">
+        <TabsList className="h-12 bg-muted/50 p-1.5 border-2 border-eco-green/15 gap-1 justify-start w-fit">
           <TabsTrigger
             value="draft"
             className="gap-2 font-medium data-[state=active]:bg-card data-[state=active]:text-muted-foreground whitespace-nowrap"
@@ -548,7 +548,7 @@ export default function SchoolCampaigns() {
 
         <TabsContent value="sending_invites">
           <Tabs defaultValue="school" className="space-y-4">
-            <TabsList className="bg-muted/50 p-1">
+            <TabsList className="bg-muted/50 p-1 justify-start w-fit">
               <TabsTrigger
                 value="school"
                 className="gap-2 data-[state=active]:bg-card data-[state=active]:text-eco-green"
@@ -594,7 +594,7 @@ export default function SchoolCampaigns() {
 
         <TabsContent value="active">
           <Tabs defaultValue="school" className="space-y-4">
-            <TabsList className="bg-muted/50 p-1">
+            <TabsList className="bg-muted/50 p-1 justify-start w-fit">
               <TabsTrigger
                 value="school"
                 className="gap-2 data-[state=active]:bg-card data-[state=active]:text-eco-green"
@@ -640,7 +640,7 @@ export default function SchoolCampaigns() {
 
         <TabsContent value="completed">
           <Tabs defaultValue="school" className="space-y-4">
-            <TabsList className="bg-muted/50 p-1">
+            <TabsList className="bg-muted/50 p-1 justify-start w-fit">
               <TabsTrigger
                 value="school"
                 className="gap-2 data-[state=active]:bg-card data-[state=active]:text-eco-green"
@@ -700,7 +700,7 @@ export default function SchoolCampaigns() {
 
         <TabsContent value="invitations">
           <Tabs defaultValue="pending" className="space-y-4">
-            <TabsList className="bg-muted/50 p-1">
+            <TabsList className="bg-muted/50 p-1 justify-start w-fit">
               <TabsTrigger value="pending" className="gap-2 data-[state=active]:bg-card data-[state=active]:text-purple-600">
                 Chờ phản hồi ({invitationsPending.length})
               </TabsTrigger>
