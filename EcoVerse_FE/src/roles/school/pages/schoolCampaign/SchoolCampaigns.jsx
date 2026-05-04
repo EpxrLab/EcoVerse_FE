@@ -78,17 +78,6 @@ export default function SchoolCampaigns() {
   const [isConfirmInvitationOpen, setIsConfirmInvitationOpen] = useState(false);
   const [invitationAction, setInvitationAction] = useState({ type: 'accept', campaign: null });
 
-  // Partnership Invitation logic
-  const invitationsPending = allCampaigns.filter(c => c.origin === 'partnership' && c.invitation_status === 'INVITED');
-  const invitationsAccepted = allCampaigns
-    .filter(c => c.origin === 'partnership' && c.invitation_status === 'APPROVED')
-    .sort((a, b) => {
-      if (a.campaignPartnershipStatus === 'JOINING' && b.campaignPartnershipStatus !== 'JOINING') return -1;
-      if (a.campaignPartnershipStatus !== 'JOINING' && b.campaignPartnershipStatus === 'JOINING') return 1;
-      return 0;
-    });
-  const invitationsRejected = allCampaigns.filter(c => c.origin === 'partnership' && (c.invitation_status === 'REJECTED' || c.invitation_status === 'DECLINED'));
-
   const handleOpenAcceptDialog = (campaign) => {
     setInvitationAction({ type: 'accept', campaign });
     setIsConfirmInvitationOpen(true);
@@ -113,12 +102,23 @@ export default function SchoolCampaigns() {
 
   const { allStudents, availableClasses } = useStudents();
 
-  // Filter campaigns by search
   const filteredCampaigns = allCampaigns.filter(
     (campaign) =>
       campaign.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      campaign.description?.toLowerCase().includes(searchQuery.toLowerCase()),
+      campaign.description?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      campaign.partnership_name?.toLowerCase().includes(searchQuery.toLowerCase()),
   );
+
+  // Partnership Invitation logic (Filtered)
+  const invitationsPending = filteredCampaigns.filter(c => c.origin === 'partnership' && c.invitation_status === 'INVITED');
+  const invitationsAccepted = filteredCampaigns
+    .filter(c => c.origin === 'partnership' && c.invitation_status === 'APPROVED')
+    .sort((a, b) => {
+      if (a.campaignPartnershipStatus === 'JOINING' && b.campaignPartnershipStatus !== 'JOINING') return -1;
+      if (a.campaignPartnershipStatus !== 'JOINING' && b.campaignPartnershipStatus === 'JOINING') return 1;
+      return 0;
+    });
+  const invitationsRejected = filteredCampaigns.filter(c => c.origin === 'partnership' && (c.invitation_status === 'REJECTED' || c.invitation_status === 'DECLINED'));
 
   const draftCampaigns = filteredCampaigns.filter((c) => c.status === "draft");
   const scheduledCampaigns = filteredCampaigns.filter(
