@@ -365,14 +365,7 @@ export default class EcoGameSorter {
     this.wasteCategories.forEach((catCode, index) => {
       const binType = DynamicBinTypes[catCode] || DynamicBinTypes.GENERAL;
 
-      // Responsive bin layout
-      const aspect = window.innerWidth / window.innerHeight;
-      const responsiveWidth = aspect < 1 ? 6 : 14;
-      const responsiveSpacing =
-        numBins === 1 ? 0 : responsiveWidth / (numBins - 1);
-      const responsiveStartX = -responsiveWidth / 2;
-
-      const x = responsiveStartX + responsiveSpacing * index;
+      // Position will be set by _updateBinLayout
       const z = -4;
 
       const group = new THREE.Group();
@@ -431,7 +424,7 @@ export default class EcoGameSorter {
       label.rotation.x = -Math.PI / 8; // Tilted more towards camera
       group.add(label);
 
-      group.position.set(x, 0, z);
+      group.position.set(0, 0, z);
       group.userData = { type: "bin", binId: binType.id };
 
       this.scene.add(group);
@@ -447,6 +440,24 @@ export default class EcoGameSorter {
         ease: "back.out(1.5)",
         delay: 0.2 + index * 0.1,
       });
+    });
+
+    this._updateBinLayout();
+  }
+
+  _updateBinLayout() {
+    if (!this.binMeshes || this.binMeshes.length === 0) return;
+
+    const numBins = this.binMeshes.length;
+    const aspect = window.innerWidth / window.innerHeight;
+    const responsiveWidth = aspect < 1 ? 6 : 14;
+    const responsiveSpacing =
+      numBins === 1 ? 0 : responsiveWidth / (numBins - 1);
+    const responsiveStartX = -responsiveWidth / 2;
+
+    this.binMeshes.forEach((group, index) => {
+      const x = responsiveStartX + responsiveSpacing * index;
+      group.position.x = x;
     });
   }
 
@@ -767,6 +778,7 @@ export default class EcoGameSorter {
     const camZ = aspect > 1.6 ? 7 + (aspect - 1.6) * 2 : 7;
     const camY = aspect > 1.6 ? 7 + (aspect - 1.6) * 1.5 : 7;
     this.camera.position.set(0, camY, camZ);
+    this._updateBinLayout();
   }
 
   _getPointerPosition(event) {

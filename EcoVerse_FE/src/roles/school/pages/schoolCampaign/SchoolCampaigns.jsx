@@ -456,49 +456,50 @@ export default function SchoolCampaigns() {
 
       {/* Tabs */}
       <Tabs defaultValue="draft" className="space-y-5">
-        <TabsList className="bg-muted/50 p-1 border-2 border-eco-green/15">
+      <div className="overflow-x-auto pb-1 scrollbar-hide">
+        <TabsList className="bg-muted/50 p-1 border-2 border-eco-green/15 inline-flex w-auto min-w-full">
           <TabsTrigger
             value="draft"
-            className="gap-2 font-medium data-[state=active]:bg-card data-[state=active]:text-muted-foreground"
+            className="gap-2 font-medium data-[state=active]:bg-card data-[state=active]:text-muted-foreground whitespace-nowrap"
           >
             <Edit className="w-4 h-4" />
             Nháp ({draftCampaigns.length})
           </TabsTrigger>
           <TabsTrigger
             value="scheduled"
-            className="gap-2 font-medium data-[state=active]:bg-card data-[state=active]:text-purple-500"
+            className="gap-2 font-medium data-[state=active]:bg-card data-[state=active]:text-purple-500 whitespace-nowrap"
           >
             <Clock className="w-4 h-4" />
             Đã lên lịch ({scheduledCampaigns.length})
           </TabsTrigger>
           <TabsTrigger
             value="sending_invites"
-            className="gap-2 font-medium data-[state=active]:bg-card data-[state=active]:text-indigo-600"
+            className="gap-2 font-medium data-[state=active]:bg-card data-[state=active]:text-indigo-600 whitespace-nowrap"
           >
             <Send className="w-4 h-4" />
             Đang mời ({sendingInvitesCampaigns.length})
           </TabsTrigger>
           <TabsTrigger
             value="active"
-            className="gap-2 font-medium data-[state=active]:bg-card data-[state=active]:text-eco-green"
+            className="gap-2 font-medium data-[state=active]:bg-card data-[state=active]:text-eco-green whitespace-nowrap"
           >
             <Play className="w-4 h-4" />
             Đang hoạt động ({activeCampaigns.length})
           </TabsTrigger>
           <TabsTrigger
             value="completed"
-            className="gap-2 font-medium data-[state=active]:bg-card data-[state=active]:text-eco-blue"
+            className="gap-2 font-medium data-[state=active]:bg-card data-[state=active]:text-eco-blue whitespace-nowrap"
           >
             <CheckCircle2 className="w-4 h-4" />
             Hoàn thành ({completedCampaigns.length})
           </TabsTrigger>
           <TabsTrigger
             value="cancelled"
-            className="gap-2 font-medium data-[state=active]:bg-card data-[state=active]:text-destructive"
+            className="gap-2 font-medium data-[state=active]:bg-card data-[state=active]:text-destructive whitespace-nowrap"
           >
             Đã hủy ({cancelledCampaigns.length})
           </TabsTrigger>
-          <TabsTrigger value="invitations" className="gap-2 font-medium data-[state=active]:bg-card data-[state=active]:text-purple-600 relative">
+          <TabsTrigger value="invitations" className="gap-2 font-medium data-[state=active]:bg-card data-[state=active]:text-purple-600 relative whitespace-nowrap">
              <div className="flex items-center gap-2">
                Lời mời
                {invitationsPending.length > 0 && (
@@ -509,6 +510,7 @@ export default function SchoolCampaigns() {
              </div>
           </TabsTrigger>
         </TabsList>
+      </div>
 
         <TabsContent value="draft">
           <CampaignList
