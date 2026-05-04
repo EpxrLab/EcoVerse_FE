@@ -106,18 +106,26 @@ export function RewardFormDialog({
               <Label>Giá (Xu) *</Label>
               <Input 
                 type="number" 
+                min="0"
                 placeholder="200" 
                 value={form.coinCost !== null && form.coinCost !== undefined ? form.coinCost : ''}
-                onChange={(e) => onUpdateForm({ coinCost: e.target.value === '' ? '' : parseInt(e.target.value) || 0 })}
+                onChange={(e) => {
+                  const val = e.target.value === '' ? '' : parseInt(e.target.value);
+                  onUpdateForm({ coinCost: val === '' ? '' : Math.max(0, val || 0) });
+                }}
               />
             </div>
             <div className="space-y-2">
               <Label>Số lượng</Label>
               <Input 
                 type="number" 
+                min="0"
                 placeholder="10" 
                 value={form.stockQuantity !== null && form.stockQuantity !== undefined ? form.stockQuantity : ''}
-                onChange={(e) => onUpdateForm({ stockQuantity: e.target.value === '' ? '' : parseInt(e.target.value) || 0 })}
+                onChange={(e) => {
+                  const val = e.target.value === '' ? '' : parseInt(e.target.value);
+                  onUpdateForm({ stockQuantity: val === '' ? '' : Math.max(0, val || 0) });
+                }}
                 disabled={form.isUnlimited}
               />
             </div>
@@ -147,7 +155,15 @@ export function RewardFormDialog({
           <Button 
             className="w-full bg-eco-green hover:bg-eco-green-dark text-primary-foreground font-semibold"
             onClick={onSubmit}
-            disabled={!form.rewardName || form.coinCost === undefined || form.coinCost === null || form.coinCost < 0}
+            disabled={
+              !form.rewardName || 
+              !form.rewardType || 
+              form.coinCost === undefined || 
+              form.coinCost === null || 
+              form.coinCost === '' || 
+              form.coinCost < 0 ||
+              (!form.isUnlimited && (form.stockQuantity === undefined || form.stockQuantity === null || form.stockQuantity === ''))
+            }
           >
             {isEdit ? "Lưu thay đổi" : "Thêm sản phẩm"}
           </Button>
