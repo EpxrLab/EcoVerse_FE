@@ -573,6 +573,7 @@ export default function SchoolCampaigns() {
                 onInvite={handleOpenInviteDialog}
                 onChangeStatus={changeStatus}
                 onDelete={handleConfirmDelete}
+                onExtend={handleOpenExtendDialog}
               />
             </TabsContent>
 
@@ -587,6 +588,7 @@ export default function SchoolCampaigns() {
                 onInvite={handleOpenInviteDialog}
                 onChangeStatus={changeStatus}
                 onDelete={handleConfirmDelete}
+                onExtend={handleOpenExtendDialog}
               />
             </TabsContent>
           </Tabs>

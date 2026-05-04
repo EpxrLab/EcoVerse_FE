@@ -1,4 +1,6 @@
 import { useState, useMemo, useEffect } from 'react';
+import { ConfigProvider, DatePicker } from 'antd';
+import dayjs from 'dayjs';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription } from '@/shared/components/ui/dialog';
 import { Button } from '@/shared/components/ui/button';
 import { Input } from '@/shared/components/ui/input';
@@ -9,6 +11,7 @@ import { Badge } from '@/shared/components/ui/badge';
 import { Calendar, Users, UserPlus, AlertCircle, Clock } from 'lucide-react';
 import { toLocalISO } from '@/utils/dateUtils';
 import { StudentSelectionDialog } from './StudentSelectionDialog';
+import { cn } from '@/shared/lib/utils';
 
 export function ExtendInvitingDialog({
   isOpen,
@@ -192,41 +195,63 @@ export function ExtendInvitingDialog({
               <Clock className="w-4 h-4" />
               Gia hạn
             </h4>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 p-4 rounded-xl bg-orange-50/50 border border-orange-100 items-stretch">
-              <div className="space-y-2">
-                <Label className="font-semibold flex items-center gap-2 h-6">
-                  Thời hạn mới <span className="text-destructive">*</span>
-                </Label>
-                <Input
-                  type="datetime-local"
-                  value={newInviteEndAt}
-                  onChange={(e) => handleDateChange(e.target.value)}
-                  min={minDate}
-                  max={maxDate}
-                  className={`bg-background border-orange-200 ${dateError ? 'border-destructive focus-visible:ring-destructive' : ''}`}
-                />
-                {dateError ? (
-                  <p className="text-[11px] text-destructive flex items-center gap-1 font-medium">
-                    <AlertCircle className="w-3 h-3" />
-                    {dateError}
-                  </p>
-                ) : (
-                  <p className="text-[11px] text-muted-foreground italic">
-                    Hạn chót để học sinh chấp nhận tham gia.
-                  </p>
-                )}
+            <ConfigProvider
+              theme={{
+                token: {
+                  colorPrimary: '#f97316', // orange-500
+                  borderRadius: 12,
+                }
+              }}
+            >
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6 p-4 rounded-xl bg-orange-50/50 border border-orange-100 items-stretch">
+                <div className="space-y-2">
+                  <Label className="font-semibold flex items-center gap-2 h-6">
+                    Thời hạn mới <span className="text-destructive">*</span>
+                  </Label>
+                  <DatePicker
+                    showTime={{ format: 'HH:mm', showNow: false }}
+                    format="DD/MM/YYYY HH:mm"
+                    value={newInviteEndAt ? dayjs(newInviteEndAt) : null}
+                    onChange={(date) => handleDateChange(date ? date.format('YYYY-MM-DDTHH:mm') : '')}
+                    disabledDate={(current) => {
+                      if (!current) return false;
+                      const min = minDate ? dayjs(minDate) : null;
+                      const max = maxDate ? dayjs(maxDate) : null;
+                      
+                      if (min && current.isBefore(min, 'day')) return true;
+                      if (max && current.isAfter(max, 'day')) return true;
+                      return false;
+                    }}
+                    className={cn(
+                      "w-full h-10 border-orange-200",
+                      dateError ? 'border-destructive hover:border-destructive focus:border-destructive' : ''
+                    )}
+                    placeholder="Chọn thời hạn mới"
+                    getPopupContainer={(trigger) => trigger.parentElement}
+                  />
+                  {dateError ? (
+                    <p className="text-[11px] text-destructive flex items-center gap-1 font-medium">
+                      <AlertCircle className="w-3 h-3" />
+                      {dateError}
+                    </p>
+                  ) : (
+                    <p className="text-[11px] text-muted-foreground italic">
+                      Hạn chót để học sinh chấp nhận tham gia.
+                    </p>
+                  )}
+                </div>
+                <div className="space-y-2">
+                  <Label className="font-semibold flex items-center h-6">Lý do gia hạn</Label>
+                  <Input
+                    placeholder="Nhập lý do gia hạn"
+                    value={reason}
+                    onChange={(e) => setReason(e.target.value)}
+                    className="bg-background border-orange-200"
+                  />
+                  <p className="text-[11px] invisible select-none">&nbsp;</p>
+                </div>
               </div>
-              <div className="space-y-2">
-                <Label className="font-semibold flex items-center h-6">Lý do gia hạn</Label>
-                <Input
-                  placeholder="Nhập lý do gia hạn"
-                  value={reason}
-                  onChange={(e) => setReason(e.target.value)}
-                  className="bg-background border-orange-200"
-                />
-                <p className="text-[11px] invisible select-none">&nbsp;</p>
-              </div>
-            </div>
+            </ConfigProvider>
           </div>
 
           {/* Grouped Student Selection */}
