@@ -82,6 +82,9 @@ export default class EcoGrabber {
         this.minReach = 1.5;
         this.currentReach = this.minReach + (this.maxReach - this.minReach) * this.reachRatio;
 
+        // Mobile / Joystick state
+        this.joystick = { x: 0, y: 0 };
+
         // 3D groups
         this.craneGroup = null;
         this.armGroup = null;
@@ -122,6 +125,7 @@ export default class EcoGrabber {
         // Bound handlers
         this._onClick = this._handleClick.bind(this);
         this._onTouch = this._handleTouch.bind(this);
+        this._onResize = this._handleResize.bind(this);
     }
 
     // ─── Init ─────────────────────────────────────────────────────────────────
@@ -163,9 +167,17 @@ export default class EcoGrabber {
     // ─── Camera ───────────────────────────────────────────────────────────────
 
     _setupCamera() {
-        this.camera.position.set(18, 16, 18);
+        const aspect = window.innerWidth / window.innerHeight;
+        
+        // Adjust FOV for mobile portrait to see more vertical space
+        const baseFov = 50;
+        this.camera.fov = aspect < 1 ? baseFov + 15 : baseFov;
+        
+        // Pull camera back a bit more on mobile
+        const camDist = aspect < 1 ? 24 : 18;
+        this.camera.position.set(camDist, camDist * 0.88, camDist);
+        
         this.camera.lookAt(0, -2, 0);
-        this.camera.fov = 50;
         this.camera.updateProjectionMatrix();
     }
 
@@ -1098,6 +1110,7 @@ export default class EcoGrabber {
         window.addEventListener("touchstart", this._onTouch, { passive: false });
         window.addEventListener("keydown", this._onKeyDown);
         window.addEventListener("keyup", this._onKeyUp);
+        window.addEventListener("resize", this._onResize);
     }
 
     _removeEventListeners() {
@@ -1105,11 +1118,12 @@ export default class EcoGrabber {
         window.removeEventListener("touchstart", this._onTouch);
         window.removeEventListener("keydown", this._onKeyDown);
         window.removeEventListener("keyup", this._onKeyUp);
+        window.removeEventListener("resize", this._onResize);
     }
 
     _onKeyDown = (e) => {
         this.keys[e.code] = true;
-        if (e.code === "Space") this._processInput();
+        if (e.code === "Space" || e.code === "Enter") this.triggerInput();
     };
 
     _onKeyUp = (e) => {
@@ -1118,13 +1132,24 @@ export default class EcoGrabber {
 
     _handleClick() {
         if (this.isGameOver) return;
-        this._processInput();
+        this.triggerInput();
     }
 
     _handleTouch(e) {
         if (this.isGameOver) return;
+        // Check if it's a HUD element (buttons)
+        if (e.target.closest('button')) return;
+        
         e.preventDefault();
+        this.triggerInput();
+    }
+
+    triggerInput() {
         this._processInput();
+    }
+
+    _handleResize() {
+        this._setupCamera();
     }
 
     _processInput() {
@@ -1344,22 +1369,30 @@ export default class EcoGrabber {
             return;
         }
 
+        // ── Movement Input Processing ──
+        let moveX = 0; // Rotation
+        let moveY = 0; // Reach
+
+        // Keyboard
+        if (this.keys["KeyA"] || this.keys["ArrowLeft"]) moveX -= 1;
+        if (this.keys["KeyD"] || this.keys["ArrowRight"]) moveX += 1;
+        if (this.keys["KeyW"] || this.keys["ArrowUp"]) moveY += 1;
+        if (this.keys["KeyS"] || this.keys["ArrowDown"]) moveY -= 1;
+
+        // Joystick (Mobile) overrides or adds to keyboard
+        if (Math.abs(this.joystick.x) > 0.1) moveX = this.joystick.x;
+        if (Math.abs(this.joystick.y) > 0.1) moveY = -this.joystick.y; // Invert Y for reach (Up = Out)
+
         // ── Manual Control ──
         if (this.grabState === GrabState.MANUAL) {
-            if (this.keys["KeyA"] || this.keys["ArrowLeft"]) {
-                this.craneAngle -= this.config.rotationSpeed * delta;
-            }
-            if (this.keys["KeyD"] || this.keys["ArrowRight"]) {
-                this.craneAngle += this.config.rotationSpeed * delta;
+            if (moveX !== 0) {
+                this.craneAngle += moveX * this.config.rotationSpeed * delta;
             }
             this.armGroup.rotation.y = this.craneAngle;
 
-            // Reach (W/S or Arrows)
-            if (this.keys["KeyW"] || this.keys["ArrowUp"]) {
-                this.reachRatio += delta * 1.5;
-            }
-            if (this.keys["KeyS"] || this.keys["ArrowDown"]) {
-                this.reachRatio -= delta * 1.5;
+            // Reach
+            if (moveY !== 0) {
+                this.reachRatio += moveY * delta * 1.5;
             }
             this.reachRatio = Math.max(0, Math.min(1, this.reachRatio));
 
@@ -1583,6 +1616,16 @@ export default class EcoGrabber {
     onInstructionUpdate(callback) {
         if (!this._cbInstructionUpdate) this._cbInstructionUpdate = [];
         this._cbInstructionUpdate.push(callback);
+    }
+
+    setJoystick(x, y) {
+        this.joystick.x = x;
+        this.joystick.y = y;
+    }
+
+    resetJoystick() {
+        this.joystick.x = 0;
+        this.joystick.y = 0;
     }
 
     // ─── Dispose ──────────────────────────────────────────────────────────────
