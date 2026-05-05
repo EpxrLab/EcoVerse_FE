@@ -35,7 +35,6 @@ export default function PartnershipCampaigns() {
     availableSchools,
     availableQuizzes,
     setAvailableQuizzes,
-    availableGameLevels,
     handleSubmit,
     handleRevertToDraft,
     isEditing,

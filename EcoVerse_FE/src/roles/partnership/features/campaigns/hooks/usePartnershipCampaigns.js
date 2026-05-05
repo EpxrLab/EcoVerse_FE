@@ -1,18 +1,10 @@
 import { useState, useMemo, useEffect } from 'react';
 import toast from 'react-hot-toast';
-import { getGameLevelsForPartnership } from '@/shared/data/admin-game-levels.data';
 import { partnershipCampaignService } from '../../../services/partnershipCampaign.service';
 import { subscriptionService } from '@/roles/school/services/subscription.service';
 import { quizzesService } from '../../quizzes/services/quizzes.service';
 import { toLocalISO, toUTCISO } from '@/utils/dateUtils';
 
-const adminPartnershipLevels = getGameLevelsForPartnership().map(level => ({
-  id: level.id.toString(),
-  name: level.name,
-  gameType: level.gameType === 'sorting' ? 'collection-sorting' : 'run-sorting',
-  difficulty: level.difficulty,
-  binTypes: level.binTypes || [],
-}));
 
 export function usePartnershipCampaigns() {
   const [isAddGameOpen, setIsAddGameOpen] = useState(false);
@@ -25,7 +17,6 @@ export function usePartnershipCampaigns() {
   const [campaigns, setCampaigns] = useState([]);
   const [availableSchools, setAvailableSchools] = useState([]);
   const [availableQuizzes, setAvailableQuizzes] = useState([]);
-  const [availableGameLevels] = useState(adminPartnershipLevels);
   const [selectedCampaign, setSelectedCampaign] = useState(null);
   const [isDetailOpen, setIsDetailOpen] = useState(false);
   const [isCreateOpen, setIsCreateOpen] = useState(false);
@@ -742,7 +733,6 @@ export function usePartnershipCampaigns() {
     availableSchools,
     availableQuizzes,
     setAvailableQuizzes,
-    availableGameLevels,
     handleSubmit,
     isEditing,
 
