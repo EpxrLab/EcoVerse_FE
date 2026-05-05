@@ -261,8 +261,6 @@ export default function SchoolCampaigns() {
         target.rounds?.[0]?.quizzes?.map((q) => q.id) ||
         target.selected_quizzes?.map((q) => q.quiz_id) ||
         [],
-      game_types: target.selected_games || [],
-      level_ids: target.selected_levels?.map((l) => l.level_id) || [],
     });
     setIsEditOpen(true);
   };

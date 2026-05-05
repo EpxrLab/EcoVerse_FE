@@ -192,6 +192,8 @@ export default function StudentGame() {
                       completed: item.isPassed === true,
                       locked: false, // Determine your lock logic if any
                       stars: 0, // Not explicitly provided in new API payload without attempt result
+                      todayAttempts: item.todayAttempts || 0,
+                      maxDailyAttempts: item.maxDailyAttempts || 0,
                     });
                   });
                 }
@@ -742,7 +744,24 @@ export default function StudentGame() {
                                   </span>
                                 </div>
                               )}
-                            </div>
+                                <div className="flex items-center justify-between text-sm">
+                                  <span className="text-gray-500 flex items-center gap-2">
+                                    <RotateCcw className="w-4 h-4" />
+                                    Lượt chơi hôm nay
+                                  </span>
+                                  <span
+                                    className={`font-bold ${
+                                      level.todayAttempts >=
+                                      level.maxDailyAttempts
+                                        ? "text-red-500"
+                                        : "text-primary"
+                                    }`}
+                                  >
+                                    {level.todayAttempts}/
+                                    {level.maxDailyAttempts}
+                                  </span>
+                                </div>
+                              </div>
 
                             {/* Action Button */}
                             <Button

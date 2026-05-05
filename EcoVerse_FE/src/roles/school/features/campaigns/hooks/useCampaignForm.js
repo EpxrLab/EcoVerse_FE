@@ -11,8 +11,7 @@ export function useCampaignForm(initialData) {
     class_ids: initialData?.class_ids || [],
     student_ids: initialData?.student_ids || [],
     quiz_ids: initialData?.quiz_ids || [],
-    game_types: initialData?.game_types || [],
-    level_ids: initialData?.level_ids || [],
+    quiz_ids: initialData?.quiz_ids || [],
   });
 
 
@@ -111,23 +110,6 @@ export function useCampaignForm(initialData) {
     }));
   };
 
-  const handleGameToggle = (gameType) => {
-    setFormData(prev => ({
-      ...prev,
-      game_types: prev.game_types.includes(gameType)
-        ? prev.game_types.filter(g => g !== gameType)
-        : [...prev.game_types, gameType],
-    }));
-  };
-
-  const handleLevelToggle = (levelId) => {
-    setFormData(prev => ({
-      ...prev,
-      level_ids: prev.level_ids.includes(levelId)
-        ? prev.level_ids.filter(id => id !== levelId)
-        : [...prev.level_ids, levelId],
-    }));
-  };
 
   const resetForm = () => {
     setFormData({
@@ -140,8 +122,6 @@ export function useCampaignForm(initialData) {
       class_ids: [],
       student_ids: [],
       quiz_ids: [],
-      game_types: [],
-      level_ids: [],
     });
   };
 
@@ -156,8 +136,6 @@ export function useCampaignForm(initialData) {
       class_ids: data.class_ids || [],
       student_ids: data.student_ids || [],
       quiz_ids: data.quiz_ids || [],
-      game_types: data.game_types || [],
-      level_ids: data.level_ids || [],
     });
   };
 
@@ -167,9 +145,6 @@ export function useCampaignForm(initialData) {
     handleFormChange,
     handleClassToggle,
     handleStudentSelection,
-    handleQuizToggle,
-    handleGameToggle,
-    handleLevelToggle,
     resetForm,
     loadFormData,
   };
