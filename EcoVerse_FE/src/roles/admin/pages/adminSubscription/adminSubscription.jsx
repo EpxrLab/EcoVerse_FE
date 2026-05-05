@@ -157,7 +157,7 @@ const PlanFormModal = ({ open, onClose, onSave, initialValues, isCreate }) => {
         durationDays: Number(vals.durationDays),
         price: Number(vals.price),
         currency: "VND",
-        maxStudents: Number(vals.maxStudents),
+        maxStudents: Number(vals.maxStudents) || 200,
         maxCampaignsPerMonth: Number(vals.maxCampaignsPerMonth),
         maxRoundsPerCampaign: Number(vals.maxRoundsPerCampaign),
         maxSchoolsPerCampaign: Number(vals.maxSchoolsPerCampaign),
@@ -356,7 +356,9 @@ const PlanFormModal = ({ open, onClose, onSave, initialValues, isCreate }) => {
                 </span>
               }
               name="durationDays"
-              rules={[{ required: true, message: "Vui lòng nhập thời hạn gói" }]}
+              rules={[
+                { required: true, message: "Vui lòng nhập thời hạn gói" },
+              ]}
             >
               <InputNumber
                 className="w-full rounded-lg"
@@ -390,13 +392,10 @@ const PlanFormModal = ({ open, onClose, onSave, initialValues, isCreate }) => {
           </p>
           <div className="grid grid-cols-2 gap-3">
             <Form.Item
-              label={
-                <span className={lbl}>
-                  Học sinh tối đa <span className="text-red-500">*</span>
-                </span>
-              }
+              label={<span className={lbl}>Học sinh tối đa</span>}
+              initialValue={200}
               name="maxStudents"
-              rules={[{ required: true, message: "Vui lòng nhập số lượng học sinh tối đa" }]}
+              rules={[]}
             >
               <InputNumber
                 className="w-full rounded-lg"

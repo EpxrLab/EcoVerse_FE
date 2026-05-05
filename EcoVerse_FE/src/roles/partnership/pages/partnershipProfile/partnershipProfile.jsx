@@ -58,14 +58,18 @@ export default function PartnershipProfile() {
   const [isUpdating, setIsUpdating] = useState(false);
   const [isUploadingFile, setIsUploadingFile] = useState(false);
   const [provinces, setProvinces] = useState([]);
-  const [pCode, setPCode] = useState(null);
   const [wards, setWards] = useState([]);
   const [isEditing, setIsEditing] = useState(false);
   const [formData, setFormData] = useState(null);
+  const [pCode, setPCode] = useState(null);
   const [localPreviews, setLocalPreviews] = useState({
     logoUrl: null,
     licenseUrl: null,
   });
+
+  const availableWards = formData?.geographicScopeProvince
+    ? wards.filter((item) => item.province_code === pCode) || []
+    : [];
 
   // Cleanup object URLs to prevent memory leaks
   useEffect(() => {
@@ -80,24 +84,6 @@ export default function PartnershipProfile() {
     fetchProfile();
   }, []);
 
-  useEffect(() => {
-    if (!formData?.geographicScopeProvince) {
-      setWards([]);
-      setPCode(null);
-      return;
-    }
-    const found = provinces.find(
-      (p) => p.name === formData.geographicScopeProvince,
-    );
-    if (found) {
-      setPCode(found.code);
-      fetchWards(found.code);
-    }
-  }, [formData?.geographicScopeProvince]);
-
-  const availableWards = pCode
-    ? wards.filter((w) => w.province_code === pCode)
-    : wards;
 
   // ─── API calls ───────────────────────────────────────────────────────────────
 
@@ -123,10 +109,10 @@ export default function PartnershipProfile() {
     }
   };
 
-  // provinceCode truyền vào để getWards lọc đúng tỉnh
-  const fetchWards = async (provinceCode) => {
+  // pCode truyền vào để getWards lọc đúng tỉnh
+  const fetchWards = async () => {
     try {
-      const res = await getWards(provinceCode);
+      const res = await getWards();
       setWards(res || []);
     } catch (err) {
       console.error("Không tải được danh sách phường/xã:", err);
@@ -137,24 +123,46 @@ export default function PartnershipProfile() {
 
   const handleBack = () => navigate("/partnership");
 
-  const startEditing = () => {
-    fetchProvinces();
+  const startEditing = async () => {
+    // Sanitize profile data: convert null values to empty strings to avoid React warnings
+    const sanitizedProfile = { ...profile };
+    Object.keys(sanitizedProfile).forEach((key) => {
+      if (sanitizedProfile[key] === null) sanitizedProfile[key] = "";
+    });
+
+    // Fetch provinces and wards list (matching registration logic)
+    const [provincesList, wardsList] = await Promise.all([
+      getProvinces(),
+      getWards(),
+    ]);
+    
+    setProvinces(provincesList || []);
+    setWards(wardsList || []);
+
+    // If profile already has a province, find its code for filtering wards
+    if (sanitizedProfile.geographicScopeProvince) {
+      const p = provincesList.find(
+        (item) => item.name === sanitizedProfile.geographicScopeProvince,
+      );
+      if (p) setPCode(p.code);
+    }
+
     // Khởi tạo formData đúng theo BE schema — giữ đúng field names
     setFormData({
-      organizationName: profile.organizationName ?? "",
-      partnershipType: profile.partnershipType ?? "",
-      contactEmail: profile.contactEmail ?? "",
-      phoneNumber: profile.phoneNumber ?? "",
-      registeredAddress: profile.registeredAddress ?? "",
-      geographicScopeWard: profile.geographicScopeWard ?? "",
-      geographicScopeProvince: profile.geographicScopeProvince ?? "",
-      contactPerson: profile.contactPerson ?? "",
-      position: profile.position ?? "",
-      taxCode: profile.taxCode ?? "",
-      linkWeb: profile.linkWeb ?? "",
-      description: profile.description ?? "",
-      logoUrl: profile.logoUrl ?? "",
-      licenseUrl: profile.licenseUrl ?? "",
+      organizationName: sanitizedProfile.organizationName ?? "",
+      partnershipType: sanitizedProfile.partnershipType ?? "",
+      contactEmail: sanitizedProfile.contactEmail ?? "",
+      phoneNumber: sanitizedProfile.phoneNumber ?? "",
+      registeredAddress: sanitizedProfile.registeredAddress ?? "",
+      geographicScopeWard: sanitizedProfile.geographicScopeWard ?? "",
+      geographicScopeProvince: sanitizedProfile.geographicScopeProvince ?? "",
+      contactPerson: sanitizedProfile.contactPerson ?? "",
+      position: sanitizedProfile.position ?? "",
+      taxCode: sanitizedProfile.taxCode ?? "",
+      linkWeb: sanitizedProfile.linkWeb ?? "",
+      description: sanitizedProfile.description ?? "",
+      logoUrl: sanitizedProfile.logoUrl ?? "",
+      licenseUrl: sanitizedProfile.licenseUrl ?? "",
     });
     setIsEditing(true);
   };
@@ -163,7 +171,6 @@ export default function PartnershipProfile() {
     setIsEditing(false);
     setFormData(null);
     setWards([]);
-    setPCode(null);
     // Cleanup local previews
     if (localPreviews.logoUrl) URL.revokeObjectURL(localPreviews.logoUrl);
     if (localPreviews.licenseUrl) URL.revokeObjectURL(localPreviews.licenseUrl);
@@ -172,7 +179,17 @@ export default function PartnershipProfile() {
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
-    setFormData((prev) => ({ ...prev, [name]: value }));
+    if (name === "geographicScopeProvince") {
+      const p = provinces.find((item) => item.name === value);
+      setPCode(p?.code || null);
+      setFormData((prev) => ({
+        ...prev,
+        [name]: value,
+        geographicScopeWard: "",
+      }));
+    } else {
+      setFormData((prev) => ({ ...prev, [name]: value }));
+    }
   };
 
   const handleFileChange = async (e, field) => {
@@ -742,14 +759,9 @@ export default function PartnershipProfile() {
                               name="geographicScopeWard"
                               value={formData.geographicScopeWard}
                               onChange={handleInputChange}
-                              disabled={!formData.geographicScopeProvince}
-                              className="w-full bg-muted/30 border-2 border-border/50 rounded-2xl px-4 py-3 focus:border-primary focus:bg-background outline-none transition-all shadow-inner font-medium disabled:opacity-50 disabled:cursor-not-allowed"
+                              className="w-full bg-muted/30 border-2 border-border/50 rounded-2xl px-4 py-3 focus:border-primary focus:bg-background outline-none transition-all shadow-inner font-medium"
                             >
-                              <option value="">
-                                {formData.geographicScopeProvince
-                                  ? "Chọn Phường / Xã"
-                                  : "Chọn tỉnh trước"}
-                              </option>
+                              <option value="">Chọn Phường / Xã</option>
                               {availableWards.map((w) => (
                                 <option key={w.code} value={w.name}>
                                   {w.name}

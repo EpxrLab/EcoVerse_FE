@@ -407,7 +407,7 @@ export default function PartnershipQuizzes() {
       ) : (
         /* Quiz List */
         <Tabs defaultValue="published" className="space-y-5">
-          <TabsList className="bg-muted/50 p-1 border-2 border-eco-blue/15 grid w-full grid-cols-2">
+          <TabsList className="bg-muted/50 p-1 border-2 border-eco-blue/15 gap-1 justify-start w-fit">
             <TabsTrigger value="published" className="gap-2 font-medium data-[state=active]:bg-card data-[state=active]:text-eco-blue">
               <Globe className="w-4 h-4" />
               Đã xuất bản ({(defaultQuizzes.length + publishedQuizzes.length)})

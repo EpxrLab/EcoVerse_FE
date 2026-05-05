@@ -32,7 +32,7 @@ import {
 } from "@/shared/components/ui/pagination";
 import { Search, Plus, Gift, Clock, CheckCircle, XCircle, AlertCircle, Package, TrendingUp } from "lucide-react";
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from "recharts";
-import { RewardStats, RewardList, MarketplaceItems, RewardFormDialog, DeliveryFormDialog, RejectionFormDialog } from '../../features/rewards/components';
+import { RewardStats, RewardList, MarketplaceItems, RewardFormDialog, DeliveryFormDialog, RejectionFormDialog, RewardStatusLogsDialog } from '../../features/rewards/components';
 import { useRewards, useRewardForm, useRewardPagination } from '../../features/rewards/hooks';
 import { rewardService } from '../../services/reward.service';
 
@@ -72,6 +72,14 @@ export default function SchoolRewards() {
   const [isDelivering, setIsDelivering] = useState(false);
   const [deliveryType, setDeliveryType] = useState('mission'); // 'mission' or 'partnership'
   
+  const [isLogsDialogOpen, setIsLogsDialogOpen] = useState(false);
+  const [selectedRequest, setSelectedRequest] = useState(null);
+
+  const handleViewLogs = (reward) => {
+    setSelectedRequest(reward);
+    setIsLogsDialogOpen(true);
+  };
+
   const [partnershipFilters, setPartnershipFilters] = useState({
     campaign: '',
     status: 'all'
@@ -253,7 +261,7 @@ export default function SchoolRewards() {
 
       {/* Tabs */}
       <Tabs defaultValue="pending" className="space-y-5">
-        <TabsList className="bg-muted/50 p-1 border-2 border-eco-green/15 flex-wrap h-auto gap-1">
+        <TabsList className="bg-muted/50 p-1 border-2 border-eco-green/15 flex-wrap h-auto gap-1 justify-start w-fit">
           <TabsTrigger value="pending" className="gap-2 font-medium data-[state=active]:bg-card data-[state=active]:text-eco-orange">
             <Clock className="w-4 h-4" />
             Chờ duyệt ({filtered.pending.length})
@@ -306,6 +314,7 @@ export default function SchoolRewards() {
                 onApprove={handleApprove}
                 onReject={handleReject}
                 onDeliver={handleDeliver}
+                onViewLogs={handleViewLogs}
               />
               {filtered.pending.length > PAGE_SIZE && (
                 <div className="mt-4">
@@ -366,6 +375,7 @@ export default function SchoolRewards() {
                 rewards={paged.approved} 
                 status="pending" 
                 onDeliver={handleDeliver}
+                onViewLogs={handleViewLogs}
               />
               {filtered.approved.length > PAGE_SIZE && (
                 <div className="mt-4">
@@ -422,7 +432,7 @@ export default function SchoolRewards() {
               </div>
             </CardHeader>
             <CardContent>
-              <RewardList rewards={paged.delivered} status="completed" />
+              <RewardList rewards={paged.delivered} status="completed" onViewLogs={handleViewLogs} />
               {filtered.delivered.length > PAGE_SIZE && (
                 <div className="mt-4">
                   <Pagination>
@@ -478,7 +488,7 @@ export default function SchoolRewards() {
               </div>
             </CardHeader>
             <CardContent>
-              <RewardList rewards={paged.confirmed} status="completed" />
+              <RewardList rewards={paged.confirmed} status="completed" onViewLogs={handleViewLogs} />
               {filtered.confirmed.length > PAGE_SIZE && (
                 <div className="mt-4">
                   <Pagination>
@@ -534,7 +544,7 @@ export default function SchoolRewards() {
               </div>
             </CardHeader>
             <CardContent>
-              <RewardList rewards={paged.cancelled} status="cancelled" />
+              <RewardList rewards={paged.cancelled} status="cancelled" onViewLogs={handleViewLogs} />
               {filtered.cancelled.length > PAGE_SIZE && (
                 <div className="mt-4">
                   <Pagination>
@@ -800,10 +810,17 @@ export default function SchoolRewards() {
       <DeliveryFormDialog 
         isOpen={isDeliverDialogOpen}
         onOpenChange={setIsDeliverDialogOpen}
+        onSubmit={handleConfirmDeliver}
         deliveryForm={deliveryForm}
         onUpdateForm={(updates) => setDeliveryForm(prev => ({ ...prev, ...updates }))}
-        onSubmit={handleConfirmDeliver}
         isSubmitting={isDelivering}
+      />
+
+      <RewardStatusLogsDialog 
+        isOpen={isLogsDialogOpen}
+        onOpenChange={setIsLogsDialogOpen}
+        requestId={selectedRequest?.id}
+        requestCode={selectedRequest?.requestCode}
       />
     </div>
   );

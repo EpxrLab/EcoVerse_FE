@@ -78,17 +78,6 @@ export default function SchoolCampaigns() {
   const [isConfirmInvitationOpen, setIsConfirmInvitationOpen] = useState(false);
   const [invitationAction, setInvitationAction] = useState({ type: 'accept', campaign: null });
 
-  // Partnership Invitation logic
-  const invitationsPending = allCampaigns.filter(c => c.origin === 'partnership' && c.invitation_status === 'INVITED');
-  const invitationsAccepted = allCampaigns
-    .filter(c => c.origin === 'partnership' && c.invitation_status === 'APPROVED')
-    .sort((a, b) => {
-      if (a.campaignPartnershipStatus === 'JOINING' && b.campaignPartnershipStatus !== 'JOINING') return -1;
-      if (a.campaignPartnershipStatus !== 'JOINING' && b.campaignPartnershipStatus === 'JOINING') return 1;
-      return 0;
-    });
-  const invitationsRejected = allCampaigns.filter(c => c.origin === 'partnership' && (c.invitation_status === 'REJECTED' || c.invitation_status === 'DECLINED'));
-
   const handleOpenAcceptDialog = (campaign) => {
     setInvitationAction({ type: 'accept', campaign });
     setIsConfirmInvitationOpen(true);
@@ -113,12 +102,23 @@ export default function SchoolCampaigns() {
 
   const { allStudents, availableClasses } = useStudents();
 
-  // Filter campaigns by search
   const filteredCampaigns = allCampaigns.filter(
     (campaign) =>
       campaign.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      campaign.description?.toLowerCase().includes(searchQuery.toLowerCase()),
+      campaign.description?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      campaign.partnership_name?.toLowerCase().includes(searchQuery.toLowerCase()),
   );
+
+  // Partnership Invitation logic (Filtered)
+  const invitationsPending = filteredCampaigns.filter(c => c.origin === 'partnership' && c.invitation_status === 'INVITED');
+  const invitationsAccepted = filteredCampaigns
+    .filter(c => c.origin === 'partnership' && c.invitation_status === 'APPROVED')
+    .sort((a, b) => {
+      if (a.campaignPartnershipStatus === 'JOINING' && b.campaignPartnershipStatus !== 'JOINING') return -1;
+      if (a.campaignPartnershipStatus !== 'JOINING' && b.campaignPartnershipStatus === 'JOINING') return 1;
+      return 0;
+    });
+  const invitationsRejected = filteredCampaigns.filter(c => c.origin === 'partnership' && (c.invitation_status === 'REJECTED' || c.invitation_status === 'DECLINED'));
 
   const draftCampaigns = filteredCampaigns.filter((c) => c.status === "draft");
   const scheduledCampaigns = filteredCampaigns.filter(
@@ -456,49 +456,50 @@ export default function SchoolCampaigns() {
 
       {/* Tabs */}
       <Tabs defaultValue="draft" className="space-y-5">
-        <TabsList className="bg-muted/50 p-1 border-2 border-eco-green/15">
+      <div className="overflow-x-auto pb-1 scrollbar-hide">
+        <TabsList className="h-12 bg-muted/50 p-1.5 border-2 border-eco-green/15 gap-1 justify-start w-fit">
           <TabsTrigger
             value="draft"
-            className="gap-2 font-medium data-[state=active]:bg-card data-[state=active]:text-muted-foreground"
+            className="gap-2 font-medium data-[state=active]:bg-card data-[state=active]:text-muted-foreground whitespace-nowrap"
           >
             <Edit className="w-4 h-4" />
             Nháp ({draftCampaigns.length})
           </TabsTrigger>
           <TabsTrigger
             value="scheduled"
-            className="gap-2 font-medium data-[state=active]:bg-card data-[state=active]:text-purple-500"
+            className="gap-2 font-medium data-[state=active]:bg-card data-[state=active]:text-purple-500 whitespace-nowrap"
           >
             <Clock className="w-4 h-4" />
             Đã lên lịch ({scheduledCampaigns.length})
           </TabsTrigger>
           <TabsTrigger
             value="sending_invites"
-            className="gap-2 font-medium data-[state=active]:bg-card data-[state=active]:text-indigo-600"
+            className="gap-2 font-medium data-[state=active]:bg-card data-[state=active]:text-indigo-600 whitespace-nowrap"
           >
             <Send className="w-4 h-4" />
             Đang mời ({sendingInvitesCampaigns.length})
           </TabsTrigger>
           <TabsTrigger
             value="active"
-            className="gap-2 font-medium data-[state=active]:bg-card data-[state=active]:text-eco-green"
+            className="gap-2 font-medium data-[state=active]:bg-card data-[state=active]:text-eco-green whitespace-nowrap"
           >
             <Play className="w-4 h-4" />
             Đang hoạt động ({activeCampaigns.length})
           </TabsTrigger>
           <TabsTrigger
             value="completed"
-            className="gap-2 font-medium data-[state=active]:bg-card data-[state=active]:text-eco-blue"
+            className="gap-2 font-medium data-[state=active]:bg-card data-[state=active]:text-eco-blue whitespace-nowrap"
           >
             <CheckCircle2 className="w-4 h-4" />
             Hoàn thành ({completedCampaigns.length})
           </TabsTrigger>
           <TabsTrigger
             value="cancelled"
-            className="gap-2 font-medium data-[state=active]:bg-card data-[state=active]:text-destructive"
+            className="gap-2 font-medium data-[state=active]:bg-card data-[state=active]:text-destructive whitespace-nowrap"
           >
             Đã hủy ({cancelledCampaigns.length})
           </TabsTrigger>
-          <TabsTrigger value="invitations" className="gap-2 font-medium data-[state=active]:bg-card data-[state=active]:text-purple-600 relative">
+          <TabsTrigger value="invitations" className="gap-2 font-medium data-[state=active]:bg-card data-[state=active]:text-purple-600 relative whitespace-nowrap">
              <div className="flex items-center gap-2">
                Lời mời
                {invitationsPending.length > 0 && (
@@ -509,6 +510,7 @@ export default function SchoolCampaigns() {
              </div>
           </TabsTrigger>
         </TabsList>
+      </div>
 
         <TabsContent value="draft">
           <CampaignList
@@ -546,7 +548,7 @@ export default function SchoolCampaigns() {
 
         <TabsContent value="sending_invites">
           <Tabs defaultValue="school" className="space-y-4">
-            <TabsList className="bg-muted/50 p-1">
+            <TabsList className="bg-muted/50 p-1 justify-start w-fit">
               <TabsTrigger
                 value="school"
                 className="gap-2 data-[state=active]:bg-card data-[state=active]:text-eco-green"
@@ -571,6 +573,7 @@ export default function SchoolCampaigns() {
                 onInvite={handleOpenInviteDialog}
                 onChangeStatus={changeStatus}
                 onDelete={handleConfirmDelete}
+                onExtend={handleOpenExtendDialog}
               />
             </TabsContent>
 
@@ -585,6 +588,7 @@ export default function SchoolCampaigns() {
                 onInvite={handleOpenInviteDialog}
                 onChangeStatus={changeStatus}
                 onDelete={handleConfirmDelete}
+                onExtend={handleOpenExtendDialog}
               />
             </TabsContent>
           </Tabs>
@@ -592,7 +596,7 @@ export default function SchoolCampaigns() {
 
         <TabsContent value="active">
           <Tabs defaultValue="school" className="space-y-4">
-            <TabsList className="bg-muted/50 p-1">
+            <TabsList className="bg-muted/50 p-1 justify-start w-fit">
               <TabsTrigger
                 value="school"
                 className="gap-2 data-[state=active]:bg-card data-[state=active]:text-eco-green"
@@ -638,7 +642,7 @@ export default function SchoolCampaigns() {
 
         <TabsContent value="completed">
           <Tabs defaultValue="school" className="space-y-4">
-            <TabsList className="bg-muted/50 p-1">
+            <TabsList className="bg-muted/50 p-1 justify-start w-fit">
               <TabsTrigger
                 value="school"
                 className="gap-2 data-[state=active]:bg-card data-[state=active]:text-eco-green"
@@ -698,7 +702,7 @@ export default function SchoolCampaigns() {
 
         <TabsContent value="invitations">
           <Tabs defaultValue="pending" className="space-y-4">
-            <TabsList className="bg-muted/50 p-1">
+            <TabsList className="bg-muted/50 p-1 justify-start w-fit">
               <TabsTrigger value="pending" className="gap-2 data-[state=active]:bg-card data-[state=active]:text-purple-600">
                 Chờ phản hồi ({invitationsPending.length})
               </TabsTrigger>

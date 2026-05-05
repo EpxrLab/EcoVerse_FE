@@ -725,7 +725,7 @@ export default function SchoolLeaderboardPage() {
                   <Crown className="w-3.5 h-3.5 text-amber-500" />
                 </p>
                 {/* Reorder: 2nd | 1st | 3rd */}
-                <div className="flex items-end justify-center gap-4 max-w-md mx-auto">
+                <div className="flex items-end justify-center gap-2 sm:gap-4 max-w-md mx-auto px-2">
                   <PodiumCard item={top3[1]} rank={2} isPartnership={isPartnership} onClick={handleStudentClick} />
                   <PodiumCard item={top3[0]} rank={1} isPartnership={isPartnership} onClick={handleStudentClick} />
                   <PodiumCard item={top3[2]} rank={3} isPartnership={isPartnership} onClick={handleStudentClick} />

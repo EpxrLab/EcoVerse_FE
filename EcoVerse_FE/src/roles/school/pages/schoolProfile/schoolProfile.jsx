@@ -46,12 +46,18 @@ export default function SchoolProfile() {
     provinces,
     wards,
     fetchProfile, 
+    fetchWards,
     updateProfile,
     handleFileUpload 
   } = useProfile();
   const [isEditing, setIsEditing] = useState(false);
   const [formData, setFormData] = useState(null);
+  const [pCode, setPCode] = useState(null);
   const [localPreviews, setLocalPreviews] = useState({ logoUrl: null, licenseUrl: null });
+
+  const availableWards = formData?.province
+    ? wards.filter((item) => item.province_code === pCode) || []
+    : [];
   
   // Cleanup object URLs when component unmounts or editing is finished
   useEffect(() => {
@@ -66,8 +72,19 @@ export default function SchoolProfile() {
   };
 
   const startEditing = () => {
-    setFormData({ ...profile });
+    // Sanitize profile data: convert null values to empty strings to avoid React warnings
+    const sanitizedProfile = { ...profile };
+    Object.keys(sanitizedProfile).forEach((key) => {
+      if (sanitizedProfile[key] === null) sanitizedProfile[key] = "";
+    });
+
+    setFormData(sanitizedProfile);
     setIsEditing(true);
+
+    if (profile.province) {
+      const p = provinces.find((p) => p.name === profile.province);
+      if (p) setPCode(p.code);
+    }
   };
 
   const cancelEditing = () => {
@@ -81,7 +98,13 @@ export default function SchoolProfile() {
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
-    setFormData((prev) => ({ ...prev, [name]: value }));
+    if (name === "province") {
+      const p = provinces.find((p) => p.name === value);
+      setPCode(p?.code || null);
+      setFormData((prev) => ({ ...prev, [name]: value, ward: "" }));
+    } else {
+      setFormData((prev) => ({ ...prev, [name]: value }));
+    }
   };
 
   const handleFileChange = async (e, field) => {
@@ -475,7 +498,7 @@ export default function SchoolProfile() {
                                 className="w-full bg-muted/30 border-2 border-border/50 rounded-2xl px-4 py-3 focus:border-primary focus:bg-background outline-none transition-all shadow-inner font-medium"
                               >
                                 <option value="">Chọn Phường / Xã</option>
-                                {wards.map((w) => (
+                                {availableWards.map((w) => (
                                   <option key={w.code} value={w.name}>{w.name}</option>
                                 ))}
                               </select>

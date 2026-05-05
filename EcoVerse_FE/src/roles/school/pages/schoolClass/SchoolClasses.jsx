@@ -55,6 +55,7 @@ export default function SchoolClasses() {
   
   const initialStudentForm = {
     student_name: '',
+    student_code: '',
     date_of_birth: '',
     gender: '',
     gradeLevel: '1',
@@ -149,7 +150,7 @@ export default function SchoolClasses() {
 
       {/* ─── Main Tabs — full view switch ─── */}
       <Tabs value={mainTab} onValueChange={setMainTab}>
-        <TabsList className="h-10 p-1 bg-muted/60 rounded-xl">
+        <TabsList className="h-10 p-1 bg-muted/60 rounded-xl justify-start w-fit">
             <TabsTrigger
               value="classes"
               className="gap-2 rounded-lg px-4 data-[state=active]:bg-background data-[state=active]:shadow-sm"

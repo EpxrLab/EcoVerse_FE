@@ -79,5 +79,9 @@ export const partnershipCampaignService = {
 
   getStudentHistory: (id, roundId, studentId) => {
     return axios.get(`/partnership/campaigns/${id}/rounds/${roundId}/students/${studentId}/history`);
+  },
+
+  getRewardStatusLogs: (params) => {
+    return axios.get('/partnership/rewards/status-logs', { params });
   }
 };

@@ -136,7 +136,7 @@ export default function SchoolReports() {
 
       <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-card/50 p-2 rounded-2xl border border-border/50 backdrop-blur-sm">
-          <TabsList className="bg-transparent h-12 gap-1 p-0">
+          <TabsList className="bg-transparent h-12 gap-1 p-0 justify-start">
             <TabsTrigger 
               value="students" 
               className="rounded-xl h-10 px-6 data-[state=active]:bg-eco-green data-[state=active]:text-primary-foreground data-[state=active]:shadow-lg data-[state=active]:shadow-eco-green/20 font-bold transition-all"
@@ -174,71 +174,73 @@ export default function SchoolReports() {
           ) : (
             <div className="grid grid-cols-1 gap-4">
               <div className="overflow-hidden rounded-2xl border-2 border-border/50 bg-card shadow-sm">
-                <table className="w-full text-left border-collapse">
-                  <thead>
-                    <tr className="bg-muted/30 border-b border-border/50">
-                      <th className="p-4 font-bold text-xs uppercase tracking-wider text-muted-foreground">Học sinh</th>
-                      <th className="p-4 font-bold text-xs uppercase tracking-wider text-muted-foreground">Lớp</th>
-                      <th className="p-4 font-bold text-xs uppercase tracking-wider text-muted-foreground text-center">Độ chính xác Game</th>
-                      <th className="p-4 font-bold text-xs uppercase tracking-wider text-muted-foreground text-center">Điểm Quiz</th>
-                      <th className="p-4 font-bold text-xs uppercase tracking-wider text-muted-foreground text-center">Chiến dịch</th>
-                      <th className="p-4 font-bold text-xs uppercase tracking-wider text-muted-foreground text-right">Tổng Coins</th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-border/30">
-                    {paginatedStudents.map((student) => (
-                      <tr key={student.studentId} className="hover:bg-muted/10 transition-colors group">
-                        <td colSpan={1} className="p-4">
-                          <div className="flex items-center gap-3">
-                            <div className="w-10 h-10 rounded-xl bg-eco-green/10 flex items-center justify-center font-bold text-eco-green group-hover:scale-110 transition-transform">
-                              {student.fullName.charAt(0)}
-                            </div>
-                            <span className="font-semibold text-base">{student.fullName}</span>
-                          </div>
-                        </td>
-                        <td className="p-4">
-                          <p className="text-sm font-semibold text-foreground">Lớp {student.gradeLevel}{student.className}</p>
-                        </td>
-                        <td className="p-4 text-center">
-                          <div className="flex flex-col items-center gap-1.5">
-                            <span className="text-sm font-bold text-eco-green">{Math.round(student.avgGameAccuracy)}%</span>
-                            <div className="w-24 h-1.5 bg-eco-green/10 rounded-full overflow-hidden">
-                              <div className="h-full bg-eco-green rounded-full" style={{ width: `${student.avgGameAccuracy}%` }} />
-                            </div>
-                          </div>
-                        </td>
-                        <td className="p-4 text-center">
-                          <div className="flex flex-col items-center gap-1.5">
-                            <span className="text-sm font-bold text-eco-green">{Math.round(student.avgQuizScore)}%</span>
-                            <div className="w-24 h-1.5 bg-eco-green/10 rounded-full overflow-hidden">
-                              <div className="h-full bg-eco-green rounded-full" style={{ width: `${student.avgQuizScore}%` }} />
-                            </div>
-                          </div>
-                        </td>
-                        <td className="p-4 text-center">
-                          <Badge variant="secondary" className="bg-eco-green/5 text-eco-green border-eco-green/10 font-bold">
-                            {student.totalCampaignsJoined} đã tham gia
-                          </Badge>
-                        </td>
-                        <td className="p-4 text-right">
-                          <div className="inline-flex items-center gap-1.5 font-bold text-foreground">
-                            {student.totalCoins.toLocaleString()}
-                            <div className="p-1 rounded-md bg-eco-green/10 text-eco-green">
-                               <TrendingUp className="w-3 h-3" />
-                            </div>
-                          </div>
-                        </td>
+                <div className="overflow-x-auto">
+                  <table className="w-full text-left border-collapse">
+                    <thead>
+                      <tr className="bg-muted/30 border-b border-border/50 text-xs uppercase tracking-wider text-muted-foreground whitespace-nowrap">
+                        <th className="p-4 font-bold">Học sinh</th>
+                        <th className="p-4 font-bold">Lớp</th>
+                        <th className="p-4 font-bold text-center">Độ chính xác Game</th>
+                        <th className="p-4 font-bold text-center">Điểm Quiz</th>
+                        <th className="p-4 font-bold text-center">Chiến dịch</th>
+                        <th className="p-4 font-bold text-right">Tổng Coins</th>
                       </tr>
-                    ))}
-                    {filteredStudents.length === 0 && (
-                      <tr>
-                        <td colSpan={6} className="p-20 text-center text-muted-foreground">
-                          Không tìm thấy dữ liệu học sinh
-                        </td>
-                      </tr>
-                    )}
-                  </tbody>
-                </table>
+                    </thead>
+                    <tbody className="divide-y divide-border/30">
+                      {paginatedStudents.map((student) => (
+                        <tr key={student.studentId} className="hover:bg-muted/10 transition-colors group">
+                          <td className="p-4 whitespace-nowrap">
+                            <div className="flex items-center gap-3">
+                              <div className="w-10 h-10 rounded-xl bg-eco-green/10 flex items-center justify-center font-bold text-eco-green group-hover:scale-110 transition-transform">
+                                {student.fullName.charAt(0)}
+                              </div>
+                              <span className="font-semibold text-base">{student.fullName}</span>
+                            </div>
+                          </td>
+                          <td className="p-4 whitespace-nowrap">
+                            <p className="text-sm font-semibold text-foreground">Lớp {student.gradeLevel}{student.className}</p>
+                          </td>
+                          <td className="p-4 text-center whitespace-nowrap">
+                            <div className="flex flex-col items-center gap-1.5">
+                              <span className="text-sm font-bold text-eco-green">{Math.round(student.avgGameAccuracy)}%</span>
+                              <div className="w-24 h-1.5 bg-eco-green/10 rounded-full overflow-hidden">
+                                <div className="h-full bg-eco-green rounded-full" style={{ width: `${student.avgGameAccuracy}%` }} />
+                              </div>
+                            </div>
+                          </td>
+                          <td className="p-4 text-center whitespace-nowrap">
+                            <div className="flex flex-col items-center gap-1.5">
+                              <span className="text-sm font-bold text-eco-green">{Math.round(student.avgQuizScore)}%</span>
+                              <div className="w-24 h-1.5 bg-eco-green/10 rounded-full overflow-hidden">
+                                <div className="h-full bg-eco-green rounded-full" style={{ width: `${student.avgQuizScore}%` }} />
+                              </div>
+                            </div>
+                          </td>
+                          <td className="p-4 text-center whitespace-nowrap">
+                            <Badge variant="secondary" className="bg-eco-green/5 text-eco-green border-eco-green/10 font-bold">
+                              {student.totalCampaignsJoined} đã tham gia
+                            </Badge>
+                          </td>
+                          <td className="p-4 text-right whitespace-nowrap">
+                            <div className="inline-flex items-center gap-1.5 font-bold text-foreground">
+                              {student.totalCoins.toLocaleString()}
+                              <div className="p-1 rounded-md bg-eco-green/10 text-eco-green">
+                                 <TrendingUp className="w-3 h-3" />
+                              </div>
+                            </div>
+                          </td>
+                        </tr>
+                      ))}
+                      {filteredStudents.length === 0 && (
+                        <tr>
+                          <td colSpan={6} className="p-20 text-center text-muted-foreground">
+                            Không tìm thấy dữ liệu học sinh
+                          </td>
+                        </tr>
+                      )}
+                    </tbody>
+                  </table>
+                </div>
               </div>
             </div>
           )}
