@@ -1,5 +1,5 @@
 import { useState, lazy, Suspense, useEffect } from "react";
-import { useNavigate, useParams } from "react-router";
+import { useNavigate, useParams, useLocation } from "react-router";
 import { motion, AnimatePresence } from "framer-motion";
 import { Card, Button, Spin, Select, Space, Modal, Empty, Tag } from "antd";
 import {
@@ -19,7 +19,6 @@ import {
   Lock,
 } from "lucide-react";
 import { getCampaignDetails, getQuizHistory } from "../../services";
-import { toLocalISO } from "@/utils/dateUtils";
 
 // Lazy-loaded QuizCard component
 const QuizCard = lazy(() =>
@@ -151,7 +150,7 @@ const QuizCard = lazy(() =>
                 }`}
               >
                 {isPreviewMode
-                  ? "Chưa mở"
+                  ? "Đã kết thúc"
                   : isCompleted
                     ? "Làm lại"
                     : "Bắt đầu"}
@@ -221,6 +220,7 @@ const FILTER_OPTIONS = [
 export default function StudentQuiz() {
   const navigate = useNavigate();
   const { campaignId } = useParams();
+  const location = useLocation();
   const [selectedDifficulty, setSelectedDifficulty] = useState("all");
   const [campaign, setCampaign] = useState(null);
   const [selectedRoundId, setSelectedRoundId] = useState(null);
@@ -232,6 +232,7 @@ export default function StudentQuiz() {
   const [historyLoading, setHistoryLoading] = useState(false);
   const [isPreviewMode, setIsPreviewMode] = useState(false);
   const [isCompletedMode, setIsCompletedMode] = useState(false);
+  const isCampaignCompleted = campaign?.status === "COMPLETED";
 
   const fetchQuizHistoryData = async (quizId) => {
     setHistoryLoading(true);
@@ -266,11 +267,16 @@ export default function StudentQuiz() {
       const campaignData = res.data;
       setCampaign(campaignData);
 
-      // Default to the first round
+      // Default to the first round or state.roundId
       if (campaignData?.rounds?.length > 0) {
-        const firstRound = campaignData.rounds[0];
-        setSelectedRoundId(firstRound.id);
-        setQuizzes(firstRound.quizzes || []);
+        const initialRoundId =
+          location.state?.roundId || campaignData.rounds[0].id;
+        setSelectedRoundId(initialRoundId);
+
+        const targetRound = campaignData.rounds.find(
+          (r) => r.id === initialRoundId,
+        );
+        setQuizzes(targetRound?.quizzes || []);
       }
     } catch (error) {
       console.log(error);
@@ -427,91 +433,91 @@ export default function StudentQuiz() {
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
           {/* Round Selector - Only show if not SCHOOL_INTERNAL */}
           {campaign?.campaignType !== "SCHOOL_INTERNAL" && (
-              <motion.div
-                className="lg:col-span-4"
-                initial={{ opacity: 0, x: -20 }}
-                animate={{ opacity: 1, x: 0 }}
-                transition={{ delay: 0.2 }}
+            <motion.div
+              className="lg:col-span-4"
+              initial={{ opacity: 0, x: -20 }}
+              animate={{ opacity: 1, x: 0 }}
+              transition={{ delay: 0.2 }}
+            >
+              <Card
+                className="border-2 border-primary/20 rounded-2xl shadow-sm hover:border-primary/40 transition-colors bg-white"
+                bodyStyle={{ padding: "20px" }}
               >
-                <Card
-                  className="border-2 border-primary/20 rounded-2xl shadow-sm hover:border-primary/40 transition-colors bg-white"
-                  bodyStyle={{ padding: "20px" }}
-                >
-                  <Space direction="vertical" className="w-full" size="middle">
-                    <div className="flex items-center gap-2 text-primary font-black px-1 uppercase tracking-wider text-xs">
-                      <Layers className="w-4 h-4" />
-                      <span>Vòng thi đấu</span>
-                    </div>
-                    <Select
-                      className="w-full h-12"
-                      placeholder="Chọn vòng"
-                      value={selectedRoundId}
-                      onChange={setSelectedRoundId}
-                      size="large"
-                      suffixIcon={<ChevronRight className="w-4 h-4" />}
-                      dropdownClassName="rounded-xl overflow-hidden shadow-xl"
-                      options={campaign?.rounds?.map((round) => {
-                        const status = round.status;
-                        const statusLabel =
-                          status === "UPCOMING"
-                            ? " (Chưa mở)"
-                            : status === "COMPLETED"
-                              ? " (Đã kết thúc)"
-                              : "";
-                        return {
-                          label: `${round.roundName || `Vòng ${round.roundNumber}`}${statusLabel}`,
-                          value: round.id,
-                        };
-                      })}
-                    />
-                    {(() => {
-                      const selectedRound = campaign?.rounds?.find(
-                        (r) => r.id === selectedRoundId,
-                      );
-                      if (!selectedRound) return null;
-                      return (
-                        <div className="mt-1 text-sm flex flex-col gap-2 bg-gray-50 border border-gray-100 rounded-xl p-3">
-                          <div className="flex justify-between items-center">
-                            <span className="text-gray-500 font-medium">
-                              Bắt đầu:
-                            </span>
-                            <span className="text-primary font-bold">
-                              {new Date(selectedRound.startTime).toLocaleString(
-                                "vi-VN",
-                                {
-                                  hour: "2-digit",
-                                  minute: "2-digit",
-                                  day: "2-digit",
-                                  month: "2-digit",
-                                  year: "numeric",
-                                },
-                              )}
-                            </span>
-                          </div>
-                          <div className="flex justify-between items-center">
-                            <span className="text-gray-500 font-medium">
-                              Kết thúc:
-                            </span>
-                            <span className="text-gray-800 font-bold">
-                              {new Date(selectedRound.endTime).toLocaleString(
-                                "vi-VN",
-                                {
-                                  hour: "2-digit",
-                                  minute: "2-digit",
-                                  day: "2-digit",
-                                  month: "2-digit",
-                                  year: "numeric",
-                                },
-                              )}
-                            </span>
-                          </div>
+                <Space direction="vertical" className="w-full" size="middle">
+                  <div className="flex items-center gap-2 text-primary font-black px-1 uppercase tracking-wider text-xs">
+                    <Layers className="w-4 h-4" />
+                    <span>Vòng thi đấu</span>
+                  </div>
+                  <Select
+                    className="w-full h-12"
+                    placeholder="Chọn vòng"
+                    value={selectedRoundId}
+                    onChange={setSelectedRoundId}
+                    size="large"
+                    suffixIcon={<ChevronRight className="w-4 h-4" />}
+                    dropdownClassName="rounded-xl overflow-hidden shadow-xl"
+                    options={campaign?.rounds?.map((round) => {
+                      const status = round.status;
+                      const statusLabel =
+                        status === "UPCOMING"
+                          ? " (Chưa mở)"
+                          : status === "COMPLETED"
+                            ? " (Đã kết thúc)"
+                            : "";
+                      return {
+                        label: `${round.roundName || `Vòng ${round.roundNumber}`}${statusLabel}`,
+                        value: round.id,
+                      };
+                    })}
+                  />
+                  {(() => {
+                    const selectedRound = campaign?.rounds?.find(
+                      (r) => r.id === selectedRoundId,
+                    );
+                    if (!selectedRound) return null;
+                    return (
+                      <div className="mt-1 text-sm flex flex-col gap-2 bg-gray-50 border border-gray-100 rounded-xl p-3">
+                        <div className="flex justify-between items-center">
+                          <span className="text-gray-500 font-medium">
+                            Bắt đầu:
+                          </span>
+                          <span className="text-primary font-bold">
+                            {new Date(selectedRound.startTime).toLocaleString(
+                              "vi-VN",
+                              {
+                                hour: "2-digit",
+                                minute: "2-digit",
+                                day: "2-digit",
+                                month: "2-digit",
+                                year: "numeric",
+                              },
+                            )}
+                          </span>
                         </div>
-                      );
-                    })()}
-                  </Space>
-                </Card>
-              </motion.div>
-            )}
+                        <div className="flex justify-between items-center">
+                          <span className="text-gray-500 font-medium">
+                            Kết thúc:
+                          </span>
+                          <span className="text-gray-800 font-bold">
+                            {new Date(selectedRound.endTime).toLocaleString(
+                              "vi-VN",
+                              {
+                                hour: "2-digit",
+                                minute: "2-digit",
+                                day: "2-digit",
+                                month: "2-digit",
+                                year: "numeric",
+                              },
+                            )}
+                          </span>
+                        </div>
+                      </div>
+                    );
+                  })()}
+                </Space>
+              </Card>
+            </motion.div>
+          )}
 
           {/* Filters */}
           <motion.div
@@ -555,6 +561,31 @@ export default function StudentQuiz() {
             </Card>
           </motion.div>
         </div>
+
+        {/* Campaign Completed Notification */}
+        {isCampaignCompleted && (
+          <motion.div
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.15 }}
+            className="mb-8"
+          >
+            <div className="bg-emerald-50 border-2 border-emerald-200 rounded-2xl p-4 flex items-center gap-4">
+              <div className="w-12 h-12 shrink-0 rounded-xl bg-emerald-100 flex items-center justify-center">
+                <CheckCircle className="text-emerald-600 w-6 h-6" />
+              </div>
+              <div>
+                <h3 className="text-emerald-800 text-lg font-bold m-0">
+                  Chiến dịch đã kết thúc
+                </h3>
+                <p className="text-emerald-700 m-0 mt-1">
+                  Chiến dịch này đã hoàn thành. Cảm ơn bạn đã tham gia! Bạn có
+                  thể xem lại lịch sử làm quiz của mình bên dưới.
+                </p>
+              </div>
+            </div>
+          </motion.div>
+        )}
 
         {/* Preview Mode Notification */}
         {isPreviewMode && (

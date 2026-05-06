@@ -62,20 +62,10 @@ export default function StudentDashboardLayout() {
   }
 
   useEffect(() => {
-    if (isCompleted) {
-      const isRestrictedPath =
-        location.pathname === `/student/campaign/${campaignId}` ||
-        location.pathname === `/student/campaign/${campaignId}/` ||
-        location.pathname.includes("/game") ||
-        location.pathname.includes("/quiz");
-
-      if (isRestrictedPath) {
-        navigate(`/student/campaign/${campaignId}/leaderboard`, {
-          replace: true,
-        });
-      }
-    }
+    // We no longer restrict access to Game and Quiz tabs when the campaign is completed
+    // This allows students to view their history and leaderboard.
   }, [isCompleted, location.pathname, campaignId, navigate]);
+
   // Menu items
   const menuItems = [
     {
@@ -83,21 +73,21 @@ export default function StudentDashboardLayout() {
       label: "Tổng quan",
       icon: <HomeOutlined />,
       path: `/student/campaign/${campaignId}`,
-      disabled: isCompleted,
+      disabled: false,
     },
     {
       key: "game",
       label: "Chơi game",
       icon: <PlayCircleOutlined />,
       path: `/student/campaign/${campaignId}/game`,
-      disabled: isCompleted,
+      disabled: false,
     },
     {
       key: "quiz",
       label: "Làm Quiz",
       icon: <BookOutlined />,
       path: `/student/campaign/${campaignId}/quiz`,
-      disabled: isCompleted,
+      disabled: false,
     },
     {
       key: "leaderboard",

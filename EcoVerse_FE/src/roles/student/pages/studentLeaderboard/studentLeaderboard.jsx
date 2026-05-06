@@ -185,8 +185,10 @@ export default function StudentLeaderboard() {
     [campaign?.rounds, selectedRoundId],
   );
 
-  const isCampaignCompleted = useMemo(() => {
+  const isLeaderboardUnlocked = useMemo(() => {
     if (!campaign) return false;
+    if (campaign.status === "COMPLETED") return true;
+
     // Check if ALL game levels and ALL mandatory quizzes are passed across all rounds
     return (campaign.rounds ?? []).every((round) => {
       const gamesPassed = (round.games ?? []).every((game) =>
@@ -322,7 +324,7 @@ export default function StudentLeaderboard() {
       </motion.div>
 
       {/* ── Main Content Area ── */}
-      {!isCampaignCompleted ? (
+      {!isLeaderboardUnlocked ? (
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
@@ -528,7 +530,7 @@ export default function StudentLeaderboard() {
                               )}
                             </p>
 
-                            {isCampaignFinished && (
+                            {isCampaignFinished && isMe && (
                               <Dropdown
                                 menu={{
                                   items: [
@@ -539,6 +541,7 @@ export default function StudentLeaderboard() {
                                       onClick: () =>
                                         navigate(
                                           `/student/campaign/${campaignId}/game`,
+                                          { state: { roundId: selectedRoundId } },
                                         ),
                                     },
                                     {
@@ -548,6 +551,7 @@ export default function StudentLeaderboard() {
                                       onClick: () =>
                                         navigate(
                                           `/student/campaign/${campaignId}/quiz`,
+                                          { state: { roundId: selectedRoundId } },
                                         ),
                                     },
                                   ],
