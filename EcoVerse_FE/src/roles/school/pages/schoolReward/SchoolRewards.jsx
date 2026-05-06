@@ -10,8 +10,6 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/shared/components/ui/select";
-import { Badge } from "@/shared/components/ui/badge";
-import { cn } from "@/shared/lib/utils";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -86,7 +84,10 @@ export default function SchoolRewards() {
   });
 
   const uniqueCampaigns = useMemo(() => {
-    return rewards.partnershipInvitations || [];
+    return (rewards.partnershipInvitations || []).filter(inv => {
+      const status = (inv.campaignPartnershipStatus || '').toUpperCase();
+      return status === 'COMPLETED';
+    });
   }, [rewards.partnershipInvitations]);
 
   useEffect(() => {
@@ -598,17 +599,7 @@ export default function SchoolRewards() {
 
                           {uniqueCampaigns.map(invitation => (
                             <SelectItem key={invitation.campaignId} value={invitation.campaignId} className="rounded-xl my-1 cursor-pointer">
-                              <div className="flex items-center justify-between gap-4 w-full min-w-[300px]">
-                                <span className="font-bold text-sm truncate max-w-[200px]">{invitation.campaignName}</span>
-                                {invitation.campaignStatus === 'on_going' && (
-                                  <Badge variant="outline" className={cn(
-                                    "whitespace-nowrap text-[9px] uppercase font-black px-2 py-0.5 rounded-lg border-0",
-                                    "bg-blue-100 text-blue-700"
-                                  )}>
-                                    Đang diễn ra
-                                  </Badge>
-                                )}
-                              </div>
+                              <span className="font-bold text-sm truncate max-w-[300px]">{invitation.campaignName}</span>
                             </SelectItem>
                           ))}
                         </SelectContent>

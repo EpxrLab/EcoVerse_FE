@@ -24,8 +24,6 @@ import {
   User,
   Phone,
   MapPin,
-  Calendar,
-
   AlertCircle,
 } from "lucide-react";
 
@@ -51,7 +49,6 @@ export function StudentFormDialog({
     
     // Required fields
     if (!form.student_name?.trim()) newErrors.student_name = "Họ tên không được để trống";
-    if (!form.student_code?.trim()) newErrors.student_code = "Mã học sinh không được để trống";
     if (!form.gradeLevel) newErrors.gradeLevel = "Vui lòng chọn lớp";
     if (!form.className?.trim()) newErrors.className = "Vui lòng nhập tên lớp";
     if (!form.date_of_birth) newErrors.date_of_birth = "Vui lòng chọn ngày sinh";
@@ -121,8 +118,7 @@ export function StudentFormDialog({
               Thông tin cơ bản
             </div>
             <div className="grid grid-cols-4 gap-4 p-4 rounded-xl bg-muted/30 border border-border/50">
-              {/* Họ và tên – span 2 */}
-              <div className="col-span-4 md:col-span-2 flex flex-col justify-end gap-2">
+              <div className="col-span-4 flex flex-col justify-end gap-2">
                 <Label className="font-medium">
                   Họ và tên <span className="text-destructive">*</span>
                 </Label>
@@ -136,25 +132,6 @@ export function StudentFormDialog({
                   <p className="text-[11px] text-destructive flex items-center gap-1 font-medium">
                     <AlertCircle className="w-3 h-3" />
                     {errors.student_name}
-                  </p>
-                )}
-              </div>
-
-              {/* Mã học sinh – span 2 */}
-              <div className="col-span-4 md:col-span-2 flex flex-col justify-end gap-2">
-                <Label className="font-medium">
-                  Mã học sinh <span className="text-destructive">*</span>
-                </Label>
-                <Input
-                  placeholder="Nhập mã học sinh"
-                  value={form.student_code}
-                  onChange={(e) => onFormChange({ ...form, student_code: e.target.value })}
-                  className={errors.student_code ? "border-destructive bg-destructive/5" : "bg-background"}
-                />
-                {errors.student_code && (
-                  <p className="text-[11px] text-destructive flex items-center gap-1 font-medium">
-                    <AlertCircle className="w-3 h-3" />
-                    {errors.student_code}
                   </p>
                 )}
               </div>

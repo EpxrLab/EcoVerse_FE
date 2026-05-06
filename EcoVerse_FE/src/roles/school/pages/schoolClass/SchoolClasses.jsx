@@ -55,7 +55,6 @@ export default function SchoolClasses() {
   
   const initialStudentForm = {
     student_name: '',
-    student_code: '',
     date_of_birth: '',
     gender: '',
     gradeLevel: '1',

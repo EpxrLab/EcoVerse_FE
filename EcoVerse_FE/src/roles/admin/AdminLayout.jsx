@@ -172,7 +172,7 @@ const AdminLayout = ({ children }) => {
       {/* Main Layout */}
       <Layout style={{ marginLeft: collapsed ? 80 : 260 }}>
         {/* Header */}
-        <Header className="bg-white border-b border-gray-200 px-6 flex items-center justify-between h-16 sticky top-0 z-10">
+        <Header className="bg-white border-b border-gray-200 px-6 flex items-center justify-between h-16 sticky top-0 z-40">
           <div className="flex items-center gap-4">
             <motion.button
               onClick={() => setCollapsed(!collapsed)}

@@ -143,7 +143,7 @@ export function StudentHistoryModal({ isOpen, onClose, campaignId, roundId, stud
                                   />
                                   <StatItem 
                                     icon={Gamepad2} 
-                                    label="Cấp độ" 
+                                    label="Màn" 
                                     value={session.currentLevel} 
                                     color="text-eco-green"
                                   />

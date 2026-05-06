@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { useNavigate, useParams } from "react-router";
+import { useNavigate, useParams, useLocation } from "react-router";
 import {
   Card,
   Button,
@@ -114,6 +114,7 @@ const cardVariants = {
 export default function StudentGame() {
   const navigate = useNavigate();
   const { campaignId } = useParams();
+  const location = useLocation();
 
   const [campaign, setCampaign] = useState(null);
   const [selectedRoundId, setSelectedRoundId] = useState(null);
@@ -129,6 +130,7 @@ export default function StudentGame() {
   const [isPreviewMode, setIsPreviewMode] = useState(false);
   const [isCompletedMode, setIsCompletedMode] = useState(false);
   const isPartnership = campaign?.campaignType === "PARTNERSHIP_EVENT";
+  const isCampaignCompleted = campaign?.status === "COMPLETED";
 
   useEffect(() => {
     let cancelled = false;
@@ -142,7 +144,10 @@ export default function StudentGame() {
           const campaignData = res.data;
           setCampaign(campaignData);
           if (campaignData?.rounds?.length > 0) {
-            setSelectedRoundId(campaignData.rounds[0].id);
+            // Priority: state.roundId > first round
+            const initialRoundId =
+              location.state?.roundId || campaignData.rounds[0].id;
+            setSelectedRoundId(initialRoundId);
           }
         }
       } catch (err) {
@@ -484,6 +489,30 @@ export default function StudentGame() {
               })()}
             </Space>
           </Card>
+        </motion.div>
+      )}
+
+      {/* Campaign Completed Notification */}
+      {isCampaignCompleted && (
+        <motion.div
+          initial={{ opacity: 0, y: 10 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.15 }}
+          className="mb-6"
+        >
+          <div className="bg-emerald-50 border-2 border-emerald-200 rounded-2xl p-4 flex items-center gap-4">
+            <div className="w-12 h-12 shrink-0 rounded-xl bg-emerald-100 flex items-center justify-center">
+              <CheckCircleOutlined className="text-emerald-600 text-2xl" />
+            </div>
+            <div>
+              <h3 className="text-emerald-800 text-lg font-bold m-0">
+                Chiến dịch đã kết thúc
+              </h3>
+              <p className="text-emerald-700 m-0 mt-1">
+                Chiến dịch này đã hoàn thành. Cảm ơn bạn đã tham gia! Bạn có thể xem lại lịch sử chơi game của mình bên dưới.
+              </p>
+            </div>
+          </div>
         </motion.div>
       )}
 
