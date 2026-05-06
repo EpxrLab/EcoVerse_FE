@@ -217,12 +217,14 @@ export function CampaignForm({
               colorBorder: '#d8e2dc',
               colorBgContainer: 'transparent',
               colorBgElevated: '#ffffff',
+              zIndexPopupBase: 10000,
             },
             components: {
               DatePicker: {
                 activeBorderColor: '#2d6a4f',
                 hoverBorderColor: '#40916c',
                 cellActiveWithRangeBg: '#d8f3dc',
+                zIndexPopup: 10000,
               }
             }
           }}
@@ -264,7 +266,7 @@ export function CampaignForm({
           ))}
         </div>
 
-        <ScrollArea className="flex-1 -mx-2 px-2 scrollbar-thin">
+        <div className="flex-1 overflow-y-auto pr-2 -mr-2 px-2 scrollbar-thin">
           <div className="py-4">
             {currentStep === 0 && (
               <div className="space-y-4 animate-fade-in">
@@ -308,6 +310,7 @@ export function CampaignForm({
                         needConfirm={false}
                         className="w-full h-10"
                         placeholder="Chọn ngày bắt đầu"
+                        getPopupContainer={(trigger) => trigger.parentElement}
                         status={(formData.startDate && dayjs(formData.startDate).isBefore(dayjs().subtract(1, 'minute'))) || (formData.startDate && formData.endDate && !dayjs(formData.startDate).isBefore(dayjs(formData.endDate))) ? 'error' : ''}
                         value={formData.startDate ? dayjs(formData.startDate) : null}
                         onChange={(date) => {
@@ -338,6 +341,7 @@ export function CampaignForm({
                         needConfirm={false}
                         className="w-full h-10"
                         placeholder="Chọn ngày kết thúc"
+                        getPopupContainer={(trigger) => trigger.parentElement}
                         status={formData.endDate && formData.startDate && !dayjs(formData.endDate).isAfter(dayjs(formData.startDate)) ? 'error' : ''}
                         value={formData.endDate ? dayjs(formData.endDate) : null}
                         onChange={(date) => {
@@ -365,6 +369,7 @@ export function CampaignForm({
                         needConfirm={false}
                         className="w-full h-10"
                         placeholder="Chọn ngày mở đăng ký"
+                        getPopupContainer={(trigger) => trigger.parentElement}
                         status={(formData.registrationDate && formData.startDate && !dayjs(formData.registrationDate).isBefore(dayjs(formData.startDate))) || (formData.registrationDate && formData.registrationDeadline && !dayjs(formData.registrationDate).isBefore(dayjs(formData.registrationDeadline))) ? 'error' : ''}
                         value={formData.registrationDate ? dayjs(formData.registrationDate) : null}
                         onChange={(date) => onFormChange({ registrationDate: date ? date.format('YYYY-MM-DDTHH:mm') : '' })}
@@ -385,6 +390,7 @@ export function CampaignForm({
                         needConfirm={false}
                         className="w-full h-10"
                         placeholder="Chọn hạn chót đăng ký"
+                        getPopupContainer={(trigger) => trigger.parentElement}
                         status={formData.registrationDeadline && formData.registrationDate && !dayjs(formData.registrationDeadline).isAfter(dayjs(formData.registrationDate)) ? 'error' : ''}
                         value={formData.registrationDeadline ? dayjs(formData.registrationDeadline) : null}
                         onChange={(date) => onFormChange({ registrationDeadline: date ? date.format('YYYY-MM-DDTHH:mm') : '' })}
@@ -413,6 +419,7 @@ export function CampaignForm({
                         needConfirm={false}
                         className="w-full h-10"
                         placeholder="Chọn ngày gửi lời mời"
+                        getPopupContainer={(trigger) => trigger.parentElement}
                         status={(formData.invitationDate && formData.registrationDeadline && !dayjs(formData.invitationDate).isAfter(dayjs(formData.registrationDeadline))) || (formData.invitationDate && formData.invitationDeadline && !dayjs(formData.invitationDate).isBefore(dayjs(formData.invitationDeadline))) || (formData.invitationDate && formData.startDate && !dayjs(formData.invitationDate).isBefore(dayjs(formData.startDate))) ? 'error' : ''}
                         value={formData.invitationDate ? dayjs(formData.invitationDate) : null}
                         onChange={(date) => onFormChange({ invitationDate: date ? date.format('YYYY-MM-DDTHH:mm') : '' })}
@@ -433,6 +440,7 @@ export function CampaignForm({
                         needConfirm={false}
                         className="w-full h-10"
                         placeholder="Chọn hạn chót xác nhận"
+                        getPopupContainer={(trigger) => trigger.parentElement}
                         status={(formData.invitationDeadline && formData.invitationDate && !dayjs(formData.invitationDeadline).isAfter(dayjs(formData.invitationDate))) || (formData.invitationDeadline && formData.startDate && !dayjs(formData.invitationDeadline).isBefore(dayjs(formData.startDate))) ? 'error' : ''}
                         value={formData.invitationDeadline ? dayjs(formData.invitationDeadline) : null}
                         onChange={(date) => onFormChange({ invitationDeadline: date ? date.format('YYYY-MM-DDTHH:mm') : '' })}
@@ -760,6 +768,7 @@ export function CampaignForm({
                             needConfirm={false}
                             className="w-full h-10"
                             placeholder="Chọn ngày bắt đầu"
+                            getPopupContainer={(trigger) => trigger.parentElement}
                             value={round.startTime ? dayjs(round.startTime) : null}
                             onChange={(date) => {
                               const newRounds = [...formData.rounds];
@@ -776,6 +785,7 @@ export function CampaignForm({
                             needConfirm={false}
                             className="w-full h-10"
                             placeholder="Chọn ngày kết thúc"
+                            getPopupContainer={(trigger) => trigger.parentElement}
                             value={round.endTime ? dayjs(round.endTime) : null}
                             onChange={(date) => {
                               const newEndTime = date ? date.format('YYYY-MM-DDTHH:mm') : '';
@@ -796,14 +806,23 @@ export function CampaignForm({
                             id={`final-${index}`} 
                             checked={round.isFinalRound}
                             onCheckedChange={(checked) => {
-                              const newRounds = [...formData.rounds];
-                              newRounds[index].isFinalRound = !!checked;
-                              if (checked) {
-                                newRounds[index].advanceCount = formData.topRankingCount || 0;
-                                if (formData.endDate) {
-                                  newRounds[index].endTime = formData.endDate;
+                              const newRounds = formData.rounds.map((r, i) => {
+                                if (checked && i === index) {
+                                  return {
+                                    ...r,
+                                    isFinalRound: true,
+                                    advanceCount: formData.topRankingCount || 0,
+                                    endTime: formData.endDate || r.endTime
+                                  };
                                 }
-                              }
+                                if (checked && i !== index) {
+                                  return { ...r, isFinalRound: false };
+                                }
+                                if (!checked && i === index) {
+                                  return { ...r, isFinalRound: false };
+                                }
+                                return r;
+                              });
                               onFormChange({ rounds: newRounds });
                             }}
                           />
@@ -926,7 +945,7 @@ export function CampaignForm({
               </div>
             )}
           </div>
-        </ScrollArea>
+        </div>
 
         <div className="flex items-center justify-between pt-4 border-t mt-auto">
           <Button

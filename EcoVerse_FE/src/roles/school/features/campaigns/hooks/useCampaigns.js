@@ -150,7 +150,7 @@ export function useCampaigns() {
   const stats = useMemo(() => {
     const list = allFormattedCampaigns || [];
     return {
-      totalCampaigns: list.length,
+      totalCampaigns: list.filter(c => c.origin === 'school' || c.invitation_status === 'APPROVED').length,
       activeCampaigns: list.filter(c => c.status === 'on_going').length,
       scheduledCampaigns: list.filter(c => c.status === 'scheduled').length,
       invitingCampaigns: list.filter(c => c.status === 'inviting').length,
