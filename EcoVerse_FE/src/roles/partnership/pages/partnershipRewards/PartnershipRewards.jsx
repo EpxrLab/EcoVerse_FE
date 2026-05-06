@@ -230,11 +230,18 @@ export default function PartnershipRewards() {
                     </div>
                   </div>
                 </TableCell>
-                <TableCell>
-                  <div className="flex flex-col">
-                    <p className="font-semibold text-sm">{delivery.schoolName}</p>
-                    <p className="text-[10px] text-muted-foreground flex items-center gap-1 mt-0.5">
-                      <MapPin className="w-3 h-3" />
+                <TableCell className="min-w-[200px]">
+                  <div className="flex flex-col gap-0.5">
+                    <p className="font-bold text-sm text-foreground">{delivery.schoolName}</p>
+                    <div className="flex items-start gap-1 text-[10px] text-muted-foreground">
+                      <MapPin className="w-3 h-3 mt-0.5 flex-shrink-0 text-eco-blue/60" />
+                      <span className="leading-relaxed">
+                        {[delivery.schoolAddress, delivery.schoolWard, delivery.schoolProvince]
+                          .filter(Boolean)
+                          .join(', ')}
+                      </span>
+                    </div>
+                    <p className="text-[9px] text-muted-foreground/60 font-mono mt-0.5">
                       ID: {delivery.schoolId.substring(0, 8)}...
                     </p>
                   </div>
@@ -515,9 +522,17 @@ export default function PartnershipRewards() {
                 <div className="mt-1 p-2 bg-eco-blue/10 rounded-full">
                     <MapPin className="w-5 h-5 text-eco-blue" />
                 </div>
-                <div className="flex flex-col">
-                    <p className="font-bold text-foreground leading-tight">{selectedDelivery?.schoolName}</p>
-                    <p className="text-sm text-muted-foreground mt-1.5 font-medium italic">ID trường: {selectedDelivery?.schoolId}</p>
+                <div className="flex flex-col gap-1">
+                    <p className="font-bold text-lg text-foreground leading-tight">{selectedDelivery?.schoolName}</p>
+                    <div className="flex items-start gap-1.5 text-sm text-muted-foreground font-medium">
+                      <MapPin className="w-4 h-4 mt-0.5 flex-shrink-0 text-eco-blue" />
+                      <span>
+                        {[selectedDelivery?.schoolAddress, selectedDelivery?.schoolWard, selectedDelivery?.schoolProvince]
+                          .filter(Boolean)
+                          .join(', ')}
+                      </span>
+                    </div>
+                    <p className="text-xs text-muted-foreground/60 mt-1 font-mono italic">ID trường: {selectedDelivery?.schoolId}</p>
                 </div>
               </div>
             </div>

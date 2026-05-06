@@ -194,15 +194,14 @@ export function useClasses() {
 
     try {
       const payload = {
-        fullName: formData.student_name,
-        studentCode: formData.student_code || '',
+        studentFullName: formData.student_name,
         className: className,
         gradeLevel: String(gradeLevel),
         dateOfBirth: formData.date_of_birth || null,
         gender: formData.gender === 'male' ? 'MALE' : formData.gender === 'female' ? 'FEMALE' : 'OTHER',
         address: formData.address || '',
         parentFullName: formData.parent_name || '',
-        parentPhoneNumber: formData.parent_phone || '',
+        parentPhone: formData.parent_phone || '',
         parentEmail: formData.parent_email || ''
       };
 
@@ -223,15 +222,14 @@ export function useClasses() {
 
     try {
       const payload = {
-        fullName: formData.student_name,
-        studentCode: formData.student_code || '',
+        studentFullName: formData.student_name,
         className: formData.className,
         gradeLevel: String(formData.gradeLevel),
         dateOfBirth: formData.date_of_birth || null,
         gender: formData.gender === 'male' ? 'MALE' : formData.gender === 'female' ? 'FEMALE' : 'OTHER',
         address: formData.address || '',
         parentFullName: formData.parent_name || '',
-        parentPhoneNumber: formData.parent_phone || '',
+        parentPhone: formData.parent_phone || '',
         parentEmail: formData.parent_email || ''
       };
 

@@ -314,7 +314,7 @@ export default function PartnershipLayout() {
           getPartnershipTypeLabel={getPartnershipTypeLabel}
         />
         <main className="flex-1 flex flex-col min-w-0">
-          <header className="h-16 border-b-2 border-border bg-card flex items-center justify-between px-4 sm:px-6 sticky top-0 z-10 shrink-0">
+          <header className="h-16 border-b-2 border-border bg-card flex items-center justify-between px-4 sm:px-6 sticky top-0 z-40 shrink-0">
             <div className="flex items-center gap-2 sm:gap-4">
               <SidebarTrigger className="text-muted-foreground hover:text-foreground p-2 hover:bg-muted/60 rounded-xl transition-colors" />
               <div className="flex items-center gap-2.5">

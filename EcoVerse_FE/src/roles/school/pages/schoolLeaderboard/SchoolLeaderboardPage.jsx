@@ -252,7 +252,7 @@ function StudentHistoryModal({ isOpen, onClose, student, history, isLoading }) {
                                 </div>
                                 <div>
                                   <div className="flex items-center gap-2">
-                                    <span className="font-black text-foreground">Cấp độ {session.currentLevel}</span>
+                                    <span className="font-black text-foreground">Màn {session.currentLevel}</span>
                                     <Badge variant="outline" className={cn(
                                       "text-[10px] px-2 py-0 h-5 font-bold uppercase",
                                       session.isPassed ? "border-eco-green text-eco-green bg-eco-green/5" : "border-red-300 text-red-500 bg-red-50"

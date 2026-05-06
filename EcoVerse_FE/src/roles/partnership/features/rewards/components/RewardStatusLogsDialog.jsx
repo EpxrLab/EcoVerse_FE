@@ -26,8 +26,8 @@ export function RewardStatusLogsDialog({ isOpen, onOpenChange, deliveryId, stude
     setIsLoading(true);
     try {
       // Filtering by referenceId which should be the deliveryId
-      const data = await fetchRewardStatusLogs({ referenceId: deliveryId, size: 50 });
-      setLogs(data?.content || []);
+      const data = await fetchRewardStatusLogs(deliveryId);
+      setLogs(Array.isArray(data) ? data : []);
     } catch (error) {
       console.error('Failed to fetch status logs', error);
       setLogs([]);

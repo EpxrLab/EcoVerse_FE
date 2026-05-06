@@ -32,13 +32,11 @@ import {
   ArrowLeft,
   Upload, 
   Users,
-  Trophy,
   GraduationCap,
   Search,
   MoreVertical,
   Pencil,
   Trash2,
-  Coins,
   Phone,
   Mail,
   User,
@@ -51,7 +49,6 @@ import { EmailPreviewDialog } from "./EmailPreviewDialog";
 
 const initialStudentForm = {
   student_name: '',
-  student_code: '',
   student_password: '',
   date_of_birth: '',
   gender: '',
