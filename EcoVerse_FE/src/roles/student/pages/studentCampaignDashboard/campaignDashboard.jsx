@@ -103,7 +103,7 @@ const fadeUp = {
 function RoundCard({ round, campaignId, navigate }) {
   const sc = ROUND_STATUS_CFG[round.status] ?? ROUND_STATUS_CFG.UPCOMING;
   const isActive = round.status === "ACTIVE"; // Unified to ACTIVE
-  const isAccessible = round.status === "ACTIVE"; // Only ACTIVE is accessible
+  const isAccessible = round.status === "ACTIVE" || round.status === "COMPLETED"; // Allow access to completed rounds to view history
   const diff = round.resolvedDifficulty ?? round.difficultyOverride;
 
   return (
@@ -113,7 +113,7 @@ function RoundCard({ round, campaignId, navigate }) {
       transition={{ duration: 0.2 }}
       onClick={() => {
         if (isAccessible) {
-          navigate(`/student/campaign/${campaignId}/game`);
+          navigate(`/student/campaign/${campaignId}/round/${round.id}`);
         }
       }}
     >
@@ -246,7 +246,7 @@ function RoundCard({ round, campaignId, navigate }) {
           {round.status === "UPCOMING"
             ? "Sắp mở"
             : round.status === "COMPLETED"
-              ? "Vòng đã kết thúc"
+              ? "Xem chi tiết"
               : "Bắt đầu chơi"}
         </Button>
       </Card>
@@ -352,8 +352,8 @@ export default function CampaignDashboard() {
                   </p>
                 )}
 
-                {/* Join Button (Active Round) */}
-                {activeRound && (
+                {/* Join/View Button */}
+                {(activeRound || c.status === "COMPLETED") && (
                   <motion.div
                     initial={{ opacity: 0, y: 20 }}
                     animate={{ opacity: 1, y: 0 }}
@@ -363,18 +363,26 @@ export default function CampaignDashboard() {
                     <Button
                       type="primary"
                       size="large"
-                      onClick={() =>
-                        navigate(
-                          `/student/campaign/${campaignId}/round/${activeRound.id}`,
-                        )
-                      }
+                      onClick={() => {
+                        const targetRound =
+                          activeRound || c.rounds?.[c.rounds.length - 1];
+                        if (targetRound) {
+                          navigate(
+                            `/student/campaign/${campaignId}/round/${targetRound.id}`,
+                          );
+                        }
+                      }}
                       className="h-12 px-8 rounded-2xl bg-white text-emerald-600 border-white hover:bg-emerald-50 hover:scale-105 transition-all font-black text-base shadow-2xl shadow-black/20 flex items-center gap-2 mx-auto lg:mx-0"
                     >
-                      THAM GIA THI ĐẤU NGAY
+                      {c.status === "COMPLETED"
+                        ? "XEM LẠI KẾT QUẢ"
+                        : "THAM GIA THI ĐẤU NGAY"}
                       <RightOutlined className="animate-bounce-x" />
                     </Button>
                     <p className="text-white/70 text-xs mt-3 font-bold uppercase tracking-widest">
-                      Đang diễn ra: {activeRound.roundName}
+                      {c.status === "COMPLETED"
+                        ? "Chiến dịch đã kết thúc"
+                        : `Đang diễn ra: ${activeRound?.roundName}`}
                     </p>
                   </motion.div>
                 )}
