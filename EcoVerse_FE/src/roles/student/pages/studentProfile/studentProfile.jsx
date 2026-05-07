@@ -926,17 +926,23 @@ export default function StudentProfile() {
                 ) : (
                   <div className="relative flex-shrink-0">
                     <div className="absolute -inset-2 bg-primary/20 rounded-[2rem] blur-xl" />
-                    {student?.avatarPresignedUrl ? (
-                      <img
-                        src={student.avatarPresignedUrl}
-                        alt={student.fullName}
-                        className="relative w-32 h-32 rounded-[1.75rem] object-cover border-4 border-white shadow-xl"
-                      />
-                    ) : (
-                      <div className="relative w-32 h-32 rounded-[1.75rem] bg-primary flex items-center justify-center text-5xl font-black text-white border-4 border-white shadow-xl uppercase">
-                        {student?.fullName?.charAt(0) ?? "?"}
-                      </div>
-                    )}
+                    <img
+                      src={
+                        student?.avatarPresignedUrl ||
+                        (student?.gender === "MALE"
+                          ? "/avatar/boy_avatar.jpg"
+                          : student?.gender === "FEMALE"
+                            ? "/avatar/girl_avatar.jpg"
+                            : "https://www.svgrepo.com/show/452030/avatar-default.svg")
+                      }
+                      alt={student?.fullName}
+                      className="relative w-32 h-32 rounded-[1.75rem] object-cover border-4 border-white shadow-xl"
+                      onError={(e) => {
+                        e.target.onerror = null;
+                        e.target.src =
+                          "https://www.svgrepo.com/show/452030/avatar-default.svg";
+                      }}
+                    />
                   </div>
                 )}
 
