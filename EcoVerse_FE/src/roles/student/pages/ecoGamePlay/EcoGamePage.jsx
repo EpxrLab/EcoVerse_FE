@@ -1,9 +1,5 @@
 import { useRef, useEffect, useState, useCallback } from "react";
-import {
-  useLocation,
-  useNavigate,
-  useParams,
-} from "react-router";
+import { useLocation, useNavigate, useParams } from "react-router";
 import { Spin, Progress } from "antd";
 import { LoadingOutlined } from "@ant-design/icons";
 import { GLTFLoader } from "three/examples/jsm/loaders/GLTFLoader";
@@ -132,6 +128,10 @@ export default function EcoGamePage() {
           sessionId: apiData.sessionId,
           name: apiData.gameTypeName || "",
           difficulty: apiData.resolvedDifficulty?.toLowerCase() || "medium",
+          campaignType:
+            apiData.campaignType ||
+            apiData.campaign?.campaignType ||
+            location.state?.campaignType,
           stage1Game,
           scorePerCorrect: apiData.scorePerCorrect || 0,
           runner: {
@@ -145,7 +145,8 @@ export default function EcoGamePage() {
             maxHp: apiData.lives || 10,
           },
           grabber: {
-            gameTime: apiData.timeLimitSeconds > 0 ? apiData.timeLimitSeconds : 90,
+            gameTime:
+              apiData.timeLimitSeconds > 0 ? apiData.timeLimitSeconds : 90,
             totalTrash: apiData.itemCount || 10,
             requiredPercentage: 60,
           },
@@ -180,7 +181,9 @@ export default function EcoGamePage() {
         // Register stage change listener to reset timer for Sorter specifically
         game.onStageChange((newStage) => {
           if (newStage === "STAGE_2") {
-            console.log("[EcoGamePage] Transitioning to Stage 2: Resetting timer");
+            console.log(
+              "[EcoGamePage] Transitioning to Stage 2: Resetting timer",
+            );
             gameStartTimeRef.current = Date.now();
             deadTimeRef.current = 0;
             pauseStartTimeRef.current = null;
@@ -230,7 +233,14 @@ export default function EcoGamePage() {
         gameRef.current = null;
       }
     };
-  }, [campaignId, roundId, roundGameConfigId, levelNumber, typeCode, replayKey]);
+  }, [
+    campaignId,
+    roundId,
+    roundGameConfigId,
+    levelNumber,
+    typeCode,
+    replayKey,
+  ]);
 
   const handleReplay = useCallback(() => {
     setReplayKey((prev) => prev + 1);
@@ -254,6 +264,12 @@ export default function EcoGamePage() {
   // Submit game result to API
   const handleGameResult = useCallback(
     async (result) => {
+      // If Stage 1 failure, do not submit to backend as it only handles sorting results
+      // and we want to preserve the local Stage 1 metrics in the result modal.
+      if (result.failedAtStage === 1) {
+        return null;
+      }
+
       const sessionId = levelConfig?.sessionId;
       if (!sessionId) {
         console.warn("[EcoGamePage] No sessionId, skipping submit");
@@ -270,12 +286,17 @@ export default function EcoGamePage() {
           )
         : 0;
 
-      const totalItems =
-        (result.sortingScore?.correct || 0) + (result.sortingScore?.wrong || 0);
+      const correctItems = Math.max(
+        0,
+        (result.sortingScore?.correct || 0) - (result.sortingScore?.wrong || 0),
+      );
 
       const payload = {
-        totalItems,
-        correctItems: result.sortingScore?.correct || 0,
+        totalItems: Math.max(
+          0,
+          correctItems + (result.sortingScore?.wrong || 0),
+        ),
+        correctItems,
         incorrectItems: result.sortingScore?.wrong || 0,
         timeTakenSeconds: timeTaken,
       };
@@ -372,17 +393,17 @@ export default function EcoGamePage() {
           zIndex: 9999,
         }}
       >
-          <div style={{ pointerEvents: "auto" }}>
-            <EcoGameHUD
-              key={replayKey}
-              game={gameInstance}
-              onBack={handleBack}
-              levelConfig={levelConfig}
-              gameType={typeCode}
-              onGameResult={handleGameResult}
-              onPauseChange={handlePauseChange}
-              onReplay={handleReplay}
-            />
+        <div style={{ pointerEvents: "auto" }}>
+          <EcoGameHUD
+            key={replayKey}
+            game={gameInstance}
+            onBack={handleBack}
+            levelConfig={levelConfig}
+            gameType={typeCode}
+            onGameResult={handleGameResult}
+            onPauseChange={handlePauseChange}
+            onReplay={handleReplay}
+          />
         </div>
       </div>
     </div>
