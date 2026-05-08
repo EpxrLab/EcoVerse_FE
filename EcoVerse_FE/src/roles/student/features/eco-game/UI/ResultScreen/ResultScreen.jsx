@@ -1,5 +1,5 @@
 import { motion } from "framer-motion";
-export function ResultScreen({ result, onReplay, onBack }) {
+export function ResultScreen({ result, onReplay, onBack, campaignType }) {
   if (!result) return null;
 
   const { distance, trashCollected, sortingScore, collectedTrash, apiResult } =
@@ -20,6 +20,60 @@ export function ResultScreen({ result, onReplay, onBack }) {
   const feedbackMessage = apiResult?.feedbackMessage;
 
   const isLoss = result.success === false;
+  const isStage1Loss = isLoss && result.failedAtStage === 1;
+  const isPartnership = campaignType?.trim() === "PARTNERSHIP_EVENT";
+
+  // Filter stats based on stage and campaign type
+  const stats = [
+    {
+      label: "🏃 Quãng đường",
+      value: `${Math.floor(distance || 0)}m`,
+      color: "primary",
+    },
+    {
+      label: "🗑️ Thu gom",
+      value: isStage1Loss
+        ? `${trashCollected}/${totalItems}`
+        : trashCollected || 0,
+      color: "primary",
+    },
+    {
+      label: "⏱️ Thời gian",
+      value: `${timeTaken}s`,
+      color: "primary",
+    },
+    // Only show "Đúng" if not a stage 1 loss
+    ...(!isStage1Loss
+      ? [
+          {
+            label: "✅ Đúng",
+            value: `${correct}/${totalItems}`,
+            color: "primary",
+          },
+        ]
+      : []),
+    {
+      label: isStage1Loss ? "🎯 Phần trăm" : "🎯 Chính xác",
+      value: `${accuracy}%`,
+      color: "amber",
+      bg: "amber-50",
+      text: "amber-700",
+      labelColor: "amber-600",
+    },
+    // Only show "Thưởng" if not a partnership event
+    ...(!isPartnership
+      ? [
+          {
+            label: "💰 Thưởng",
+            value: `+${coins}`,
+            color: "yellow",
+            bg: "yellow-50",
+            text: "yellow-700",
+            labelColor: "yellow-600",
+          },
+        ]
+      : []),
+  ];
 
   return (
     <motion.div
@@ -59,44 +113,7 @@ export function ResultScreen({ result, onReplay, onBack }) {
         <div className="flex-1 overflow-hidden flex flex-col gap-4">
           {/* Stats Grid */}
           <div className="grid grid-cols-3 gap-2 sm:gap-3">
-            {[
-              {
-                label: "🏃 Quãng đường",
-                value: `${Math.floor(distance || 0)}m`,
-                color: "primary",
-              },
-              {
-                label: "🗑️ Thu gom",
-                value: trashCollected || 0,
-                color: "primary",
-              },
-              {
-                label: "⏱️ Thời gian",
-                value: `${timeTaken}s`,
-                color: "primary",
-              },
-              {
-                label: "✅ Đúng",
-                value: `${correct}/${totalItems}`,
-                color: "primary",
-              },
-              {
-                label: "🎯 Chính xác",
-                value: `${accuracy}%`,
-                color: "amber",
-                bg: "amber-50",
-                text: "amber-700",
-                labelColor: "amber-600",
-              },
-              {
-                label: "💰 Thưởng",
-                value: `+${coins}`,
-                color: "yellow",
-                bg: "yellow-50",
-                text: "yellow-700",
-                labelColor: "yellow-600",
-              },
-            ].map((stat, i) => (
+            {stats.map((stat, i) => (
               <div
                 key={i}
                 className={`${stat.bg || "bg-primary/5"} rounded-2xl p-2 sm:p-3 text-center border border-transparent hover:border-gray-100 transition-colors`}

@@ -214,6 +214,7 @@ export default class EcoGame {
           { correct: 0, wrong: 0 },
           {
             success: false,
+            failedAtStage: 1,
             apiResult: {
               feedbackMessage: failMessage,
               totalItems: totalTrash,

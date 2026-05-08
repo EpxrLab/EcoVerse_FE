@@ -249,6 +249,7 @@ export default function StudentGame() {
           levelNumber: level.levelNumber,
           presetId: level.presetId,
           typeCode: level.typeCode,
+          campaignType: campaign?.campaignType,
         },
       },
     );

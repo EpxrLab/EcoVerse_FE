@@ -326,7 +326,12 @@ export default function EcoGameHUD({
       </AnimatePresence>
 
       {stage === "RESULT" && result && (
-        <ResultScreen result={result} onReplay={handleReplay} onBack={onBack} />
+        <ResultScreen
+          result={result}
+          onReplay={handleReplay}
+          onBack={onBack}
+          campaignType={levelConfig?.campaignType}
+        />
       )}
     </>
   );
