@@ -275,7 +275,7 @@ export function CampaignForm({
                     <Label htmlFor="campaignName">Tên chiến dịch *</Label>
                     <Input
                       id="campaignName"
-                      placeholder="VD: Chiến dịch Thu gom rác thải nhựa 2024"
+                      placeholder="VD: Chiến dịch Thu gom rác thải nhựa 2026"
                       value={formData.campaignName}
                       onChange={(e) => onFormChange({ campaignName: e.target.value })}
                     />
