@@ -120,13 +120,14 @@ const QuizCard = lazy(() =>
               {/* Action Button */}
               <Button
                 type={
-                  isCompleted && !isCampaignCompleted && quiz.attemptsUsed < quiz.maxAttempts
+                  isCompleted &&
+                  !isCampaignCompleted &&
+                  quiz.attemptsUsed < quiz.maxAttempts
                     ? "default"
                     : "primary"
                 }
                 disabled={
-                  isCampaignCompleted || 
-                  quiz.attemptsUsed >= quiz.maxAttempts
+                  isCampaignCompleted || quiz.attemptsUsed >= quiz.maxAttempts
                 }
                 icon={
                   isCampaignCompleted ? (
@@ -305,7 +306,7 @@ export default function StudentQuiz() {
 
   const completedQuizzes = quizzes.filter((q) => q.isPassed);
   const totalCoinsEarned = completedQuizzes.reduce(
-    (sum, q) => sum + (q.coinReward || 20),
+    (sum, q) => sum + (q.coinsOnPass || 20),
     0,
   );
 
@@ -581,7 +582,6 @@ export default function StudentQuiz() {
             </div>
           </motion.div>
         )}
-
 
         {/* Completed Mode Notification */}
         {isCompletedMode && (
