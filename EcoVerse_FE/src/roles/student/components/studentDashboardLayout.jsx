@@ -168,10 +168,12 @@ export default function StudentDashboardLayout() {
         </Button>
         <div className="space-y-2">
           <h3 className="font-bold text-sm text-foreground line-clamp-2">
-            {campaign.name}
+            {campaign?.campaignName}
           </h3>
           <span className="inline-block px-3 py-1 rounded-full text-xs font-bold bg-primary/10 text-primary border border-primary/20">
-            {campaign.type === "school" ? "Trường học" : "Đối tác"}
+            {campaign?.campaignType === "SCHOOL_INTERNAL"
+              ? "Trường học"
+              : "Đối tác"}
           </span>
         </div>
       </div>

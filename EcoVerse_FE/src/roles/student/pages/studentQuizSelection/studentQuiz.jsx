@@ -28,7 +28,7 @@ const QuizCard = lazy(() =>
       getDifficultyConfig,
       onStart,
       onOpenHistory,
-      isPreviewMode,
+      isCampaignCompleted,
     }) {
       const config = getDifficultyConfig(quiz.difficulty);
       const isCompleted = quiz.isPassed;
@@ -120,20 +120,18 @@ const QuizCard = lazy(() =>
               {/* Action Button */}
               <Button
                 type={
-                  isCompleted && !isPreviewMode
+                  isCompleted && !isCampaignCompleted && quiz.attemptsUsed < quiz.maxAttempts
                     ? "default"
-                    : isPreviewMode
-                      ? "default"
-                      : "primary"
+                    : "primary"
                 }
                 disabled={
-                  (quiz.attemptsUsed >= quiz.maxAttempts && !isCompleted) ||
-                  isPreviewMode
+                  isCampaignCompleted || 
+                  quiz.attemptsUsed >= quiz.maxAttempts
                 }
                 icon={
-                  isPreviewMode ? (
+                  isCampaignCompleted ? (
                     <Lock className="w-4 h-4" />
-                  ) : isCompleted ? (
+                  ) : isCompleted && quiz.attemptsUsed < quiz.maxAttempts ? (
                     <RotateCcw className="w-4 h-4" />
                   ) : (
                     <Play className="w-4 h-4" />
@@ -141,17 +139,16 @@ const QuizCard = lazy(() =>
                 }
                 onClick={() => onStart(quiz)}
                 className={`w-full h-10 font-semibold flex items-center justify-center gap-2 rounded-xl transition-all duration-200 ${
-                  isPreviewMode ||
-                  (quiz.attemptsUsed >= quiz.maxAttempts && !isCompleted)
+                  isCampaignCompleted || quiz.attemptsUsed >= quiz.maxAttempts
                     ? "bg-gray-100 text-gray-400 border-transparent cursor-not-allowed"
                     : isCompleted
                       ? "bg-gray-100 text-gray-700 hover:bg-gray-200 border-gray-200"
                       : "bg-primary hover:opacity-90 border-primary text-white shadow-md shadow-primary/10"
                 }`}
               >
-                {isPreviewMode
+                {isCampaignCompleted
                   ? "Đã kết thúc"
-                  : isCompleted
+                  : isCompleted && quiz.attemptsUsed < quiz.maxAttempts
                     ? "Làm lại"
                     : "Bắt đầu"}
               </Button>
@@ -230,7 +227,6 @@ export default function StudentQuiz() {
   const [historyModalOpen, setHistoryModalOpen] = useState(false);
   const [selectedQuiz, setSelectedQuiz] = useState(null);
   const [historyLoading, setHistoryLoading] = useState(false);
-  const [isPreviewMode, setIsPreviewMode] = useState(false);
   const [isCompletedMode, setIsCompletedMode] = useState(false);
   const isCampaignCompleted = campaign?.status === "COMPLETED";
 
@@ -295,7 +291,6 @@ export default function StudentQuiz() {
       if (round) {
         // Evaluate access based on round status
         const status = round.status;
-        setIsPreviewMode(status === "UPCOMING");
         setIsCompletedMode(status === "COMPLETED");
 
         setQuizzes(round.quizzes || []);
@@ -587,30 +582,6 @@ export default function StudentQuiz() {
           </motion.div>
         )}
 
-        {/* Preview Mode Notification */}
-        {isPreviewMode && (
-          <motion.div
-            initial={{ opacity: 0, y: 10 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.15 }}
-            className="mb-8"
-          >
-            <div className="bg-amber-50 border-2 border-amber-200 rounded-2xl p-4 flex items-center gap-4">
-              <div className="w-12 h-12 shrink-0 rounded-xl bg-amber-100 flex items-center justify-center">
-                <Lock className="text-amber-500 w-6 h-6" />
-              </div>
-              <div>
-                <h3 className="text-amber-800 text-lg font-bold m-0">
-                  Vòng đấu chưa mở
-                </h3>
-                <p className="text-amber-700 m-0 mt-1">
-                  Vòng đấu này hiện chưa tới thời gian bắt đầu nên bạn chưa thể
-                  tham gia làm quiz. Hãy quay lại sau nhé!
-                </p>
-              </div>
-            </div>
-          </motion.div>
-        )}
 
         {/* Completed Mode Notification */}
         {isCompletedMode && (
@@ -670,7 +641,7 @@ export default function StudentQuiz() {
                         getDifficultyConfig={getDifficultyConfig}
                         onStart={() => handleStartQuiz(quiz)}
                         onOpenHistory={handleOpenHistory}
-                        isPreviewMode={isPreviewMode || isCompletedMode}
+                        isCampaignCompleted={isCompletedMode}
                       />
                     </motion.div>
                   ))
