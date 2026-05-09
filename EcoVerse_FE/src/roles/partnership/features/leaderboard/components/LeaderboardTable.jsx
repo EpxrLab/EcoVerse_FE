@@ -34,72 +34,80 @@ export function LeaderboardTable({ data, currentPage, totalPages, totalItems, it
             </TableRow>
           </TableHeader>
           <TableBody>
-            {data.map((student) => {
-              const isTop3 = student.rank <= 3;
-              return (
-                <TableRow
-                  key={student.studentId}
-                  onClick={() => onRowClick?.(student)}
-                  className={cn(
-                    'group transition-colors border-b border-border/30 last:border-0 cursor-pointer',
-                    isTop3 ? 'bg-primary/[0.03] hover:bg-primary/[0.06]' : 'hover:bg-muted/40'
-                  )}
-                >
-                  <TableCell className="py-2.5">
-                    <div className="flex items-center justify-center">
-                      {isTop3 ? (
-                        <div className={cn(
-                          'w-7 h-7 rounded-lg flex items-center justify-center font-bold text-xs',
-                          student.rank === 1 ? 'bg-accent/15 text-accent' :
-                          student.rank === 2 ? 'bg-muted text-muted-foreground' :
-                          'bg-secondary/15 text-secondary'
-                        )}>
-                          {student.rank}
-                        </div>
-                      ) : (
-                        <span className="text-sm text-muted-foreground font-medium">{student.rank}</span>
-                      )}
-                    </div>
-                  </TableCell>
-
-                  <TableCell className="py-2.5">
-                    <div className="flex items-center gap-2.5">
-                      <Avatar className={cn(
-                        'h-8 w-8 border transition-transform group-hover:scale-105',
-                        isTop3 ? 'border-primary/20' : 'border-border'
-                      )}>
-                        <AvatarFallback className={cn(
-                          'text-[10px] font-bold',
-                          isTop3 ? 'bg-primary/10 text-primary' : 'bg-muted text-muted-foreground'
-                        )}>
-                          {getInitials(student.studentName)}
-                        </AvatarFallback>
-                      </Avatar>
-                      <div className="min-w-0">
-                        <p className="font-semibold text-sm text-foreground truncate">{student.studentName}</p>
-                        <p className="text-[10px] text-muted-foreground md:hidden truncate">{student.schoolName}</p>
+            {data.length === 0 ? (
+              <TableRow>
+                <TableCell colSpan={5} className="h-32 text-center text-muted-foreground">
+                  Chưa có dữ liệu xếp hạng cho vòng thi này
+                </TableCell>
+              </TableRow>
+            ) : (
+              data.map((student) => {
+                const isTop3 = student.rank <= 3;
+                return (
+                  <TableRow
+                    key={student.studentId}
+                    onClick={() => onRowClick?.(student)}
+                    className={cn(
+                      'group transition-colors border-b border-border/30 last:border-0 cursor-pointer',
+                      isTop3 ? 'bg-primary/[0.03] hover:bg-primary/[0.06]' : 'hover:bg-muted/40'
+                    )}
+                  >
+                    <TableCell className="py-2.5">
+                      <div className="flex items-center justify-center">
+                        {isTop3 ? (
+                          <div className={cn(
+                            'w-7 h-7 rounded-lg flex items-center justify-center font-bold text-xs',
+                            student.rank === 1 ? 'bg-accent/15 text-accent' :
+                            student.rank === 2 ? 'bg-muted text-muted-foreground' :
+                            'bg-secondary/15 text-secondary'
+                          )}>
+                            {student.rank}
+                          </div>
+                        ) : (
+                          <span className="text-sm text-muted-foreground font-medium">{student.rank}</span>
+                        )}
                       </div>
-                    </div>
-                  </TableCell>
+                    </TableCell>
 
-                  <TableCell className="py-2.5 hidden md:table-cell">
-                    <div className="flex items-center gap-1.5 text-muted-foreground">
-                      <School className="w-3.5 h-3.5 shrink-0" />
-                      <span className="text-sm truncate max-w-[180px]">{student.schoolName}</span>
-                    </div>
-                  </TableCell>
+                    <TableCell className="py-2.5">
+                      <div className="flex items-center gap-2.5">
+                        <Avatar className={cn(
+                          'h-8 w-8 border transition-transform group-hover:scale-105',
+                          isTop3 ? 'border-primary/20' : 'border-border'
+                        )}>
+                          <AvatarFallback className={cn(
+                            'text-[10px] font-bold',
+                            isTop3 ? 'bg-primary/10 text-primary' : 'bg-muted text-muted-foreground'
+                          )}>
+                            {getInitials(student.studentName)}
+                          </AvatarFallback>
+                        </Avatar>
+                        <div className="min-w-0">
+                          <p className="font-semibold text-sm text-foreground truncate">{student.studentName}</p>
+                          <p className="text-[10px] text-muted-foreground md:hidden truncate">{student.schoolName}</p>
+                        </div>
+                      </div>
+                    </TableCell>
 
-                  <TableCell className="text-center py-2.5">
-                    <span className="text-sm font-medium text-eco-blue">{student.combinedAccuracyPercentage || 0}%</span>
-                  </TableCell>
+                    <TableCell className="py-2.5 hidden md:table-cell">
+                      <div className="flex items-center gap-1.5 text-muted-foreground">
+                        <School className="w-3.5 h-3.5 shrink-0" />
+                        <span className="text-sm truncate max-w-[180px]">{student.schoolName}</span>
+                      </div>
+                    </TableCell>
 
-                  <TableCell className="text-center py-2.5">
-                    <span className="text-sm font-medium text-eco-green">{student.avgTimeSeconds || 0}s</span>
-                  </TableCell>
+                    <TableCell className="text-center py-2.5">
+                      <span className="text-sm font-medium text-eco-blue">{student.combinedAccuracyPercentage || 0}%</span>
+                    </TableCell>
 
-                </TableRow>
-              );
-            })}
+                    <TableCell className="text-center py-2.5">
+                      <span className="text-sm font-medium text-eco-green">{student.avgTimeSeconds || 0}s</span>
+                    </TableCell>
+
+                  </TableRow>
+                );
+              })
+            )}
           </TableBody>
         </Table>
       </div>

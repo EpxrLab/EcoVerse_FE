@@ -12,6 +12,7 @@ export function CampaignList({ campaigns, onViewDetail, onEdit, onDelete, onActi
     switch (status) {
       case 'draft': return 'bg-muted text-muted-foreground';
       case 'scheduled': return 'bg-purple-500/15 text-purple-500 border-purple-500/25';
+      case 'joining':
       case 'inviting': return 'bg-eco-orange/15 text-eco-orange border-eco-orange/25';
       case 'on_going': return 'bg-eco-blue/15 text-eco-blue border-eco-blue/25';
       case 'completed': return 'bg-eco-green/15 text-eco-green border-eco-green/25';
@@ -24,6 +25,7 @@ export function CampaignList({ campaigns, onViewDetail, onEdit, onDelete, onActi
     switch (status) {
       case 'draft': return 'Nháp';
       case 'scheduled': return 'Đã lên lịch';
+      case 'joining':
       case 'inviting': return 'Đang mời';
       case 'on_going': return 'Đang diễn ra';
       case 'completed': return 'Hoàn thành';
@@ -199,14 +201,14 @@ export function CampaignList({ campaigns, onViewDetail, onEdit, onDelete, onActi
                           </DropdownMenuItem>
                         )}
   
-                        {(campaign.status === 'draft' || campaign.status === 'cancelled') && (
+                        {campaign.status === 'draft' && (
                           <DropdownMenuItem onClick={() => onEdit(campaign)}>
                             <Edit className="w-4 h-4 mr-2" />
                             Sửa
                           </DropdownMenuItem>
                         )}
   
-                        {campaign.status === 'inviting' && onCancel && (
+                        {campaign.status === 'joining' && onCancel && (
                           <DropdownMenuItem
                             onClick={() => onCancel(campaign)}
                             className="text-destructive focus:text-destructive"

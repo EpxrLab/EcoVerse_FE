@@ -34,6 +34,7 @@ export function CampaignDetail({ isOpen, onClose, campaign }) {
     switch (status) {
       case 'draft': return 'bg-muted text-muted-foreground border-transparent';
       case 'scheduled': return 'bg-purple-500/15 text-purple-500 border-purple-500/25';
+      case 'joining':
       case 'inviting': return 'bg-eco-orange/10 text-eco-orange border-eco-orange/20';
       case 'on_going': return 'bg-eco-blue/10 text-eco-blue border-eco-blue/20';
       case 'completed': return 'bg-eco-green/10 text-eco-green border-eco-green/20';
@@ -46,6 +47,7 @@ export function CampaignDetail({ isOpen, onClose, campaign }) {
     switch (status) {
       case 'draft': return 'Nháp';
       case 'scheduled': return 'Đã lên lịch';
+      case 'joining':
       case 'inviting': return 'Đang mời';
       case 'on_going': return 'Đang diễn ra';
       case 'completed': return 'Hoàn thành';
@@ -74,7 +76,7 @@ export function CampaignDetail({ isOpen, onClose, campaign }) {
         <DialogHeader className="p-6 border-b bg-muted/20">
           <div className="flex items-start gap-4">
              <div className="w-12 h-12 rounded-2xl bg-eco-blue/15 flex items-center justify-center shrink-0">
-               {campaign.status === 'inviting' ? (
+               {(campaign.status === 'inviting' || campaign.status === 'joining') ? (
                  <Send className="w-6 h-6 text-eco-blue" />
                ) : (
                  <Calendar className="w-6 h-6 text-eco-blue" />
@@ -166,6 +168,10 @@ export function CampaignDetail({ isOpen, onClose, campaign }) {
                               ) : school.status === 'REJECTED' ? (
                                 <Badge variant="outline" className="bg-destructive/10 text-destructive border-destructive/20">
                                   Từ chối
+                                </Badge>
+                              ) : school.status === 'CANCELLED' ? (
+                                <Badge variant="outline" className="bg-destructive/10 text-destructive border-destructive/20">
+                                  Đã hủy
                                 </Badge>
                               ) : school.status === 'PREPARED' ? (
                                 <Badge variant="outline" className="bg-eco-blue/10 text-eco-blue border-eco-blue/20">
@@ -330,10 +336,7 @@ export function CampaignDetail({ isOpen, onClose, campaign }) {
                   </div>
 
                   <div className="pt-3 border-t space-y-2">
-                    <div className="flex justify-between items-center text-sm">
-                      <span className="text-muted-foreground">HS tối đa/trường:</span>
-                      <span className="font-bold text-eco-blue">{campaign.maxStudentsPerSchool || "N/A"}</span>
-                    </div>
+
                     <div className="flex justify-between items-center text-sm">
                       <span className="text-muted-foreground">Tổng chỉ tiêu HS:</span>
                       <span className="font-bold text-eco-blue">{campaign.totalStudentQuota || "N/A"}</span>

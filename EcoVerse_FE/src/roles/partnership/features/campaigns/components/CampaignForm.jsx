@@ -1,7 +1,6 @@
 import React from 'react';
 import toast from 'react-hot-toast';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/shared/components/ui/dialog';
-import { ScrollArea } from '@/shared/components/ui/scroll-area';
 import { Button } from '@/shared/components/ui/button';
 import { Input } from '@/shared/components/ui/input';
 import { Label } from '@/shared/components/ui/label';
@@ -208,7 +207,11 @@ export function CampaignForm({
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="max-w-5xl h-[92vh] flex flex-col p-6 overflow-hidden">
+      <DialogContent 
+        className="max-w-5xl h-[92vh] flex flex-col p-6 overflow-hidden"
+        onPointerDownOutside={(e) => e.preventDefault()}
+        onInteractOutside={(e) => e.preventDefault()}
+      >
         <ConfigProvider
           theme={{
             token: {
@@ -275,7 +278,7 @@ export function CampaignForm({
                     <Label htmlFor="campaignName">Tên chiến dịch *</Label>
                     <Input
                       id="campaignName"
-                      placeholder="VD: Chiến dịch Thu gom rác thải nhựa 2024"
+                      placeholder="VD: Chiến dịch Thu gom rác thải nhựa 2026"
                       value={formData.campaignName}
                       onChange={(e) => onFormChange({ campaignName: e.target.value })}
                     />
@@ -769,6 +772,7 @@ export function CampaignForm({
                             className="w-full h-10"
                             placeholder="Chọn ngày bắt đầu"
                             getPopupContainer={(trigger) => trigger.parentElement}
+                            status={(round.startTime && formData.startDate && dayjs(round.startTime).isBefore(dayjs(formData.startDate).subtract(1, 'minute'))) || (index > 0 && round.startTime && formData.rounds[index-1].endTime && dayjs(round.startTime).isBefore(dayjs(formData.rounds[index-1].endTime).subtract(1, 'minute'))) ? 'error' : ''}
                             value={round.startTime ? dayjs(round.startTime) : null}
                             onChange={(date) => {
                               const newRounds = [...formData.rounds];
@@ -776,6 +780,12 @@ export function CampaignForm({
                               onFormChange({ rounds: newRounds });
                             }}
                           />
+                          {round.startTime && formData.startDate && dayjs(round.startTime).isBefore(dayjs(formData.startDate).subtract(1, 'minute')) && (
+                            <p className="text-[10px] text-destructive mt-1">Phải từ ngày bắt đầu chiến dịch</p>
+                          )}
+                          {index > 0 && round.startTime && formData.rounds[index-1].endTime && dayjs(round.startTime).isBefore(dayjs(formData.rounds[index-1].endTime).subtract(1, 'minute')) && (
+                            <p className="text-[10px] text-destructive mt-1">Phải sau vòng trước</p>
+                          )}
                         </div>
                         <div className="space-y-2">
                           <Label>Thời gian kết thúc *</Label>
@@ -786,6 +796,7 @@ export function CampaignForm({
                             className="w-full h-10"
                             placeholder="Chọn ngày kết thúc"
                             getPopupContainer={(trigger) => trigger.parentElement}
+                            status={(round.endTime && round.startTime && !dayjs(round.endTime).isAfter(dayjs(round.startTime))) || (round.endTime && formData.endDate && dayjs(round.endTime).isAfter(dayjs(formData.endDate).add(1, 'minute'))) ? 'error' : ''}
                             value={round.endTime ? dayjs(round.endTime) : null}
                             onChange={(date) => {
                               const newEndTime = date ? date.format('YYYY-MM-DDTHH:mm') : '';
@@ -800,6 +811,12 @@ export function CampaignForm({
                               onFormChange({ rounds: newRounds });
                             }}
                           />
+                          {round.endTime && round.startTime && !dayjs(round.endTime).isAfter(dayjs(round.startTime)) && (
+                            <p className="text-[10px] text-destructive mt-1">Phải sau ngày bắt đầu vòng</p>
+                          )}
+                          {round.endTime && formData.endDate && dayjs(round.endTime).isAfter(dayjs(formData.endDate).add(1, 'minute')) && (
+                            <p className="text-[10px] text-destructive mt-1">Phải trước ngày kết thúc chiến dịch</p>
+                          )}
                         </div>
                         <div className="flex items-center space-x-2 pt-8">
                           <Checkbox 

@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { motion } from "framer-motion";
-import { Input, Button, Card, message } from "antd";
+import { Input, message } from "antd";
 import {
   MailOutlined,
   LockOutlined,
@@ -11,7 +11,6 @@ import {
 } from "@ant-design/icons";
 import { useNavigate } from "react-router";
 import { loginFunction } from "../../../services";
-import { pass } from "three/src/nodes/TSL.js";
 
 const validateForm = (email, password) => {
   const errors = {};
@@ -218,7 +217,7 @@ export default function AdminAuth() {
           animate={{ opacity: 1 }}
           transition={{ delay: 0.6 }}
         >
-          © 2024 ECOVERSE SECURITY LAYER
+          © 2026 ECOVERSE SECURITY LAYER
         </motion.p>
       </motion.div>
     </div>

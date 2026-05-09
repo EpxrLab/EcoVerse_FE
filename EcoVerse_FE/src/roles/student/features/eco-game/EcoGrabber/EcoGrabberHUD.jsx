@@ -7,8 +7,12 @@
 import { useEffect, useState, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 
-const isMobileDevice = () =>
-  /Android|iPhone|iPad|iPod|Opera Mini|IEMobile/i.test(navigator.userAgent);
+const isTouchOrMobile = () => {
+  // Show controls if: touch device OR narrow viewport (≤768px)
+  const hasTouch = 'ontouchstart' in window || navigator.maxTouchPoints > 0;
+  const isNarrow = window.innerWidth <= 768;
+  return hasTouch || isNarrow;
+};
 
 // ─── Mobile Joystick ─────────────────────────────────────────────────────────
 
@@ -17,7 +21,7 @@ function MobileJoystick({ onMove, onEnd }) {
   const containerRef = useRef(null);
 
   useEffect(() => {
-    setIsMobile(isMobileDevice());
+    setIsMobile(isTouchOrMobile());
   }, []);
 
   if (!isMobile) return null;
@@ -44,9 +48,10 @@ function MobileJoystick({ onMove, onEnd }) {
   return (
     <div
       ref={containerRef}
-      onTouchStart={(e) => handleTouch(e)}
-      onTouchMove={(e) => handleTouch(e)}
-      onTouchEnd={() => handleTouch(null, true)}
+      data-joystick="true"
+      onTouchStart={(e) => { e.nativeEvent.stopImmediatePropagation(); handleTouch(e); }}
+      onTouchMove={(e) => { e.nativeEvent.stopImmediatePropagation(); handleTouch(e); }}
+      onTouchEnd={(e) => { e.nativeEvent.stopImmediatePropagation(); handleTouch(null, true); }}
       className="absolute bottom-10 left-10 w-32 h-32 rounded-full border-2 border-white/30 bg-white/10 backdrop-blur-md flex items-center justify-center"
       style={{ zIndex: 1100, pointerEvents: "auto" }}
     >
@@ -61,13 +66,15 @@ function GrabButton({ onClick }) {
   const [isMobile, setIsMobile] = useState(false);
 
   useEffect(() => {
-    setIsMobile(isMobileDevice());
+    setIsMobile(isTouchOrMobile());
   }, []);
 
   if (!isMobile) return null;
 
   return (
     <button
+      data-hud="true"
+      onTouchEnd={(e) => { e.nativeEvent.stopImmediatePropagation(); e.preventDefault(); onClick(); }}
       onClick={onClick}
       className="absolute bottom-10 right-10 w-24 h-24 rounded-full bg-yellow-500/80 border-4 border-white/50 text-white flex items-center justify-center shadow-2xl active:scale-95 transition-transform"
       style={{ zIndex: 1100, pointerEvents: "auto" }}

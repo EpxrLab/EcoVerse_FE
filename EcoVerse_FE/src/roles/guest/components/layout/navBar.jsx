@@ -80,7 +80,9 @@ const NavBar = () => {
             >
               <LeafIcon className="w-6 h-6 text-white" />
             </motion.div>
-            <span className="text-lg sm:text-xl md:text-2xl font-extrabold tracking-tight text-[#2e3430] font-greenhouse-heading">EcoVerse</span>
+            <span className="text-lg sm:text-xl md:text-2xl font-extrabold tracking-tight text-[#2e3430] font-greenhouse-heading">
+              EcoVerse
+            </span>
           </motion.a>
 
           {/* Desktop Nav */}
@@ -110,18 +112,18 @@ const NavBar = () => {
 
           {/* CTA Buttons */}
           <div className="hidden md:flex items-center gap-3">
-            <Button
+            {/* <Button
               type="text"
               size="large"
               onClick={() => handleNavigate("/auth")}
               className="font-bold text-[#5b605c] hover:text-[#2d6a4f] font-greenhouse-heading"
             >
               Đăng nhập
-            </Button>
+            </Button> */}
             <Button
               type="primary"
               size="large"
-              onClick={() => handleNavigate("/")}
+              onClick={() => handleNavigate("/auth")}
               className="h-12 px-8 bg-gradient-to-r from-[#2d6a4f] to-[#1f5e44] hover:from-[#1f5e44] hover:to-[#2d6a4f] border-none font-bold rounded-full shadow-lg shadow-green-900/20 transform transition-all active:scale-95 font-greenhouse-heading"
             >
               Bắt đầu ngay
