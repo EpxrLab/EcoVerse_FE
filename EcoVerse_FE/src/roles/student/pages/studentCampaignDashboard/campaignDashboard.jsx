@@ -66,8 +66,6 @@ const DIFFICULTY_COLOR = {
 };
 const DIFFICULTY_LABEL = { EASY: "Dễ", MEDIUM: "Trung bình", HARD: "Khó" };
 
-
-
 const fmtDate = (iso) =>
   iso
     ? new Date(iso).toLocaleDateString("vi-VN", {
@@ -103,7 +101,8 @@ const fadeUp = {
 function RoundCard({ round, campaignId, navigate }) {
   const sc = ROUND_STATUS_CFG[round.status] ?? ROUND_STATUS_CFG.UPCOMING;
   const isActive = round.status === "ACTIVE"; // Unified to ACTIVE
-  const isAccessible = round.status === "ACTIVE" || round.status === "COMPLETED"; // Allow access to completed rounds to view history
+  const isAccessible =
+    round.status === "ACTIVE" || round.status === "COMPLETED"; // Allow access to completed rounds to view history
   const diff = round.resolvedDifficulty ?? round.difficultyOverride;
 
   return (
@@ -367,9 +366,7 @@ export default function CampaignDashboard() {
                         const targetRound =
                           activeRound || c.rounds?.[c.rounds.length - 1];
                         if (targetRound) {
-                          navigate(
-                            `/student/campaign/${campaignId}/round/${targetRound.id}`,
-                          );
+                          navigate(`/student/campaign/${campaignId}/game`);
                         }
                       }}
                       className="h-12 px-8 rounded-2xl bg-white text-emerald-600 border-white hover:bg-emerald-50 hover:scale-105 transition-all font-black text-base shadow-2xl shadow-black/20 flex items-center gap-2 mx-auto lg:mx-0"
