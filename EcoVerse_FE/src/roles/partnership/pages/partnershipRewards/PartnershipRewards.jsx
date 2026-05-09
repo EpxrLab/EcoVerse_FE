@@ -532,7 +532,6 @@ export default function PartnershipRewards() {
                           .join(', ')}
                       </span>
                     </div>
-                    <p className="text-xs text-muted-foreground/60 mt-1 font-mono italic">ID trường: {selectedDelivery?.schoolId}</p>
                 </div>
               </div>
             </div>
