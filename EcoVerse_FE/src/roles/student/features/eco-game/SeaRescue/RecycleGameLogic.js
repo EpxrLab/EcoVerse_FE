@@ -381,6 +381,8 @@ export function initTrash(
   }
 
   const loader = new GLTFLoader(manager);
+  // Cache để tránh load lại cùng một model URL nhiều lần (giống Runner & Grabber)
+  const modelCache = new Map();
 
   const catColors = {
     RECYCLABLE: 0x2196f3,
@@ -511,18 +513,27 @@ export function initTrash(
       const modelUrl = apiItem.presignedModel3dUrl || apiItem.imagePresignedUrl;
 
       if (modelUrl) {
-        loader.load(
-          modelUrl,
-          (gltf) => finalizeMesh(gltf.scene.clone(true)),
-          undefined,
-          (err) => {
-            console.error(
-              `[SeaRescue] Failed to load trash model: ${modelUrl}`,
-              err,
-            );
-            spawnFallback();
-          },
-        );
+        // Kiểm tra cache trước — tránh fetch lại cùng URL nhiều lần
+        if (modelCache.has(modelUrl)) {
+          finalizeMesh(modelCache.get(modelUrl).clone(true));
+        } else {
+          loader.load(
+            modelUrl,
+            (gltf) => {
+              // Lưu scene gốc vào cache để các lần sau clone trực tiếp
+              modelCache.set(modelUrl, gltf.scene);
+              finalizeMesh(gltf.scene.clone(true));
+            },
+            undefined,
+            (err) => {
+              console.error(
+                `[SeaRescue] Failed to load trash model: ${modelUrl}`,
+                err,
+              );
+              spawnFallback();
+            },
+          );
+        }
       } else {
         spawnFallback();
       }

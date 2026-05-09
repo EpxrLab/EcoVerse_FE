@@ -772,6 +772,7 @@ export function CampaignForm({
                             className="w-full h-10"
                             placeholder="Chọn ngày bắt đầu"
                             getPopupContainer={(trigger) => trigger.parentElement}
+                            status={(round.startTime && formData.startDate && dayjs(round.startTime).isBefore(dayjs(formData.startDate).subtract(1, 'minute'))) || (index > 0 && round.startTime && formData.rounds[index-1].endTime && dayjs(round.startTime).isBefore(dayjs(formData.rounds[index-1].endTime).subtract(1, 'minute'))) ? 'error' : ''}
                             value={round.startTime ? dayjs(round.startTime) : null}
                             onChange={(date) => {
                               const newRounds = [...formData.rounds];
@@ -779,6 +780,12 @@ export function CampaignForm({
                               onFormChange({ rounds: newRounds });
                             }}
                           />
+                          {round.startTime && formData.startDate && dayjs(round.startTime).isBefore(dayjs(formData.startDate).subtract(1, 'minute')) && (
+                            <p className="text-[10px] text-destructive mt-1">Phải từ ngày bắt đầu chiến dịch</p>
+                          )}
+                          {index > 0 && round.startTime && formData.rounds[index-1].endTime && dayjs(round.startTime).isBefore(dayjs(formData.rounds[index-1].endTime).subtract(1, 'minute')) && (
+                            <p className="text-[10px] text-destructive mt-1">Phải sau vòng trước</p>
+                          )}
                         </div>
                         <div className="space-y-2">
                           <Label>Thời gian kết thúc *</Label>
@@ -789,6 +796,7 @@ export function CampaignForm({
                             className="w-full h-10"
                             placeholder="Chọn ngày kết thúc"
                             getPopupContainer={(trigger) => trigger.parentElement}
+                            status={(round.endTime && round.startTime && !dayjs(round.endTime).isAfter(dayjs(round.startTime))) || (round.endTime && formData.endDate && dayjs(round.endTime).isAfter(dayjs(formData.endDate).add(1, 'minute'))) ? 'error' : ''}
                             value={round.endTime ? dayjs(round.endTime) : null}
                             onChange={(date) => {
                               const newEndTime = date ? date.format('YYYY-MM-DDTHH:mm') : '';
@@ -803,6 +811,12 @@ export function CampaignForm({
                               onFormChange({ rounds: newRounds });
                             }}
                           />
+                          {round.endTime && round.startTime && !dayjs(round.endTime).isAfter(dayjs(round.startTime)) && (
+                            <p className="text-[10px] text-destructive mt-1">Phải sau ngày bắt đầu vòng</p>
+                          )}
+                          {round.endTime && formData.endDate && dayjs(round.endTime).isAfter(dayjs(formData.endDate).add(1, 'minute')) && (
+                            <p className="text-[10px] text-destructive mt-1">Phải trước ngày kết thúc chiến dịch</p>
+                          )}
                         </div>
                         <div className="flex items-center space-x-2 pt-8">
                           <Checkbox 

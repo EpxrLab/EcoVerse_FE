@@ -49,7 +49,7 @@ export const DEFAULT_LEVEL_CONFIG = {
     descentSpeed: 5,         // Units per second for claw descent
     ascentSpeed: 4,          // Units per second for claw ascent
     totalTrash: 10,          // Number of trash objects to spawn
-    requiredPercentage: 60,  // Minimum % of trash to collect to pass
+    requiredPercentage: 80,  // Minimum % of trash to collect to pass
     penaltyTime: 5,          // Seconds lost for grabbing marine life
   },
 

@@ -68,7 +68,7 @@ export default function EcoGamePage() {
           { icon: "🖥️", label: "Di chuyển chuột để điều chỉnh hướng cầu nâng" },
           { icon: "💥", label: "Click chuột để thả cầu nâng xuống bắt rác" },
           { icon: "⏳", label: "Hoàn thành trong thời gian quy định" },
-          { icon: "🎯", label: "Bắt đủ ≥ 60% số rác để tiến sang Stage 2" },
+          { icon: "🎯", label: "Bắt đủ ≥ 80% số rác để tiến sang Stage 2" },
         ],
       },
     };
@@ -207,7 +207,7 @@ export default function EcoGamePage() {
             gameTime:
               apiData.timeLimitSeconds > 0 ? apiData.timeLimitSeconds : 90,
             totalTrash: apiData.itemCount || 10,
-            requiredPercentage: 60,
+            requiredPercentage: 80,
           },
           sorter: {
             timeLimit: Math.max(apiData.timeLimitSeconds || 0, 60),
@@ -237,20 +237,28 @@ export default function EcoGamePage() {
 
         if (cancelled) return;
 
-        // Register stage change listener to reset timer for Sorter specifically
+        // No longer resetting timer here to include Stage 1 duration in total result
         game.onStageChange((newStage) => {
           if (newStage === "STAGE_2") {
-            console.log(
-              "[EcoGamePage] Transitioning to Stage 2: Resetting timer",
-            );
-            gameStartTimeRef.current = Date.now();
-            deadTimeRef.current = 0;
-            pauseStartTimeRef.current = null;
+            console.log("[EcoGamePage] Stage 2 started. Total time continues...");
           }
         });
 
         // Register loading listener for Stage 2
         game.onStageLoading((isLoading, progress, text) => {
+          if (isLoading) {
+            // "Freeze" the game timer during loading transitions to be fair to the student
+            if (!pauseStartTimeRef.current) {
+              pauseStartTimeRef.current = Date.now();
+            }
+          } else {
+            // Resume timer by adding the "loading time" to deadTimeRef
+            if (pauseStartTimeRef.current) {
+              deadTimeRef.current += Date.now() - pauseStartTimeRef.current;
+              pauseStartTimeRef.current = null;
+            }
+          }
+
           setLoading(isLoading);
           setLoadingProgress(Math.round(progress * 100));
           if (text) setLoadingText(text);
