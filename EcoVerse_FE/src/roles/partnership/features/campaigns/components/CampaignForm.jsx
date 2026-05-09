@@ -1,7 +1,6 @@
 import React from 'react';
 import toast from 'react-hot-toast';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/shared/components/ui/dialog';
-import { ScrollArea } from '@/shared/components/ui/scroll-area';
 import { Button } from '@/shared/components/ui/button';
 import { Input } from '@/shared/components/ui/input';
 import { Label } from '@/shared/components/ui/label';
@@ -208,7 +207,11 @@ export function CampaignForm({
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="max-w-5xl h-[92vh] flex flex-col p-6 overflow-hidden">
+      <DialogContent 
+        className="max-w-5xl h-[92vh] flex flex-col p-6 overflow-hidden"
+        onPointerDownOutside={(e) => e.preventDefault()}
+        onInteractOutside={(e) => e.preventDefault()}
+      >
         <ConfigProvider
           theme={{
             token: {
@@ -275,7 +278,7 @@ export function CampaignForm({
                     <Label htmlFor="campaignName">Tên chiến dịch *</Label>
                     <Input
                       id="campaignName"
-                      placeholder="VD: Chiến dịch Thu gom rác thải nhựa 2024"
+                      placeholder="VD: Chiến dịch Thu gom rác thải nhựa 2026"
                       value={formData.campaignName}
                       onChange={(e) => onFormChange({ campaignName: e.target.value })}
                     />

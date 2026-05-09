@@ -177,6 +177,30 @@ function RankRow({ item, isPartnership, onClick }) {
 }
 
 function StudentHistoryModal({ isOpen, onClose, student, history, isLoading }) {
+  const groupedGameHistories = useMemo(() => {
+    if (!history?.gameHistories) return [];
+    
+    const groups = [];
+    history.gameHistories.forEach(game => {
+      const sessionsByPreset = {};
+      game.sessions?.forEach(session => {
+        const pName = session.presetName || game.gameTypeName;
+        if (!sessionsByPreset[pName]) sessionsByPreset[pName] = [];
+        sessionsByPreset[pName].push(session);
+      });
+      
+      Object.entries(sessionsByPreset).forEach(([presetName, sessions]) => {
+        groups.push({
+          id: `${game.roundGameConfigId || Math.random()}-${presetName}`,
+          gameTypeName: game.gameTypeName,
+          displayName: presetName,
+          sessions: sessions
+        });
+      });
+    });
+    return groups;
+  }, [history]);
+
   if (!student) return null;
 
   return (
@@ -224,7 +248,7 @@ function StudentHistoryModal({ isOpen, onClose, student, history, isLoading }) {
             <Tabs defaultValue="games" className="w-full">
               <TabsList className="grid w-full grid-cols-2 mb-8 bg-muted/50 p-1 rounded-2xl h-14">
                 <TabsTrigger value="games" className="rounded-xl font-black text-sm data-[state=active]:bg-white data-[state=active]:text-eco-green data-[state=active]:shadow-md transition-all h-12">
-                  <Gamepad2 className="w-4 h-4 mr-2" /> Trò chơi ({history.gameHistories?.length || 0})
+                  <Gamepad2 className="w-4 h-4 mr-2" /> Trò chơi ({groupedGameHistories.length})
                 </TabsTrigger>
                 <TabsTrigger value="quizzes" className="rounded-xl font-black text-sm data-[state=active]:bg-white data-[state=active]:text-eco-green data-[state=active]:shadow-md transition-all h-12">
                   <ClipboardList className="w-4 h-4 mr-2" /> Quiz ({history.quizHistories?.length || 0})
@@ -233,14 +257,23 @@ function StudentHistoryModal({ isOpen, onClose, student, history, isLoading }) {
 
               <ScrollArea className="h-[450px] pr-4 -mr-4">
                 <TabsContent value="games" className="space-y-6 mt-0">
-                  {history.gameHistories?.map((game, gIdx) => (
-                    <div key={gIdx} className="space-y-3">
+                  {groupedGameHistories.map((group) => (
+                    <div key={group.id} className="space-y-3">
                       <div className="flex items-center gap-2 px-2">
                         <div className="w-2 h-6 bg-eco-green rounded-full" />
-                        <h4 className="font-black text-lg text-foreground">{game.gameTypeName}</h4>
+                        <div className="flex flex-col">
+                          <h4 className="font-black text-lg text-foreground leading-tight">
+                            {group.displayName}
+                          </h4>
+                          {group.displayName !== group.gameTypeName && (
+                            <span className="text-xs font-bold text-eco-green/70 uppercase tracking-wider">
+                              {group.gameTypeName}
+                            </span>
+                          )}
+                        </div>
                       </div>
                       <div className="grid gap-4">
-                        {game.sessions?.map((session, sIdx) => (
+                        {group.sessions?.map((session, sIdx) => (
                           <div key={sIdx} className="group relative bg-card hover:bg-muted/30 border-2 border-border/50 hover:border-eco-green/30 rounded-2xl p-5 transition-all duration-300">
                             <div className="flex flex-wrap items-center justify-between gap-4">
                               <div className="flex items-center gap-4">
@@ -504,7 +537,6 @@ export default function SchoolLeaderboardPage() {
   }, [leaderboardData]);
 
   const isPartnership = campaignType === "partnership";
-  const accentColor = isPartnership ? "amber" : "eco-green";
 
   return (
     <div className="space-y-5 animate-fade-in pb-10">
