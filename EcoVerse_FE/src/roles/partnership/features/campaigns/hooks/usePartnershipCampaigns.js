@@ -80,7 +80,6 @@ export function usePartnershipCampaigns() {
           status: (s => {
             const status = s?.toLowerCase();
             if (status === 'active') return 'on_going';
-            if (status === 'joining') return 'inviting';
             return status || '';
           })(campaign.status),
           startDate: toLocalISO(campaign.startDate),
@@ -207,7 +206,7 @@ export function usePartnershipCampaigns() {
   const stats = useMemo(() => {
     const draft = campaigns.filter(c => c.status === 'draft').length;
     const scheduled = campaigns.filter(c => c.status === 'scheduled').length;
-    const inviting = campaigns.filter(c => c.status === 'inviting').length;
+    const inviting = campaigns.filter(c => c.status === 'inviting' || c.status === 'joining').length;
     const on_going = campaigns.filter(c => c.status === 'on_going').length;
     const completed = campaigns.filter(c => c.status === 'completed').length;
     const cancelled = campaigns.filter(c => c.status === 'cancelled').length;
@@ -220,6 +219,9 @@ export function usePartnershipCampaigns() {
 
 
   const getCampaignsByStatus = (status) => {
+    if (status === 'inviting') {
+      return campaigns.filter(c => c.status === 'inviting' || c.status === 'joining');
+    }
     return campaigns.filter(c => c.status === status);
   };
 
@@ -241,7 +243,6 @@ export function usePartnershipCampaigns() {
           status: (s => {
             const status = s?.toLowerCase();
             if (status === 'active') return 'on_going';
-            if (status === 'joining') return 'inviting';
             return status || '';
           })(detailData.status),
           startDate: toLocalISO(detailData.startDate),
@@ -374,6 +375,7 @@ export function usePartnershipCampaigns() {
         console.log('Campaign created successfully');
       }
       await fetchCampaigns();
+      await fetchSubscription();
       handleCloseCreate();
     } catch (error) {
       console.error(`Failed to ${isEditing ? 'update' : 'create'} campaign`, error);
@@ -462,6 +464,7 @@ export function usePartnershipCampaigns() {
           setLoading(true);
           await partnershipCampaignService.deleteCampaign(campaign.id);
           await fetchCampaigns();
+          await fetchSubscription();
           console.log('Campaign deleted successfully');
           setConfirmConfig(prev => ({ ...prev, isOpen: false }));
         } catch (error) {
@@ -495,6 +498,7 @@ export function usePartnershipCampaigns() {
           setLoading(true);
           await partnershipCampaignService.activateCampaign(campaign.id);
           await fetchCampaigns();
+          await fetchSubscription();
           console.log('Campaign activated successfully:', campaign.id);
           setConfirmConfig(prev => ({ ...prev, isOpen: false }));
         } catch (error) {
@@ -519,6 +523,7 @@ export function usePartnershipCampaigns() {
           setLoading(true);
           await partnershipCampaignService.setDraftCampaign(campaign.id);
           await fetchCampaigns();
+          await fetchSubscription();
           console.log('Campaign reverted to draft successfully:', campaign.id);
           setConfirmConfig(prev => ({ ...prev, isOpen: false }));
         } catch (error) {
@@ -543,6 +548,7 @@ export function usePartnershipCampaigns() {
           setLoading(true);
           await partnershipCampaignService.cancelCampaign(campaign.id);
           await fetchCampaigns();
+          await fetchSubscription();
           console.log('Campaign cancelled successfully:', campaign.id);
           setConfirmConfig(prev => ({ ...prev, isOpen: false }));
         } catch (error) {

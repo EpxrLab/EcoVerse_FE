@@ -1107,7 +1107,7 @@ export default class EcoGrabber {
 
     _addEventListeners() {
         window.addEventListener("click", this._onClick);
-        window.addEventListener("touchstart", this._onTouch, { passive: false });
+        window.addEventListener("touchend", this._onTouch, { passive: false });
         window.addEventListener("keydown", this._onKeyDown);
         window.addEventListener("keyup", this._onKeyUp);
         window.addEventListener("resize", this._onResize);
@@ -1115,7 +1115,7 @@ export default class EcoGrabber {
 
     _removeEventListeners() {
         window.removeEventListener("click", this._onClick);
-        window.removeEventListener("touchstart", this._onTouch);
+        window.removeEventListener("touchend", this._onTouch);
         window.removeEventListener("keydown", this._onKeyDown);
         window.removeEventListener("keyup", this._onKeyUp);
         window.removeEventListener("resize", this._onResize);
@@ -1137,11 +1137,21 @@ export default class EcoGrabber {
 
     _handleTouch(e) {
         if (this.isGameOver) return;
-        // Check if it's a HUD element (buttons)
-        if (e.target.closest('button')) return;
-        
+        // For touchend events, use changedTouches[0].target (correct for touchend)
+        const touch = e.changedTouches?.[0];
+        const target = touch?.target || e.target;
+        if (!target) return;
+
+        // Ignore touches on any HUD element (buttons, joystick, overlays)
+        if (
+            target.closest('button') ||
+            target.closest('[data-joystick]') ||
+            target.closest('[data-hud]')
+        ) return;
+
         e.preventDefault();
         this.triggerInput();
+
     }
 
     triggerInput() {

@@ -508,11 +508,21 @@ function AIGeneratePanel({ campaignId, roundId, onGenerated, currentSubscription
                     <p className="text-xs font-bold truncate text-gray-700">
                       {file.name || file.fileName || (file.publicId ? file.publicId.split('/').pop() : 'Tài liệu không tên')}
                     </p>
-                    <p className="text-[10px] text-gray-400 mt-0.5">
-                      {file.size ? `${(file.size / 1024).toFixed(1)} KB` : 'Đang xử lý size'} 
-                      • 
-                      {file.createdAt ? new Date(file.createdAt).toLocaleDateString() : 'Vừa tải lên'}
-                    </p>
+                    <div className="flex items-center gap-2 mt-0.5">
+                      <span className="text-[10px] text-gray-400">
+                        {file.fileSize ? `${(file.fileSize / 1024).toFixed(1)} KB` : 'Đang xử lý size'} • {file.createdAt ? new Date(file.createdAt).toLocaleDateString() : 'Vừa tải lên'}
+                      </span>
+                      {file.embeddingStatus && (
+                        <span className={cn(
+                          "text-[9px] px-1.5 py-0.5 rounded-full font-bold",
+                          file.embeddingStatus === 'COMPLETED' ? "bg-green-100 text-green-600" : 
+                          file.embeddingStatus === 'FAILED' ? "bg-red-100 text-red-600" : "bg-eco-green/10 text-eco-green animate-pulse"
+                        )}>
+                          {file.embeddingStatus === 'COMPLETED' ? 'Sẵn sàng' : 
+                           file.embeddingStatus === 'FAILED' ? 'Lỗi' : 'Đang xử lý...'}
+                        </span>
+                      )}
+                    </div>
                   </div>
                   <div className={cn(
                     "w-5 h-5 rounded-full border-2 flex items-center justify-center transition-all",
@@ -689,10 +699,14 @@ export function AddQuizModal({
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className={cn(
-        "h-[85vh] flex flex-col overflow-hidden transition-all duration-300",
-        activeTab === 'ai' && !isSubmitting ? "max-w-4xl" : "max-w-xl"
-      )}>
+      <DialogContent 
+        className={cn(
+          "h-[85vh] flex flex-col overflow-hidden transition-all duration-300",
+          activeTab === 'ai' && !isSubmitting ? "max-w-4xl" : "max-w-xl"
+        )}
+        onPointerDownOutside={(e) => e.preventDefault()}
+        onInteractOutside={(e) => e.preventDefault()}
+      >
         <DialogHeader className="shrink-0 pb-2">
           <div className="flex items-center gap-3">
             <div className="w-9 h-9 rounded-xl bg-eco-green/10 flex items-center justify-center">

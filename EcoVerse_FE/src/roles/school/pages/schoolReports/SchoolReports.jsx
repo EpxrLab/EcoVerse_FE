@@ -308,12 +308,7 @@ export default function SchoolReports() {
                              </Badge>
                              <CardTitle className="text-lg font-black group-hover:text-primary transition-colors">{campaign.campaignName}</CardTitle>
                           </div>
-                          <Badge variant={campaign.status === 'COMPLETED' ? 'outline' : 'default'} className={cn(
-                            "rounded-lg px-2.5 py-1 font-bold uppercase text-[10px] tracking-widest",
-                            campaign.status === 'COMPLETED' ? "border-emerald-200 text-emerald-600 bg-emerald-50" : "bg-primary text-primary-foreground shadow-md shadow-primary/20"
-                          )}>
-                            {campaign.status === 'COMPLETED' ? 'Hoàn thành' : (campaign.status === 'ON_GOING' ? 'Đang diễn ra' : 'Sắp tới')}
-                          </Badge>
+
                         </div>
                      </CardHeader>
                      <CardContent className="p-5 space-y-5">
@@ -325,7 +320,7 @@ export default function SchoolReports() {
                                  <span className="text-[10px] text-muted-foreground">/{campaign.studentsEnrolled || '?'} HS</span>
                               </div>
                               <Progress value={(campaign.studentsCompleted / (campaign.studentsEnrolled || 1)) * 100} className="h-1.5" />
-                              <p className="text-[9px] text-eco-green font-bold">{campaign.studentsCompleted} hoàn thành</p>
+
                            </div>
                            <div className="space-y-1.5 p-3 rounded-xl bg-eco-green/5 border border-eco-green/10">
                               <p className="text-[10px] text-eco-green/70 font-bold uppercase tracking-widest">Độ chính xác TB</p>

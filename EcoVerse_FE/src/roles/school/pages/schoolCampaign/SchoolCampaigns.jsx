@@ -747,7 +747,11 @@ export default function SchoolCampaigns() {
 
       {/* Create Dialog */}
       <Dialog open={isCreateOpen} onOpenChange={setIsCreateOpen}>
-        <DialogContent className="max-w-5xl h-[85vh] overflow-hidden flex flex-col">
+        <DialogContent 
+          className="max-w-5xl h-[85vh] overflow-hidden flex flex-col"
+          onPointerDownOutside={(e) => e.preventDefault()}
+          onInteractOutside={(e) => e.preventDefault()}
+        >
           <DialogHeader>
             <DialogTitle>Tạo chiến dịch mới</DialogTitle>
             <DialogDescription>
@@ -773,7 +777,11 @@ export default function SchoolCampaigns() {
 
       {/* Edit Dialog */}
       <Dialog open={isEditOpen} onOpenChange={setIsEditOpen}>
-        <DialogContent className="max-w-5xl h-[85vh] overflow-hidden flex flex-col">
+        <DialogContent 
+          className="max-w-5xl h-[85vh] overflow-hidden flex flex-col"
+          onPointerDownOutside={(e) => e.preventDefault()}
+          onInteractOutside={(e) => e.preventDefault()}
+        >
           <DialogHeader>
             <DialogTitle>Chỉnh sửa chiến dịch</DialogTitle>
             <DialogDescription>
