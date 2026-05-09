@@ -512,16 +512,7 @@ function AIGeneratePanel({ campaignId, roundId, onGenerated, currentSubscription
                       <span className="text-[10px] text-gray-400">
                         {file.fileSize ? `${(file.fileSize / 1024).toFixed(1)} KB` : 'Đang xử lý size'} • {file.createdAt ? new Date(file.createdAt).toLocaleDateString() : 'Vừa tải lên'}
                       </span>
-                      {file.embeddingStatus && (
-                        <span className={cn(
-                          "text-[9px] px-1.5 py-0.5 rounded-full font-bold",
-                          file.embeddingStatus === 'COMPLETED' ? "bg-green-100 text-green-600" : 
-                          file.embeddingStatus === 'FAILED' ? "bg-red-100 text-red-600" : "bg-eco-green/10 text-eco-green animate-pulse"
-                        )}>
-                          {file.embeddingStatus === 'COMPLETED' ? 'Sẵn sàng' : 
-                           file.embeddingStatus === 'FAILED' ? 'Lỗi' : 'Đang xử lý...'}
-                        </span>
-                      )}
+
                     </div>
                   </div>
                   <div className={cn(
