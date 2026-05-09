@@ -84,7 +84,10 @@ function PodiumCard({ item, rank, isPartnership, onClick }) {
 
   return (
     <div 
-      className="flex-1 flex flex-col items-center gap-2 cursor-pointer group transition-transform hover:scale-105"
+      className={cn(
+        "flex-1 flex flex-col items-center gap-2 group transition-transform",
+        onClick && "cursor-pointer hover:scale-105"
+      )}
       onClick={() => onClick && onClick(item)}
     >
       {/* Icon trophy */}
@@ -138,7 +141,8 @@ function RankRow({ item, isPartnership, onClick }) {
     <div 
       onClick={() => onClick && onClick(item)}
       className={cn(
-        "flex items-center gap-4 px-5 py-3.5 transition-all duration-150 hover:bg-muted/40 group cursor-pointer",
+        "flex items-center gap-4 px-5 py-3.5 transition-all duration-150 group",
+        onClick ? "hover:bg-muted/40 cursor-pointer" : "cursor-default"
       )}
     >
       {/* Rank number */}
@@ -758,9 +762,9 @@ export default function SchoolLeaderboardPage() {
                 </p>
                 {/* Reorder: 2nd | 1st | 3rd */}
                 <div className="flex items-end justify-center gap-2 sm:gap-4 max-w-md mx-auto px-2">
-                  <PodiumCard item={top3[1]} rank={2} isPartnership={isPartnership} onClick={handleStudentClick} />
-                  <PodiumCard item={top3[0]} rank={1} isPartnership={isPartnership} onClick={handleStudentClick} />
-                  <PodiumCard item={top3[2]} rank={3} isPartnership={isPartnership} onClick={handleStudentClick} />
+                  <PodiumCard item={top3[1]} rank={2} isPartnership={isPartnership} onClick={isPartnership ? undefined : handleStudentClick} />
+                  <PodiumCard item={top3[0]} rank={1} isPartnership={isPartnership} onClick={isPartnership ? undefined : handleStudentClick} />
+                  <PodiumCard item={top3[2]} rank={3} isPartnership={isPartnership} onClick={isPartnership ? undefined : handleStudentClick} />
                 </div>
               </div>
             )}
@@ -775,7 +779,7 @@ export default function SchoolLeaderboardPage() {
                 </div>
                 <div className="divide-y divide-border/50">
                   {paginatedRest.map(item => (
-                    <RankRow key={`${item.studentId}-${item.rank}`} item={item} isPartnership={isPartnership} onClick={handleStudentClick} />
+                    <RankRow key={`${item.studentId}-${item.rank}`} item={item} isPartnership={isPartnership} onClick={isPartnership ? undefined : handleStudentClick} />
                   ))}
                 </div>
               </>
