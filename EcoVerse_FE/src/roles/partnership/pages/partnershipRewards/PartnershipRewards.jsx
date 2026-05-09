@@ -24,7 +24,7 @@ export default function PartnershipRewards() {
   const [isShippingDialogOpen, setIsShippingDialogOpen] = useState(false);
   const [selectedDelivery, setSelectedDelivery] = useState(null);
   const [shippingNotes, setShippingNotes] = useState('');
-  const [trackingCode, setTrackingCode] = useState('');
+
 
   const [isLogDialogOpen, setIsLogDialogOpen] = useState(false);
   const [selectedDeliveryForLogs, setSelectedDeliveryForLogs] = useState(null);
@@ -129,7 +129,6 @@ export default function PartnershipRewards() {
     
     setLoading(true);
     const success = await markRewardShipped(selectedDelivery.id, {
-      shippingTrackingCode: trackingCode,
       notes: shippingNotes
     });
 
@@ -140,7 +139,6 @@ export default function PartnershipRewards() {
       setRewardDeliveries(data);
       setIsShippingDialogOpen(false);
       setShippingNotes('');
-      setTrackingCode('');
       setSelectedDelivery(null);
     } else {
       toast.error('Cập nhật thất bại');
@@ -241,9 +239,7 @@ export default function PartnershipRewards() {
                           .join(', ')}
                       </span>
                     </div>
-                    <p className="text-[9px] text-muted-foreground/60 font-mono mt-0.5">
-                      ID: {delivery.schoolId.substring(0, 8)}...
-                    </p>
+
                   </div>
                 </TableCell>
                 <TableCell className="text-center">
@@ -260,16 +256,9 @@ export default function PartnershipRewards() {
                 {currentTab !== 'pending' && (
                   <>
                     <TableCell className="text-center">
-                      <div className="flex flex-col gap-1">
-                        <span className="text-xs font-bold whitespace-nowrap">
-                          {delivery.shippedAt ? new Date(delivery.shippedAt).toLocaleDateString('vi-VN') : '-'}
-                        </span>
-                        {delivery.shippingTrackingCode && (
-                          <Badge variant="outline" className="text-[9px] py-0 border-eco-blue/20 text-eco-blue bg-eco-blue/5">
-                            {delivery.shippingTrackingCode}
-                          </Badge>
-                        )}
-                      </div>
+                      <span className="text-xs font-bold whitespace-nowrap">
+                        {delivery.shippedAt ? new Date(delivery.shippedAt).toLocaleDateString('vi-VN') : '-'}
+                      </span>
                     </TableCell>
 
                     <TableCell className="text-center">
@@ -537,19 +526,6 @@ export default function PartnershipRewards() {
             </div>
 
             <div className="space-y-5">
-              <div className="space-y-2.5">
-                <Label htmlFor="tracking" className="text-xs font-black uppercase tracking-widest px-1">Mã vận đơn (nếu có)</Label>
-                <div className="relative">
-                    <Package className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-                    <Input
-                        id="tracking"
-                        placeholder="VD: GHN-123456789"
-                        value={trackingCode}
-                        onChange={(e) => setTrackingCode(e.target.value)}
-                        className="h-12 pl-12 rounded-xl focus:ring-eco-blue border-2 font-medium"
-                    />
-                </div>
-              </div>
 
               <div className="space-y-2.5">
                 <Label htmlFor="notes" className="text-xs font-black uppercase tracking-widest px-1 text-muted-foreground">Ghi chú gửi hàng</Label>
