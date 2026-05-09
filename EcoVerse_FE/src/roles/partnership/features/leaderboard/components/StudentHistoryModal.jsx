@@ -32,6 +32,30 @@ export function StudentHistoryModal({ isOpen, onClose, campaignId, roundId, stud
     }
   }, [isOpen, campaignId, roundId, student]);
 
+  const groupedGameHistories = React.useMemo(() => {
+    if (!history?.gameHistories) return [];
+    
+    const groups = [];
+    history.gameHistories.forEach(game => {
+      const sessionsByPreset = {};
+      game.sessions?.forEach(session => {
+        const pName = session.presetName || game.gameTypeName;
+        if (!sessionsByPreset[pName]) sessionsByPreset[pName] = [];
+        sessionsByPreset[pName].push(session);
+      });
+      
+      Object.entries(sessionsByPreset).forEach(([presetName, sessions]) => {
+        groups.push({
+          id: `${game.roundGameConfigId}-${presetName}`,
+          gameTypeName: game.gameTypeName,
+          displayName: presetName,
+          sessions: sessions
+        });
+      });
+    });
+    return groups;
+  }, [history]);
+
   const fetchHistory = async () => {
     setLoading(true);
     try {
@@ -92,23 +116,32 @@ export function StudentHistoryModal({ isOpen, onClose, campaignId, roundId, stud
 
               <ScrollArea className="flex-1 px-6 py-4">
                 <TabsContent value="games" className="mt-0 space-y-6 outline-none">
-                  {!history?.gameHistories?.length ? (
+                  {!groupedGameHistories.length ? (
                     <EmptyState icon={Gamepad2} title="Chưa có dữ liệu trò chơi" description="Học sinh này chưa tham gia trò chơi nào trong vòng thi này." />
                   ) : (
-                    history.gameHistories.map((game, gIdx) => (
-                      <div key={game.roundGameConfigId} className="space-y-3">
-                        <div className="flex items-center gap-2">
-                          <div className="w-8 h-8 rounded-lg bg-eco-green/10 flex items-center justify-center">
-                            <Gamepad2 className="w-4 h-4 text-eco-green" />
+                    groupedGameHistories.map((group) => (
+                      <div key={group.id} className="space-y-3">
+                        <div className="flex items-center gap-3">
+                          <div className="w-10 h-10 rounded-xl bg-eco-green/10 flex items-center justify-center shrink-0">
+                            <Gamepad2 className="w-5 h-5 text-eco-green" />
                           </div>
-                          <h3 className="font-bold text-base text-foreground">{game.gameTypeName}</h3>
+                          <div className="flex flex-col">
+                            <h3 className="font-bold text-base text-foreground leading-tight">
+                              {group.displayName}
+                            </h3>
+                            {group.displayName !== group.gameTypeName && (
+                              <span className="text-[10px] font-bold text-eco-green/70 uppercase tracking-widest">
+                                {group.gameTypeName}
+                              </span>
+                            )}
+                          </div>
                           <Badge variant="outline" className="ml-auto bg-muted/30">
-                            {game.sessions.length} lượt chơi
+                            {group.sessions.length} lượt chơi
                           </Badge>
                         </div>
                         
                         <div className="grid grid-cols-1 gap-3">
-                          {game.sessions.map((session) => (
+                          {group.sessions.map((session) => (
                             <div key={session.sessionId} className="group p-4 rounded-2xl border bg-card hover:border-eco-green/30 hover:shadow-md transition-all">
                               <div className="flex flex-wrap items-center justify-between gap-4">
                                 <div className="space-y-1">
