@@ -100,6 +100,20 @@ export default function SchoolAuth() {
     }
   };
 
+  const handleKeyDown = (e) => {
+    if (e.key === "Enter") {
+      if (activeTab === "login") {
+        handleLogin();
+      } else if (activeTab === "register") {
+        if (registerStep === "credentials") {
+          handleSendOTP();
+        } else if (registerStep === "verify") {
+          handleVerifyOTP();
+        }
+      }
+    }
+  };
+
   const handleSendOTP = async () => {
     if (!validate()) return;
     setIsLoading(true);
@@ -309,6 +323,7 @@ export default function SchoolAuth() {
                           setEmail(e.target.value);
                           setErrors((p) => ({ ...p, email: "" }));
                         }}
+                        onKeyDown={handleKeyDown}
                         className="h-14 rounded-2xl bg-[#f9faf6]/50 border-white/50 focus:bg-white transition-all font-greenhouse-body text-base"
                         disabled={isLoading}
                         status={errors.email ? "error" : ""}
@@ -340,6 +355,7 @@ export default function SchoolAuth() {
                           setPassword(e.target.value);
                           setErrors((p) => ({ ...p, password: "" }));
                         }}
+                        onKeyDown={handleKeyDown}
                         className="h-14 rounded-2xl bg-[#f9faf6]/50 border-white/50 focus:bg-white transition-all font-greenhouse-body text-base"
                         disabled={isLoading}
                         status={errors.password ? "error" : ""}
@@ -416,6 +432,7 @@ export default function SchoolAuth() {
                               setEmail(e.target.value);
                               setErrors((p) => ({ ...p, email: "" }));
                             }}
+                            onKeyDown={handleKeyDown}
                             className="h-14 rounded-2xl bg-[#f9faf6]/50 border-white/50 focus:bg-white transition-all font-greenhouse-body text-base"
                             disabled={isLoading}
                             status={errors.email ? "error" : ""}
@@ -437,6 +454,7 @@ export default function SchoolAuth() {
                               setPassword(e.target.value);
                               setErrors((p) => ({ ...p, password: "" }));
                             }}
+                            onKeyDown={handleKeyDown}
                             className="h-14 rounded-2xl bg-[#f9faf6]/50 border-white/50 focus:bg-white transition-all font-greenhouse-body text-base"
                             disabled={isLoading}
                             status={errors.password ? "error" : ""}
@@ -520,7 +538,10 @@ export default function SchoolAuth() {
                             onChange={(e) =>
                               handleOtpChange(index, e.target.value)
                             }
-                            onKeyDown={(e) => handleOtpKeyDown(index, e)}
+                            onKeyDown={(e) => {
+                              handleOtpKeyDown(index, e);
+                              handleKeyDown(e);
+                            }}
                             disabled={isLoading}
                             className="w-14 h-16 text-center text-2xl font-black bg-[#f9faf6]/80 border-2 border-[#1f941f]/5 rounded-2xl focus:border-[#1f941f] focus:bg-white focus:outline-none transition-all font-greenhouse-heading disabled:opacity-50 shadow-sm"
                           />

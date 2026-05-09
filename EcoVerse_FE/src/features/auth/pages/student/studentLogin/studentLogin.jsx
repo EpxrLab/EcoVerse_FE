@@ -74,6 +74,12 @@ export default function StudentLogin() {
     }
   };
 
+  const handleKeyDown = (e) => {
+    if (e.key === "Enter") {
+      handleLogin();
+    }
+  };
+
   const containerVariants = {
     hidden: { opacity: 0, y: 20 },
     visible: {
@@ -165,6 +171,7 @@ export default function StudentLogin() {
                       setUsername(e.target.value);
                       setErrors((p) => ({ ...p, username: "" }));
                     }}
+                    onKeyDown={handleKeyDown}
                     className="h-14 rounded-2xl bg-[#f9faf6]/50 border-white/50 focus:bg-white transition-all font-greenhouse-body text-base"
                     disabled={isLoading}
                     status={errors.username ? "error" : ""}
@@ -186,6 +193,7 @@ export default function StudentLogin() {
                       setPassword(e.target.value);
                       setErrors((p) => ({ ...p, password: "" }));
                     }}
+                    onKeyDown={handleKeyDown}
                     className="h-14 rounded-2xl bg-[#f9faf6]/50 border-white/50 focus:bg-white transition-all font-greenhouse-body text-base"
                     disabled={isLoading}
                     status={errors.password ? "error" : ""}
