@@ -728,7 +728,9 @@ function PerformanceSection() {
                                     : "bg-gray-100 text-gray-500"
                                 }`}
                               >
-                                {c.campaignStatus}
+                                {c.campaignStatus === "ON_GOING"
+                                  ? "Đang diễn ra"
+                                  : "Đã hoàn thành"}
                               </span>
                             </div>
                           </div>
@@ -784,14 +786,16 @@ function PerformanceSection() {
                                 {c.quizzesCompleted}
                               </p>
                             </div>
-                            <div className="text-center p-2 rounded-xl bg-amber-50">
-                              <p className="text-[9px] font-bold text-amber-500 uppercase mb-0.5">
-                                Xu
-                              </p>
-                              <p className="text-sm font-black text-amber-600">
-                                {fmtN(c.totalCoinsEarned)}
-                              </p>
-                            </div>
+                            {c.campaignType !== "PARTNERSHIP_EVENT" && (
+                              <div className="text-center p-2 rounded-xl bg-amber-50">
+                                <p className="text-[9px] font-bold text-amber-500 uppercase mb-0.5">
+                                  Xu
+                                </p>
+                                <p className="text-sm font-black text-amber-600">
+                                  {fmtN(c.totalCoinsEarned)}
+                                </p>
+                              </div>
+                            )}
                           </div>
                         </div>
                       </div>
