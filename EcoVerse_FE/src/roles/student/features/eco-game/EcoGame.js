@@ -165,7 +165,7 @@ export default class EcoGame {
       } else if (gameType === "grabber") {
         const grabConfig = this.levelConfig.grabber || {};
         totalTrash = grabConfig.totalTrash || 10;
-        reqPercent = grabConfig.requiredPercentage || 60;
+        reqPercent = grabConfig.requiredPercentage || 80;
       } else {
         const runnerConfig = this.levelConfig.runner || {};
         totalTrash = runnerConfig.itemCount || 20;
