@@ -154,104 +154,6 @@ function SectionTitle({ icon, title, sub }) {
   );
 }
 
-// ─── Status distribution bar ──────────────────────────────────────────────────
-
-function StatusBar({ counts, label }) {
-  const entries = Object.entries(counts ?? {}).filter(([, v]) => v > 0);
-  const total = entries.reduce((s, [, v]) => s + v, 0);
-  if (total === 0) return null;
-
-  return (
-    <div className="space-y-3">
-      <p className="text-xs font-bold text-slate-500 uppercase tracking-wider">
-        {label}
-      </p>
-      {/* Stacked bar */}
-      <div className="flex h-3 rounded-full overflow-hidden gap-px">
-        {entries.map(([key, val]) => (
-          <Tooltip key={key} title={`${STATUS_CFG[key]?.label ?? key}: ${val}`}>
-            <div
-              className="transition-all hover:opacity-80 cursor-default"
-              style={{
-                width: `${(val / total) * 100}%`,
-                background: STATUS_CFG[key]?.color ?? "#94a3b8",
-              }}
-            />
-          </Tooltip>
-        ))}
-      </div>
-      {/* Legend */}
-      <div className="flex flex-wrap gap-2">
-        {entries.map(([key, val]) => (
-          <div
-            key={key}
-            className="flex items-center gap-1.5 text-xs text-slate-600"
-          >
-            <span
-              className="w-2.5 h-2.5 rounded-sm flex-shrink-0"
-              style={{ background: STATUS_CFG[key]?.color ?? "#94a3b8" }}
-            />
-            <span className="font-medium">{STATUS_CFG[key]?.label ?? key}</span>
-            <span className="text-slate-400 font-bold">({val})</span>
-          </div>
-        ))}
-      </div>
-    </div>
-  );
-}
-
-// ─── Mini Donut ───────────────────────────────────────────────────────────────
-
-function MiniDonut({ data, title }) {
-  const filtered = data.filter((d) => d.value > 0);
-  return (
-    <div>
-      <p className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-3">
-        {title}
-      </p>
-      <div className="flex items-center gap-4">
-        <div style={{ width: 110, height: 110 }}>
-          <ResponsiveContainer width="100%" height="100%">
-            <PieChart>
-              <Pie
-                data={filtered}
-                dataKey="value"
-                cx="50%"
-                cy="50%"
-                innerRadius={28}
-                outerRadius={48}
-                paddingAngle={3}
-              >
-                {filtered.map((_, i) => (
-                  <Cell
-                    key={i}
-                    fill={CHART_PALETTE[i % CHART_PALETTE.length]}
-                  />
-                ))}
-              </Pie>
-              <ReTooltip formatter={(v, n) => [v, n]} />
-            </PieChart>
-          </ResponsiveContainer>
-        </div>
-        <div className="space-y-1.5 flex-1 min-w-0">
-          {filtered.map((d, i) => (
-            <div key={i} className="flex items-center gap-2 text-xs">
-              <span
-                className="w-2 h-2 rounded-full flex-shrink-0"
-                style={{ background: CHART_PALETTE[i % CHART_PALETTE.length] }}
-              />
-              <span className="text-slate-600 truncate">{d.name}</span>
-              <span className="font-black text-slate-800 ml-auto">
-                {fmtN(d.value)}
-              </span>
-            </div>
-          ))}
-        </div>
-      </div>
-    </div>
-  );
-}
-
 // ─── Custom Tooltip for revenue chart ────────────────────────────────────────
 
 const RevenueTooltip = ({ active, payload, label }) => {
@@ -656,11 +558,11 @@ function AdminDashboard() {
                 />
               </motion.div>
 
-              <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-5">
+              <div className="grid grid-cols-1 xl:grid-cols-3 gap-5">
                 {/* Campaign KPIs */}
                 <motion.div
                   {...fadeUp(0.14)}
-                  className="bg-white rounded-2xl border border-slate-100 p-5 shadow-sm space-y-4"
+                  className="xl:col-span-1 bg-white rounded-2xl border border-slate-100 p-5 shadow-sm space-y-4"
                 >
                   <p className="text-xs font-bold text-slate-400 uppercase tracking-wider">
                     Tổng quan chiến dịch
@@ -671,136 +573,115 @@ function AdminDashboard() {
                         label: "Tổng chiến dịch",
                         value: fmtN(ca.totalCampaigns),
                         color: "bg-blue-50 text-blue-700",
+                        icon: <TrophyOutlined className="opacity-50" />,
                       },
                       {
                         label: "Người tham gia",
                         value: fmtN(ca.totalParticipants),
                         color: "bg-teal-50 text-teal-700",
+                        icon: <TeamOutlined className="opacity-50" />,
                       },
                       {
                         label: "Trường học",
                         value: fmtN(ca.totalSchoolCampaigns),
                         color: "bg-indigo-50 text-indigo-700",
+                        icon: <BankOutlined className="opacity-50" />,
                       },
                       {
                         label: "Đối tác",
                         value: fmtN(ca.totalPartnershipCampaigns),
                         color: "bg-cyan-50 text-cyan-700",
+                        icon: <GlobalOutlined className="opacity-50" />,
                       },
                       {
                         label: "Lời mời trường",
                         value: fmtN(ca.totalSchoolInvitations),
                         color: "bg-amber-50 text-amber-700",
+                        icon: <EditOutlined className="opacity-50" />,
                       },
                       {
                         label: "Lời mời được duyệt",
                         value: fmtN(ca.approvedSchoolInvitations),
                         color: "bg-green-50 text-green-700",
+                        icon: <CheckCircleOutlined className="opacity-50" />,
                       },
                     ].map((s, i) => (
                       <div
                         key={i}
-                        className={`px-3 py-2.5 rounded-xl text-center ${s.color}`}
+                        className={`px-3 py-2.5 rounded-xl text-center border border-transparent hover:border-current/10 transition-colors ${s.color}`}
                       >
-                        <p className="text-[10px] font-bold opacity-70 uppercase tracking-wider">
-                          {s.label}
-                        </p>
-                        <p className="text-xl font-black">{s.value}</p>
+                        <div className="flex flex-col items-center gap-1">
+                          <span className="text-base">{s.icon}</span>
+                          <p className="text-[10px] font-bold opacity-70 uppercase tracking-wider">
+                            {s.label}
+                          </p>
+                          <p className="text-xl font-black">{s.value}</p>
+                        </div>
                       </div>
                     ))}
                   </div>
                 </motion.div>
 
-                {/* Donut charts */}
-                <motion.div
-                  {...fadeUp(0.16)}
-                  className="bg-white rounded-2xl border border-slate-100 p-5 shadow-sm space-y-5"
-                >
-                  <MiniDonut data={campaignTypePie} title="Phân bổ theo loại" />
-                  <Divider className="my-0" />
-                  <MiniDonut
-                    data={invitationPie}
-                    title="Tình trạng lời mời trường"
-                  />
-                </motion.div>
-
-                {/* Status breakdown */}
+                {/* Stacked bar comparison */}
                 <motion.div
                   {...fadeUp(0.18)}
-                  className="bg-white rounded-2xl border border-slate-100 p-5 shadow-sm space-y-5 xl:col-span-1"
+                  className="xl:col-span-2 bg-white rounded-2xl border border-slate-100 p-5 shadow-sm"
                 >
-                  <StatusBar
-                    counts={ca.schoolCampaignStatusCounts}
-                    label="Trạng thái — Chiến dịch trường học"
-                  />
-                  <div className="border-t border-slate-100 pt-4">
-                    <StatusBar
-                      counts={ca.partnershipCampaignStatusCounts}
-                      label="Trạng thái — Chiến dịch đối tác"
-                    />
-                  </div>
+                  <p className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-4">
+                    So sánh số lượng theo trạng thái
+                  </p>
+                  <ResponsiveContainer width="100%" height={260}>
+                    <BarChart
+                      data={(() => {
+                        const allKeys = new Set([
+                          ...Object.keys(ca.schoolCampaignStatusCounts ?? {}),
+                          ...Object.keys(
+                            ca.partnershipCampaignStatusCounts ?? {},
+                          ),
+                        ]);
+                        return [...allKeys]
+                          .map((k) => ({
+                            status: STATUS_CFG[k]?.label ?? k,
+                            Trường: ca.schoolCampaignStatusCounts?.[k] ?? 0,
+                            "Đối tác":
+                              ca.partnershipCampaignStatusCounts?.[k] ?? 0,
+                          }))
+                          .filter((d) => d["Trường"] + d["Đối tác"] > 0);
+                      })()}
+                      layout="vertical"
+                      margin={{ left: 8, right: 16 }}
+                    >
+                      <CartesianGrid
+                        strokeDasharray="3 3"
+                        stroke="#f1f5f9"
+                        horizontal={false}
+                      />
+                      <XAxis
+                        type="number"
+                        tick={{ fontSize: 11, fill: "#94a3b8" }}
+                      />
+                      <YAxis
+                        type="category"
+                        dataKey="status"
+                        width={90}
+                        tick={{ fontSize: 11, fill: "#6b7280" }}
+                      />
+                      <ReTooltip />
+                      <Legend wrapperStyle={{ fontSize: 12 }} />
+                      <Bar
+                        dataKey="Trường"
+                        fill="#3b82f6"
+                        radius={[0, 4, 4, 0]}
+                      />
+                      <Bar
+                        dataKey="Đối tác"
+                        fill="#06b6d4"
+                        radius={[0, 4, 4, 0]}
+                      />
+                    </BarChart>
+                  </ResponsiveContainer>
                 </motion.div>
               </div>
-
-              {/* Stacked bar comparison */}
-              <motion.div
-                {...fadeUp(0.2)}
-                className="mt-5 bg-white rounded-2xl border border-slate-100 p-5 shadow-sm"
-              >
-                <p className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-4">
-                  So sánh số lượng theo trạng thái
-                </p>
-                <ResponsiveContainer width="100%" height={200}>
-                  <BarChart
-                    data={(() => {
-                      const allKeys = new Set([
-                        ...Object.keys(ca.schoolCampaignStatusCounts ?? {}),
-                        ...Object.keys(
-                          ca.partnershipCampaignStatusCounts ?? {},
-                        ),
-                      ]);
-                      return [...allKeys]
-                        .map((k) => ({
-                          status: STATUS_CFG[k]?.label ?? k,
-                          Trường: ca.schoolCampaignStatusCounts?.[k] ?? 0,
-                          "Đối tác":
-                            ca.partnershipCampaignStatusCounts?.[k] ?? 0,
-                        }))
-                        .filter((d) => d["Trường"] + d["Đối tác"] > 0);
-                    })()}
-                    layout="vertical"
-                    margin={{ left: 8, right: 16 }}
-                  >
-                    <CartesianGrid
-                      strokeDasharray="3 3"
-                      stroke="#f1f5f9"
-                      horizontal={false}
-                    />
-                    <XAxis
-                      type="number"
-                      tick={{ fontSize: 11, fill: "#94a3b8" }}
-                    />
-                    <YAxis
-                      type="category"
-                      dataKey="status"
-                      width={90}
-                      tick={{ fontSize: 11, fill: "#6b7280" }}
-                    />
-                    <ReTooltip />
-                    <Legend wrapperStyle={{ fontSize: 12 }} />
-                    <Bar
-                      dataKey="Trường"
-                      fill="#3b82f6"
-                      radius={[0, 4, 4, 0]}
-                    />
-                    <Bar
-                      dataKey="Đối tác"
-                      fill="#06b6d4"
-                      radius={[0, 4, 4, 0]}
-                    />
-                  </BarChart>
-                </ResponsiveContainer>
-              </motion.div>
             </section>
           )}
         </>
