@@ -544,14 +544,6 @@ const AdminSubscriptions = () => {
     return result;
   }, [plans, typeFilter, searchQuery]);
 
-  const totalSchools = useMemo(
-    () => plans.reduce((s, p) => s + (p.schools || 0), 0),
-    [plans],
-  );
-  const totalRevenue = useMemo(
-    () => plans.reduce((s, p) => s + p.price * (p.schools || 0), 0),
-    [plans],
-  );
   const activeCount = useMemo(
     () => plans.filter((p) => p.isActive).length,
     [plans],
@@ -698,57 +690,6 @@ const AdminSubscriptions = () => {
       ),
     },
     {
-      title: "Số trường",
-      dataIndex: "schools",
-      key: "schools",
-      render: (v, plan) => (
-        <span
-          className={`font-medium ${plan.isActive ? "text-gray-800" : "text-gray-400"}`}
-        >
-          {v ?? 0}
-        </span>
-      ),
-    },
-    {
-      title: "Doanh thu/tháng",
-      key: "revenue",
-      render: (_, plan) => (
-        <span
-          className={`font-semibold ${plan.isActive ? "text-gray-800" : "text-gray-400"}`}
-        >
-          {fmtPrice(plan.price * (plan.schools || 0))}
-        </span>
-      ),
-    },
-    {
-      title: "% Tổng",
-      key: "percent",
-      render: (_, plan) => {
-        const pct =
-          totalSchools > 0
-            ? Math.round(((plan.schools || 0) / totalSchools) * 100)
-            : 0;
-        const color = plan.isActive ? getPlanColor(plan) : "#d1d5db";
-        return (
-          <div className="flex items-center gap-2 min-w-[120px]">
-            <Progress
-              percent={pct}
-              showInfo={false}
-              strokeColor={color}
-              trailColor="#f3f4f6"
-              size="small"
-              className="flex-1"
-            />
-            <span
-              className={`text-sm w-9 text-right ${plan.isActive ? "text-gray-500" : "text-gray-400"}`}
-            >
-              {pct}%
-            </span>
-          </div>
-        );
-      },
-    },
-    {
       title: "",
       key: "actions",
       align: "right",
@@ -820,53 +761,32 @@ const AdminSubscriptions = () => {
         </motion.div>
 
         {/* Stats */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
-          {[
-            {
-              icon: <CreditCardOutlined className="text-2xl text-blue-500" />,
-              bg: "bg-blue-50",
-              value: totalSchools,
-              label: "Trường đang dùng",
-            },
-            {
-              icon: <StarOutlined className="text-2xl text-green-500" />,
-              bg: "bg-green-50",
-              value: `₫${(totalRevenue / 1_000_000).toFixed(1)}M`,
-              label: "Doanh thu ước tính/tháng",
-            },
-            {
-              icon: <PoweroffOutlined className="text-2xl text-emerald-500" />,
-              bg: "bg-emerald-50",
-              value: `${activeCount}/${plans.length}`,
-              label: "Gói đang hoạt động",
-            },
-          ].map((s, i) => (
-            <motion.div key={i} variants={itemVariants}>
-              <Card
-                className="rounded-2xl border-0 shadow-sm hover:shadow-md transition-shadow duration-300"
-                bodyStyle={{ padding: "20px 24px" }}
-              >
-                <div className="flex items-center gap-4">
-                  <div
-                    className={`w-12 h-12 rounded-xl flex items-center justify-center ${s.bg}`}
-                  >
-                    {s.icon}
-                  </div>
-                  <Statistic
-                    value={s.value}
-                    title={
-                      <span className="text-sm text-gray-400">{s.label}</span>
-                    }
-                    valueStyle={{
-                      fontSize: 24,
-                      fontWeight: 700,
-                      color: "#1e293b",
-                    }}
-                  />
+        <div className="flex justify-start">
+          <motion.div variants={itemVariants} className="w-full md:w-80">
+            <Card
+              className="rounded-2xl border-0 shadow-sm hover:shadow-md transition-shadow duration-300"
+              bodyStyle={{ padding: "20px 24px" }}
+            >
+              <div className="flex items-center gap-4">
+                <div
+                  className="w-12 h-12 rounded-xl flex items-center justify-center bg-emerald-50"
+                >
+                  <PoweroffOutlined className="text-2xl text-emerald-500" />
                 </div>
-              </Card>
-            </motion.div>
-          ))}
+                <Statistic
+                  value={`${activeCount}/${plans.length}`}
+                  title={
+                    <span className="text-sm text-gray-400">Gói đang hoạt động</span>
+                  }
+                  valueStyle={{
+                    fontSize: 24,
+                    fontWeight: 700,
+                    color: "#1e293b",
+                  }}
+                />
+              </div>
+            </Card>
+          </motion.div>
         </div>
 
         {/* Cards section */}
