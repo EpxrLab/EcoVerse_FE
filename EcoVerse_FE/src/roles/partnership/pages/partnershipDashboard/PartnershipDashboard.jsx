@@ -25,7 +25,6 @@ export default function PartnershipDashboard() {
       icon: FileText,
       color: "text-eco-blue",
       bg: "bg-eco-blue/10",
-      desc: `${stats.activeCampaigns} đang diễn ra`
     },
     {
       title: "Trường tham gia",
